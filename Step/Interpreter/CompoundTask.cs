@@ -47,6 +47,17 @@ namespace Step.Interpreter
         public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain) 
             => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain));
 
+        public string Call(Module m, params object[] arglist)
+        {
+            var output = PartialOutput.NewEmpty();
+            var env = new BindingEnvironment(m, null);
+            string result = null;
+            foreach (var method in Methods)
+                if (method.Try(arglist, output, env, (o, u, s) => { result = o.AsString; return true; }))
+                    return result;
+            return null;
+        }
+
         internal class Method
         {
             /// <summary>

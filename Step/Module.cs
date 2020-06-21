@@ -108,7 +108,7 @@ namespace Step
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
-            return new Call(t, args, null).Expand(this);
+            return t.Call(this, args);
         }
 
         public void LoadDefinitions(TextReader stream)
