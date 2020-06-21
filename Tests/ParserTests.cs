@@ -207,7 +207,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void MultiLineTest()
+        public void MultiDefinitionTest()
         {
             var m = Module.FromDefintions(
                 "Self subject: I\nSelf object: me\nSelf reflexive: myself",
@@ -225,6 +225,24 @@ Listener object: you
 Love ?x ?y: [?x subject] love [?y object]
 Test: [Love Speaker Listener]");
             Assert.AreEqual("I love you",m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void MultiLineDefinitionTest()
+        {
+            var m = Module.FromDefintions(@"
+Multi:
+This is a test of
+a very nice feature
+of multi-line definitions
+
+With a line break in it!
+[end]
+
+Test: [Multi]
+");
+            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\nWith a line break in it!",
+                m.Call("Test"));
         }
     }
 }

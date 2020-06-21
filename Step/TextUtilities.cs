@@ -42,11 +42,11 @@ namespace Step
             var lastToken = "";
             foreach (var t in tokens)
             {
-                if (!PunctuationToken(t) && !t.StartsWith("<"))
+                if (!PunctuationToken(t) && !t.StartsWith("<") && t != "\n")
                 {
                     if (firstOne)
                         firstOne = false;
-                    else if (lastToken != "-" && !lastToken.StartsWith("<"))
+                    else if (lastToken != "-" && lastToken != "\n" && !lastToken.StartsWith("<"))
                         b.Append(' ');
                 }
 

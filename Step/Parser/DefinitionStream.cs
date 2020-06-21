@@ -55,15 +55,29 @@ namespace Step.Parser
 
         private static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
         private static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
-        private bool EndOfDefinition => end || EndOfLineToken;
 
-        private bool EndOfLineToken => Peek is string s && s == "\n";
+        /// <summary>
+        /// The current definition is a single line definition
+        /// </summary>
+        private bool multiLine;
+
+        private const string EndOfLine = "\n";
+        private bool EndOfDefinition => end || ExplicitEndToken || (!multiLine && EndOfLineToken);
+
+        private bool EndOfLineToken => Peek.Equals(EndOfLine);
+        private bool ExplicitEndToken => Peek is object[] array && array.Length == 1 && array[0].Equals("end");
 
         private object Get()
         {
             var result = Peek;
             MoveNext();
             return result;
+        }
+
+        private void SwallowNewlines()
+        {
+            while (!end && EndOfLineToken)
+                Get();
         }
 
         private readonly List<LocalVariableName> locals = new List<LocalVariableName>();
@@ -116,10 +130,12 @@ namespace Step.Parser
         {
             locals.Clear();
 
+            SwallowNewlines();
+
             // Process the head
             var taskName = Get() as string;
             if (taskName == null)
-                throw new SyntaxError($"Bracketed expression at start of definition");
+                throw new SyntaxError("Bracketed expression at start of definition");
 
             // Read the argument pattern
             var pattern = new List<object>();
@@ -130,6 +146,10 @@ namespace Step.Parser
             // Change variable references in pattern to LocalVariableNames
             Variablize(pattern);
 
+            multiLine = EndOfLineToken;
+            if (multiLine)
+                Get();  // Swallow the end of line
+            
             Interpreter.Step firstStep = null;
             Interpreter.Step previousStep = null;
             void AddStep(Interpreter.Step s)
@@ -149,7 +169,18 @@ namespace Step.Parser
             {
                 tokens.Clear();
                 while (!EndOfDefinition && Peek is string)
-                    tokens.Add((string)Get());
+                    if (!EndOfLineToken)
+                        tokens.Add((string)Get());
+                    else
+                    {
+                        Get(); // Skip newline
+                        if (EndOfLineToken)
+                        {
+                            // It's two consecutive newline tokens
+                            tokens.Add((string)Get());
+                        }
+                    }
+
                 if (tokens.Count > 0) 
                     AddStep(new EmitStep(tokens.ToArray(), null));
                 if (!EndOfDefinition && Peek is object[] expression)
@@ -170,6 +201,8 @@ namespace Step.Parser
 
             if (EndOfDefinition && !end)
                 Get(); // Skip over the delimiter
+
+            SwallowNewlines();
 
             return (GlobalVariable.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep);
         }
