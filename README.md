@@ -17,24 +17,24 @@ Here are the basics:
 
 The basic definition is the name of a task, a colon, and the text it expands to:
 
-`Test: This is a test`
+    Test: This is a test
 
 When `Test` is called, this will generate the text "This is a test".
 
 Calls to subtasks are wrapped in square brackets:
 
-`Dog: the happy dog
-Test: [Dog] loves [Dog]`
+    Dog: the happy dog
+    Test: [Dog] loves [Dog]
 
 Calling this `Test` generates "the happy dog loves the happy dog".
 
 Tasks can take arguments, and those arguments can even be order tasks:
 
-`Speaker subject: I
-Speaker object: me
-Listener subject: you
-Listener object: you
-Love ?x ?y: [?x subject] love [?y object]
-Test: [Love Speaker Listener]`
+    Speaker subject: I
+    Speaker object: me
+    Listener subject: you
+    Listener object: you
+    Love ?x ?y: [?x subject] love [?y object]
+    Test: [Love Speaker Listener]
 
 When `Test` is called, this will generate the text "I love you".
