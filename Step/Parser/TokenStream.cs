@@ -35,37 +35,89 @@ namespace Step.Parser
     /// </summary>
     public class TokenStream
     {
-        private readonly TextReader input;
-        private readonly StringBuilder token = new StringBuilder();
-
         public TokenStream(TextReader input)
         {
             this.input = input;
         }
 
+        #region Token buffer managment
+        /// <summary>
+        /// Buffer for accumulating characters into tokens
+        /// </summary>
+        private readonly StringBuilder token = new StringBuilder();
+
+        /// <summary>
+        /// True it token buffer non-empty
+        /// </summary>
         private bool HaveToken => token.Length > 0;
+
+        /// <summary>
+        /// Add current stream character to token
+        /// </summary>
         void AddCharToToken() => token.Append(Get());
 
+        /// <summary>
+        /// Return the accumulated characters as a token and clear the token buffer.
+        /// </summary>
         string ConsumeToken()
         {
             var newToken = token.ToString();
             token.Length = 0;
             return newToken;
         }
+        #endregion
 
-        char Get() => (char) (input.Read());
+        #region Stream interface
+        /// <summary>
+        /// The raw text stream
+        /// </summary>
+        private readonly TextReader input;
 
-        void Skip() => Get();
+        /// <summary>
+        /// True if we're at the end of the stream
+        /// </summary>
+        bool End => input.Peek() < 0;
 
+        /// <summary>
+        /// Return the current character, without advancing
+        /// </summary>
+        char Peek => (char) (input.Peek());
+
+        /// <summary>
+        /// Return the current character and advance to the next
+        /// </summary>
+        /// <returns></returns>
+        private char Get() => (char) (input.Read());
+
+        /// <summary>
+        /// Synonym for Get().  Used to indicate the character is being deliberately thrown away.
+        /// </summary>
+        private void Skip() => Get();
+
+        /// <summary>
+        /// Skip over all whitespace chars, except newlines (they're considered tokens)
+        /// </summary>
         void SkipWhitespace()
         {
             while (IsWhiteSpace) Skip();
         }
+        #endregion
 
-        char Peek => (char) (input.Peek());
-        bool End => input.Peek() < 0;
+        #region Character classification
+        /// <summary>
+        /// Current character is non-newline whitespace
+        /// </summary>
         bool IsWhiteSpace => char.IsWhiteSpace(Peek)  && Peek != '\n';
-        private bool IsPunctuation => char.IsPunctuation(Peek) && Peek != '?';
+
+        /// <summary>
+        /// Current character is some punctuation symbol other than '?'
+        /// '?' is treated specially because it's allowed to start a variable-name token.
+        /// </summary>
+        private bool IsPunctuationNotQuestionMark => char.IsPunctuation(Peek) && Peek != '?';
+
+        /// <summary>
+        /// True if the current character can't be a continuation of a word token.
+        /// </summary>
         private bool IsEndOfWord
         {
             get        
@@ -74,9 +126,11 @@ namespace Step.Parser
                 return char.IsWhiteSpace(c) || char.IsPunctuation(c);
             }
         }
+        #endregion
 
-
-
+        /// <summary>
+        /// The stream of tokens read from the stream.
+        /// </summary>
         public IEnumerable<string> Tokens
         {
             get
@@ -87,7 +141,7 @@ namespace Step.Parser
                     // Start of token
                     Debug.Assert(token.Length == 0);
                     // Handle any single-character tokens
-                    while (IsPunctuation || Peek == '\n')
+                    while (IsPunctuationNotQuestionMark || Peek == '\n')
                         yield return Get().ToString();
                     // Allow ?'s at the start of word tokens
                     if (Peek == '?')

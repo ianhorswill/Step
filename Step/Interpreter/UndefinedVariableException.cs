@@ -31,9 +31,12 @@ using System.Threading.Tasks;
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// Global variable was referenced that was never given a value in the relevant module.
+    /// </summary>
     public class UndefinedVariableException : Exception
     {
-        public UndefinedVariableException(GlobalVariable v) : base($"Undefined variable {v.Name}")
+        public UndefinedVariableException(GlobalVariableName v) : base($"Undefined variable {v.Name}")
         { }
     }
 }

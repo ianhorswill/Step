@@ -28,18 +28,40 @@ using System.Diagnostics;
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// A step that involves calling another task as a subtask
+    /// </summary>
     [DebuggerDisplay("Call {" + nameof(Task) + "}")]
     public class Call : Step
     {
+        /// <summary>
+        /// A step that involves calling a sub-task
+        /// </summary>
+        /// <param name="task">A term whose value is the sub-task to execute</param>
+        /// <param name="args">Terms for the arguments of the call</param>
+        /// <param name="next">Next step in the step chain of whatever method this belongs to</param>
         public Call(object task, object[] args, Step next) : base(next)
         {
             Task = task;
             Arglist = args;
         }
 
+        /// <summary>
+        /// Term (e.g. variable) representing the task to call
+        /// </summary>
         public readonly object Task;
+        /// <summary>
+        /// Terms representing the arguments to the subtask.
+        /// </summary>
         public readonly object[] Arglist;
 
+        /// <summary>
+        /// Attempt to run this task
+        /// </summary>
+        /// <param name="output">Output to which to write text</param>
+        /// <param name="env">Variable binding information</param>
+        /// <param name="k">Continuation to call at the end of this step's step-chain</param>
+        /// <returns>True if this steps, the rest of its step-chain, and the continuation all succeed.</returns>
         public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k)
         {
             var target = env.Resolve(Task);

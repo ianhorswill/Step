@@ -35,23 +35,6 @@ namespace Step.Parser
     /// </summary>
     public class ExpressionStream
     {
-        private readonly IEnumerator<string> tokens;
-        private bool end;
-
-        private void MoveNext()
-        {
-            end = !tokens.MoveNext();
-        }
-
-        private string Get()
-        {
-            var tok = tokens.Current;
-            MoveNext();
-            return tok;
-        }
-
-        private string Peek => tokens.Current;
-
         public ExpressionStream(TextReader stream) : this(new TokenStream(stream))
         { }
 
@@ -61,6 +44,43 @@ namespace Step.Parser
             MoveNext();
         }
 
+        #region TokenStream interface
+        /// <summary>
+        /// Sequence of tokens read from the original stream
+        /// </summary>
+        private readonly IEnumerator<string> tokens;
+        /// <summary>
+        /// True if we've hit the end of the stream
+        /// </summary>
+        private bool end;
+
+        /// <summary>
+        /// Move to the next token in the stream
+        /// </summary>
+        private void MoveNext()
+        {
+            end = !tokens.MoveNext();
+        }
+
+        /// <summary>
+        /// Return the current token and move to the next
+        /// </summary>
+        private string Get()
+        {
+            var tok = tokens.Current;
+            MoveNext();
+            return tok;
+        }
+
+        /// <summary>
+        /// Returns the current token without advancing to the next token.
+        /// </summary>
+        private string Peek => tokens.Current;
+        #endregion
+
+        /// <summary>
+        /// Sequence of tokens, with bracketed groups of expressions replace with a single array.
+        /// </summary>
         public IEnumerable<object> Expressions
         {
             get

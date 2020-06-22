@@ -25,6 +25,10 @@
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// A step that dumps a fixed set of tokens to the output.
+    /// EmitSteps always succeed
+    /// </summary>
     public class EmitStep : Step
     {
         public EmitStep(string[] text, Step next) : base(next)
@@ -32,8 +36,18 @@ namespace Step.Interpreter
             Text = text;
         }
 
+        /// <summary>
+        /// Fixed sequence of tokens to output when this step is performed
+        /// </summary>
         public readonly string[] Text;
 
+        /// <summary>
+        /// Output Text and succeed.
+        /// </summary>
+        /// <param name="output">When to write the text</param>
+        /// <param name="e">Variable info.  Not used, but passed on to continuation</param>
+        /// <param name="k">Continuation to run after the end of this method.</param>
+        /// <returns></returns>
         public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k) => Continue(output.Append(Text), e, k);
     }
 }

@@ -27,12 +27,30 @@ using System;
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// Represents all information about variable binding at a particular point in execution
+    /// Binding environments are readonly because we have to support backtracking: when we bind
+    /// a variable, we make a new binding environment, so that the old environment still exists
+    /// if we have to backtrack.
+    /// </summary>
     public readonly struct BindingEnvironment
     {
+        /// <summary>
+        /// Module containing bindings of GlobalVariables
+        /// </summary>
         public readonly Module Module;
+        /// <summary>
+        /// Logic variables holding the values of the current method's local variables
+        /// </summary>
         public readonly LogicVariable[] Local;
+        /// <summary>
+        /// Bindings mapping local variables to their values, or to other local variables
+        /// </summary>
         public readonly BindingList<LogicVariable> Unifications;
-        public readonly BindingList<GlobalVariable> DynamicState;
+        /// <summary>
+        /// Bindings mapping global variables to their values, when overriding the Module's values
+        /// </summary>
+        public readonly BindingList<GlobalVariableName> DynamicState;
 
         public BindingEnvironment(BindingEnvironment e, LogicVariable[] local)
             : this(e.Module, local, e.Unifications, e.DynamicState)
@@ -42,16 +60,16 @@ namespace Step.Interpreter
             : this(module, local, null, null)
         { }
 
-        public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, BindingList<GlobalVariable> dynamicState)
+        public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
             : this(e.Module, e.Local, unifications, dynamicState)
         { }
 
-        public BindingEnvironment(BindingEnvironment e, GlobalVariable v, object newValue)
-            : this(e.Module, e.Local, e.Unifications, new BindingList<GlobalVariable>(v, newValue, e.DynamicState))
+        public BindingEnvironment(BindingEnvironment e, GlobalVariableName v, object newValue)
+            : this(e.Module, e.Local, e.Unifications, new BindingList<GlobalVariableName>(v, newValue, e.DynamicState))
         { }
 
         private BindingEnvironment(Module module, LogicVariable[] local,
-            BindingList<LogicVariable> unifications, BindingList<GlobalVariable> dynamicState)
+            BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
         {
             Module = module;
             Local = local;
@@ -59,7 +77,11 @@ namespace Step.Interpreter
             DynamicState = dynamicState;
         }
 
-        public static BindingEnvironment NewEmpty() => new BindingEnvironment(new Module(), new LogicVariable[0]);
+        /// <summary>
+        /// Make a new binding environment with nothing in it.
+        /// Used for Unit tests.  Don't use this yourself.
+        /// </summary>
+        internal static BindingEnvironment NewEmpty() => new BindingEnvironment(new Module(), new LogicVariable[0]);
 
         /// <summary>
         /// Canonicalize a term, i.e. get its value, or reduce it to a logic variable
@@ -72,8 +94,8 @@ namespace Step.Interpreter
                 case LocalVariableName l:
                     return Deref(Local[l.Index]);
 
-                case GlobalVariable g:
-                    if (BindingList<GlobalVariable>.TryLookup(DynamicState, g, out var result))
+                case GlobalVariableName g:
+                    if (BindingList<GlobalVariableName>.TryLookup(DynamicState, g, out var result))
                         return result;
                     return Module[g];
 
@@ -82,6 +104,9 @@ namespace Step.Interpreter
             }
         }
 
+        /// <summary>
+        /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
+        /// </summary>
         public object[] ResolveList(object[] arglist)
         {
             var result = new object[arglist.Length];
@@ -90,6 +115,14 @@ namespace Step.Interpreter
             return result;
         }
 
+        /// <summary>
+        /// Attempt to unify two terms
+        /// </summary>
+        /// <param name="a">First term</param>
+        /// <param name="b">Other term</param>
+        /// <param name="inUnifications">Substitutions currently in place</param>
+        /// <param name="outUnifications">Substitutions in place after unification, if unification successful</param>
+        /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
         private bool Unify(object a, object b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
         {
             a = Resolve(a);
@@ -98,7 +131,9 @@ namespace Step.Interpreter
             {
                 outUnifications = new BindingList<LogicVariable>(va, b, inUnifications);
                 return true;
-            } else if (b is LogicVariable vb)
+            }
+
+            if (b is LogicVariable vb)
             {
                 outUnifications = new BindingList<LogicVariable>(vb, a, inUnifications);
                 return true;
@@ -119,18 +154,13 @@ namespace Step.Interpreter
             return true;
         }
 
-        public bool Unify(object a, object b, out BindingEnvironment e)
-        {
-            if (Unify(a, b, Unifications, out BindingList<LogicVariable> outUnifications))
-            {
-                e = new BindingEnvironment(Module, Local, outUnifications, DynamicState);
-                return true;
-            }
-
-            e = this;
-            return false;
-        }
-
+        /// <summary>
+        /// Attempt to unify two arrays of terms
+        /// </summary>
+        /// <param name="a">First array term</param>
+        /// <param name="b">Other array term</param>
+        /// <param name="e">Resulting BindingEnvironment.  This is the same as this BindingEnvironment, but possibly with a longer Unifications list.</param>
+        /// <returns>True if the objects are unifiable and e holds their most general unifier</returns>
         public bool UnifyArrays(object[] a, object[] b, out BindingEnvironment e)
         {
             if (UnifyArrays(a, b, out BindingList<LogicVariable> outUnifications))
@@ -143,6 +173,12 @@ namespace Step.Interpreter
             return false;
         }
 
+        /// <summary>
+        /// If value is a LogicVariable, follow the chain of substitutions in Unifications to reduce it to its normal form.
+        /// If it's not a logic variable, just returns the value.
+        /// </summary>
+        /// <param name="value">Term</param>
+        /// <returns>Reduced value of term.  Could be a LogicVariable, in which case it reduces to an unbound variable.</returns>
         private object Deref(object value)
         {
             while (value is LogicVariable v)
@@ -155,7 +191,5 @@ namespace Step.Interpreter
 
             return value;
         }
-
-        
     }
 }

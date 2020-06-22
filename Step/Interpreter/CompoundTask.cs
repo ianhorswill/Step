@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -30,12 +31,22 @@ namespace Step.Interpreter
 {
     /// <summary>
     /// Task implemented as a set of methods, each composed of a series of Steps (sub-tasks)
+    /// Tasks defined by user code are CompoundTasks
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
     public class CompoundTask
     {
+        /// <summary>
+        /// Name, for debugging purposes
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// Number of arguments expected by the task
+        /// </summary>
         public readonly int ArgCount;
+        /// <summary>
+        /// Methods for accomplishing the task
+        /// </summary>
         internal readonly List<Method> Methods = new List<Method>();
 
         public CompoundTask(string name, int argCount)
@@ -44,10 +55,19 @@ namespace Step.Interpreter
             ArgCount = argCount;
         }
 
+        /// <summary>
+        /// Add a new method for achieving this task
+        /// </summary>
+        /// <param name="argumentPattern">Terms (variables or values) to unify with the arguments in a call to test whether this method is appropriate</param>
+        /// <param name="localVariableNames">LocalVariables used in this method</param>
+        /// <param name="stepChain">Linked list of Step objects to attempt to execute when running this method</param>
         public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain) 
             => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain));
 
-        public string Call(Module m, params object[] arglist)
+        /// <summary>
+        /// Call this method with the specified arguments and module, returning the resulting string
+        /// </summary>
+        internal string Call(Module m, params object[] arglist)
         {
             var output = PartialOutput.NewEmpty();
             var env = new BindingEnvironment(m, null);
@@ -58,6 +78,9 @@ namespace Step.Interpreter
             return null;
         }
 
+        /// <summary>
+        /// Internal representation of a method for performing a CompoundTask
+        /// </summary>
         internal class Method
         {
             /// <summary>
@@ -65,15 +88,18 @@ namespace Step.Interpreter
             /// </summary>
             public readonly CompoundTask Task;
 
+            /// <summary>
+            /// Terms (variables or values) to unify with the arguments in a call to test whether this method is appropriate
+            /// </summary>
             public readonly object[] ArgumentPattern;
 
             /// <summary>
-            /// Number of local variables 
+            /// LocalVariables used in this method
             /// </summary>
             public readonly LocalVariableName[] LocalVariableNames;
 
             /// <summary>
-            /// First Step in the linked list of steps constituting this task
+            /// First Step in the linked list of steps constituting this method
             /// </summary>
             public readonly Step StepChain;
 
@@ -85,6 +111,14 @@ namespace Step.Interpreter
                 StepChain = stepChain;
             }
 
+            /// <summary>
+            /// Attempt to run this method
+            /// </summary>
+            /// <param name="args">Arguments from the call to the method's task</param>
+            /// <param name="output">Output buffer to write to</param>
+            /// <param name="env">Variable binding information</param>
+            /// <param name="k">Continuation to call if method succeeds</param>
+            /// <returns>True if the method and its continuation succeeded</returns>
             public bool Try(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
             {
                 // Make stack frame for locals

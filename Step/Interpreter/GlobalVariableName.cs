@@ -28,22 +28,40 @@ using System.Diagnostics;
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// An object representing the name of a variable held in a Module
+    /// This does not store the value itself; it's just a key to the
+    /// tables in the Modules.  So it's like a symbol in lisp.
+    /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class GlobalVariable
+    public class GlobalVariableName
     {
+        /// <summary>
+        /// Name of the variable.
+        /// Names are unique to GlobalVariables; two different GlobalVariable objects must always have different names.
+        /// </summary>
         public readonly string Name;
-        private static readonly Dictionary<string,GlobalVariable> SymbolTable = new Dictionary<string, GlobalVariable>();
 
-        private GlobalVariable(string name)
+        /// <summary>
+        /// Table mapping names to existing global variables
+        /// </summary>
+        private static readonly Dictionary<string,GlobalVariableName> SymbolTable = new Dictionary<string, GlobalVariableName>();
+
+        private GlobalVariableName(string name)
         {
             Name = name;
         }
 
-        public static GlobalVariable Named(string name)
+        /// <summary>
+        /// Return the unique global variable with this name.
+        /// Creates and stores the variable if necessary.
+        /// </summary>
+        /// <param name="name">Name for the variable</param>
+        public static GlobalVariableName Named(string name)
         {
             if (SymbolTable.TryGetValue(name, out var global))
                 return global;
-            return SymbolTable[name] = new GlobalVariable(name);
+            return SymbolTable[name] = new GlobalVariableName(name);
         }
     }
 }

@@ -29,13 +29,31 @@ using System.Collections.Generic;
 namespace Step.Interpreter
 {
     /// <summary>
-    /// Task implemented in C# code
+    /// Definitions used in making Tasks that are implemented directly as C# code.
     /// </summary>
     public static class PrimitiveTask
     {
+        /// <summary>
+        /// A primitive that just succeeds or fails, without generating output
+        /// </summary>
+        /// <param name="arg1">Argument to the predicate</param>
+        /// <returns>Whether the predicate should succeed or fail</returns>
         public delegate bool Predicate1(object arg1);
+        /// <summary>
+        /// A primitive that just succeeds or fails, without generating output
+        /// </summary>
+        /// <param name="arg1">Argument to the predicate</param>
+        /// <param name="arg2">Argument to the predicate</param>
+        /// <returns>Whether the predicate should succeed or fail</returns>
         public delegate bool Predicate2(object arg1, object arg2);
 
+        /// <summary>
+        /// Wraps a C# predicate in type checking code.
+        /// </summary>
+        /// <typeparam name="T">Expected type of the predicate's argument</typeparam>
+        /// <param name="name">Task name to give to the predicate</param>
+        /// <param name="realFunction">Implementation as a C# delegate</param>
+        /// <returns></returns>
         public static Predicate1 Predicate<T>(string name, Func<T, bool> realFunction)
         {
             return o =>
@@ -44,7 +62,14 @@ namespace Step.Interpreter
                 return realFunction((T) o);
             };
         }
-
+        /// <summary>
+        /// Wraps a C# predicate in type checking code.
+        /// </summary>
+        /// <typeparam name="T1">Expected type of the predicate's first argument</typeparam>
+        /// <typeparam name="T2">Expected type of the predicate's second argument</typeparam>
+        /// <param name="name">Task name to give to the predicate</param>
+        /// <param name="realFunction">Implementation as a C# delegate</param>
+        /// <returns></returns>
         public static Predicate2 Predicate<T1,T2>(string name, Func<T1, T2, bool> realFunction)
         {
             return (o1, o2) =>
@@ -55,14 +80,41 @@ namespace Step.Interpreter
             };
         }
 
+        /// <summary>
+        /// A primitive task that generates text and always succeeds once (i.e. you can't backtrack to get different alternative versions of the text.
+        /// </summary>
+        /// <returns>Generated text</returns>
         public delegate IEnumerable<string> DeterministicTextGenerator0();
+        /// <summary>
+        /// A primitive task that generates text and always succeeds once (i.e. you can't backtrack to get different alternative versions of the text.
+        /// </summary>
+        /// <returns>Generated text</returns>
         public delegate IEnumerable<string> DeterministicTextGenerator1(object arg1);
+        /// <summary>
+        /// A primitive task that generates text and always succeeds once (i.e. you can't backtrack to get different alternative versions of the text.
+        /// </summary>
+        /// <returns>Generated text</returns>
         public delegate IEnumerable<string> DeterministicTextGenerator2(object arg1, object arg2);
 
+        /// <summary>
+        /// A primitive task that generates text and succeeds a variable number of times (possibly not at all)
+        /// </summary>
+        /// <returns>Each element is a string enumeration for one possible success of this primitive.</returns>
         public delegate IEnumerable<IEnumerable<string>> NondeterministicTextGenerator0();
+        /// <summary>
+        /// A primitive task that generates text and succeeds a variable number of times (possibly not at all)
+        /// </summary>
+        /// <returns>Each element is a string enumeration for one possible success of this primitive.</returns>
         public delegate IEnumerable<IEnumerable<string>> NondeterministicTextGenerator1(object arg1);
+        /// <summary>
+        /// A primitive task that generates text and succeeds a variable number of times (possibly not at all)
+        /// </summary>
+        /// <returns>Each element is a string enumeration for one possible success of this primitive.</returns>
         public delegate IEnumerable<IEnumerable<string>> NondeterministicTextGenerator2(object arg1, object arg2);
 
+        /// <summary>
+        /// Add the built-in primitives to the global module.
+        /// </summary>
         public static void DefineGlobals()
         {
             var g = Module.Global;

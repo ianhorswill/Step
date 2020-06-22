@@ -42,7 +42,7 @@ namespace Tests
         [TestMethod]
         public void Emit2()
         {
-            var s = Step.Interpreter.Step.Sequence(new [] { "this", "is" }, new [] {"a", "test" });
+            var s = TestUtils.Sequence(new [] { "this", "is" }, new [] {"a", "test" });
             Assert.AreEqual("this is a test", s.Expand());
         }
     }

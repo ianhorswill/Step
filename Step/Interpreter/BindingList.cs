@@ -25,6 +25,12 @@
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// Represents values of variables of different types.
+    /// In the case of LocalVariables, which can be unified, this might be another variable,
+    /// in which case the bound variable has whatever value the other variable has.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class BindingList<T>
     {
         public readonly T Variable;

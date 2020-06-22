@@ -27,6 +27,9 @@ using System;
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// Signals a task was called with the wrong kind of argument
+    /// </summary>
     public class ArgumentTypeException : ArgumentException
     {
         public ArgumentTypeException(object task, Type expected, object actual) 

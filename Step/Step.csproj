@@ -49,7 +49,7 @@
     <Compile Include="Interpreter\EmitStep.cs" />
     <Compile Include="Interpreter\UndefinedVariableException.cs" />
     <Compile Include="Module.cs" />
-    <Compile Include="Interpreter\GlobalVariable.cs" />
+    <Compile Include="Interpreter\GlobalVariableName.cs" />
     <Compile Include="Interpreter\LocalVariableName.cs" />
     <Compile Include="Interpreter\LogicVariable.cs" />
     <Compile Include="Interpreter\PartialOutput.cs" />
@@ -63,6 +63,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TextUtilities.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Interpreter\README.md" />
+    <None Include="Parser\README.md" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

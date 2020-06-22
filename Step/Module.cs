@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Schema;
 using Step.Interpreter;
 using Step.Parser;
 
@@ -37,31 +36,54 @@ namespace Step
     /// </summary>
     public class Module
     {
-        private readonly Dictionary<GlobalVariable, object> dictionary = new Dictionary<GlobalVariable, object>();
+        #region Fields
+        private readonly Dictionary<GlobalVariableName, object> dictionary = new Dictionary<GlobalVariableName, object>();
         public readonly Module Parent;
         public static readonly Module Global;
+        #endregion
 
+        #region Constructors
         static Module()
         {
             Global = new Module(null);
             PrimitiveTask.DefineGlobals();
         }
 
+        /// <summary>
+        /// Make a module that inherits from Global
+        /// </summary>
         public Module() : this(Global)
         { }
 
+        /// <summary>
+        /// Make a module that inherits from the specified parent
+        /// </summary>
         public Module(Module parent)
         {
             Parent = parent;
         }
+        #endregion
 
+        #region Accessors
+        /// <summary>
+        /// Returns the value of the variable with the specified name
+        /// </summary>
+        /// <param name="variableName">Name (string) of the variable</param>
+        /// <returns>Value</returns>
+        /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
         public object this[string variableName]
         {
-            get => this[GlobalVariable.Named(variableName)];
-            set => this[GlobalVariable.Named(variableName)] = value;
+            get => this[GlobalVariableName.Named(variableName)];
+            set => this[GlobalVariableName.Named(variableName)] = value;
         }
 
-        public object this[GlobalVariable v]
+        /// <summary>
+        /// Returns the value of the global variable with the specified name
+        /// </summary>
+        /// <param name="v">The variable</param>
+        /// <returns>Value</returns>
+        /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
+        public object this[GlobalVariableName v]
         {
             get
             {
@@ -74,7 +96,14 @@ namespace Step
             set => dictionary[v] = value;
         }
 
-        private CompoundTask FindTask(GlobalVariable v, int argCount)
+        /// <summary>
+        /// Find the CompoundTask named by the specified variable, creating one if necessary.
+        /// </summary>
+        /// <param name="v">Task variable</param>
+        /// <param name="argCount">Number of arguments the task is expected to have</param>
+        /// <returns>The task</returns>
+        /// <exception cref="ArgumentException">If variable is defined but isn't a CompoundTask</exception>
+        private CompoundTask FindTask(GlobalVariableName v, int argCount)
         {
             CompoundTask Recur(Module m)
             {
@@ -101,29 +130,45 @@ namespace Step
                 throw new ArgumentException($"{v.Name} was defined with {t.ArgCount} arguments, but a method is being added with {argCount} arguments");
             return t;
         }
+        #endregion
 
+        /// <summary>
+        /// Calls the named task with the specified arguments and returns the text it generates
+        /// </summary>
+        /// <param name="taskName">Name of the task</param>
+        /// <param name="args">Arguments to task, if any</param>
+        /// <returns>Generated text as one big string, or null if the task failed.</returns>
         public string Call(string taskName, params object[] args)
         {
-            var maybeTask = this[GlobalVariable.Named(taskName)];
+            var maybeTask = this[GlobalVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
             return t.Call(this, args);
         }
 
+        /// <summary>
+        /// Load the method definitions from stream into this module
+        /// </summary>
         public void LoadDefinitions(TextReader stream)
         {
             foreach (var (task, pattern, locals, chain) in new DefinitionStream(stream).Definitions)
                 FindTask(task, pattern.Length).AddMethod(pattern, locals, chain);
         }
 
+        /// <summary>
+        /// Parse and add the method definitions to this module
+        /// </summary>
         public void AddDefinitions(params string[] definitions)
         {
             foreach (var s in definitions)
                 LoadDefinitions(new StringReader(s));
         }
 
-        public static Module FromDefintions(params string[] definitions)
+        /// <summary>
+        /// Make a new module, then parse and add the specified method definitions.
+        /// </summary>
+        public static Module FromDefinitions(params string[] definitions)
         {
             var m = new Module();
             m.AddDefinitions(definitions);

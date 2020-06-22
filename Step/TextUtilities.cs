@@ -28,6 +28,9 @@ using System.Text;
 
 namespace Step
 {
+    /// <summary>
+    /// Random utilities for working with text
+    /// </summary>
     public static class TextUtilities
     {
         /// <summary>
@@ -58,6 +61,9 @@ namespace Step
             return b.ToString();
         }
 
+        /// <summary>
+        /// True when string consists of just a single punctuation mark.
+        /// </summary>
         private static bool PunctuationToken(string s) => s.Length == 1 && char.IsPunctuation(s[0]);
     }
 }

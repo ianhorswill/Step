@@ -29,14 +29,24 @@ namespace Step.Interpreter
 {
     /// <summary>
     /// The formal variable name for a local variable.
-    /// This is not the run-time local variable, which differs from call to call.
+    /// This is not the run-time local variable itself, which differs from call to call.
     /// To get the run-time variable for a specific call, use
-    /// BindingEnvironment.Local[LocalVariableName.Index].
+    /// BindingEnvironment.Local[LocalVariableName.Index].  This will be a LogicVariable,
+    /// which can be dereferenced through the BindingEnvironment's Unifications field to
+    /// get the actual value of the variable.
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
     public class LocalVariableName
     {
+        /// <summary>
+        /// Name of the variable.
+        /// Different methods with variables with the same name have different LocalVariableName objects
+        /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// Position in the method's stack frame (the Locals field of the BindingEnvironment) of the LogicVariable
+        /// holding this variable's value.
+        /// </summary>
         public readonly int Index;
 
         public LocalVariableName(string name, int index)

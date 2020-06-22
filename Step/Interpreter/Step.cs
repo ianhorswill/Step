@@ -23,9 +23,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
-using System.Linq;
-
 namespace Step.Interpreter
 {
     /// <summary>
@@ -38,57 +35,37 @@ namespace Step.Interpreter
             Next = next;
         }
 
-        public static Step Sequence(params object[] steps)
-        {
-            Step next = null;
-            for (var i = steps.Length - 1; i >= 0; i--)
-            {
-                var step = steps[i];
-                switch (step)
-                {
-                    case string[] tokens:
-                        next = new EmitStep(tokens, next);
-                        break;
+        /// <summary>
+        /// Next step in the step chain of the method to which this step belongs.
+        /// Null, if this is the last step in the chain.
+        /// </summary>
+        public Step Next;
 
-                        case object[] call:
-                            next = new Call(call[0], call.Skip(1).ToArray(), next);
-                            break;
+        /// <summary>
+        /// A continuation is a procedure to call when a step has completed successfully.
+        /// It takes as arguments the things that might have changed in the process of running the step.
+        /// </summary>
+        /// <returns>True if everything completed successfully, false if we need to backtrack</returns>
+        public delegate bool Continuation(PartialOutput o, BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState);
 
-                        default:
-                            throw new ArgumentException($"Unknown step argument in Step.Sequence: {step}");
-                }
-            }
-
-            return next;
-        }
-
-        internal string Expand(Module g)
-        {
-            string result = null;
-            Try(PartialOutput.NewEmpty(), new BindingEnvironment(g, new LogicVariable[0]), (o, u, s) =>
-            {
-                result = o.AsString;
-                return true;
-            }); 
-            return result;
-        }
-
-        internal string Expand()
-        {
-            return Expand(new Module());
-        }
-
-        public delegate bool Continuation(PartialOutput o, BindingList<LogicVariable> unifications, BindingList<GlobalVariable> dynamicState);
-
+        /// <summary>
+        /// Attempt to run this step.
+        /// </summary>
+        /// <param name="output">Output accumulated so far</param>
+        /// <param name="e">Variable binding information to use in this step</param>
+        /// <param name="k">Procedure to run if this step and the other steps in its chain are successful</param>
+        /// <returns>True if all steps in the chain, and the continuation are all successful.  False means we're backtracking</returns>
         public abstract bool Try(PartialOutput output, BindingEnvironment e, Continuation k);
 
+        /// <summary>
+        /// Run any remaining steps in the chain, otherwise run the continuation.
+        /// </summary>
+        /// <returns>True if all steps in the chain, and the continuation are all successful.  False means we're backtracking</returns>
         protected bool Continue(PartialOutput p, BindingEnvironment e, Continuation k)
         {
             if (Next != null)
                 return Next.Try(p, e, k);
             return k == null || k(p, e.Unifications, e.DynamicState);
         }
-
-        public Step Next;
     }
 }

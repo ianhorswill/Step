@@ -191,14 +191,14 @@ namespace Tests
         [TestMethod]
         public void LoadModuleTest()
         {
-            var m = Module.FromDefintions("Test: this is a test");
+            var m = Module.FromDefinitions("Test: this is a test");
             Assert.AreEqual("this is a test",m.Call("Test"));
         }
 
         [TestMethod]
         public void ComplexTest()
         {
-            var m = Module.FromDefintions(
+            var m = Module.FromDefinitions(
                 "Self subject: I",
                 "Self object: me",
                 "Self reflexive: myself",
@@ -209,7 +209,7 @@ namespace Tests
         [TestMethod]
         public void MultiDefinitionTest()
         {
-            var m = Module.FromDefintions(
+            var m = Module.FromDefinitions(
                 "Self subject: I\nSelf object: me\nSelf reflexive: myself",
                 "Test: [Self subject] like [Self reflexive]");
             Assert.AreEqual("I like myself",m.Call("Test"));
@@ -218,7 +218,7 @@ namespace Tests
         [TestMethod]
         public void HigherOrderTest()
         {
-            var m = Module.FromDefintions(@"Speaker subject: I
+            var m = Module.FromDefinitions(@"Speaker subject: I
 Speaker object: me
 Listener subject: you
 Listener object: you
@@ -230,7 +230,7 @@ Test: [Love Speaker Listener]");
         [TestMethod]
         public void MultiLineDefinitionTest()
         {
-            var m = Module.FromDefintions(@"
+            var m = Module.FromDefinitions(@"
 Multi:
 This is a test of
 a very nice feature

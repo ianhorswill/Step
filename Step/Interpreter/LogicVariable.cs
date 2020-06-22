@@ -28,11 +28,18 @@ using System.Diagnostics;
 namespace Step.Interpreter
 {
     /// <summary>
-    /// A variable that can be aliased to values and/or other variables using BindingEnvironment.Unify
+    /// A variable that can be aliased to values and/or other variables using BindingEnvironment.Unify.
+    /// It works like logic variables in any other programming language that has them, although they're
+    /// implemented using deep binding through the Unifications list in the BindingEnvironment, rather than
+    /// shallow binding with a trail (i.e. an undo stack).
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
     public class LogicVariable
     {
+        /// <summary>
+        /// Name of the variable.
+        /// This is for debugging purposes only.  It has no functional role.
+        /// </summary>
         public readonly LocalVariableName Name;
 
         public LogicVariable(LocalVariableName name)

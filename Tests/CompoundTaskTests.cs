@@ -55,7 +55,7 @@ namespace Tests
             var X = new LocalVariableName("X", 0);
             var locals = new[] { X };
             t.AddMethod(new object[] {X}, locals,
-                Step.Interpreter.Step.Sequence(new object[] {toString, X}, new[] {"matched"}));
+                TestUtils.Sequence(new object[] {toString, X}, new[] {"matched"}));
 
             Assert.AreEqual("1 matched", new Call(t, new object[]{1}, null).Expand());
             Assert.AreEqual("2 matched", new Call(t, new object[]{2}, null).Expand());
@@ -72,13 +72,13 @@ namespace Tests
             // ReSharper disable once InconsistentNaming
             var X = new LocalVariableName("X", 0);
             down.AddMethod(new object[] {X}, new[] { X },
-                Step.Interpreter.Step.Sequence(new object[] {toString, X}, new[] {"matched"}));
+                TestUtils.Sequence(new object[] {toString, X}, new[] {"matched"}));
 
             var test = new CompoundTask("test", 0);
             // ReSharper disable once InconsistentNaming
             var Y = new LocalVariableName("Y", 0);
             test.AddMethod(new object[0], new [] { Y },
-                Step.Interpreter.Step.Sequence(new object[] { up, Y }, new object[] { down, Y } ));
+                TestUtils.Sequence(new object[] { up, Y }, new object[] { down, Y } ));
 
             Assert.AreEqual("xyz matched", new Call(test, new object[0], null).Expand());
         }

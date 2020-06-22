@@ -35,6 +35,10 @@ namespace Step.Parser
     /// </summary>
     public class DefinitionStream
     {
+        /// <summary>
+        /// Reads definitions from the specified stream
+        /// </summary>
+        /// <param name="stream"></param>
         public DefinitionStream(TextReader stream) : this(new ExpressionStream(stream)) 
         { }
 
@@ -44,29 +48,32 @@ namespace Step.Parser
             MoveNext();
         }
 
+        #region Stream interface
+        /// <summary>
+        /// Expressions being read from the stream
+        /// </summary>
         private readonly IEnumerator<object> expressions;
+        /// <summary>
+        /// True if we've hit the end of the stream
+        /// </summary>
         private bool end;
+        /// <summary>
+        /// Get the next expression from expressions, updating end.
+        /// </summary>
         private void MoveNext()
         {
             end = !expressions.MoveNext();
         }
 
-        private object Peek => expressions.Current;
-
-        private static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
-        private static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
-
         /// <summary>
-        /// The current definition is a single line definition
+        /// Current expression
         /// </summary>
-        private bool multiLine;
-
-        private const string EndOfLine = "\n";
-        private bool EndOfDefinition => end || ExplicitEndToken || (!multiLine && EndOfLineToken);
-
-        private bool EndOfLineToken => Peek.Equals(EndOfLine);
-        private bool ExplicitEndToken => Peek is object[] array && array.Length == 1 && array[0].Equals("end");
-
+        private object Peek => expressions.Current;
+        
+        /// <summary>
+        /// Return the current expression and move to the next
+        /// </summary>
+        /// <returns></returns>
         private object Get()
         {
             var result = Peek;
@@ -74,14 +81,68 @@ namespace Step.Parser
             return result;
         }
 
+        /// <summary>
+        /// Skip forward to the next token that isn't a newline
+        /// </summary>
         private void SwallowNewlines()
         {
             while (!end && EndOfLineToken)
                 Get();
         }
+        #endregion
 
+        #region End of definition tracking
+        /// <summary>
+        /// The current definition is a single line definition
+        /// </summary>
+        private bool multiLine;
+
+        /// <summary>
+        /// The actual token representation of an end of line
+        /// </summary>
+        private const string EndOfLine = "\n";
+
+        /// <summary>
+        /// True if we're at the end of the current definition
+        /// </summary>
+        private bool EndOfDefinition => end || ExplicitEndToken || (!multiLine && EndOfLineToken);
+
+        /// <summary>
+        /// True if we're at an end of line token
+        /// </summary>
+        private bool EndOfLineToken => Peek.Equals(EndOfLine);
+
+        /// <summary>
+        /// True if we're at an "[end]" expression
+        /// </summary>
+        private bool ExplicitEndToken => Peek is object[] array && array.Length == 1 && array[0].Equals("end");
+        #endregion
+
+        #region Source-language variables     
+        /// <summary>
+        /// True if the string is a valid local variable name
+        /// </summary>
+        private static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
+
+        /// <summary>
+        /// True if the string is a valid global variable name
+        /// </summary>
+        private static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
+
+        /// <summary>
+        /// Local variables of the definition currently being parsed.
+        /// </summary>
         private readonly List<LocalVariableName> locals = new List<LocalVariableName>();
-        private readonly List<string> tokens = new List<string>();
+
+        /// <summary>
+        /// Tokens being accumulated for the current Emit step of the current method.
+        /// </summary>
+        private readonly List<string> tokensToEmit = new List<string>();
+
+        /// <summary>
+        /// Return the local variable for the current method with the specified name,
+        /// creating one and adding it to locals, if there isn't one.
+        /// </summary>
         private LocalVariableName GetLocal(string name)
         {
             var result = locals.FirstOrDefault(l => l.Name == name);
@@ -93,23 +154,29 @@ namespace Step.Parser
 
             return result;
         }
+        #endregion
 
-        // ReSharper disable once IdentifierTypo
-        void Variablize(IList<object> objects)
+        /// <summary>
+        /// Identify tokens that identify non-strings (variables, numbers) and replace them
+        /// with their internal representations
+        /// </summary>
+        void Canonicalize(IList<object> objects)
         {
             for (var i = 0; i < objects.Count; i++)
-                objects[i] = Variablize(objects[i]);
+                objects[i] = Canonicalize(objects[i]);
         }
 
-        // ReSharper disable once IdentifierTypo
-        object Variablize(object o)
+        /// <summary>
+        /// Return the internal representation for the term denoted by the specified token
+        /// </summary>
+        object Canonicalize(object o)
         {
             if (o is string s)
             {
                 if (IsLocalVariableName(s))
                     return GetLocal(s);
                 if (IsGlobalVariableName(s))
-                    return GlobalVariable.Named(s);
+                    return GlobalVariableName.Named(s);
                 if (int.TryParse(s, out var result))
                     return result;
             }
@@ -117,7 +184,10 @@ namespace Step.Parser
             return o;
         }
 
-        public IEnumerable<(GlobalVariable task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain)> Definitions
+        /// <summary>
+        /// Read, parse, and return the information for all method definitions in the stream
+        /// </summary>
+        public IEnumerable<(GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain)> Definitions
         {
             get
             {
@@ -126,7 +196,10 @@ namespace Step.Parser
             }
         }
 
-        private (GlobalVariable task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain) ReadDefinition()
+        /// <summary>
+        /// Read and parse the next method definition
+        /// </summary>
+        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain) ReadDefinition()
         {
             locals.Clear();
 
@@ -144,7 +217,7 @@ namespace Step.Parser
             Get(); // Swallow the colon
             
             // Change variable references in pattern to LocalVariableNames
-            Variablize(pattern);
+            Canonicalize(pattern);
 
             multiLine = EndOfLineToken;
             if (multiLine)
@@ -167,22 +240,22 @@ namespace Step.Parser
             // Read the body
             while (!EndOfDefinition)
             {
-                tokens.Clear();
+                tokensToEmit.Clear();
                 while (!EndOfDefinition && Peek is string)
                     if (!EndOfLineToken)
-                        tokens.Add((string)Get());
+                        tokensToEmit.Add((string)Get());
                     else
                     {
                         Get(); // Skip newline
                         if (EndOfLineToken)
                         {
                             // It's two consecutive newline tokens
-                            tokens.Add((string)Get());
+                            tokensToEmit.Add((string)Get());
                         }
                     }
 
-                if (tokens.Count > 0) 
-                    AddStep(new EmitStep(tokens.ToArray(), null));
+                if (tokensToEmit.Count > 0) 
+                    AddStep(new EmitStep(tokensToEmit.ToArray(), null));
                 if (!EndOfDefinition && Peek is object[] expression)
                 {
                     // It's a call
@@ -191,9 +264,9 @@ namespace Step.Parser
                         throw new SyntaxError($"Invalid task name {expression[0]} in call.");
                     var target = IsLocalVariableName(targetName)
                         ? (object)GetLocal(targetName)
-                        : GlobalVariable.Named(targetName);
+                        : GlobalVariableName.Named(targetName);
                     var args = expression.Skip(1).ToArray();
-                    Variablize(args);
+                    Canonicalize(args);
                     AddStep(new Call(target, args, null));
                     Get(); // Skip over the expression we just Peeked
                 }
@@ -204,7 +277,7 @@ namespace Step.Parser
 
             SwallowNewlines();
 
-            return (GlobalVariable.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep);
+            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep);
         }
     }
 }

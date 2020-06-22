@@ -43,21 +43,21 @@ namespace Tests
         [TestMethod]
         public void Predicate1TestTrue()
         {
-            var s = Step.Interpreter.Step.Sequence(new object[] {new object[] {positive, 1}});
+            var s = TestUtils.Sequence(new object[] {new object[] {positive, 1}});
             Assert.IsTrue(Succeeds(s));
         }
 
         [TestMethod]
         public void Predicate1TestFalse()
         {
-            var s = Step.Interpreter.Step.Sequence(new object[] {new object[] {positive, -1}});
+            var s = TestUtils.Sequence(new object[] {new object[] {positive, -1}});
             Assert.IsFalse(Succeeds(s));
         }
 
         [TestMethod]
         public void DeterministicGenerator1Test()
         {
-            var s = Step.Interpreter.Step.Sequence(new object[] {new object[] {toString, 1}});
+            var s = TestUtils.Sequence(new object[] {new object[] {toString, 1}});
             Assert.AreEqual("1", s.Expand());
         }
     }

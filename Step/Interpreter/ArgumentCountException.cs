@@ -27,6 +27,9 @@ using System;
 
 namespace Step.Interpreter
 {
+    /// <summary>
+    /// Signals a task was called with the wrong number of arguments
+    /// </summary>
     public class ArgumentCountException : ArgumentException
     {
         public ArgumentCountException(object task, int expected, object[] actual) 
