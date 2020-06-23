@@ -43,7 +43,7 @@ namespace Tests
                     output = input;
                 var tokens = new TokenStream(new StringReader(input)).Tokens.ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
-                Assert.AreEqual(output, tokens.Untokenize());
+                Assert.AreEqual(output, tokens.Untokenize(false));
             }
 
             Test("this is a test", 4, null);
@@ -64,7 +64,7 @@ namespace Tests
                     output = input;
                 var tokens = new ExpressionStream(new StringReader(input)).Expressions.Cast<string>().ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
-                Assert.AreEqual(output, tokens.Untokenize());
+                Assert.AreEqual(output, tokens.Untokenize(false));
             }
 
             Test("this is a test", 4, null);
@@ -192,7 +192,7 @@ namespace Tests
         public void LoadModuleTest()
         {
             var m = Module.FromDefinitions("Test: this is a test");
-            Assert.AreEqual("this is a test",m.Call("Test"));
+            Assert.AreEqual("This is a test",m.Call("Test"));
         }
 
         [TestMethod]

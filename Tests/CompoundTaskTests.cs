@@ -80,7 +80,7 @@ namespace Tests
             test.AddMethod(new object[0], new [] { Y },
                 TestUtils.Sequence(new object[] { up, Y }, new object[] { down, Y } ));
 
-            Assert.AreEqual("xyz matched", new Call(test, new object[0], null).Expand());
+            Assert.AreEqual("Xyz matched", new Call(test, new object[0], null).Expand());
         }
     }
 }

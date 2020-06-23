@@ -36,14 +36,34 @@ namespace Tests
         public void Emit1()
         {
             var s = new EmitStep(new [] { "this", "is", "a", "test" }, null);
-            Assert.AreEqual("this is a test", s.Expand());
+            Assert.AreEqual("This is a test", s.Expand());
         }
 
         [TestMethod]
         public void Emit2()
         {
             var s = TestUtils.Sequence(new [] { "this", "is" }, new [] {"a", "test" });
-            Assert.AreEqual("this is a test", s.Expand());
+            Assert.AreEqual("This is a test", s.Expand());
+        }
+
+        [TestMethod]
+        public void CapitalizationTest()
+        {
+            var tokens = new []
+            {
+                "this", "is", "a", "test", ".",
+                "and", "this", "is", "a", "test", "."
+            };
+
+            Assert.AreEqual(
+                "This is a test.  And this is a test.",
+                tokens.Untokenize());
+            Assert.AreEqual(
+                "this is a test.  and this is a test.",
+                tokens.Untokenize(false));
+            Assert.AreEqual(
+                "this is a test. and this is a test.",
+                tokens.Untokenize(false, false));
         }
     }
 }

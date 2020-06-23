@@ -24,6 +24,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Text;
 
 namespace Step
@@ -36,7 +37,7 @@ namespace Step
         /// <summary>
         /// Convert a sequence of tokens into a single text string, adding spaces where appropriate.
         /// </summary>
-        public static string Untokenize(this IEnumerable<string> tokens)
+        public static string Untokenize(this IEnumerable<string> tokens, bool capitalize = true, bool frenchSpacing = true)
         {
             if (tokens == null)
                 return "";
@@ -45,20 +46,36 @@ namespace Step
             var lastToken = "";
             foreach (var t in tokens)
             {
+                var token = t;
                 if (!PunctuationToken(t) && !t.StartsWith("<") && t != "\n")
                 {
+                    if (capitalize && (firstOne || lastToken == "." && char.IsLower(t[0])))
+                        token = Capitalize(token);
                     if (firstOne)
                         firstOne = false;
                     else if (lastToken != "-" && lastToken != "\n" && !lastToken.StartsWith("<"))
                         b.Append(' ');
+                    if (frenchSpacing && lastToken == ".")
+                        // Double the space after period.
+                        b.Append(' ');
                 }
 
-                b.Append(t);
+                b.Append(token);
                 if (!t.StartsWith("<"))
-                    lastToken = t;
+                    lastToken = token;
             }
 
             return b.ToString();
+        }
+
+        /// <summary>
+        /// Force first character of token to be capitalized.
+        /// </summary>
+        private static string Capitalize(string token)
+        {
+            var a = token.ToCharArray();
+            a[0] = char.ToUpper(a[0]);
+            return new string(a);
         }
 
         /// <summary>
