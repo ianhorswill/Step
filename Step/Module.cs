@@ -37,8 +37,30 @@ namespace Step
     public class Module
     {
         #region Fields
+        /// <summary>
+        /// Table of values assigned by this module to different global variables
+        /// </summary>
         private readonly Dictionary<GlobalVariableName, object> dictionary = new Dictionary<GlobalVariableName, object>();
+        /// <summary>
+        /// Parent module to try if a variable can't be found in this module;
+        /// </summary>
         public readonly Module Parent;
+
+        /// <summary>
+        /// A user-defined procedure that can be called to import the value of a variable
+        /// </summary>
+        /// <param name="name">Variable to look up</param>
+        /// <returns>True if variable found</returns>
+        public delegate bool BindHook(GlobalVariableName name, out object value);
+
+        /// <summary>
+        /// Optional list of hooks to try when a variable can't be found.
+        /// </summary>
+        private List<BindHook> bindHooks;
+
+        /// <summary>
+        /// The global Module that all other modules inherit from by default.
+        /// </summary>
         public static readonly Module Global;
         #endregion
 
@@ -87,10 +109,19 @@ namespace Step
         {
             get
             {
-                if (dictionary.TryGetValue(v, out var value))
-                    return value;
-                if (Parent != null)
-                    return Parent[v];
+                // First see if it's stored in this or some ancestor module
+                for (var module = this; module != null; module = module.Parent)
+                    if (module.dictionary.TryGetValue(v, out var value))
+                        return value;
+
+                // Not found in this or any ancestor module; try bind hooks
+                for (var module = this; module != null; module = module.Parent)
+                    if (module.bindHooks != null)
+                        foreach (var hook in module.bindHooks)
+                            if (hook(v, out var result))
+                                return module.dictionary[v] = result;
+
+                // Give up
                 throw new UndefinedVariableException(v);
             }
             set => dictionary[v] = value;
@@ -173,6 +204,18 @@ namespace Step
             var m = new Module();
             m.AddDefinitions(definitions);
             return m;
+        }
+
+        /// <summary>
+        /// Add a procedure to call when a variable isn't found.
+        /// If the procedure returns a value for it, that value is added to the module.
+        /// </summary>
+        /// <param name="hook">Procedure to use to import variables</param>
+        public void AddBindHook(BindHook hook)
+        {
+            if (bindHooks == null)
+                bindHooks = new List<BindHook>();
+            bindHooks.Add(hook);
         }
     }
 }
