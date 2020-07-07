@@ -77,6 +77,9 @@ namespace Step.Interpreter
                     // Failure
                     return false;
 
+                case PrimitiveTask.MetaTask m:
+                    return m(arglist, output, env, (o, u, s) => Continue(o, new BindingEnvironment(env, u, s), k));
+
                 case PrimitiveTask.Predicate1 p:
                     ArgumentCountException.Check(p, 1, arglist);
                     return p(arglist[0]) && Continue(output, env, k);
@@ -96,6 +99,9 @@ namespace Step.Interpreter
                 case PrimitiveTask.DeterministicTextGenerator2 g:
                     ArgumentCountException.Check(g, 2, arglist);
                     return Continue(output.Append(g(arglist[0], arglist[1])), env, k);
+
+                case PrimitiveTask.DeterministicTextGeneratorMetaTask g:
+                    return Continue(output.Append(g(arglist, output, env)), env, k);
 
                 case PrimitiveTask.NondeterministicTextGenerator0 g:
                     ArgumentCountException.Check(g, 0, arglist);
@@ -117,6 +123,18 @@ namespace Step.Interpreter
                         if (Continue(output.Append(tokens), env, k))
                             return true;
                     return false;
+
+                case PrimitiveTask.NonDeterministicRelation r:
+                    foreach (var bindings in r(arglist, env))
+                        if (Continue(output, new BindingEnvironment(env, bindings, env.DynamicState), k))
+                            return true;
+                    return false;
+
+                case string[] text:
+                    return Continue(output.Append(text), env, k);
+
+                case string text:
+                    return Continue(output.Append(text), env, k);
 
                 case LogicVariable v:
                     throw new ArgumentException($"Attempt to call an unbound variable {v}");

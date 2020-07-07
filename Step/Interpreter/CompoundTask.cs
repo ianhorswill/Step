@@ -65,20 +65,6 @@ namespace Step.Interpreter
             => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain));
 
         /// <summary>
-        /// Call this method with the specified arguments and module, returning the resulting string
-        /// </summary>
-        internal string Call(Module m, params object[] arglist)
-        {
-            var output = PartialOutput.NewEmpty();
-            var env = new BindingEnvironment(m, null);
-            string result = null;
-            foreach (var method in Methods)
-                if (method.Try(arglist, output, env, (o, u, s) => { result = o.AsString; return true; }))
-                    return result;
-            return null;
-        }
-
-        /// <summary>
         /// Internal representation of a method for performing a CompoundTask
         /// </summary>
         internal class Method

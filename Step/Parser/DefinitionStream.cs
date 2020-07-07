@@ -180,6 +180,11 @@ namespace Step.Parser
                 if (int.TryParse(s, out var result))
                     return result;
             }
+            else if (o is object[] list)
+            {
+                Canonicalize(list);
+                return list;
+            }
 
             return o;
         }
@@ -201,28 +206,6 @@ namespace Step.Parser
         /// </summary>
         private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain) ReadDefinition()
         {
-            locals.Clear();
-
-            SwallowNewlines();
-
-            // Process the head
-            var taskName = Get() as string;
-            if (taskName == null)
-                throw new SyntaxError("Bracketed expression at start of definition");
-
-            // Read the argument pattern
-            var pattern = new List<object>();
-            while (!Peek.Equals(":"))
-                pattern.Add(Get());
-            Get(); // Swallow the colon
-            
-            // Change variable references in pattern to LocalVariableNames
-            Canonicalize(pattern);
-
-            multiLine = EndOfLineToken;
-            if (multiLine)
-                Get();  // Swallow the end of line
-            
             Interpreter.Step firstStep = null;
             Interpreter.Step previousStep = null;
             void AddStep(Interpreter.Step s)
@@ -237,6 +220,39 @@ namespace Step.Parser
                 }
             }
 
+            locals.Clear();
+
+            SwallowNewlines();
+
+            // Process the head
+            var taskName = Get() as string;
+            if (taskName == null)
+                throw new SyntaxError("Bracketed expression at start of definition");
+
+            // Read the argument pattern
+            var pattern = new List<object>();
+            while (!Peek.Equals(":"))
+            {
+                var argPattern = Get();
+                if (argPattern is object[] call)
+                {
+                    // it has an embedded predicate
+                    pattern.Add(call[1]);
+                    // Add the predicate to the body
+                    AddStep(new Call(Canonicalize(call[0]), new []{ Canonicalize(call[1])}, null));
+                }
+                else
+                    pattern.Add(argPattern);
+            }
+            Get(); // Swallow the colon
+            
+            // Change variable references in pattern to LocalVariableNames
+            Canonicalize(pattern);
+
+            multiLine = EndOfLineToken;
+            if (multiLine)
+                Get();  // Swallow the end of line
+            
             // Read the body
             while (!EndOfDefinition)
             {

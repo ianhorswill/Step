@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Step.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -43,6 +44,7 @@
   <ItemGroup>
     <Compile Include="Interpreter\ArgumentCountException.cs" />
     <Compile Include="Interpreter\ArgumentTypeException.cs" />
+    <Compile Include="Interpreter\ArgumentInstantiationException.cs" />
     <Compile Include="Interpreter\BindingEnvironment.cs" />
     <Compile Include="Interpreter\BindingList.cs" />
     <Compile Include="Interpreter\Call.cs" />

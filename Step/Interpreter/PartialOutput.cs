@@ -64,7 +64,7 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="tokens">Tokens to add to output</param>
         /// <returns>New buffer state</returns>
-        public PartialOutput Append(string[] tokens)
+        public PartialOutput Append(params string[] tokens)
         {
             Array.Copy(tokens, 0, Buffer, Length, tokens.Length);
             return new PartialOutput(Buffer, Length + tokens.Length);

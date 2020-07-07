@@ -69,5 +69,12 @@ namespace Step.Interpreter
         }
 
 
+        /// <summary>
+        /// Make a new binding list with specified additional binding
+        /// </summary>
+        public BindingList<T> Bind(T variable, object value)
+        {
+            return new BindingList<T>(variable, value, this);
+        }
     }
 }

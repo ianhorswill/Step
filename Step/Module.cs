@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Step.Interpreter;
 using Step.Parser;
 
@@ -76,6 +77,18 @@ namespace Step
         /// </summary>
         public Module() : this(Global)
         { }
+
+        /// <summary>
+        /// Make a module with the Global module as parent and load the specified source files into it.
+        /// </summary>
+        /// <param name="parent">Parent module for this module.  This will usually be Module.Global</param>
+        /// <param name="sourceFiles">Definition files to load</param>
+        public Module(Module parent, params string[] sourceFiles)
+            : this(parent)
+        {
+            foreach (var f in sourceFiles)
+                LoadDefinitions(f);
+        }
 
         /// <summary>
         /// Make a module that inherits from the specified parent
@@ -175,7 +188,110 @@ namespace Step
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
-            return t.Call(this, args);
+            var output = PartialOutput.NewEmpty();
+            var env = new BindingEnvironment(this, null);
+
+            string result = null;
+            foreach (var method in t.Methods)
+                if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; return true; }))
+                    return result;
+            return null;
+        }
+
+        /// <summary>
+        /// Calls a task with the specified arguments and allows the user to provide their own continuation.
+        /// The only (?) use case for this is when you want to forcibly generate multiple solutions
+        /// </summary>
+        internal static void GenerateSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, Interpreter.Step.Continuation k)
+        {
+            new Call(GlobalVariableName.Named(taskName), args, null).Try(o, e, k);
+        }
+
+        /// <summary>
+        /// Find all solutions to the specified task and arguments.  Return a list of the arglists for each solution.
+        /// </summary>
+        internal static List<object[]> AllSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e)
+        {
+            var results = new List<object[]>();
+            GenerateSolutions(taskName, args, o, e, (output, b, d) =>
+            {
+                results.Add(new BindingEnvironment(e, b, d).ResolveList(args));
+                return false;
+            });
+            return results;
+        }
+
+        /// <summary>
+        /// Find all solutions to the specified task and arguments.  Return a list of the text outputs of each solution.
+        /// </summary>
+        internal static List<string[]> AllSolutionText(string taskName, object[] args, PartialOutput o, BindingEnvironment e)
+        {
+            var results = new List<string[]>();
+            var initialLength = o.Length;
+            GenerateSolutions(taskName, args, o, e, (output, b, d) =>
+            {
+                var chunk = new string[output.Length - initialLength];
+                for (var i = initialLength; i < output.Length; i++)
+                    chunk[i - initialLength] = o.Buffer[i];
+                results.Add(chunk);
+                return false;
+            });
+            return results;
+        }
+
+        /// <summary>
+        /// Calls all the tasks in the body and allows the user to provide their own continuation.
+        /// The only (?) use case for this is when you want to forcibly generate multiple solutions
+        /// </summary>
+        internal static void GenerateSolutionsFromBody(string callingTaskName, object[] body, PartialOutput o, BindingEnvironment e, Interpreter.Step.Continuation k)
+        {
+            StepChainFromBody(callingTaskName, body).Try(o, e, k);
+        }
+
+        internal static Interpreter.Step StepChainFromBody(string callingTaskName, object[] body)
+        {
+            Interpreter.Step chain = null;
+            for (var i = body.Length - 1; i >= 0; i--)
+            {
+                if (body[i].Equals("\n"))
+                    continue;
+                var invocation = body[i] as object[];
+                if (invocation == null  || invocation.Length == 0)
+                    throw new ArgumentTypeException(callingTaskName, typeof(Call), body[i]);
+                var arglist = new object[invocation.Length - 1];
+                Array.Copy(invocation, 1, arglist, 0, arglist.Length);
+                chain = new Call(invocation[0], arglist, chain);
+            }
+
+            return chain;
+        }
+
+        /// <summary>
+        /// Find all solutions to the specified sequence of calls.  Return a list of the text outputs of each solution.
+        /// </summary>
+        internal static List<string[]> AllSolutionTextFromBody(string callingTaskName, object[] body, PartialOutput o, BindingEnvironment e)
+        {
+            var results = new List<string[]>();
+            var initialLength = o.Length;
+            GenerateSolutionsFromBody(callingTaskName, body, o, e, (output, b, d) =>
+            {
+                var chunk = new string[output.Length - initialLength];
+                for (var i = initialLength; i < output.Length; i++)
+                    chunk[i - initialLength] = o.Buffer[i];
+                results.Add(chunk);
+                return false;
+            });
+            return results;
+        }
+
+        /// <summary>
+        /// Load the definitions in the specified file
+        /// </summary>
+        /// <param name="path">Path to the file</param>
+        public void LoadDefinitions(string path)
+        {
+            using (var f = File.OpenText(path))
+                LoadDefinitions(f);
         }
 
         /// <summary>
