@@ -272,25 +272,5 @@ namespace Step.Interpreter
                     throw new ArgumentTypeException(name, typeof(T1), arg1);
             }
         }
-
-        private static readonly string[] NewLine = { "\n" };
-        /// <summary>
-        /// Add the built-in primitives to the global module.
-        /// </summary>
-        public static void DefineGlobals()
-        {
-            var g = Module.Global;
-            g["="] = Predicate<int, int>("=", (a, b) => a == b);
-            g[">"] = Predicate<int, int>(">", (a, b) => a > b);
-            g["<"] = Predicate<int, int>("<", (a, b) => a < b);
-            g[">="] = Predicate<int, int>(">=", (a, b) => a >= b);
-            g["<="] = Predicate<int, int>("<=", (a, b) => a <= b);
-            g["DoAll"] =
-                (DeterministicTextGeneratorMetaTask) ((args, o, e) =>
-                    Module.AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings));
-            g["Once"] =
-                (MetaTask) ((args, o, e, k) => Module.StepChainFromBody("Once", args).Try(o, e, k));
-            g["Newline"] = (DeterministicTextGenerator0) (() => NewLine);
-        }
     }
 }

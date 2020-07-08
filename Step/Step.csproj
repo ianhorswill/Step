@@ -47,8 +47,10 @@
     <Compile Include="Interpreter\ArgumentInstantiationException.cs" />
     <Compile Include="Interpreter\BindingEnvironment.cs" />
     <Compile Include="Interpreter\BindingList.cs" />
+    <Compile Include="Interpreter\Builtins.cs" />
     <Compile Include="Interpreter\Call.cs" />
     <Compile Include="Interpreter\EmitStep.cs" />
+    <Compile Include="Interpreter\HigherOrderBuiltins.cs" />
     <Compile Include="Interpreter\UndefinedVariableException.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="Interpreter\GlobalVariableName.cs" />
