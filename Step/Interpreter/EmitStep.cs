@@ -29,7 +29,7 @@ namespace Step.Interpreter
     /// A step that dumps a fixed set of tokens to the output.
     /// EmitSteps always succeed
     /// </summary>
-    public class EmitStep : Step
+    internal class EmitStep : Step
     {
         public EmitStep(string[] text, Step next) : base(next)
         {

@@ -25,7 +25,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Step.Interpreter
 {
@@ -81,6 +80,13 @@ namespace Step.Interpreter
             };
         }
 
+        /// <summary>
+        /// Implementation of a higher-order primitive (one that takes task expressions as arguments)
+        /// </summary>
+        /// <param name="args">Raw, unevaluated arguments to the task</param>
+        /// <param name="o">Partial output accumulated so far</param>
+        /// <param name="e">Binding environment to use</param>
+        /// <param name="k">Continuation to call when successful</param>
         public delegate bool MetaTask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k);
 
         /// <summary>
@@ -99,6 +105,12 @@ namespace Step.Interpreter
         /// <returns>Generated text</returns>
         public delegate IEnumerable<string> DeterministicTextGenerator2(object arg1, object arg2);
 
+        /// <summary>
+        /// Implementation of a higher-order primitive that only generates text output
+        /// </summary>
+        /// <param name="args">Raw, unevaled arguments</param>
+        /// <param name="o">Partial output accumulated so far</param>
+        /// <param name="e">Binding environment to use</param>
         public delegate IEnumerable<string> DeterministicTextGeneratorMetaTask(object[] args, PartialOutput o, BindingEnvironment e);
 
         /// <summary>

@@ -33,10 +33,20 @@ namespace Step.Interpreter
     /// <typeparam name="T"></typeparam>
     public class BindingList<T>
     {
+        /// <summary>
+        /// Variable given a value by this cell of the linked list
+        /// </summary>
         public readonly T Variable;
+        /// <summary>
+        /// Value given to the Variable
+        /// </summary>
         public readonly object Value;
+        /// <summary>
+        /// Next cell in the binding list
+        /// </summary>
         public readonly BindingList<T> Next;
 
+        /// <inheritdoc />
         public BindingList(T variable, object value, BindingList<T> next)
         {
             Variable = variable;
@@ -44,6 +54,13 @@ namespace Step.Interpreter
             Next = next;
         }
 
+        /// <summary>
+        /// Attempt to find the value of the variable in the bindinglist
+        /// </summary>
+        /// <param name="bindingList">BindingList to check</param>
+        /// <param name="variable">Variable to look for</param>
+        /// <param name="value">Value, if found, or null</param>
+        /// <returns>True if a value was found, otherwise false.</returns>
         public static bool TryLookup(BindingList<T> bindingList, T variable, out object value)
         {
             for (var cell = bindingList; cell != null; cell = cell.Next)
@@ -57,9 +74,22 @@ namespace Step.Interpreter
             return false;
         }
 
+        /// <summary>
+        /// Return value of the variable in the (possibly empty) binding list
+        /// </summary>
+        /// <param name="bindingList">List to check</param>
+        /// <param name="v">Variable to look up</param>
+        /// <param name="defaultValue">Default value to return if the variable isn't found</param>
+        /// <returns>Value of variable or defaultValue if not found</returns>
         public static object Lookup(BindingList<T> bindingList, T v, object defaultValue)
             => bindingList == null ? defaultValue : bindingList.Lookup(v, defaultValue);
 
+        /// <summary>
+        /// Find the value to which the variable is bound
+        /// </summary>
+        /// <param name="v">Variable whose value to look up</param>
+        /// <param name="defaultValue">Value to return if the variable isn't bound in this binding list</param>
+        /// <returns>Value of the variable or defaultValue</returns>
         public object Lookup(T v, object defaultValue)
         {
             for (var cell = this; cell != null; cell = cell.Next)

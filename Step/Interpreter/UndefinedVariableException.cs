@@ -24,10 +24,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Step.Interpreter
 {
@@ -36,6 +32,7 @@ namespace Step.Interpreter
     /// </summary>
     public class UndefinedVariableException : Exception
     {
+        /// <inheritdoc />
         public UndefinedVariableException(GlobalVariableName v) : base($"Undefined variable {v.Name}")
         { }
     }

@@ -52,18 +52,30 @@ namespace Step.Interpreter
         /// </summary>
         public readonly BindingList<GlobalVariableName> DynamicState;
 
+        /// <summary>
+        /// Make a new binding environment based on the specified environment, with the specified change(s)
+        /// </summary>
         public BindingEnvironment(BindingEnvironment e, LogicVariable[] local)
             : this(e.Module, local, e.Unifications, e.DynamicState)
         { }
 
+        /// <summary>
+        /// Make a new binding environment based on the specified environment, with the specified change(s)
+        /// </summary>
         public BindingEnvironment(Module module, LogicVariable[] local)
             : this(module, local, null, null)
         { }
 
+        /// <summary>
+        /// Make a new binding environment based on the specified environment, with the specified change(s)
+        /// </summary>
         public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
             : this(e.Module, e.Local, unifications, dynamicState)
         { }
 
+        /// <summary>
+        /// Make a binding environment identical to e but with v bound to newValue
+        /// </summary>
         public BindingEnvironment(BindingEnvironment e, GlobalVariableName v, object newValue)
             : this(e.Module, e.Local, e.Unifications, new BindingList<GlobalVariableName>(v, newValue, e.DynamicState))
         { }

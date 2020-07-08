@@ -101,7 +101,7 @@ namespace Tests
             Test("this is a test", "this", "is", "a", "test");
             Test(" [a] b [c] d", new object[] {"a"}, "b", new object[] {"c"}, "d");
             Test("b [c] d [a]", "b", new object[] {"c"}, "d", new object[] {"a"});
-            Test("", new object[0]);
+            Test("");
         }
 
         [TestMethod, ExpectedException(typeof(SyntaxError))]

@@ -24,15 +24,15 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Step.Parser
 {
+    /// <summary>
+    /// Represents a syntactic error in a .step file
+    /// </summary>
     public class SyntaxError : Exception
     {
+        /// <inheritdoc />
         public SyntaxError(string message) : base(message)
         { }
     }

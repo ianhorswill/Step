@@ -32,14 +32,22 @@ namespace Step.Interpreter
     /// </summary>
     public class ArgumentCountException : ArgumentException
     {
+        /// <inheritdoc />
         public ArgumentCountException(object task, int expected, object[] actual) 
             : base($"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}")
         { }
 
-        public static void Check(object task, int expected, object[] actual)
+        /// <summary>
+        /// Check if the number of arguments is as expected.  If not, throw an exception.
+        /// </summary>
+        /// <param name="task">Name of task called (used in error message, if necessary)</param>
+        /// <param name="expected">Number of arguments the task should take</param>
+        /// <param name="arglist">Actual arguments passed</param>
+        /// <exception cref="ArgumentCountException">When the number of arguments is incorrect.</exception>
+        public static void Check(object task, int expected, object[] arglist)
         {
-            if (expected != actual.Length)
-                throw new ArgumentCountException(task, expected, actual);
+            if (expected != arglist.Length)
+                throw new ArgumentCountException(task, expected, arglist);
         }
     }
 }

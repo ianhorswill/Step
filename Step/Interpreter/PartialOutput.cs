@@ -34,12 +34,19 @@ namespace Step.Interpreter
     /// The buffer is writable but the PartialOutput object is read-only.
     /// Calling Append will write the buffer but return a new PartialOutput
     /// struct, that is also read-only.
-    /// The read-onlyness is to make backtracking easy.
+    /// The read-only-ness is to make backtracking easy.
     /// </summary>
     [DebuggerDisplay("{" + nameof(AsString) + "}")]
     public readonly struct PartialOutput
     {
+        /// <summary>
+        /// Fixed buffer in which to hold the output
+        /// </summary>
         public readonly string[] Buffer;
+        /// <summary>
+        /// Amount of Buffer currently in use.
+        /// The output generated so far is in cells Buffer[0 ... Length-1]
+        /// </summary>
         public readonly int Length;
 
         private PartialOutput(string[] buffer, int length)
@@ -49,12 +56,23 @@ namespace Step.Interpreter
         }
 
         private const int DefaultCapacity = 500;
+
+        /// <summary>
+        /// Make an empty PartialOutput with a new buffer.
+        /// </summary>
         public PartialOutput(int capacity)
             : this(new string[capacity])
         { }
 
+        /// <summary>
+        /// Make an empty PartialOutput that stores output in the specified buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
         public PartialOutput(string[] buffer) : this(buffer, 0) { }
 
+        /// <summary>
+        /// Make an empty PartialOutput with a new buffer.
+        /// </summary>
         public static PartialOutput NewEmpty() => new PartialOutput(DefaultCapacity);
 
         /// <summary>
@@ -101,6 +119,7 @@ namespace Step.Interpreter
         /// </summary>
         public string AsString => Output.Untokenize();
 
+        /// <inheritdoc />
         public override string ToString() => AsString;
     }
 }

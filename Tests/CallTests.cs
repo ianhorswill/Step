@@ -24,7 +24,6 @@
 #endregion
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Step;
 using Step.Interpreter;
 
 namespace Tests
@@ -32,8 +31,8 @@ namespace Tests
     [TestClass]
     public class CallTests
     {
-        private PrimitiveTask.Predicate1 positive = (n) => (int) n > 0;
-        private PrimitiveTask.DeterministicTextGenerator1 toString => (x) => new []{ x.ToString() };
+        private readonly PrimitiveTask.Predicate1 positive = (n) => (int) n > 0;
+        private static PrimitiveTask.DeterministicTextGenerator1 ToStringPrimitive => (x) => new []{ x.ToString() };
 
         bool Succeeds(Step.Interpreter.Step s)
         {
@@ -57,7 +56,7 @@ namespace Tests
         [TestMethod]
         public void DeterministicGenerator1Test()
         {
-            var s = TestUtils.Sequence(new object[] {new object[] {toString, 1}});
+            var s = TestUtils.Sequence(new object[] {new object[] {ToStringPrimitive, 1}});
             Assert.AreEqual("1", s.Expand());
         }
     }

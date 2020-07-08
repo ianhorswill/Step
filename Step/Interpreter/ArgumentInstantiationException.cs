@@ -1,6 +1,6 @@
 ﻿#region Copyright
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ArgumentCountException.cs" company="Ian Horswill">
+// <copyright file="ArgumentInstantiationException.cs" company="Ian Horswill">
 // Copyright (C) 2020 Ian Horswill
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -33,6 +33,7 @@ namespace Step.Interpreter
     /// </summary>
     public class ArgumentInstantiationException : ArgumentException
     {
+        /// <inheritdoc />
         public ArgumentInstantiationException(object task, BindingEnvironment e, object[] args) 
             : base($"Arguments to {task} incorrectly instantiated: {PrintArgs(args, e)}")
         { }
@@ -47,12 +48,6 @@ namespace Step.Interpreter
             }
 
             return b.ToString();
-        }
-
-        public static void Check(object task, int expected, object[] actual)
-        {
-            if (expected != actual.Length)
-                throw new ArgumentCountException(task, expected, actual);
         }
     }
 }

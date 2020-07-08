@@ -23,7 +23,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using Step;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step.Interpreter;
 

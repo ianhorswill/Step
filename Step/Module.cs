@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Step.Interpreter;
 using Step.Parser;
 
@@ -51,6 +50,7 @@ namespace Step
         /// A user-defined procedure that can be called to import the value of a variable
         /// </summary>
         /// <param name="name">Variable to look up</param>
+        /// <param name="value">Value found, if any</param>
         /// <returns>True if variable found</returns>
         public delegate bool BindHook(GlobalVariableName name, out object value);
 

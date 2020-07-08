@@ -1,6 +1,6 @@
 ﻿#region Copyright
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="GlobalVariable.cs" company="Ian Horswill">
+// <copyright file="GlobalVariableName.cs" company="Ian Horswill">
 // Copyright (C) 2020 Ian Horswill
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of

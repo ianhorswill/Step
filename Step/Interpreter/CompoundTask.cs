@@ -23,7 +23,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -34,7 +33,7 @@ namespace Step.Interpreter
     /// Tasks defined by user code are CompoundTasks
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class CompoundTask
+    internal class CompoundTask
     {
         /// <summary>
         /// Name, for debugging purposes

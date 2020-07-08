@@ -32,10 +32,18 @@ namespace Step.Interpreter
     /// </summary>
     public class ArgumentTypeException : ArgumentException
     {
+        /// <inheritdoc />
         public ArgumentTypeException(object task, Type expected, object actual) 
             : base($"Wrong argument type in call to {task}, expected {expected.Name}, got {actual}")
         { }
 
+        /// <summary>
+        /// Check the specified argument value is of the right type.  If not, throw exception
+        /// </summary>
+        /// <param name="task">Name of task - used in error message if necessary</param>
+        /// <param name="expected">Type expected</param>
+        /// <param name="actual">Value provided</param>
+        /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
         public static void Check(object task, Type expected, object actual)
         {
             if (!expected.IsInstanceOfType(actual))

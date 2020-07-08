@@ -42,6 +42,7 @@ namespace Step.Parser
         public DefinitionStream(TextReader stream) : this(new ExpressionStream(stream)) 
         { }
 
+        /// <inheritdoc />
         public DefinitionStream(ExpressionStream expressions)
         {
             this.expressions = expressions.Expressions.GetEnumerator();

@@ -42,11 +42,13 @@ namespace Step.Interpreter
         /// </summary>
         public readonly LocalVariableName Name;
 
+        /// <inheritdoc />
         public LogicVariable(LocalVariableName name)
         {
             Name = name;
         }
 
+        /// <inheritdoc />
         public override string ToString() => Name.Name;
     }
 }

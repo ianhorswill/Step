@@ -35,6 +35,7 @@ namespace Step.Parser
     /// </summary>
     public class TokenStream
     {
+        /// <inheritdoc />
         public TokenStream(TextReader input)
         {
             this.input = input;

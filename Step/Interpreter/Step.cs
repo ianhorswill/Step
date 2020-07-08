@@ -30,6 +30,7 @@ namespace Step.Interpreter
     /// </summary>
     public abstract class Step
     {
+        /// <inheritdoc />
         protected Step(Step next)
         {
             Next = next;

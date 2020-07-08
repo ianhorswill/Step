@@ -49,6 +49,7 @@ namespace Step.Interpreter
         /// </summary>
         public readonly int Index;
 
+        /// <inheritdoc />
         public LocalVariableName(string name, int index)
         {
             Name = name;
