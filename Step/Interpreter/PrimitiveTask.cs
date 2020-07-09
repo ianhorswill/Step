@@ -33,6 +33,49 @@ namespace Step.Interpreter
     /// </summary>
     public static class PrimitiveTask
     {
+        internal static readonly Dictionary<object, Delegate>  SurrogateTable = new Dictionary<object, Delegate>();
+
+        /// <summary>
+        /// Tell the system that when surrogate is called as if it were a task, the specified implementation should be used instead.
+        /// </summary>
+        public static void DefineSurrogate(object surrogate, Delegate implementation) =>
+            SurrogateTable[surrogate] = implementation;
+
+        /// <summary>
+        /// Performs generate type checking of an argument to a primitive
+        /// </summary>
+        /// <param name="taskName">Name of the primitive to which the argument was passed (used for error messages)</param>
+        /// <param name="arg">Argument passed to the primitive</param>
+        /// <param name="e">Binding environment passed to the primitive</param>
+        /// <param name="instantiated">Where to store the value if it is instantiated and of the expected type</param>
+        /// <param name="uninstantiated">Where to store the value if it is uninstantiated</param>
+        /// <typeparam name="T">Type expected for the argument</typeparam>
+        /// <returns>True if argument was instantiated</returns>
+        /// <exception cref="ArgumentTypeException">If the argument was instantiated but of the wrong type</exception>
+        public static bool CheckArgument<T>(string taskName, object arg, BindingEnvironment e, out T instantiated,
+            out LogicVariable uninstantiated)
+        {
+            var resolved = e.Resolve(arg);
+            uninstantiated = resolved as LogicVariable;
+            if (uninstantiated != null)
+            {
+                instantiated = default;
+                return false;
+            }
+
+            if (resolved is T resolved1)
+            {
+                instantiated = resolved1;
+                return true;
+            }
+            throw new ArgumentTypeException(taskName, typeof(T), resolved);
+        }
+
+        /// <summary>
+        /// A primitive that just succeeds or fails, without generating output
+        /// </summary>
+        public delegate bool Predicate0();
+
         /// <summary>
         /// A primitive that just succeeds or fails, without generating output
         /// </summary>
@@ -46,6 +89,11 @@ namespace Step.Interpreter
         /// <param name="arg2">Argument to the predicate</param>
         /// <returns>Whether the predicate should succeed or fail</returns>
         public delegate bool Predicate2(object arg1, object arg2);
+
+        /// <summary>
+        /// A predicate that takes a variable number of arguments.
+        /// </summary>
+        public delegate bool PredicateN(object[] args, BindingEnvironment e);
 
         /// <summary>
         /// Wraps a C# predicate in type checking code.
@@ -181,7 +229,7 @@ namespace Step.Interpreter
         }
 
         /// <summary>
-        /// Make a general user-defined unary predicate
+        /// Make a general user-defined binary predicate
         /// </summary>
         /// <param name="name">Name of the predicate</param>
         /// <param name="inInMode">Implementation for when both arguments are bound</param>

@@ -35,15 +35,51 @@ namespace Step.Interpreter
     /// </summary>
     internal static class HigherOrderBuiltins
     {
+        private class NonLocalExit : Exception
+        {
+            public readonly PartialOutput Output;
+            public readonly BindingList<LogicVariable> Environment;
+            public readonly BindingList<GlobalVariableName> DynamicState;
+
+            private NonLocalExit(PartialOutput output, BindingList<LogicVariable> environment, BindingList<GlobalVariableName> dynamicState)
+            {
+                Output = output;
+                Environment = environment;
+                DynamicState = dynamicState;
+            }
+
+            public static bool Throw(PartialOutput output, BindingList<LogicVariable> environment,
+                BindingList<GlobalVariableName> dynamicState)
+            {
+                throw new NonLocalExit(output, environment, dynamicState);
+            }
+        }
+
         internal static void DefineGlobals()
         {
             var g = Module.Global;
 
-            g["DoAll"] =
-                (DeterministicTextGeneratorMetaTask) ((args, o, e) =>
-                    AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings));
-            g["Once"] =
-                (MetaTask) ((args, o, e, k) => StepChainFromBody("Once", args).Try(o, e, k));
+            g["DoAll"] = (DeterministicTextGeneratorMetaTask) (DoAll);
+            g["Once"] = (MetaTask) (Once);
+        }
+
+        private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e)
+        {
+            return AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings);
+        }
+
+        private static bool Once(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            try
+            {
+                StepChainFromBody("Once", args).Try(o, e, (output, u, d) => NonLocalExit.Throw(output, u, d));
+            }
+            catch (NonLocalExit x)
+            {
+                return k(x.Output, x.Environment, x.DynamicState);
+            }
+
+            return false;
         }
 
         #region Utilities for higher-order primitives

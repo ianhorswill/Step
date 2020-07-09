@@ -135,7 +135,7 @@ namespace Step.Interpreter
         /// <param name="inUnifications">Substitutions currently in place</param>
         /// <param name="outUnifications">Substitutions in place after unification, if unification successful</param>
         /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
-        private bool Unify(object a, object b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
+        public bool Unify(object a, object b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
         {
             a = Resolve(a);
             b = Resolve(b);

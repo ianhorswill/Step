@@ -63,6 +63,8 @@ namespace Step.Interpreter
         public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain) 
             => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain));
 
+        public override string ToString() => Name;
+
         /// <summary>
         /// Internal representation of a method for performing a CompoundTask
         /// </summary>

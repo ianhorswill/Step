@@ -43,5 +43,16 @@ namespace Tests
             Assert.AreEqual("A b c", m.Call("Test"));
             Assert.AreEqual("A\nb\nc\n", m.Call("SecondTest"));
         }
+
+        [TestMethod]
+        public void OnceTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Generate: a",
+                "Generate: b",
+                "Generate: c",
+                "Test: [DoAll [Once [Generate]]]");
+            Assert.AreEqual("A", m.Call("Test"));
+        }
     }
 }

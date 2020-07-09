@@ -23,6 +23,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
+using System.Diagnostics;
+using System.Linq;
 using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
@@ -47,8 +50,30 @@ namespace Step.Interpreter
             g[">="] = Predicate<int, int>(">=", (a, b) => a >= b);
             g["<="] = Predicate<int, int>("<=", (a, b) => a <= b);
             g["Newline"] = (DeterministicTextGenerator0) (() => NewLine);
+            g["Fail"] = (Predicate0)(() => false);
+            g["Break"] = (Predicate0) Break;
+            g["Throw"] = (PredicateN) Throw;
 
             HigherOrderBuiltins.DefineGlobals();
+        }
+
+        private static bool Break()
+        {
+            Debugger.Break();
+            return true;
+        }
+
+        private static bool Throw(object[] args, BindingEnvironment e)
+        {
+            string Stringify(object o)
+            {
+                var s = o.ToString();
+                if (s != "")
+                    return s;
+                return o.GetType().Name;
+            }
+
+            throw new Exception(e.ResolveList(args).Select(Stringify).Untokenize());
         }
     }
 }

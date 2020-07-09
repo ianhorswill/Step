@@ -25,13 +25,14 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace Step.Interpreter
 {
     /// <summary>
     /// A step that involves calling another task as a subtask
     /// </summary>
-    [DebuggerDisplay("Call {" + nameof(Task) + "}")]
+    [DebuggerDisplay("Call " + nameof(SourceText))]
     public class Call : Step
     {
         /// <summary>
@@ -56,6 +57,27 @@ namespace Step.Interpreter
         public readonly object[] Arglist;
 
         /// <summary>
+        /// Regenerates an approximation to the source code for this call
+        /// </summary>
+        public string SourceText
+        {
+            get
+            {
+                var b = new StringBuilder();
+                b.Append('[');
+                b.Append(Task);
+                foreach (var a in Arglist)
+                {
+                    b.Append(' ');
+                    b.Append(a);
+                }
+
+                b.Append(']');
+                return b.ToString();
+            }
+        }
+
+        /// <summary>
         /// Attempt to run this task
         /// </summary>
         /// <param name="output">Output to which to write text</param>
@@ -64,7 +86,11 @@ namespace Step.Interpreter
         /// <returns>True if this steps, the rest of its step-chain, and the continuation all succeed.</returns>
         public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k)
         {
-            var target = env.Resolve(Task);
+            var originalTarget = env.Resolve(Task);
+            var target = originalTarget;
+            if (PrimitiveTask.SurrogateTable.TryGetValue(target, out var implementation))
+                target = implementation;
+
             var arglist = env.ResolveList(Arglist);
 
             switch (target)
@@ -80,45 +106,52 @@ namespace Step.Interpreter
                 case PrimitiveTask.MetaTask m:
                     return m(arglist, output, env, (o, u, s) => Continue(o, new BindingEnvironment(env, u, s), k));
 
+                case PrimitiveTask.Predicate0 p:
+                    ArgumentCountException.Check(originalTarget, 0, arglist);
+                    return p() && Continue(output, env, k);
+
                 case PrimitiveTask.Predicate1 p:
-                    ArgumentCountException.Check(p, 1, arglist);
+                    ArgumentCountException.Check(originalTarget, 1, arglist);
                     return p(arglist[0]) && Continue(output, env, k);
 
                 case PrimitiveTask.Predicate2 p:
-                    ArgumentCountException.Check(p, 2, arglist);
+                    ArgumentCountException.Check(originalTarget, 2, arglist);
                     return p(arglist[0], arglist[1]) && Continue(output, env, k);
 
+                case PrimitiveTask.PredicateN p:
+                    return p(arglist, env) && Continue(output, env, k);
+
                 case PrimitiveTask.DeterministicTextGenerator0 g:
-                    ArgumentCountException.Check(g, 0, arglist);
+                    ArgumentCountException.Check(originalTarget, 0, arglist);
                     return Continue(output.Append(g()), env, k);
 
                 case PrimitiveTask.DeterministicTextGenerator1 g:
-                    ArgumentCountException.Check(g, 1, arglist);
+                    ArgumentCountException.Check(originalTarget, 1, arglist);
                     return Continue(output.Append(g(arglist[0])), env, k);
 
                 case PrimitiveTask.DeterministicTextGenerator2 g:
-                    ArgumentCountException.Check(g, 2, arglist);
+                    ArgumentCountException.Check(originalTarget, 2, arglist);
                     return Continue(output.Append(g(arglist[0], arglist[1])), env, k);
 
                 case PrimitiveTask.DeterministicTextGeneratorMetaTask g:
                     return Continue(output.Append(g(arglist, output, env)), env, k);
 
                 case PrimitiveTask.NondeterministicTextGenerator0 g:
-                    ArgumentCountException.Check(g, 0, arglist);
+                    ArgumentCountException.Check(originalTarget, 0, arglist);
                     foreach (var tokens in g())
                         if (Continue(output.Append(tokens), env, k))
                             return true;
                     return false;
 
                 case PrimitiveTask.NondeterministicTextGenerator1 g:
-                    ArgumentCountException.Check(g, 1, arglist);
+                    ArgumentCountException.Check(originalTarget, 1, arglist);
                     foreach (var tokens in g(arglist[0]))
                         if (Continue(output.Append(tokens), env, k))
                             return true;
                     return false;
 
                 case PrimitiveTask.NondeterministicTextGenerator2 g:
-                    ArgumentCountException.Check(g, 2, arglist);
+                    ArgumentCountException.Check(originalTarget, 2, arglist);
                     foreach (var tokens in g(arglist[0], arglist[1]))
                         if (Continue(output.Append(tokens), env, k))
                             return true;
