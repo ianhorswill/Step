@@ -25,6 +25,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
+using Step.Interpreter;
 
 namespace Tests
 {
@@ -53,6 +54,42 @@ namespace Tests
                 "Generate: c",
                 "Test: [DoAll [Once [Generate]]]");
             Assert.AreEqual("A", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void ExactlyOnceTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Generate: a",
+                "Generate: b",
+                "Generate: c",
+                "Test: [DoAll [ExactlyOnce [Generate]]]");
+            Assert.AreEqual("A", m.Call("Test"));
+        }
+
+        [TestMethod, ExpectedException(typeof(CallFailedException))]
+        public void ExactlyOnceFailureTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Generate: a",
+                "Generate: b",
+                "Generate: c",
+                "Test: [DoAll [ExactlyOnce [Fail]]]");
+            Assert.AreEqual("A", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void HigherOrderUserCodeTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Generate a:",
+                "Generate b:",
+                "Generate c:",
+                "Write ?x: [?x]",
+                "Write ?x: oops!",
+                "OnceForEach ?generator ?writer: [DoAll ?generator [ExactlyOnce ?writer]]",
+                "Test: [OnceForEach [Generate ?x] [Write ?x]]");
+            Assert.AreEqual("A b c", m.Call("Test"));
         }
     }
 }

@@ -55,5 +55,8 @@ namespace Step.Interpreter
             Name = name;
             Index = index;
         }
+
+        /// <inheritdoc />
+        public override string ToString() => Name;
     }
 }

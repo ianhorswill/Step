@@ -49,6 +49,7 @@
     <Compile Include="Interpreter\BindingList.cs" />
     <Compile Include="Interpreter\Builtins.cs" />
     <Compile Include="Interpreter\Call.cs" />
+    <Compile Include="Interpreter\CallFailedException.cs" />
     <Compile Include="Interpreter\EmitStep.cs" />
     <Compile Include="Interpreter\HigherOrderBuiltins.cs" />
     <Compile Include="Interpreter\UndefinedVariableException.cs" />

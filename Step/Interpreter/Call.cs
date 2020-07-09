@@ -32,7 +32,7 @@ namespace Step.Interpreter
     /// <summary>
     /// A step that involves calling another task as a subtask
     /// </summary>
-    [DebuggerDisplay("Call " + nameof(SourceText))]
+    [DebuggerDisplay("Call {" + nameof(SourceText) + "}")]
     public class Call : Step
     {
         /// <summary>
@@ -61,20 +61,25 @@ namespace Step.Interpreter
         /// </summary>
         public string SourceText
         {
-            get
-            {
-                var b = new StringBuilder();
-                b.Append('[');
-                b.Append(Task);
-                foreach (var a in Arglist)
-                {
-                    b.Append(' ');
-                    b.Append(a);
-                }
+            get { return CallSourceText(Task, Arglist); }
+        }
 
-                b.Append(']');
-                return b.ToString();
+        /// <summary>
+        /// Make an approximation to the source text of a call to the specified task.
+        /// </summary>
+        public static string CallSourceText(object task, object[] arglist)
+        {
+            var b = new StringBuilder();
+            b.Append('[');
+            b.Append(task);
+            foreach (var a in arglist)
+            {
+                b.Append(' ');
+                b.Append(a);
             }
+
+            b.Append(']');
+            return b.ToString();
         }
 
         /// <summary>

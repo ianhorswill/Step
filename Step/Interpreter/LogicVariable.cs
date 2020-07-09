@@ -33,7 +33,7 @@ namespace Step.Interpreter
     /// implemented using deep binding through the Unifications list in the BindingEnvironment, rather than
     /// shallow binding with a trail (i.e. an undo stack).
     /// </summary>
-    [DebuggerDisplay("{" + nameof(Name) + "}")]
+    [DebuggerDisplay("{" + nameof(DebuggerName) + "}")]
     public class LogicVariable
     {
         /// <summary>
@@ -48,7 +48,16 @@ namespace Step.Interpreter
             Name = name;
         }
 
+        private string DebuggerName => ToString();
+
+#if DEBUG
+        private static int uidCounter;
+        private readonly int uid = uidCounter++;
+        /// <inheritdoc />
+        public override string ToString() => Name.Name + uid;
+#else
         /// <inheritdoc />
         public override string ToString() => Name.Name;
+#endif
     }
 }

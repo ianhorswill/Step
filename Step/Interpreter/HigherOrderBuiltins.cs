@@ -59,8 +59,9 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g["DoAll"] = (DeterministicTextGeneratorMetaTask) (DoAll);
-            g["Once"] = (MetaTask) (Once);
+            g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
+            g["Once"] = (MetaTask) Once;
+            g["ExactlyOnce"] = (MetaTask) ExactlyOnce;
         }
 
         private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e)
@@ -72,7 +73,7 @@ namespace Step.Interpreter
         {
             try
             {
-                StepChainFromBody("Once", args).Try(o, e, (output, u, d) => NonLocalExit.Throw(output, u, d));
+                StepChainFromBody("Once", args).Try(o, e, NonLocalExit.Throw);
             }
             catch (NonLocalExit x)
             {
@@ -80,6 +81,23 @@ namespace Step.Interpreter
             }
 
             return false;
+        }
+
+        private static bool ExactlyOnce(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            ArgumentCountException.Check("ExactlyOnce", 1, args);
+            var chain = StepChainFromBody("Once", args);
+            try
+            {
+                chain.Try(o, e, (output, u, d) => NonLocalExit.Throw(output, u, d));
+            }
+            catch (NonLocalExit x)
+            {
+                return k(x.Output, x.Environment, x.DynamicState);
+            }
+
+            var failedCall = (Call) chain;
+            throw new CallFailedException(failedCall.Task, e.ResolveList(failedCall.Arglist));
         }
 
         #region Utilities for higher-order primitives

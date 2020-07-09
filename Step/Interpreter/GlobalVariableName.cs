@@ -63,5 +63,8 @@ namespace Step.Interpreter
                 return global;
             return SymbolTable[name] = new GlobalVariableName(name);
         }
+
+        /// <inheritdoc />
+        public override string ToString() => Name;
     }
 }

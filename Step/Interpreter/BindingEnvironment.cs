@@ -111,6 +111,12 @@ namespace Step.Interpreter
                         return result;
                     return Module[g];
 
+                case object[] sublist:
+                    return ResolveList(sublist);
+
+                case LogicVariable v:
+                    return Deref(v);
+
                 default:
                     return term;
             }
