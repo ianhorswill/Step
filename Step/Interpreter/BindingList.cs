@@ -97,14 +97,18 @@ namespace Step.Interpreter
                     return cell.Value;
             return defaultValue;
         }
-
+        
+        /// <summary>
+        /// Make a new binding list with specified additional binding
+        /// USE STATIC VERSION IF ORIGINAL LIST MIGHT BE NULL
+        /// </summary>
+        public BindingList<T> Bind(T variable, object value)
+            => new BindingList<T>(variable, value, this);
 
         /// <summary>
         /// Make a new binding list with specified additional binding
         /// </summary>
-        public BindingList<T> Bind(T variable, object value)
-        {
-            return new BindingList<T>(variable, value, this);
-        }
+        public static BindingList<T> Bind(BindingList<T> bindings, T variable, object value)
+            => new BindingList<T>(variable, value, bindings);
     }
 }

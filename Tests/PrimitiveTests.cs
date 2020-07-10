@@ -39,5 +39,13 @@ namespace Tests
             m.AddDefinitions("Test: [Throw a b c]");
             m.Call("Test");
         }
+
+        [TestMethod]
+        public void StringFormTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test: [StringForm 123 ?x] [?x]");
+            Assert.AreEqual("123",m.Call("Test"));
+        }
     }
 }

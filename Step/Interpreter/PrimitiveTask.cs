@@ -246,6 +246,24 @@ namespace Step.Interpreter
             return (args, e) => BinaryPredicateTrampoline(name, inInMode, inOutMode, outInMode, outOutMode, args, e);
         }
 
+        /// <summary>
+        /// Make a binary relation from an implementation of a unary function
+        /// </summary>
+        /// <param name="name">Name of the function (for error messages</param>
+        /// <param name="f">Function</param>
+        /// <param name="fInverse">Optional inverse of the function</param>
+        /// <typeparam name="TIn">Domain of the function</typeparam>
+        /// <typeparam name="TOut">Range of the function</typeparam>
+        /// <returns>Implementation of the relation</returns>
+        public static NonDeterministicRelation UnaryFunction<TIn, TOut>(string name, Func<TIn, TOut> f,
+            Func<TOut, TIn> fInverse = null)
+            => GeneralRelation(name,
+                (i, o) => f(i).Equals(o),
+                i => new[] {f(i)},
+                (fInverse == null) ? (Func<TOut, IEnumerable<TIn>>)null : o => new[] {fInverse(o)},
+                null);
+
+
         private static IEnumerable<BindingList<LogicVariable>> UnaryPredicateTrampoline<T>(string name, Func<T, bool> inMode,
             Func<IEnumerable<T>> outMode, object[] args, BindingEnvironment e)
         {
@@ -256,7 +274,7 @@ namespace Step.Interpreter
                 case LogicVariable v:
                 {
                     foreach (var result in outMode())
-                        yield return e.Unifications.Bind(v, result);
+                        yield return BindingList<LogicVariable>.Bind(e.Unifications, v, result);
                     break;
                 }
                 case T value:
@@ -286,7 +304,7 @@ namespace Step.Interpreter
                                 throw new ArgumentInstantiationException(name, e, args);
 
                             foreach (var (out1, out2) in outOutMode())
-                                yield return e.Unifications.Bind(v1, out1).Bind(v2, out2);
+                                yield return BindingList<LogicVariable>.Bind(e.Unifications, v1, out1).Bind(v2, out2);
                             break;
 
                         case T2 in2:
@@ -294,7 +312,7 @@ namespace Step.Interpreter
                                 throw new ArgumentInstantiationException(name, e, args);
 
                             foreach (var out1 in outInMode(in2))
-                                yield return e.Unifications.Bind(v1, out1);
+                                yield return BindingList<LogicVariable>.Bind(e.Unifications, v1, out1);
                             break;
 
                         default:
@@ -311,7 +329,7 @@ namespace Step.Interpreter
                                 throw new ArgumentInstantiationException(name, e, args);
 
                             foreach (var out2 in inOutMode(in1))
-                                yield return e.Unifications.Bind(v2, out2);
+                                yield return BindingList<LogicVariable>.Bind(e.Unifications, v2, out2);
                             break;
 
                         case T2 in2:

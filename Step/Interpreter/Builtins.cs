@@ -53,6 +53,7 @@ namespace Step.Interpreter
             g["Fail"] = (Predicate0)(() => false);
             g["Break"] = (Predicate0) Break;
             g["Throw"] = (PredicateN) Throw;
+            g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
 
             HigherOrderBuiltins.DefineGlobals();
         }
