@@ -178,6 +178,8 @@ namespace Step.Interpreter
                     throw new ArgumentException($"Attempt to call an unbound variable {v}");
 
                 default:
+                    if (arglist.Length == 0)
+                        return Continue(output.Append(target.ToString()), env, k);
                     throw new ArgumentException($"Unknown task {target} in call");
             }
         }

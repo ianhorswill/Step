@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="CallTests.cs" />
     <Compile Include="EmitTest.cs" />
+    <Compile Include="HigherOrderPrimitiveTests.cs" />
     <Compile Include="PrimitiveTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CompoundTaskTests.cs" />

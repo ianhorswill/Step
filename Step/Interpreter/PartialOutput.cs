@@ -121,5 +121,18 @@ namespace Step.Interpreter
 
         /// <inheritdoc />
         public override string ToString() => AsString;
+
+        /// <summary>
+        /// Return an array of the strings added to an output buffer between before and after
+        /// </summary>
+        public static string[] Difference(in PartialOutput before, in PartialOutput after)
+        {
+            Debug.Assert(before.Buffer == after.Buffer);
+            var size = after.Length - before.Length;
+            Debug.Assert(size >= 0);
+            var result = new string[size];
+            Array.Copy(before.Buffer, before.Length, result, 0, size);
+            return result;
+        }
     }
 }

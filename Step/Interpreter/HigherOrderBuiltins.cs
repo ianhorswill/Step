@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Channels;
 using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
@@ -35,26 +36,6 @@ namespace Step.Interpreter
     /// </summary>
     internal static class HigherOrderBuiltins
     {
-        private class NonLocalExit : Exception
-        {
-            public readonly PartialOutput Output;
-            public readonly BindingList<LogicVariable> Environment;
-            public readonly BindingList<GlobalVariableName> DynamicState;
-
-            private NonLocalExit(PartialOutput output, BindingList<LogicVariable> environment, BindingList<GlobalVariableName> dynamicState)
-            {
-                Output = output;
-                Environment = environment;
-                DynamicState = dynamicState;
-            }
-
-            public static bool Throw(PartialOutput output, BindingList<LogicVariable> environment,
-                BindingList<GlobalVariableName> dynamicState)
-            {
-                throw new NonLocalExit(output, environment, dynamicState);
-            }
-        }
-
         internal static void DefineGlobals()
         {
             var g = Module.Global;
@@ -62,6 +43,8 @@ namespace Step.Interpreter
             g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
             g["Once"] = (MetaTask) Once;
             g["ExactlyOnce"] = (MetaTask) ExactlyOnce;
+            g["Max"] = (MetaTask) Max;
+            g["Min"] = (MetaTask) Min;
         }
 
         private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e)
@@ -77,7 +60,7 @@ namespace Step.Interpreter
             }
             catch (NonLocalExit x)
             {
-                return k(x.Output, x.Environment, x.DynamicState);
+                return k(x.Output, x.Bindings, x.DynamicState);
             }
 
             return false;
@@ -89,16 +72,134 @@ namespace Step.Interpreter
             var chain = StepChainFromBody("Once", args);
             try
             {
-                chain.Try(o, e, (output, u, d) => NonLocalExit.Throw(output, u, d));
+                chain.Try(o, e, NonLocalExit.Throw);
             }
             catch (NonLocalExit x)
             {
-                return k(x.Output, x.Environment, x.DynamicState);
+                return k(x.Output, x.Bindings, x.DynamicState);
             }
 
             var failedCall = (Call) chain;
             throw new CallFailedException(failedCall.Task, e.ResolveList(failedCall.Arglist));
         }
+
+        private static bool Max(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            return MaxMinDriver("Max", args, 1, o, e, k);
+        }
+
+        private static bool Min(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            return MaxMinDriver("Min", args, -1, o, e, k);
+        }
+
+        /// <summary>
+        /// Core implementation of both Max and Min
+        /// </summary>
+        private static bool MaxMinDriver(string taskName, object[] args,
+            int multiplier, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            var scoreVar = args[0] as LogicVariable;
+            if (scoreVar == null)
+                throw new ArgumentInstantiationException(taskName, e, args);
+
+            var bestScore = multiplier * float.NegativeInfinity;
+            CapturedState bestResult = new CapturedState();
+            var gotOne = false;
+
+            GenerateSolutionsFromBody(taskName, args.Skip(1).ToArray(), o, e,
+                (output, u, d) =>
+                {
+                    gotOne = true;
+
+                    var maybeScore = u.Lookup(scoreVar, scoreVar);
+                    var score = 0f;
+                    switch (maybeScore)
+                    {
+                        case int i:
+                            score = i;
+                            break;
+
+                        case float f:
+                            score = f;
+                            break;
+
+                        case double df:
+                            score = (float) df;
+                            break;
+
+                        case LogicVariable v:
+                            throw new ArgumentInstantiationException(taskName, new BindingEnvironment(e, u, d), args);
+
+                        default:
+                            throw new ArgumentTypeException(taskName, typeof(float), maybeScore);
+                    }
+
+                    if (multiplier * score > multiplier * bestScore)
+                    {
+                        bestScore = score;
+                        bestResult = new CapturedState(o, output, u, d);
+                    }
+
+                    // Always ask for another solution
+                    return false;
+                });
+
+            // When we get here, we've iterated through all solutions and kept the best one.
+            // So pass it on to our continuation
+            return gotOne
+                   && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.DynamicState);
+        }
+
+        #region Data structures for recording execution state
+        /// <summary>
+        /// Used to record the results of a call so those results can be reapplied later.
+        /// Used for all-solutions and maximization meta-predicates
+        /// </summary>
+        private struct CapturedState
+        {
+            public readonly string[] Output;
+            public readonly BindingList<LogicVariable> Bindings;
+            public readonly BindingList<GlobalVariableName> DynamicState;
+
+            private static readonly string[] EmptyOutput = new string[0];
+
+            public CapturedState(string[] output, BindingList<LogicVariable> bindings, BindingList<GlobalVariableName> dynamicState)
+            {
+                Output = output;
+                Bindings = bindings;
+                DynamicState = dynamicState;
+            }
+
+            public CapturedState(PartialOutput before, PartialOutput after, BindingList<LogicVariable> bindings,
+                BindingList<GlobalVariableName> dynamicState)
+                : this(PartialOutput.Difference(before, after), bindings, dynamicState)
+            { }
+        }
+
+        /// <summary>
+        /// Used to force control transfer to a surrounding call, preventing backtracking over the intervening calls.
+        /// </summary>
+        private class NonLocalExit : Exception
+        {
+            public readonly PartialOutput Output;
+            public readonly BindingList<LogicVariable> Bindings;
+            public readonly BindingList<GlobalVariableName> DynamicState;
+
+            private NonLocalExit(PartialOutput output, BindingList<LogicVariable> bindings, BindingList<GlobalVariableName> dynamicState)
+            {
+                Output = output;
+                Bindings = bindings;
+                DynamicState = dynamicState;
+            }
+
+            public static bool Throw(PartialOutput output, BindingList<LogicVariable> environment,
+                BindingList<GlobalVariableName> dynamicState)
+            {
+                throw new NonLocalExit(output, environment, dynamicState);
+            }
+        }
+        #endregion
 
         #region Utilities for higher-order primitives
         /// <summary>

@@ -23,73 +23,21 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
-using Step.Interpreter;
 
 namespace Tests
 {
     [TestClass]
     public class PrimitiveTests
     {
-        [TestMethod]
-        public void DoAllTest()
+        [TestMethod, ExpectedException(typeof(Exception))]
+        public void ThrowTest()
         {
             var m = new Module();
-            m.AddDefinitions("Generate: a",
-                "Generate: b",
-                "Generate: c",
-                "Test: [DoAll [Generate]]",
-                "SecondTest: [DoAll [Generate] [Newline]]");
-            Assert.AreEqual("A b c", m.Call("Test"));
-            Assert.AreEqual("A\nb\nc\n", m.Call("SecondTest"));
-        }
-
-        [TestMethod]
-        public void OnceTest()
-        {
-            var m = new Module();
-            m.AddDefinitions("Generate: a",
-                "Generate: b",
-                "Generate: c",
-                "Test: [DoAll [Once [Generate]]]");
-            Assert.AreEqual("A", m.Call("Test"));
-        }
-
-        [TestMethod]
-        public void ExactlyOnceTest()
-        {
-            var m = new Module();
-            m.AddDefinitions("Generate: a",
-                "Generate: b",
-                "Generate: c",
-                "Test: [DoAll [ExactlyOnce [Generate]]]");
-            Assert.AreEqual("A", m.Call("Test"));
-        }
-
-        [TestMethod, ExpectedException(typeof(CallFailedException))]
-        public void ExactlyOnceFailureTest()
-        {
-            var m = new Module();
-            m.AddDefinitions("Generate: a",
-                "Generate: b",
-                "Generate: c",
-                "Test: [DoAll [ExactlyOnce [Fail]]]");
-            Assert.AreEqual("A", m.Call("Test"));
-        }
-
-        [TestMethod]
-        public void HigherOrderUserCodeTest()
-        {
-            var m = new Module();
-            m.AddDefinitions("Generate a:",
-                "Generate b:",
-                "Generate c:",
-                "Write ?x: [?x]",
-                "Write ?x: oops!",
-                "OnceForEach ?generator ?writer: [DoAll ?generator [ExactlyOnce ?writer]]",
-                "Test: [OnceForEach [Generate ?x] [Write ?x]]");
-            Assert.AreEqual("A b c", m.Call("Test"));
+            m.AddDefinitions("Test: [Throw a b c]");
+            m.Call("Test");
         }
     }
 }
