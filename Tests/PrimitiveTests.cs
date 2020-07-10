@@ -44,7 +44,7 @@ namespace Tests
         public void StringFormTest()
         {
             var m = new Module();
-            m.AddDefinitions("Test: [StringForm 123 ?x] [?x]");
+            m.AddDefinitions("Test: [StringForm 123 ?x] ?x");
             Assert.AreEqual("123",m.Call("Test"));
         }
     }

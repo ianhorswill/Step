@@ -85,7 +85,7 @@ namespace Tests
             m.AddDefinitions("Generate a:",
                 "Generate b:",
                 "Generate c:",
-                "Write ?x: [?x]",
+                "Write ?x: ?x",
                 "Write ?x: oops!",
                 "OnceForEach ?generator ?writer: [DoAll ?generator [ExactlyOnce ?writer]]",
                 "Test: [OnceForEach [Generate ?x] [Write ?x]]");
@@ -99,7 +99,7 @@ namespace Tests
             m.AddDefinitions("Generate a 1:",
                 "Generate b 2:",
                 "Generate c 1:",
-                "Test: [Max ?score [Generate ?x ?score]] [?x] [?score]");
+                "Test: [Max ?score [Generate ?x ?score]] ?x ?score");
             Assert.AreEqual("B 2", m.Call("Test"));
         }
 
@@ -110,7 +110,7 @@ namespace Tests
             m.AddDefinitions("Generate a 1:",
                 "Generate b 0:",
                 "Generate c 2:",
-                "Test: [Min ?score [Generate ?x ?score]] [?x] [?score]");
+                "Test: [Min ?score [Generate ?x ?score]] ?x ?score");
             Assert.AreEqual("B 0", m.Call("Test"));
         }
 
@@ -118,7 +118,7 @@ namespace Tests
         public void MaxFailTest()
         {
             var m = new Module();
-            m.AddDefinitions("Test: [Max ?score [Fail]] [?x] [?score]",
+            m.AddDefinitions("Test: [Max ?score [Fail]] ?x ?score",
                 "Test: Max failed");
             Assert.AreEqual("Max failed", m.Call("Test"));
         }

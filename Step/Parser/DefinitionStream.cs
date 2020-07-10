@@ -258,7 +258,9 @@ namespace Step.Parser
             while (!EndOfDefinition)
             {
                 tokensToEmit.Clear();
-                while (!EndOfDefinition && Peek is string)
+                while (!EndOfDefinition 
+                       && Peek is string
+                       && !IsLocalVariableName(Peek))
                     if (!EndOfLineToken)
                         tokensToEmit.Add((string)Get());
                     else
@@ -273,6 +275,13 @@ namespace Step.Parser
 
                 if (tokensToEmit.Count > 0) 
                     AddStep(new EmitStep(tokensToEmit.ToArray(), null));
+
+                if (!EndOfDefinition && IsLocalVariableName(Peek))
+                {
+                    AddStep(new Call(GetLocal((string)Peek), new object[0], null));
+                    Get();
+                }
+
                 if (!EndOfDefinition && Peek is object[] expression)
                 {
                     // It's a call
