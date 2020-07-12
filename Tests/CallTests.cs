@@ -24,6 +24,7 @@
 #endregion
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Step;
 using Step.Interpreter;
 
 namespace Tests
@@ -58,6 +59,63 @@ namespace Tests
         {
             var s = TestUtils.Sequence(new object[] {new object[] {ToStringPrimitive, 1}});
             Assert.AreEqual("1", s.Expand());
+        }
+
+        [TestMethod]
+        public void MatchGlobalTest()
+        {
+            var m = new Module {["X"] = 1};
+            m.AddDefinitions("Test X: hit",
+                "Test ?x: miss");
+            Assert.AreEqual("Hit",m.Call("Test", 1));
+            Assert.AreEqual("Miss",m.Call("Test", 2));
+        }
+
+        [TestMethod]
+        public void InlineCallTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Inline ?x: inline",
+                "Method ?x: ?x/Inline",
+                "Test: [Method 1]");
+            Assert.AreEqual("Inline",m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void PathTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Map 1 2:",
+                "Map 2 3:",
+                "Method ?x: ?x/Map/Write",
+                "Test: [Method 1]");
+            Assert.AreEqual("2",m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void PathPlusTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Map 1 2:",
+                "Map 2 3:",
+                "Foo ?x: foo",
+                "Method ?x: ?x/Map/Write+Foo",
+                "Test: [Method 1]");
+            Assert.AreEqual("2 foo",m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void StackTraceTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Map 1 2:",
+                "Map 2 3:",
+                "Foo ?x: foo",
+                "Method ?x: ?x/Map/Write+Foo",
+                "Test: [Method 1]");
+            m.Call("Test");
+            Assert.AreEqual("[Foo 2][Method 1][Test]",
+                Module.StackTrace.Replace("\n", "").Replace("\r", ""));
         }
     }
 }

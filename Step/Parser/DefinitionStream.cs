@@ -38,18 +38,21 @@ namespace Step.Parser
         /// <summary>
         /// Reads definitions from the specified stream
         /// </summary>
-        /// <param name="stream"></param>
-        public DefinitionStream(TextReader stream) : this(new ExpressionStream(stream)) 
+        public DefinitionStream(TextReader stream, string filePath) : this(new ExpressionStream(stream, filePath)) 
         { }
 
         /// <inheritdoc />
         public DefinitionStream(ExpressionStream expressions)
         {
+            expressionStream = expressions;
             this.expressions = expressions.Expressions.GetEnumerator();
             MoveNext();
         }
 
         #region Stream interface
+
+        private ExpressionStream expressionStream;
+
         /// <summary>
         /// Expressions being read from the stream
         /// </summary>
@@ -147,14 +150,19 @@ namespace Step.Parser
         private LocalVariableName GetLocal(string name)
         {
             var result = locals.FirstOrDefault(l => l.Name == name);
-            if (result == null)
-            {
-                result = new LocalVariableName(name, locals.Count);
-                locals.Add(result);
-            }
+            if (result == null) 
+                result = GetFreshLocal(name);
 
             return result;
         }
+
+        private LocalVariableName GetFreshLocal(string name)
+        {
+            var local = new LocalVariableName(name, locals.Count);
+            locals.Add(local);
+            return local;
+        }
+
         #endregion
 
         /// <summary>
@@ -193,7 +201,9 @@ namespace Step.Parser
         /// <summary>
         /// Read, parse, and return the information for all method definitions in the stream
         /// </summary>
-        public IEnumerable<(GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain)> Definitions
+        public IEnumerable<(GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain,
+                string path, int lineNumber)>
+            Definitions
         {
             get
             {
@@ -205,7 +215,8 @@ namespace Step.Parser
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain) ReadDefinition()
+        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, string path, int lineNumber)
+            ReadDefinition()
         {
             Interpreter.Step firstStep = null;
             Interpreter.Step previousStep = null;
@@ -224,6 +235,8 @@ namespace Step.Parser
             locals.Clear();
 
             SwallowNewlines();
+
+            var lineNumber = expressionStream.LineNumber;
 
             // Process the head
             var taskName = Get() as string;
@@ -278,8 +291,44 @@ namespace Step.Parser
 
                 if (!EndOfDefinition && IsLocalVariableName(Peek))
                 {
-                    AddStep(new Call(GetLocal((string)Peek), new object[0], null));
-                    Get();
+                    var local = GetLocal((string)Get());
+                    if (Peek.Equals("/"))
+                    {
+                        while (Peek.Equals("/"))
+                        {
+                            Get(); // Swallow slash
+                            var t = Get();
+                            if (!(t is string targetName))
+                                throw new SyntaxError($"Invalid method name after the /: {local}/{t}");
+                            var target = IsLocalVariableName(targetName)
+                                ? (object) GetLocal(targetName)
+                                : GlobalVariableName.Named(targetName);
+                            if (Peek.Equals("/"))
+                            {
+                                var tempVar = GetFreshLocal("temp");
+                                // There's another / coming so this is a function call
+                                AddStep(new Call(target, new object[] { local, tempVar }, null));
+                                local = tempVar;
+                            }
+                            else
+                            {
+                                AddStep(new Call(target, new object[] {local}, null));
+                                while (Peek.Equals("+"))
+                                {
+                                    Get(); // Swallow slash
+                                    var t2 = Get();
+                                    if (!(t2 is string targetName2))
+                                        throw new SyntaxError($"Invalid method name after the /: {local}/{t}");
+                                    var target2 = IsLocalVariableName(targetName2)
+                                        ? (object) GetLocal(targetName2)
+                                        : GlobalVariableName.Named(targetName2);
+                                    AddStep(new Call(target2, new object[] {local}, null));
+                                }
+                            }
+                        }
+                    }
+                    else
+                        AddStep(new Call(local, new object[0], null));
                 }
 
                 if (!EndOfDefinition && Peek is object[] expression)
@@ -288,12 +337,26 @@ namespace Step.Parser
                     var targetName = expression[0] as string;
                     if (targetName == null)
                         throw new SyntaxError($"Invalid task name {expression[0]} in call.");
-                    var target = IsLocalVariableName(targetName)
-                        ? (object)GetLocal(targetName)
-                        : GlobalVariableName.Named(targetName);
-                    var args = expression.Skip(1).ToArray();
-                    Canonicalize(args);
-                    AddStep(new Call(target, args, null));
+                    if (targetName == "Set")
+                    {
+                        // This is a set expression
+                        if (expression.Length != 3)
+                            throw new ArgumentCountException("Set", 2, expression.Skip(1).ToArray());
+                        var name = expression[1] as string;
+                        if (name == null || !IsGlobalVariableName(name))
+                            throw new SyntaxError($"A Set command can only update a GlobalVariable; it can't update {expression[1]}");
+                        AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
+                    }
+                    else
+                    {
+                        // This is a call
+                        var target = IsLocalVariableName(targetName)
+                            ? (object) GetLocal(targetName)
+                            : GlobalVariableName.Named(targetName);
+                        var args = expression.Skip(1).ToArray();
+                        Canonicalize(args);
+                        AddStep(new Call(target, args, null));
+                    }
                     Get(); // Skip over the expression we just Peeked
                 }
             }
@@ -303,7 +366,7 @@ namespace Step.Parser
 
             SwallowNewlines();
 
-            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep);
+            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep, expressionStream.FilePath, lineNumber);
         }
     }
 }

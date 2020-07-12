@@ -37,7 +37,7 @@ namespace Step.Parser
         /// <summary>
         /// Make an object that reads a stream of nested expressions from a file
         /// </summary>
-        public ExpressionStream(TextReader stream) : this(new TokenStream(stream))
+        public ExpressionStream(TextReader stream, string filePath) : this(new TokenStream(stream, filePath))
         { }
 
         /// <summary>
@@ -45,9 +45,22 @@ namespace Step.Parser
         /// </summary>
         public ExpressionStream(TokenStream tokens)
         {
+            tokenStream = tokens;
             this.tokens = tokens.Tokens.GetEnumerator();
             MoveNext();
         }
+
+        private readonly TokenStream tokenStream;
+
+        /// <summary>
+        /// File from which this data is being read, if any
+        /// </summary>
+        public string FilePath => tokenStream.FilePath;
+
+        /// <summary>
+        /// Line number in file from which we are currently reading.
+        /// </summary>
+        public int LineNumber => tokenStream.LineNumber;
 
         #region TokenStream interface
         /// <summary>

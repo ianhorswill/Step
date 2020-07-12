@@ -36,10 +36,22 @@ namespace Step.Parser
     public class TokenStream
     {
         /// <inheritdoc />
-        public TokenStream(TextReader input)
+        public TokenStream(TextReader input, string filePath)
         {
             this.input = input;
+            FilePath = filePath;
+            LineNumber = 1;
         }
+
+        /// <summary>
+        /// Path to file being read from, if any
+        /// </summary>
+        public readonly string FilePath;
+
+        /// <summary>
+        /// Line number of file being read from
+        /// </summary>
+        public int LineNumber { get; private set; }
 
         #region Token buffer managment
         /// <summary>
@@ -88,7 +100,13 @@ namespace Step.Parser
         /// Return the current character and advance to the next
         /// </summary>
         /// <returns></returns>
-        private char Get() => (char) (input.Read());
+        private char Get()
+        {
+            var c = (char) (input.Read());
+            if (c == '\n')
+                LineNumber++;
+            return c;
+        }
 
         /// <summary>
         /// Synonym for Get().  Used to indicate the character is being deliberately thrown away.
@@ -114,7 +132,9 @@ namespace Step.Parser
         /// Current character is some punctuation symbol other than '?'
         /// '?' is treated specially because it's allowed to start a variable-name token.
         /// </summary>
-        private bool IsPunctuationNotQuestionMark => char.IsPunctuation(Peek) && Peek != '?';
+        private bool IsPunctuationNotQuestionMark => MyIsPunctuation(Peek) && Peek != '?';
+
+        private static bool MyIsPunctuation(char c) => char.IsPunctuation(c) || char.IsSymbol(c);
 
         /// <summary>
         /// True if the current character can't be a continuation of a word token.
@@ -124,7 +144,7 @@ namespace Step.Parser
             get        
             {
                 var c = Peek;
-                return char.IsWhiteSpace(c) || char.IsPunctuation(c);
+                return char.IsWhiteSpace(c) || MyIsPunctuation(c);
             }
         }
         #endregion

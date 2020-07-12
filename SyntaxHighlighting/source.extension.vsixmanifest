@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+    <Metadata>
+        <Identity Id="SyntaxHighlighting.cbc90657-ecb9-4e0b-80f3-a6c5b7a358ee" Version="1.0" Language="en-US" Publisher="ian" />
+        <DisplayName>SyntaxHighlighting</DisplayName>
+        <Description xml:space="preserve">Empty VSIX project.</Description>
+        <Icon>Resources\Icon128x128.png</Icon>
+        <PreviewImage>Resources\Icon128x128.png</PreviewImage>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0, 17.0)" />
+    </Installation>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="Grammars.pkgdef" />
+    </Assets>
+</PackageManifest>

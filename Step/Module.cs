@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Step.Interpreter;
 using Step.Parser;
 
@@ -145,9 +146,10 @@ namespace Step
         /// </summary>
         /// <param name="v">Task variable</param>
         /// <param name="argCount">Number of arguments the task is expected to have</param>
+        /// <param name="createIfNeeded">If true and variable is unbound, create a new task to bind it to.</param>
         /// <returns>The task</returns>
         /// <exception cref="ArgumentException">If variable is defined but isn't a CompoundTask</exception>
-        private CompoundTask FindTask(GlobalVariableName v, int argCount)
+        internal CompoundTask FindTask(GlobalVariableName v, int argCount, bool createIfNeeded = true)
         {
             CompoundTask Recur(Module m)
             {
@@ -166,9 +168,14 @@ namespace Step
             var t = Recur(this);
             if (t == null)
             {
-                // Define it in this module.
-                t = new CompoundTask(v.Name, argCount);
-                this[v] = t;
+                if (createIfNeeded)
+                {
+                    // Define it in this module.
+                    t = new CompoundTask(v.Name, argCount);
+                    this[v] = t;
+                }
+                else 
+                    return null;
             }
             if (t.ArgCount != argCount)
                 throw new ArgumentException($"{v.Name} was defined with {t.ArgCount} arguments, but a method is being added with {argCount} arguments");
@@ -205,16 +212,16 @@ namespace Step
         public void LoadDefinitions(string path)
         {
             using (var f = File.OpenText(path))
-                LoadDefinitions(f);
+                LoadDefinitions(f, path);
         }
 
         /// <summary>
         /// Load the method definitions from stream into this module
         /// </summary>
-        public void LoadDefinitions(TextReader stream)
+        public void LoadDefinitions(TextReader stream, string filePath)
         {
-            foreach (var (task, pattern, locals, chain) in new DefinitionStream(stream).Definitions)
-                FindTask(task, pattern.Length).AddMethod(pattern, locals, chain);
+            foreach (var (task, pattern, locals, chain, path, line) in new DefinitionStream(stream, filePath).Definitions)
+                FindTask(task, pattern.Length).AddMethod(pattern, locals, chain, path, line);
         }
 
         /// <summary>
@@ -223,7 +230,7 @@ namespace Step
         public void AddDefinitions(params string[] definitions)
         {
             foreach (var s in definitions)
-                LoadDefinitions(new StringReader(s));
+                LoadDefinitions(new StringReader(s), null);
         }
 
         /// <summary>
@@ -246,6 +253,20 @@ namespace Step
             if (bindHooks == null)
                 bindHooks = new List<BindHook>();
             bindHooks.Add(hook);
+        }
+
+        /// <summary>
+        /// Return a trace of the method calls from the current frame.
+        /// </summary>
+        public static string StackTrace
+        {
+            get
+            {
+                var b = new StringBuilder();
+                for (var frame = MethodCallFrame.CurrentFrame; frame != null; frame = frame.Parent) 
+                    b.AppendLine(frame.CallSourceText);
+                return b.ToString();
+            }
         }
     }
 }

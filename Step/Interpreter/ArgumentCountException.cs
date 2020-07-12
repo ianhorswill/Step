@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Text;
 
 namespace Step.Interpreter
 {
@@ -34,7 +35,7 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentCountException(object task, int expected, object[] actual) 
-            : base($"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}")
+            : base($"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual)}")
         { }
 
         /// <summary>

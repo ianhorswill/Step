@@ -44,16 +44,22 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g["="] = Predicate<int, int>("=", (a, b) => a == b);
-            g[">"] = Predicate<int, int>(">", (a, b) => a > b);
-            g["<"] = Predicate<int, int>("<", (a, b) => a < b);
-            g[">="] = Predicate<int, int>(">=", (a, b) => a >= b);
-            g["<="] = Predicate<int, int>("<=", (a, b) => a <= b);
+            g["="] = (MetaTask) ((args, o, e, k) =>
+            {
+                ArgumentCountException.Check("=", 2, args);
+                return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
+                           k(o, newBindings, e.DynamicState);
+            });
+            g[">"] = Predicate<float, float>(">", (a, b) => a > b);
+            g["<"] = Predicate<float, float>("<", (a, b) => a < b);
+            g[">="] = Predicate<float, float>(">=", (a, b) => a >= b);
+            g["<="] = Predicate<float, float>("<=", (a, b) => a <= b);
             g["Newline"] = (DeterministicTextGenerator0) (() => NewLine);
             g["Fail"] = (Predicate0)(() => false);
             g["Break"] = (Predicate0) Break;
             g["Throw"] = (PredicateN) Throw;
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
+            g["Write"] = (DeterministicTextGenerator1) (o => new []{ o.ToString() });
 
             HigherOrderBuiltins.DefineGlobals();
         }

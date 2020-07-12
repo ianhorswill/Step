@@ -42,7 +42,7 @@ namespace Tests
                 "Test: [DoAll [Generate]]",
                 "SecondTest: [DoAll [Generate] [Newline]]");
             Assert.AreEqual("A b c", m.Call("Test"));
-            Assert.AreEqual("A\nb\nc\n", m.Call("SecondTest"));
+            Assert.AreEqual("A\nB\nC\n", m.Call("SecondTest"));
         }
 
         [TestMethod]
@@ -85,10 +85,10 @@ namespace Tests
             m.AddDefinitions("Generate a:",
                 "Generate b:",
                 "Generate c:",
-                "Write ?x: ?x",
-                "Write ?x: oops!",
+                "TryWrite ?x: ?x",
+                "TryWrite ?x: oops!",
                 "OnceForEach ?generator ?writer: [DoAll ?generator [ExactlyOnce ?writer]]",
-                "Test: [OnceForEach [Generate ?x] [Write ?x]]");
+                "Test: [OnceForEach [Generate ?x] [TryWrite ?x]]");
             Assert.AreEqual("A b c", m.Call("Test"));
         }
 

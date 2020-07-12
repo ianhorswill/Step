@@ -1,0 +1,6 @@
+﻿[$RootKey$\TextMate\Repositories]
+"SyntaxHighlighting"="$PackageFolder$\Grammars"
+
+; Match file extensions with icons. See full icon list at https://glyphlist.azurewebsites.net/knownmonikers/
+[$RootKey$\ShellFileAssociations\.pkgdef]
+"DefaultIconMoniker"="KnownMonikers.RichTextBox"

@@ -34,6 +34,20 @@ namespace Step.Interpreter
     public static class PrimitiveTask
     {
         internal static readonly Dictionary<object, Delegate>  SurrogateTable = new Dictionary<object, Delegate>();
+        private static readonly Dictionary<object, string> PrimitiveNameTable = new Dictionary<object, string>();
+
+        internal static T NamePrimitive<T>(string name, T primitive) where T: Delegate
+        {
+            PrimitiveNameTable[primitive] = name;
+            return primitive;
+        }
+
+        internal static object PrimitiveName(object maybePrimitive)
+        {
+            if (PrimitiveNameTable.TryGetValue(maybePrimitive, out var name))
+                return name;
+            return maybePrimitive;
+        }
 
         /// <summary>
         /// Tell the system that when surrogate is called as if it were a task, the specified implementation should be used instead.
@@ -104,11 +118,11 @@ namespace Step.Interpreter
         /// <returns></returns>
         public static Predicate1 Predicate<T>(string name, Func<T, bool> realFunction)
         {
-            return o =>
+            return NamePrimitive<Predicate1>(name, o =>
             {
                 ArgumentTypeException.Check(name, typeof(T), o);
                 return realFunction((T) o);
-            };
+            });
         }
         /// <summary>
         /// Wraps a C# predicate in type checking code.
@@ -120,12 +134,25 @@ namespace Step.Interpreter
         /// <returns></returns>
         public static Predicate2 Predicate<T1,T2>(string name, Func<T1, T2, bool> realFunction)
         {
-            return (o1, o2) =>
+            return NamePrimitive<Predicate2>(name, 
+                (a1, a2) =>
             {
-                ArgumentTypeException.Check(name, typeof(T1), o1);
-                ArgumentTypeException.Check(name, typeof(T2), o2);
-                return realFunction((T1)o1, (T2)o2);
-            };
+                ArgumentTypeException.Check(name, typeof(T1), a1);
+                ArgumentTypeException.Check(name, typeof(T2), a2);
+                T1 v1;
+                T2 v2;
+                if (typeof(T1) == typeof(float))
+                    v1 = (T1)(object)Convert.ToSingle(a1);
+                else
+                    v1 = (T1) a1;
+
+                if (typeof(T2) == typeof(float))
+                    v2 = (T2)(object)Convert.ToSingle(a2);
+                else
+                    v2 = (T2) a2;
+
+                return realFunction(v1, v2);
+            });
         }
 
         /// <summary>
@@ -169,11 +196,11 @@ namespace Step.Interpreter
         /// <typeparam name="T">Type of argument to task</typeparam>
         public static DeterministicTextGenerator1 DeterministicText<T>(string name, Func<T, IEnumerable<string>> realFunction)
         {
-            return o =>
+            return NamePrimitive<DeterministicTextGenerator1>(name, o =>
             {
                 ArgumentTypeException.Check(name, typeof(T), o);
                 return realFunction((T) o);
-            };
+            });
         }
 
         /// <summary>
@@ -185,12 +212,12 @@ namespace Step.Interpreter
         /// <typeparam name="T2">Type of second argument to task</typeparam>
         public static DeterministicTextGenerator2 DeterministicText<T1, T2>(string name, Func<T1, T2, IEnumerable<string>> realFunction)
         {
-            return (o1, o2) =>
+            return NamePrimitive<DeterministicTextGenerator2>(name, (o1, o2) =>
             {
                 ArgumentTypeException.Check(name, typeof(T1), o1);
                 ArgumentTypeException.Check(name, typeof(T2), o2);
                 return realFunction((T1) o1, (T2)o2);
-            };
+            });
         }
 
         /// <summary>

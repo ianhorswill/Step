@@ -60,64 +60,11 @@ namespace Step.Interpreter
         /// <param name="argumentPattern">Terms (variables or values) to unify with the arguments in a call to test whether this method is appropriate</param>
         /// <param name="localVariableNames">LocalVariables used in this method</param>
         /// <param name="stepChain">Linked list of Step objects to attempt to execute when running this method</param>
-        public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain) 
-            => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain));
+        /// <param name="path">File from which the method was read</param>
+        /// <param name="lineNumber">Line number where the method starts in the file</param>
+        public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, string path, int lineNumber) 
+            => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain, path, lineNumber));
 
         public override string ToString() => Name;
-
-        /// <summary>
-        /// Internal representation of a method for performing a CompoundTask
-        /// </summary>
-        internal class Method
-        {
-            /// <summary>
-            /// Task for which this is a method
-            /// </summary>
-            public readonly CompoundTask Task;
-
-            /// <summary>
-            /// Terms (variables or values) to unify with the arguments in a call to test whether this method is appropriate
-            /// </summary>
-            public readonly object[] ArgumentPattern;
-
-            /// <summary>
-            /// LocalVariables used in this method
-            /// </summary>
-            public readonly LocalVariableName[] LocalVariableNames;
-
-            /// <summary>
-            /// First Step in the linked list of steps constituting this method
-            /// </summary>
-            public readonly Step StepChain;
-
-            public Method(CompoundTask task, object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain)
-            {
-                Task = task;
-                ArgumentPattern = argumentPattern;
-                LocalVariableNames = localVariableNames;
-                StepChain = stepChain;
-            }
-
-            /// <summary>
-            /// Attempt to run this method
-            /// </summary>
-            /// <param name="args">Arguments from the call to the method's task</param>
-            /// <param name="output">Output buffer to write to</param>
-            /// <param name="env">Variable binding information</param>
-            /// <param name="k">Continuation to call if method succeeds</param>
-            /// <returns>True if the method and its continuation succeeded</returns>
-            public bool Try(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
-            {
-                // Make stack frame for locals
-                var locals = new LogicVariable[LocalVariableNames.Length];
-                for (var i = 0; i < LocalVariableNames.Length; i++)
-                    locals[i] = new LogicVariable(LocalVariableNames[i]);
-                var newEnv = new BindingEnvironment(env, locals);
-                return newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv)
-                       && (StepChain?.Try(output, finalEnv, k) ?? k(output, finalEnv.Unifications, finalEnv.DynamicState));
-            }
-
-            public override string ToString() => $"Method of {Task.Name}";
-        }
     }
 }

@@ -59,28 +59,9 @@ namespace Step.Interpreter
         /// <summary>
         /// Regenerates an approximation to the source code for this call
         /// </summary>
-        public string SourceText
-        {
-            get { return CallSourceText(Task, Arglist); }
-        }
+        public string SourceText => CallSourceText(Task, Arglist);
 
-        /// <summary>
-        /// Make an approximation to the source text of a call to the specified task.
-        /// </summary>
-        public static string CallSourceText(object task, object[] arglist)
-        {
-            var b = new StringBuilder();
-            b.Append('[');
-            b.Append(task);
-            foreach (var a in arglist)
-            {
-                b.Append(' ');
-                b.Append(a);
-            }
-
-            b.Append(']');
-            return b.ToString();
-        }
+        internal readonly GlobalVariableName MentionHook = GlobalVariableName.Named("MentionHook");
 
         /// <summary>
         /// Attempt to run this task
@@ -112,51 +93,51 @@ namespace Step.Interpreter
                     return m(arglist, output, env, (o, u, s) => Continue(o, new BindingEnvironment(env, u, s), k));
 
                 case PrimitiveTask.Predicate0 p:
-                    ArgumentCountException.Check(originalTarget, 0, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
                     return p() && Continue(output, env, k);
 
                 case PrimitiveTask.Predicate1 p:
-                    ArgumentCountException.Check(originalTarget, 1, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
                     return p(arglist[0]) && Continue(output, env, k);
 
                 case PrimitiveTask.Predicate2 p:
-                    ArgumentCountException.Check(originalTarget, 2, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
                     return p(arglist[0], arglist[1]) && Continue(output, env, k);
 
                 case PrimitiveTask.PredicateN p:
                     return p(arglist, env) && Continue(output, env, k);
 
                 case PrimitiveTask.DeterministicTextGenerator0 g:
-                    ArgumentCountException.Check(originalTarget, 0, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
                     return Continue(output.Append(g()), env, k);
 
                 case PrimitiveTask.DeterministicTextGenerator1 g:
-                    ArgumentCountException.Check(originalTarget, 1, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
                     return Continue(output.Append(g(arglist[0])), env, k);
 
                 case PrimitiveTask.DeterministicTextGenerator2 g:
-                    ArgumentCountException.Check(originalTarget, 2, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
                     return Continue(output.Append(g(arglist[0], arglist[1])), env, k);
 
                 case PrimitiveTask.DeterministicTextGeneratorMetaTask g:
                     return Continue(output.Append(g(arglist, output, env)), env, k);
 
                 case PrimitiveTask.NondeterministicTextGenerator0 g:
-                    ArgumentCountException.Check(originalTarget, 0, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
                     foreach (var tokens in g())
                         if (Continue(output.Append(tokens), env, k))
                             return true;
                     return false;
 
                 case PrimitiveTask.NondeterministicTextGenerator1 g:
-                    ArgumentCountException.Check(originalTarget, 1, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
                     foreach (var tokens in g(arglist[0]))
                         if (Continue(output.Append(tokens), env, k))
                             return true;
                     return false;
 
                 case PrimitiveTask.NondeterministicTextGenerator2 g:
-                    ArgumentCountException.Check(originalTarget, 2, arglist);
+                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
                     foreach (var tokens in g(arglist[0], arglist[1]))
                         if (Continue(output.Append(tokens), env, k))
                             return true;
@@ -168,20 +149,52 @@ namespace Step.Interpreter
                             return true;
                     return false;
 
-                case string[] text:
-                    return Continue(output.Append(text), env, k);
-
-                case string text:
-                    return Continue(output.Append(text), env, k);
-
                 case LogicVariable v:
                     throw new ArgumentException($"Attempt to call an unbound variable {v}");
 
                 default:
                     if (arglist.Length == 0)
+                    {
+                        var hook = env.Module.FindTask(MentionHook, 1, false);
+                        if (hook != null)
+                            return new Call(hook, new []{ target }, Next).Try(output, env, k);
+                        if (target is string[] text)
+                            return Continue(output.Append(text), env, k);
                         return Continue(output.Append(target.ToString()), env, k);
+                    }
                     throw new ArgumentException($"Unknown task {target} in call");
             }
+        }
+
+        internal static string CallSourceText(object task, object[] arglist)
+        {
+            var b = new StringBuilder();
+            b.Append('[');
+            b.Append(task);
+            foreach (var a in arglist)
+            {
+                b.Append(' ');
+                if (a == null)
+                    b.Append("null");
+                else if (a is string s)
+                {
+                    b.Append("\"");
+                    b.Append(s);
+                    b.Append("\"");
+                }
+                else
+                {
+                    var asString = a.ToString();
+                    if (asString.IndexOf(' ') < 0)
+                        b.Append(a);
+                    else
+                        b.Append($"<{asString}>");
+                }
+            }
+
+            b.Append(']');
+
+            return b.ToString();
         }
     }
 }

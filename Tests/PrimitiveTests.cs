@@ -47,5 +47,69 @@ namespace Tests
             m.AddDefinitions("Test: [StringForm 123 ?x] ?x");
             Assert.AreEqual("123",m.Call("Test"));
         }
+
+        [TestMethod]
+        public void MentionHookTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test: [StringForm 123 ?x] ?x",
+                "MentionHook ?x: foo");
+            Assert.AreEqual("Foo",m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void SetTest()
+        {
+            var m = new Module {["X"] = 1};
+            m.AddDefinitions("Test: [X] [Set X 2] [X]");
+            Assert.AreEqual("1 2", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void SetTest2()
+        {
+            var m = new Module {["X"] = 1};
+            m.AddDefinitions("Test ?x: [X] [Set X ?x] [X]");
+            Assert.AreEqual("1 5", m.Call("Test", 5));
+        }
+
+        [TestMethod]
+        public void EqualsTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test ?x ?y: [= ?x ?z] [= ?z ?y] succeeded",
+                "Testx ?x: [Test ?x ?y] [= ?y 1] Succeeded");
+            Assert.AreEqual("Succeeded", m.Call("Test", 1, 1));
+            Assert.AreEqual(null, m.Call("Test", 1, 2));
+            
+            Assert.AreEqual("Succeeded Succeeded", m.Call("Testx", 1));
+            Assert.AreEqual(null, m.Call("Testx", 2));
+        }
+
+        [TestMethod]
+        public void LessThanTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test ?x ?y: [< ?x ?y] Succeeded");
+            Assert.AreEqual("Succeeded", m.Call("Test", 1, 2));
+            Assert.AreEqual(null, m.Call("Test", 1, 1));
+        }
+
+        [TestMethod]
+        public void ErrorPrintingTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test ?x ?y: [< = ?x ?y] Succeeded");
+            var result = "";
+            try
+            {
+                m.Call("Test", 1, 2);
+            }
+            catch (Exception e)
+            {
+                result = e.Message;
+            }
+            Assert.AreEqual("Wrong number of arguments for <, expected 2, got 3: [< \"=\" 1 2]", result);
+        }
     }
 }

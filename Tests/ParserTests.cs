@@ -41,7 +41,7 @@ namespace Tests
             {
                 if (output == null)
                     output = input;
-                var tokens = new TokenStream(new StringReader(input)).Tokens.ToArray();
+                var tokens = new TokenStream(new StringReader(input), null).Tokens.ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
                 Assert.AreEqual(output, tokens.Untokenize(false));
             }
@@ -62,7 +62,7 @@ namespace Tests
             {
                 if (output == null)
                     output = input;
-                var tokens = new ExpressionStream(new StringReader(input)).Expressions.Cast<string>().ToArray();
+                var tokens = new ExpressionStream(new StringReader(input), null).Expressions.Cast<string>().ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
                 Assert.AreEqual(output, tokens.Untokenize(false));
             }
@@ -78,7 +78,7 @@ namespace Tests
         {
             void Test(string input, params object[] expectedResult)
             {
-                var expressions = new ExpressionStream(new StringReader(input)).Expressions.ToArray();
+                var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
                 Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
@@ -109,7 +109,7 @@ namespace Tests
         {
             void Test(string input, params object[] expectedResult)
             {
-                var expressions = new ExpressionStream(new StringReader(input)).Expressions.ToArray();
+                var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
                 Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
@@ -137,7 +137,7 @@ namespace Tests
         {
             void Test(string input, params object[] expectedResult)
             {
-                var expressions = new ExpressionStream(new StringReader(input)).Expressions.ToArray();
+                var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
                 Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
@@ -165,7 +165,7 @@ namespace Tests
         {
             void Test(string input, params object[] expectedResult)
             {
-                var expressions = new ExpressionStream(new StringReader(input)).Expressions.ToArray();
+                var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
                 Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {

@@ -39,10 +39,12 @@ namespace Step.Interpreter
         /// Module containing bindings of GlobalVariables
         /// </summary>
         public readonly Module Module;
+
+        internal readonly MethodCallFrame Frame;
         /// <summary>
         /// Logic variables holding the values of the current method's local variables
         /// </summary>
-        public readonly LogicVariable[] Local;
+        public LogicVariable[] Local => Frame.Locals;
         /// <summary>
         /// Bindings mapping local variables to their values, or to other local variables
         /// </summary>
@@ -55,36 +57,36 @@ namespace Step.Interpreter
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
-        public BindingEnvironment(BindingEnvironment e, LogicVariable[] local)
-            : this(e.Module, local, e.Unifications, e.DynamicState)
+        internal BindingEnvironment(BindingEnvironment e, MethodCallFrame frame)
+            : this(e.Module, frame, e.Unifications, e.DynamicState)
         { }
 
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
-        public BindingEnvironment(Module module, LogicVariable[] local)
-            : this(module, local, null, null)
+        internal BindingEnvironment(Module module, MethodCallFrame frame)
+            : this(module, frame, null, null)
         { }
 
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
         public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
-            : this(e.Module, e.Local, unifications, dynamicState)
+            : this(e.Module, e.Frame, unifications, dynamicState)
         { }
 
         /// <summary>
         /// Make a binding environment identical to e but with v bound to newValue
         /// </summary>
         public BindingEnvironment(BindingEnvironment e, GlobalVariableName v, object newValue)
-            : this(e.Module, e.Local, e.Unifications, new BindingList<GlobalVariableName>(v, newValue, e.DynamicState))
+            : this(e.Module, e.Frame, e.Unifications, new BindingList<GlobalVariableName>(v, newValue, e.DynamicState))
         { }
 
-        private BindingEnvironment(Module module, LogicVariable[] local,
+        private BindingEnvironment(Module module, MethodCallFrame frame,
             BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
         {
             Module = module;
-            Local = local;
+            Frame = frame;
             Unifications = unifications;
             DynamicState = dynamicState;
         }
@@ -93,7 +95,9 @@ namespace Step.Interpreter
         /// Make a new binding environment with nothing in it.
         /// Used for Unit tests.  Don't use this yourself.
         /// </summary>
-        internal static BindingEnvironment NewEmpty() => new BindingEnvironment(new Module(), new LogicVariable[0]);
+        internal static BindingEnvironment NewEmpty() =>
+            new BindingEnvironment(new Module(), 
+                new MethodCallFrame(null, null, new LogicVariable[0], null));
 
         /// <summary>
         /// Canonicalize a term, i.e. get its value, or reduce it to a logic variable
@@ -183,7 +187,7 @@ namespace Step.Interpreter
         {
             if (UnifyArrays(a, b, out BindingList<LogicVariable> outUnifications))
             {
-                e = new BindingEnvironment(Module, Local, outUnifications, DynamicState);
+                e = new BindingEnvironment(Module, Frame, outUnifications, DynamicState);
                 return true;
             }
 

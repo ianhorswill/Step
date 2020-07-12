@@ -45,10 +45,13 @@ namespace Step
             var lastToken = "";
             foreach (var t in tokens)
             {
+                if (t == null)
+                    continue;
+
                 var token = t;
-                if (!PunctuationToken(t) && !t.StartsWith("<") && t != "\n")
+                if (t != "" && !PunctuationToken(t) && !t.StartsWith("<") && t != "\n")
                 {
-                    if (capitalize && (firstOne || lastToken == "." && char.IsLower(t[0])))
+                    if (capitalize && (firstOne || lastToken == "."  || lastToken == "\n") && char.IsLower(t[0]))
                         token = Capitalize(token);
                     if (firstOne)
                         firstOne = false;
