@@ -17,7 +17,7 @@ namespace Step.Interpreter
         public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
         {
             var value = e.Resolve(Value);
-            if (value is LogicVariable v)
+            if (value is LogicVariable)
                 throw new ArgumentException($"Attempt to Set {Variable.Name} to uninstantiated variable {value}");
             return Continue(output,
                 new BindingEnvironment(e,

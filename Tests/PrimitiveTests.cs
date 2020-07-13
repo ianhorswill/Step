@@ -78,12 +78,12 @@ namespace Tests
         {
             var m = new Module();
             m.AddDefinitions("Test ?x ?y: [= ?x ?z] [= ?z ?y] succeeded",
-                "Testx ?x: [Test ?x ?y] [= ?y 1] Succeeded");
+                "TextX ?x: [Test ?x ?y] [= ?y 1] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 1));
             Assert.AreEqual(null, m.Call("Test", 1, 2));
             
-            Assert.AreEqual("Succeeded Succeeded", m.Call("Testx", 1));
-            Assert.AreEqual(null, m.Call("Testx", 2));
+            Assert.AreEqual("Succeeded Succeeded", m.Call("TextX", 1));
+            Assert.AreEqual(null, m.Call("TextX", 2));
         }
 
         [TestMethod]
