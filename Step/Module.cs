@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Step.Interpreter;
 using Step.Parser;
@@ -65,8 +64,6 @@ namespace Step
         /// The global Module that all other modules inherit from by default.
         /// </summary>
         public static readonly Module Global;
-
-        private List<string> loadTimeWarnings;
         #endregion
 
         #region Constructors
@@ -124,28 +121,24 @@ namespace Step
         /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
         public object this[GlobalVariableName v]
         {
-            get => Lookup(v);
-            set => dictionary[v] = value;
-        }
+            get
+            {
+                // First see if it's stored in this or some ancestor module
+                for (var module = this; module != null; module = module.Parent)
+                    if (module.dictionary.TryGetValue(v, out var value))
+                        return value;
 
-        private object Lookup(GlobalVariableName v, bool throwOnFailure = true)
-        {
-// First see if it's stored in this or some ancestor module
-            for (var module = this; module != null; module = module.Parent)
-                if (module.dictionary.TryGetValue(v, out var value))
-                    return value;
+                // Not found in this or any ancestor module; try bind hooks
+                for (var module = this; module != null; module = module.Parent)
+                    if (module.bindHooks != null)
+                        foreach (var hook in module.bindHooks)
+                            if (hook(v, out var result))
+                                return module.dictionary[v] = result;
 
-            // Not found in this or any ancestor module; try bind hooks
-            for (var module = this; module != null; module = module.Parent)
-                if (module.bindHooks != null)
-                    foreach (var hook in module.bindHooks)
-                        if (hook(v, out var result))
-                            return module.dictionary[v] = result;
-
-            // Give up
-            if (throwOnFailure)
+                // Give up
                 throw new UndefinedVariableException(v);
-            return null;
+            }
+            set => dictionary[v] = value;
         }
 
         /// <summary>
@@ -154,11 +147,9 @@ namespace Step
         /// <param name="v">Task variable</param>
         /// <param name="argCount">Number of arguments the task is expected to have</param>
         /// <param name="createIfNeeded">If true and variable is unbound, create a new task to bind it to.</param>
-        /// <param name="path">Source file of method referencing this task, if relevant</param>
-        /// <param name="lineNumber">Source file line number of method referencing this task, if relevant</param>
         /// <returns>The task</returns>
         /// <exception cref="ArgumentException">If variable is defined but isn't a CompoundTask</exception>
-        internal CompoundTask FindTask(GlobalVariableName v, int argCount, bool createIfNeeded = true, string path = "Unknown", int lineNumber = 0)
+        internal CompoundTask FindTask(GlobalVariableName v, int argCount, bool createIfNeeded = true)
         {
             CompoundTask Recur(Module m)
             {
@@ -187,7 +178,7 @@ namespace Step
                     return null;
             }
             if (t.ArgCount != argCount)
-                throw new ArgumentException($"{Path.GetFileName(path)}:{lineNumber} {v.Name} was defined with {t.ArgCount} arguments, but a method is being added with {argCount} arguments");
+                throw new ArgumentException($"{v.Name} was defined with {t.ArgCount} arguments, but a method is being added with {argCount} arguments");
             return t;
         }
         #endregion
@@ -229,8 +220,8 @@ namespace Step
         /// </summary>
         public void LoadDefinitions(TextReader stream, string filePath)
         {
-            foreach (var (task, pattern, locals, chain, path, line) in new DefinitionStream(stream, this, filePath).Definitions)
-                FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, path, line);
+            foreach (var (task, pattern, locals, chain, path, line) in new DefinitionStream(stream, filePath).Definitions)
+                FindTask(task, pattern.Length).AddMethod(pattern, locals, chain, path, line);
         }
 
         /// <summary>
@@ -264,64 +255,6 @@ namespace Step
             bindHooks.Add(hook);
         }
 
-        #region Debugging tools
-
-        /// <summary>
-        /// Returns any warnings found by code analysis
-        /// </summary>
-        public IEnumerable<string> Warnings()
-        {
-            if (loadTimeWarnings != null)
-                foreach (var w in loadTimeWarnings)
-                    yield return w;
-            foreach (var w in Lint())
-                yield return w;
-        }
-
-        private IEnumerable<string> Lint()
-        {
-            foreach (var pair in dictionary.ToArray())  // Copy the dictionary because it might get modified by TaskDefined
-            {
-                var variable = pair.Key;
-                if (pair.Value != null && pair.Value is CompoundTask task)
-                    foreach (var method in task.Methods)
-                        for (var step = method.StepChain; step != null; step = step.Next)
-                            if (step is Call c && c.Task is GlobalVariableName g && !TaskDefined(g))
-                            {
-                                var fileName = method.FilePath == null ? "Unknown" : Path.GetFileName(method.FilePath);
-                                yield return
-                                    $"{fileName}:{method.LineNumber} {variable.Name} called undefined task {g.Name}";
-                            }
-            }
-        }
-
-        private bool TaskDefined(GlobalVariableName globalVariableName)
-        {
-            {
-                var value = Lookup(globalVariableName, false);
-                if (PrimitiveTask.SurrogateTable.TryGetValue(value, out var implementation))
-                    value = implementation;
-
-                switch (value)
-                {
-                    case null:
-                        return false;
-                    case CompoundTask _:
-                    case Delegate _:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        }
-
-        internal void AddWarning(string warning)
-        {
-            if (loadTimeWarnings == null)
-                loadTimeWarnings = new List<string>();
-            loadTimeWarnings.Add(warning);
-        }
-
         /// <summary>
         /// Return a trace of the method calls from the current frame.
         /// </summary>
@@ -335,6 +268,5 @@ namespace Step
                 return b.ToString();
             }
         }
-        #endregion
     }
 }

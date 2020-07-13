@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Channels;
 using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
@@ -112,7 +113,7 @@ namespace Step.Interpreter
                     gotOne = true;
 
                     var maybeScore = u.Lookup(scoreVar, scoreVar);
-                    float score;
+                    var score = 0f;
                     switch (maybeScore)
                     {
                         case int i:
@@ -127,11 +128,11 @@ namespace Step.Interpreter
                             score = (float) df;
                             break;
 
-                        case LogicVariable _:
+                        case LogicVariable v:
                             throw new ArgumentInstantiationException(taskName, new BindingEnvironment(e, u, d), args);
 
                         default:
-                            throw new ArgumentTypeException(taskName, typeof(float), maybeScore, args);
+                            throw new ArgumentTypeException(taskName, typeof(float), maybeScore);
                     }
 
                     if (multiplier * score > multiplier * bestScore)
@@ -161,9 +162,9 @@ namespace Step.Interpreter
             public readonly BindingList<LogicVariable> Bindings;
             public readonly BindingList<GlobalVariableName> DynamicState;
 
-            //private static readonly string[] EmptyOutput = new string[0];
+            private static readonly string[] EmptyOutput = new string[0];
 
-            private CapturedState(string[] output, BindingList<LogicVariable> bindings, BindingList<GlobalVariableName> dynamicState)
+            public CapturedState(string[] output, BindingList<LogicVariable> bindings, BindingList<GlobalVariableName> dynamicState)
             {
                 Output = output;
                 Bindings = bindings;
@@ -260,7 +261,7 @@ namespace Step.Interpreter
                     continue;
                 var invocation = body[i] as object[];
                 if (invocation == null  || invocation.Length == 0)
-                    throw new ArgumentTypeException(callingTaskName, typeof(Call), body[i], body);
+                    throw new ArgumentTypeException(callingTaskName, typeof(Call), body[i]);
                 var arglist = new object[invocation.Length - 1];
                 Array.Copy(invocation, 1, arglist, 0, arglist.Length);
                 chain = new Call(invocation[0], arglist, chain);

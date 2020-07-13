@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Text;
 
 namespace Step.Interpreter
 {
@@ -34,7 +35,19 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentInstantiationException(object task, BindingEnvironment e, object[] args) 
-            : base($"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}")
+            : base($"Arguments to {task} incorrectly instantiated: {PrintArgs(args, e)}")
         { }
+
+        private static string PrintArgs(object[] args, BindingEnvironment e)
+        {
+            var b = new StringBuilder();
+            foreach (var a in args)
+            {
+                b.Append(e.Resolve(a));
+                b.Append(' ');
+            }
+
+            return b.ToString();
+        }
     }
 }

@@ -38,27 +38,20 @@ namespace Step.Parser
         /// <summary>
         /// Reads definitions from the specified stream
         /// </summary>
-        public DefinitionStream(TextReader stream, Module module, string filePath)
-            : this(new ExpressionStream(stream, filePath), module) 
+        public DefinitionStream(TextReader stream, string filePath) : this(new ExpressionStream(stream, filePath)) 
         { }
 
         /// <inheritdoc />
-        public DefinitionStream(ExpressionStream expressions, Module module)
+        public DefinitionStream(ExpressionStream expressions)
         {
-            Module = module;
             expressionStream = expressions;
             this.expressions = expressions.Expressions.GetEnumerator();
             MoveNext();
         }
 
-        /// <summary>
-        /// Module into which this is reading definitions
-        /// </summary>
-        public readonly Module Module;
-
         #region Stream interface
 
-        private readonly ExpressionStream expressionStream;
+        private ExpressionStream expressionStream;
 
         /// <summary>
         /// Expressions being read from the stream
@@ -145,8 +138,6 @@ namespace Step.Parser
         /// </summary>
         private readonly List<LocalVariableName> locals = new List<LocalVariableName>();
 
-        private readonly List<ushort> referenceCounts = new List<ushort>();
-
         /// <summary>
         /// Tokens being accumulated for the current Emit step of the current method.
         /// </summary>
@@ -158,18 +149,17 @@ namespace Step.Parser
         /// </summary>
         private LocalVariableName GetLocal(string name)
         {
-            if (name == "?")
-                return GetFreshLocal(name);
-
             var result = locals.FirstOrDefault(l => l.Name == name);
-            return result ?? GetFreshLocal(name);
+            if (result == null) 
+                result = GetFreshLocal(name);
+
+            return result;
         }
 
         private LocalVariableName GetFreshLocal(string name)
         {
             var local = new LocalVariableName(name, locals.Count);
             locals.Add(local);
-            referenceCounts.Add(0);
             return local;
         }
 
@@ -193,11 +183,7 @@ namespace Step.Parser
             if (o is string s)
             {
                 if (IsLocalVariableName(s))
-                {
-                    var v = GetLocal(s);
-                    referenceCounts[v.Index] += 1;
-                    return v;
-                }
+                    return GetLocal(s);
                 if (IsGlobalVariableName(s))
                     return GlobalVariableName.Named(s);
                 if (int.TryParse(s, out var result))
@@ -247,7 +233,6 @@ namespace Step.Parser
             }
 
             locals.Clear();
-            referenceCounts.Clear();
 
             SwallowNewlines();
 
@@ -380,11 +365,6 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
 
             SwallowNewlines();
-
-            for (var i = 0; i < locals.Count; i++)
-                if (referenceCounts[i] == 1 && !locals[i].Name.StartsWith("?"))
-                    Module.AddWarning(
-                        $"{Path.GetFileName(expressionStream.FilePath)}:{lineNumber} Singleton variable {locals[i].Name}");
 
             return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep, expressionStream.FilePath, lineNumber);
         }

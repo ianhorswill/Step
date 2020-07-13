@@ -33,8 +33,8 @@ namespace Step.Interpreter
     public class ArgumentTypeException : ArgumentException
     {
         /// <inheritdoc />
-        public ArgumentTypeException(object task, Type expected, object actual, object[] arglist) 
-            : base($"Wrong argument type in call to {task}, expected {expected.Name}, got {actual} in {Call.CallSourceText(task, arglist)}")
+        public ArgumentTypeException(object task, Type expected, object actual) 
+            : base($"Wrong argument type in call to {task}, expected {expected.Name}, got {actual}")
         { }
 
         /// <summary>
@@ -43,12 +43,11 @@ namespace Step.Interpreter
         /// <param name="task">Name of task - used in error message if necessary</param>
         /// <param name="expected">Type expected</param>
         /// <param name="actual">Value provided</param>
-        /// <param name="arglist">Full argument list of the task</param>
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
-        public static void Check(object task, Type expected, object actual, object[] arglist)
+        public static void Check(object task, Type expected, object actual)
         {
             if (!expected.IsInstanceOfType(actual) && !(expected == typeof(float) && actual is int))
-                throw new ArgumentTypeException(task, expected, actual, arglist);
+                throw new ArgumentTypeException(task, expected, actual);
         }
     }
 }

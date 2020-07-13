@@ -61,13 +61,12 @@ namespace Step.Interpreter
         /// <param name="taskName">Name of the primitive to which the argument was passed (used for error messages)</param>
         /// <param name="arg">Argument passed to the primitive</param>
         /// <param name="e">Binding environment passed to the primitive</param>
-        /// <param name="arglist">Full argument list to the task</param>
         /// <param name="instantiated">Where to store the value if it is instantiated and of the expected type</param>
         /// <param name="uninstantiated">Where to store the value if it is uninstantiated</param>
         /// <typeparam name="T">Type expected for the argument</typeparam>
         /// <returns>True if argument was instantiated</returns>
         /// <exception cref="ArgumentTypeException">If the argument was instantiated but of the wrong type</exception>
-        public static bool CheckArgument<T>(string taskName, object arg, BindingEnvironment e, object[] arglist, out T instantiated,
+        public static bool CheckArgument<T>(string taskName, object arg, BindingEnvironment e, out T instantiated,
             out LogicVariable uninstantiated)
         {
             var resolved = e.Resolve(arg);
@@ -83,7 +82,7 @@ namespace Step.Interpreter
                 instantiated = resolved1;
                 return true;
             }
-            throw new ArgumentTypeException(taskName, typeof(T), resolved, arglist);
+            throw new ArgumentTypeException(taskName, typeof(T), resolved);
         }
 
         /// <summary>
@@ -121,7 +120,7 @@ namespace Step.Interpreter
         {
             return NamePrimitive<Predicate1>(name, o =>
             {
-                ArgumentTypeException.Check(name, typeof(T), o, new []{ o });
+                ArgumentTypeException.Check(name, typeof(T), o);
                 return realFunction((T) o);
             });
         }
@@ -138,9 +137,8 @@ namespace Step.Interpreter
             return NamePrimitive<Predicate2>(name, 
                 (a1, a2) =>
             {
-                var arglist = new []{ a1, a2 };
-                ArgumentTypeException.Check(name, typeof(T1), a1, arglist);
-                ArgumentTypeException.Check(name, typeof(T2), a2, arglist);
+                ArgumentTypeException.Check(name, typeof(T1), a1);
+                ArgumentTypeException.Check(name, typeof(T2), a2);
                 T1 v1;
                 T2 v2;
                 if (typeof(T1) == typeof(float))
@@ -200,7 +198,7 @@ namespace Step.Interpreter
         {
             return NamePrimitive<DeterministicTextGenerator1>(name, o =>
             {
-                ArgumentTypeException.Check(name, typeof(T), o, new []{ o });
+                ArgumentTypeException.Check(name, typeof(T), o);
                 return realFunction((T) o);
             });
         }
@@ -216,9 +214,8 @@ namespace Step.Interpreter
         {
             return NamePrimitive<DeterministicTextGenerator2>(name, (o1, o2) =>
             {
-                var arglist = new []{ o1, o2 };
-                ArgumentTypeException.Check(name, typeof(T1), o1, arglist);
-                ArgumentTypeException.Check(name, typeof(T2), o2, arglist);
+                ArgumentTypeException.Check(name, typeof(T1), o1);
+                ArgumentTypeException.Check(name, typeof(T2), o2);
                 return realFunction((T1) o1, (T2)o2);
             });
         }
@@ -312,7 +309,7 @@ namespace Step.Interpreter
                         yield return e.Unifications;
                     break;
                 default:
-                    throw new ArgumentTypeException(name, typeof(T), arg, args);
+                    throw new ArgumentTypeException(name, typeof(T), arg);
             }
         }
 
@@ -346,7 +343,7 @@ namespace Step.Interpreter
                             break;
 
                         default:
-                            throw new ArgumentTypeException(name, typeof(T2), arg2, new [] { arg1, arg2 });
+                            throw new ArgumentTypeException(name, typeof(T2), arg2);
                     }
 
                     break;
@@ -371,13 +368,13 @@ namespace Step.Interpreter
                             break;
 
                         default:
-                            throw new ArgumentTypeException(name, typeof(T2), arg2, new []{ arg1, arg2 });
+                            throw new ArgumentTypeException(name, typeof(T2), arg2);
                     }
 
                     break;
 
                 default:
-                    throw new ArgumentTypeException(name, typeof(T1), arg1, new []{ arg1, arg2 });
+                    throw new ArgumentTypeException(name, typeof(T1), arg1);
             }
         }
     }
