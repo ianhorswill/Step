@@ -61,7 +61,7 @@ namespace Tests
         public void SetTest()
         {
             var m = new Module {["X"] = 1};
-            m.AddDefinitions("Test: [X] [Set X 2] [X]");
+            m.AddDefinitions("Test: [X] [set X 2] [X]");
             Assert.AreEqual("1 2", m.Call("Test"));
         }
 
@@ -69,7 +69,7 @@ namespace Tests
         public void SetTest2()
         {
             var m = new Module {["X"] = 1};
-            m.AddDefinitions("Test ?x: [X] [Set X ?x] [X]");
+            m.AddDefinitions("Test ?x: [X] [set X ?x] [X]");
             Assert.AreEqual("1 5", m.Call("Test", 5));
         }
 

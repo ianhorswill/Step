@@ -88,7 +88,7 @@ namespace Tests
                 "TryWrite ?x: ?x",
                 "TryWrite ?x: oops!",
                 "OnceForEach ?generator ?writer: [DoAll ?generator [ExactlyOnce ?writer]]",
-                "Test: [OnceForEach [Generate ?x] [TryWrite ?x]]");
+                "Test: [OnceForEach [Generate ?x]\n    [TryWrite ?x]]");
             Assert.AreEqual("A b c", m.Call("Test"));
         }
 

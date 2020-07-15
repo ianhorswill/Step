@@ -226,34 +226,67 @@ namespace Step.Parser
             }
         }
 
+        private Interpreter.Step firstStep;
+        private Interpreter.Step previousStep;
+
+        private int lineNumber;
+        
+        private void InitParserState()
+        {
+            locals.Clear();
+            referenceCounts.Clear();
+            firstStep = previousStep = null;
+        }
+
+        void AddStep(Interpreter.Step s)
+        {
+            if (firstStep == null)
+                firstStep = previousStep = s;
+            else
+            {
+                // ReSharper disable once PossibleNullReferenceException
+                previousStep.Next = s;
+                previousStep = s;
+            }
+        }
+
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, string path, int lineNumber)
-            ReadDefinition()
+        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain,
+            string path, int lineNumber) ReadDefinition()
         {
-            Interpreter.Step firstStep = null;
-            Interpreter.Step previousStep = null;
-            void AddStep(Interpreter.Step s)
+            InitParserState();
+            SwallowNewlines();
+            lineNumber = expressionStream.LineNumber;
+
+            // READ HEAD
+            var (taskName, pattern) = ReadHead();
+            
+            // READ BODY
+            while (!EndOfDefinition)
             {
-                if (firstStep == null)
-                    firstStep = previousStep = s;
-                else
-                {
-                    // ReSharper disable once PossibleNullReferenceException
-                    previousStep.Next = s;
-                    previousStep = s;
-                }
+                TryProcessTextBlock();
+                TryProcessMentionExpression();
+                TryProcessMethodCall();
             }
+            
+            CheckForWarnings();
 
-            locals.Clear();
-            referenceCounts.Clear();
-
+            // Eat end token
+            if (EndOfDefinition && !end)
+                Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            var lineNumber = expressionStream.LineNumber;
-
-            // Process the head
+            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep, expressionStream.FilePath, lineNumber);
+        }
+        
+        /// <summary>
+        /// Read the task name and argument pattern
+        /// </summary>
+        private (string taskName, List<object> pattern) ReadHead()
+        {
+            // Get the task name
             var taskName = Get() as string;
             if (taskName == null)
                 throw new SyntaxError("Bracketed expression at start of definition");
@@ -265,128 +298,169 @@ namespace Step.Parser
                 var argPattern = Get();
                 if (argPattern is object[] call)
                 {
-                    // it has an embedded predicate
+                    // It has an embedded predicate
                     pattern.Add(call[1]);
-                    // Add the predicate to the body
-                    AddStep(new Call(Canonicalize(call[0]), new []{ Canonicalize(call[1])}, null));
+                    AddStep(new Call(Canonicalize(call[0]), new[] {Canonicalize(call[1])}, null));
                 }
                 else
                     pattern.Add(argPattern);
             }
-            Get(); // Swallow the colon
-            
+
             // Change variable references in pattern to LocalVariableNames
             Canonicalize(pattern);
+
+            // SKIP COLON
+            Get();
 
             multiLine = EndOfLineToken;
             if (multiLine)
                 Get();  // Swallow the end of line
-            
-            // Read the body
-            while (!EndOfDefinition)
+
+            return (taskName, pattern);
+        }
+        
+        /// <summary>
+        /// If we're looking at a method call, compile it.
+        /// </summary>
+        private void TryProcessMethodCall()
+        {
+            if (EndOfDefinition || !(Peek is object[] expression)) 
+                return;
+
+            // It's a call
+            var targetName = expression[0] as string;
+            switch (targetName)
             {
-                tokensToEmit.Clear();
-                while (!EndOfDefinition 
-                       && Peek is string
-                       && !IsLocalVariableName(Peek))
-                    if (!EndOfLineToken)
-                        tokensToEmit.Add((string)Get());
-                    else
-                    {
-                        Get(); // Skip newline
-                        if (EndOfLineToken)
-                        {
-                            // It's two consecutive newline tokens
-                            tokensToEmit.Add((string)Get());
-                        }
-                    }
+                case null:
+                    throw new SyntaxError($"Invalid task name {expression[0]} in call.");
 
-                if (tokensToEmit.Count > 0) 
-                    AddStep(new EmitStep(tokensToEmit.ToArray(), null));
-
-                if (!EndOfDefinition && IsLocalVariableName(Peek))
-                {
-                    var local = GetLocal((string)Get());
-                    if (Peek.Equals("/"))
-                    {
-                        while (Peek.Equals("/"))
-                        {
-                            Get(); // Swallow slash
-                            var t = Get();
-                            if (!(t is string targetName))
-                                throw new SyntaxError($"Invalid method name after the /: {local}/{t}");
-                            var target = IsLocalVariableName(targetName)
-                                ? (object) GetLocal(targetName)
-                                : GlobalVariableName.Named(targetName);
-                            if (Peek.Equals("/"))
-                            {
-                                var tempVar = GetFreshLocal("temp");
-                                // There's another / coming so this is a function call
-                                AddStep(new Call(target, new object[] { local, tempVar }, null));
-                                local = tempVar;
-                            }
-                            else
-                            {
-                                AddStep(new Call(target, new object[] {local}, null));
-                                while (Peek.Equals("+"))
-                                {
-                                    Get(); // Swallow slash
-                                    var t2 = Get();
-                                    if (!(t2 is string targetName2))
-                                        throw new SyntaxError($"Invalid method name after the /: {local}/{t}");
-                                    var target2 = IsLocalVariableName(targetName2)
-                                        ? (object) GetLocal(targetName2)
-                                        : GlobalVariableName.Named(targetName2);
-                                    AddStep(new Call(target2, new object[] {local}, null));
-                                }
-                            }
-                        }
-                    }
-                    else
-                        AddStep(new Call(local, new object[0], null));
-                }
-
-                if (!EndOfDefinition && Peek is object[] expression)
-                {
-                    // It's a call
-                    var targetName = expression[0] as string;
-                    if (targetName == null)
-                        throw new SyntaxError($"Invalid task name {expression[0]} in call.");
-                    if (targetName == "Set")
-                    {
-                        // This is a set expression
-                        if (expression.Length != 3)
-                            throw new ArgumentCountException("Set", 2, expression.Skip(1).ToArray());
-                        var name = expression[1] as string;
-                        if (name == null || !IsGlobalVariableName(name))
-                            throw new SyntaxError($"A Set command can only update a GlobalVariable; it can't update {expression[1]}");
-                        AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
-                    }
-                    else
-                    {
-                        // This is a call
-                        var target = IsLocalVariableName(targetName)
-                            ? (object) GetLocal(targetName)
-                            : GlobalVariableName.Named(targetName);
-                        var args = expression.Skip(1).ToArray();
-                        Canonicalize(args);
-                        AddStep(new Call(target, args, null));
-                    }
-                    Get(); // Skip over the expression we just Peeked
-                }
+                case "set":
+                    if (expression.Length != 3)
+                        throw new ArgumentCountException("set", 2, expression.Skip(1).ToArray());
+                    var name = expression[1] as string;
+                    if (name == null || !IsGlobalVariableName(name))
+                        throw new SyntaxError(
+                            $"A Set command can only update a GlobalVariable; it can't update {expression[1]}");
+                    AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
+                    break;
+                    
+                default:
+                    // This is a call
+                    var target = IsLocalVariableName(targetName)
+                        ? (object) GetLocal(targetName)
+                        : GlobalVariableName.Named(targetName);
+                    var args = expression.Skip(1).Where(token => !token.Equals("\n")).ToArray();
+                    Canonicalize(args);
+                    AddStep(new Call(target, args, null));
+                    break;
             }
 
-            if (EndOfDefinition && !end)
-                Get(); // Skip over the delimiter
+            Get(); // Skip over the expression we just Peeked
+        }
 
-            SwallowNewlines();
+        /// <summary>
+        /// If we're looking at a mention expression (?x, ?x/Foo, ?x/Foo/Bar, etc.), compile it.
+        /// </summary>
+        private void TryProcessMentionExpression()
+        {
+            if (EndOfDefinition || !IsLocalVariableName(Peek))
+                return;
 
+            var local = GetLocal((string) Get());
+
+            if (!Peek.Equals("/"))
+            {
+                // This is a simple variable mention
+                AddStep(new Call(local, new object[0], null));
+                return;
+            }
+
+            ReadComplexMentionExpression(local);
+        }
+
+        /// <summary>
+        /// Read an expression of the form ?local/STUFF
+        /// Called after ?local has already been read.
+        /// </summary>
+        /// <param name="local">The variable before the /</param>
+        private void ReadComplexMentionExpression(LocalVariableName local)
+        {
+// This is a complex "/" expression
+            while (Peek.Equals("/"))
+            {
+                Get(); // Swallow slash
+                var t = Get();
+                if (!(t is string targetName))
+                    throw new SyntaxError($"Invalid method name after the /: {local}/{t}");
+                var target = IsLocalVariableName(targetName)
+                    ? (object) GetLocal(targetName)
+                    : GlobalVariableName.Named(targetName);
+                if (Peek.Equals("/"))
+                {
+                    var tempVar = GetFreshLocal("temp");
+                    // There's another / coming so this is a function call
+                    AddStep(new Call(target, new object[] {local, tempVar}, null));
+                    local = tempVar;
+                }
+                else
+                {
+                    ReadMentionExpressionTail(local, target);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Called after the last "/" of a complex mention expression.
+        /// </summary>
+        /// <param name="local">Result of the expression from before the last "/"</param>
+        /// <param name="targetVar">Task to call on local</param>
+        /// <param name="t"></param>
+        private void ReadMentionExpressionTail(LocalVariableName local, object targetVar)
+        {
+            AddStep(new Call(targetVar, new object[] {local}, null));
+            while (Peek.Equals("+"))
+            {
+                Get(); // Swallow slash
+                var targetToken = Get();
+                if (!(targetToken is string targetName))
+                    throw new SyntaxError($"Invalid method name after the /: {local}/{targetToken}");
+                var target = IsLocalVariableName(targetName)
+                    ? (object) GetLocal(targetName)
+                    : GlobalVariableName.Named(targetName);
+                AddStep(new Call(target, new object[] {local}, null));
+            }
+        }
+
+        /// <summary>
+        /// If this is a sequence of fixed text tokens, compile them into an EmitStep.
+        /// </summary>
+        private void TryProcessTextBlock()
+        {
+            tokensToEmit.Clear();
+            while (!EndOfDefinition && Peek is string && !IsLocalVariableName(Peek))
+                if (EndOfLineToken)
+                {
+                    // Skip unless double newline
+                    Get();
+                    if (EndOfLineToken)
+                        tokensToEmit.Add((string) Get());
+                }
+                else
+                    tokensToEmit.Add((string) Get());
+
+            if (tokensToEmit.Count > 0)
+                AddStep(new EmitStep(tokensToEmit.ToArray(), null));
+        }
+
+        /// <summary>
+        /// Issue warnings for any singleton variables
+        /// </summary>
+        private void CheckForWarnings()
+        {
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !locals[i].Name.StartsWith("?"))
                     Module.AddWarning(
                         $"{Path.GetFileName(expressionStream.FilePath)}:{lineNumber} Singleton variable {locals[i].Name}");
-
-            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep, expressionStream.FilePath, lineNumber);
         }
     }
 }

@@ -195,10 +195,12 @@ namespace Step
         /// <summary>
         /// Calls the named task with the specified arguments and returns the text it generates
         /// </summary>
+        /// <param name="dynamicState">Global variable bindings to use in the call, if any.</param>
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
-        /// <returns>Generated text as one big string, or null if the task failed.</returns>
-        public string Call(string taskName, params object[] args)
+        /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
+        public (string output, BindingList<GlobalVariableName> newDynamicState) Call(
+            BindingList<GlobalVariableName> dynamicState, string taskName, params object[] args)
         {
             var maybeTask = this[GlobalVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
@@ -208,10 +210,24 @@ namespace Step
             var env = new BindingEnvironment(this, null);
 
             string result = null;
+            BindingList<GlobalVariableName> newState = null;
+
             foreach (var method in t.Methods)
-                if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; return true; }))
-                    return result;
-            return null;
+                if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; newState = s; return true; }))
+                    return (result, newState);
+            return (null, null);
+        }
+
+        /// <summary>
+        /// Calls the named task with the specified arguments and returns the text it generates
+        /// </summary>
+        /// <param name="taskName">Name of the task</param>
+        /// <param name="args">Arguments to task, if any</param>
+        /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
+        public string Call(string taskName, params object[] args)
+        {
+            var (output, _) = Call(null, taskName, args);
+            return output;
         }
 
         /// <summary>
@@ -297,21 +313,25 @@ namespace Step
 
         private bool TaskDefined(GlobalVariableName globalVariableName)
         {
-            {
-                var value = Lookup(globalVariableName, false);
-                if (PrimitiveTask.SurrogateTable.TryGetValue(value, out var implementation))
-                    value = implementation;
+            if (globalVariableName == null)
+                return false;
 
-                switch (value)
-                {
-                    case null:
-                        return false;
-                    case CompoundTask _:
-                    case Delegate _:
-                        return true;
-                    default:
-                        return false;
-                }
+            var value = Lookup(globalVariableName, false);
+            if (value == null)
+                return false;
+
+            if (PrimitiveTask.SurrogateTable.TryGetValue(value, out var implementation))
+                value = implementation;
+
+            switch (value)
+            {
+                case null:
+                    return false;
+                case CompoundTask _:
+                case Delegate _:
+                    return true;
+                default:
+                    return false;
             }
         }
 

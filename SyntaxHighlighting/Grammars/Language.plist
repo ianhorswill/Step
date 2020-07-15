@@ -26,7 +26,7 @@
       <key>name</key>
       <string>keyword.other</string>
       <key>match</key>
-      <string>Set</string>
+      <string>\bset\b</string>
     </dict>
     <dict>
       <key>name</key>
