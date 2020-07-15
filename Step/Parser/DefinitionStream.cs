@@ -200,6 +200,19 @@ namespace Step.Parser
                 }
                 if (IsGlobalVariableName(s))
                     return GlobalVariableName.Named(s);
+
+                switch (s)
+                {
+                    case "null":
+                        return null;
+                    case "empty":
+                        return Cons.Empty;
+                    case "true":
+                        return true;
+                    case "false":
+                        return false;
+                }
+
                 if (int.TryParse(s, out var result))
                     return result;
             }
@@ -333,6 +346,14 @@ namespace Step.Parser
             {
                 case null:
                     throw new SyntaxError($"Invalid task name {expression[0]} in call.");
+
+                case "add":
+                    if (expression.Length != 3)
+                        throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
+                    if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
+                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}");
+                    AddStep(new AddStep(expression[1], GlobalVariableName.Named(vName), null));
+                    break;
 
                 case "set":
                     if (expression.Length != 3)

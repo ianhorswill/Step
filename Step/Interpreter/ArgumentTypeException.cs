@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 
 namespace Step.Interpreter
 {
@@ -34,7 +35,7 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentTypeException(object task, Type expected, object actual, object[] arglist) 
-            : base($"Wrong argument type in call to {task}, expected {expected.Name}, got {actual} in {Call.CallSourceText(task, arglist)}")
+            : base($"Wrong argument type in call to {task}, expected {expected.Name}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
         { }
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace Step.Interpreter
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
         public static void Check(object task, Type expected, object actual, object[] arglist)
         {
-            if (!expected.IsInstanceOfType(actual) && !(expected == typeof(float) && actual is int))
+            if (actual == null || (!expected.IsInstanceOfType(actual) && !(expected == typeof(float) && actual is int)))
                 throw new ArgumentTypeException(task, expected, actual, arglist);
         }
     }

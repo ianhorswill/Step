@@ -199,23 +199,23 @@ namespace Step
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
-        public (string output, BindingList<GlobalVariableName> newDynamicState) Call(
-            BindingList<GlobalVariableName> dynamicState, string taskName, params object[] args)
+        public (string output, DynamicState newDynamicState) Call(
+            DynamicState dynamicState, string taskName, params object[] args)
         {
             var maybeTask = this[GlobalVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
             var output = PartialOutput.NewEmpty();
-            var env = new BindingEnvironment(this, null);
+            var env = new BindingEnvironment(this, null, null, dynamicState.Bindings);
 
             string result = null;
             BindingList<GlobalVariableName> newState = null;
 
             foreach (var method in t.Methods)
                 if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; newState = s; return true; }))
-                    return (result, newState);
-            return (null, null);
+                    return (result, new DynamicState(newState));
+            return (null, new DynamicState(null));
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace Step
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
         public string Call(string taskName, params object[] args)
         {
-            var (output, _) = Call(null, taskName, args);
+            var (output, _) = Call(new DynamicState(null), taskName, args);
             return output;
         }
 

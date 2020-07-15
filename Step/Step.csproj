@@ -42,6 +42,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cons.cs" />
+    <Compile Include="DynamicState.cs" />
+    <Compile Include="Interpreter\AddStep.cs" />
     <Compile Include="Interpreter\ArgumentCountException.cs" />
     <Compile Include="Interpreter\ArgumentTypeException.cs" />
     <Compile Include="Interpreter\ArgumentInstantiationException.cs" />

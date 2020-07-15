@@ -82,7 +82,7 @@ namespace Step.Interpreter
             : this(e.Module, e.Frame, e.Unifications, new BindingList<GlobalVariableName>(v, newValue, e.DynamicState))
         { }
 
-        private BindingEnvironment(Module module, MethodCallFrame frame,
+        internal BindingEnvironment(Module module, MethodCallFrame frame,
             BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
         {
             Module = module;

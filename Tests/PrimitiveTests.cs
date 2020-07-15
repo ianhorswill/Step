@@ -111,5 +111,14 @@ namespace Tests
             }
             Assert.AreEqual("Wrong number of arguments for <, expected 2, got 3: [< \"=\" 1 2]", result);
         }
+
+        [TestMethod]
+        public void ListTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test: [set List empty] [PrintList] [add 1 List] [PrintList] [add 2 List] [PrintList]",
+                "PrintList: [DoAll [Member ?e List] [Write ?e]]");
+            Assert.AreEqual("1 2 1", m.Call("Test"));
+        }
     }
 }

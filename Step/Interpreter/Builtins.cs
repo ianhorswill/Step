@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using static Step.Interpreter.PrimitiveTask;
@@ -37,6 +38,8 @@ namespace Step.Interpreter
     internal static class Builtins
     {
         private static readonly string[] NewLine = { "\n" };
+        private static readonly object[] EmptyArray = new object[0];
+
         /// <summary>
         /// Add the built-in primitives to the global module.
         /// </summary>
@@ -60,6 +63,12 @@ namespace Step.Interpreter
             g["Throw"] = (PredicateN) Throw;
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
             g["Write"] = (DeterministicTextGenerator1) (o => new []{ o.ToString() });
+            g["Member"] = GeneralRelation<object, IEnumerable<object>>(
+                "Member",
+                (member, collection) => collection != null && collection.Contains(member),
+                null,
+                collection => collection ?? EmptyArray,
+                null);
 
             HigherOrderBuiltins.DefineGlobals();
         }
