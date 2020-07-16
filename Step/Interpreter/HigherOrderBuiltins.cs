@@ -84,35 +84,51 @@ namespace Step.Interpreter
             return k(resultOutput, env.Unifications, dynamicState);
         }
 
-        private static bool Once(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool Once(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
         {
-            try
-            {
-                StepChainFromBody("Once", args).Try(o, e, NonLocalExit.Throw);
-            }
-            catch (NonLocalExit x)
-            {
-                return k(x.Output, x.Bindings, x.DynamicState);
-            }
+            PartialOutput finalOutput = output;
+            BindingList<LogicVariable> finalBindings = null;
+            BindingList<GlobalVariableName> finalDynamicState = null;
+            bool success = false;
 
-            return false;
+            StepChainFromBody("Once", args).Try(output, env,
+                (o, u, d) =>
+                {
+                    success = true;
+                    finalOutput = o;
+                    finalBindings = u;
+                    finalDynamicState = d;
+                    return true;
+                });
+
+            return success && k(finalOutput, finalBindings, finalDynamicState);
         }
 
-        private static bool ExactlyOnce(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool ExactlyOnce(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
         {
             ArgumentCountException.Check("ExactlyOnce", 1, args);
-            var chain = StepChainFromBody("Once", args);
-            try
-            {
-                chain.Try(o, e, NonLocalExit.Throw);
-            }
-            catch (NonLocalExit x)
-            {
-                return k(x.Output, x.Bindings, x.DynamicState);
-            }
+            PartialOutput finalOutput = output;
+            BindingList<LogicVariable> finalBindings = null;
+            BindingList<GlobalVariableName> finalDynamicState = null;
+            bool failure = true;
 
-            var failedCall = (Call) chain;
-            throw new CallFailedException(failedCall.Task, e.ResolveList(failedCall.Arglist));
+            var chain = StepChainFromBody("ExactlyOnce", args);
+            chain.Try(output, env,
+                (o, u, d) =>
+                {
+                    failure = false;
+                    finalOutput = o;
+                    finalBindings = u;
+                    finalDynamicState = d;
+                    return true;
+                });
+
+            if (failure)
+            {
+                var failedCall = (Call)chain;
+                throw new CallFailedException(env.Resolve(failedCall.Task), env.ResolveList(failedCall.Arglist));
+            }
+            return k(finalOutput, finalBindings, finalDynamicState);
         }
 
         private static bool Max(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
