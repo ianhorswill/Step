@@ -16,16 +16,10 @@
         {
             var elt = e.Resolve(element);
             var listValue = e.Resolve(listVariable);
-            Cons list = null;
 
-            if (listValue != null)
-            {
-                if (listValue is Cons c)
-                    list = c;
-                else
-                    throw new ArgumentTypeException("add", typeof(Cons), listValue,
-                        new[] {"add", elt, listValue});
-            }
+            if (!(listValue is Cons list))
+                throw new ArgumentTypeException("add", typeof(Cons), listValue,
+                    new[] {"add", elt, listValue});
 
             return Continue(output,
                 new BindingEnvironment(e,

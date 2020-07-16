@@ -46,6 +46,17 @@ namespace Tests
         }
 
         [TestMethod]
+        public void ForEachTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("Generate a:",
+                "Generate b:",
+                "Generate c:",
+                "Test: [ForEach [Generate ?x] [Write ?x]]");
+            Assert.AreEqual("A b c", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void OnceTest()
         {
             var m = new Module();

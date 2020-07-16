@@ -120,5 +120,15 @@ namespace Tests
                 "PrintList: [DoAll [Member ?e List] [Write ?e]]");
             Assert.AreEqual("1 2 1", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void ListTest2()
+        {
+            var m = new Module();
+            m.AddDefinitions("Add ?x: [add ?x List] [PrintList]",
+                "PrintList: [DoAll [Member ?e List] [Write ?e]]",
+                "Test: [set List empty] [Add 1] [Add 2] [Add 3]");
+            Assert.AreEqual("1 2 1 3 2 1", m.Call("Test"));
+        }
     }
 }

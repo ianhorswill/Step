@@ -40,15 +40,52 @@ namespace Step.Interpreter
             var g = Module.Global;
 
             g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
+            g["ForEach"] = (MetaTask) ForEach;
             g["Once"] = (MetaTask) Once;
             g["ExactlyOnce"] = (MetaTask) ExactlyOnce;
             g["Max"] = (MetaTask) Max;
             g["Min"] = (MetaTask) Min;
         }
 
-        private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e)
+        private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e) 
+            => AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings);
+
+        private static bool ForEach(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
         {
-            return AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings);
+            if (args.Length < 2)
+                throw new ArgumentCountException("ForEach", 2, args);
+
+            var results = new List<string[]>();
+            var producer = args[0];
+            var producerChain = StepChainFromBody("ForEach", producer);
+            var consumer = args.Skip(1).ToArray();
+            var consumerChain = StepChainFromBody("ForEach", consumer);
+
+            var dynamicState = env.DynamicState;
+
+            producerChain.Try(output, env, (o, u, d) =>
+            {
+                // We've got a solution to the producer in u.
+                // So run the consumer once with u but not d.
+                var initialLength = o.Length;
+                consumerChain.Try(output,
+                    new BindingEnvironment(env, u, dynamicState),
+                    (o2, u2, d2) =>
+                    {
+                        // Save modifications to dynamic state, throw away binding state
+                        dynamicState = d2;
+                        var chunk = new string[o2.Length - initialLength];
+                        for (var i = initialLength; i < o2.Length; i++)
+                            chunk[i - initialLength] = o.Buffer[i];
+                        results.Add(chunk);
+                        // Accept this one solution to consumer; don't backtrack it.
+                        return true;
+                    });
+                // Backtrack to generate the next solution for producer
+                return false;
+            });
+
+            return k(output.Append(results.SelectMany(strings => strings)), env.Unifications, dynamicState);
         }
 
         private static bool Once(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
@@ -251,7 +288,7 @@ namespace Step.Interpreter
             StepChainFromBody(callingTaskName, body).Try(o, e, k);
         }
 
-        internal static Step StepChainFromBody(string callingTaskName, object[] body)
+        internal static Step StepChainFromBody(string callingTaskName, params object[] body)
         {
             Step chain = null;
             for (var i = body.Length - 1; i >= 0; i--)

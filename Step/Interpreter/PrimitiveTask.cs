@@ -292,8 +292,7 @@ namespace Step.Interpreter
                 i => new[] {f(i)},
                 (fInverse == null) ? (Func<TOut, IEnumerable<TIn>>)null : o => new[] {fInverse(o)},
                 null);
-
-
+        
         private static IEnumerable<BindingList<LogicVariable>> UnaryPredicateTrampoline<T>(string name, Func<T, bool> inMode,
             Func<IEnumerable<T>> outMode, object[] args, BindingEnvironment e)
         {

@@ -79,6 +79,12 @@ namespace Step.Interpreter
 
             var arglist = env.ResolveList(Arglist);
 
+            return CallTask(output, env, k, target, arglist, originalTarget);
+        }
+
+        private bool CallTask(PartialOutput output, BindingEnvironment env, Continuation k, object target, object[] arglist,
+            object originalTarget)
+        {
             switch (target)
             {
                 case CompoundTask p:
@@ -157,11 +163,12 @@ namespace Step.Interpreter
                     {
                         var hook = env.Module.FindTask(MentionHook, 1, false);
                         if (hook != null)
-                            return new Call(hook, new []{ target }, Next).Try(output, env, k);
+                            return new Call(hook, new[] {target}, Next).Try(output, env, k);
                         if (target is string[] text)
                             return Continue(output.Append(text), env, k);
                         return Continue(output.Append(target.ToString()), env, k);
                     }
+
                     throw new ArgumentException($"Unknown task {target} in call");
             }
         }

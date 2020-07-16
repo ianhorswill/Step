@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Step
 {
@@ -39,6 +40,29 @@ namespace Step
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            var b = new StringBuilder();
+            b.Append('(');
+
+            var count = 0;
+            foreach (var e in this)
+            {
+                if (count == 10)
+                {
+                    b.Append(" ...");
+                    break;
+                }
+                if (count++ != 0)
+                    b.Append(' ');
+                b.Append(e);
+            }
+
+            b.Append(')');
+            return b.ToString();
         }
     }
 }

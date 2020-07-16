@@ -352,7 +352,7 @@ namespace Step.Parser
                         throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
                         throw new SyntaxError($"Invalid global variable name in add: {expression[2]}");
-                    AddStep(new AddStep(expression[1], GlobalVariableName.Named(vName), null));
+                    AddStep(new AddStep(Canonicalize(expression[1]), GlobalVariableName.Named(vName), null));
                     break;
 
                 case "set":
