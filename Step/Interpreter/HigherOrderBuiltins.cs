@@ -55,29 +55,25 @@ namespace Step.Interpreter
             if (args.Length < 2)
                 throw new ArgumentCountException("ForEach", 2, args);
 
-            var results = new List<string[]>();
             var producer = args[0];
             var producerChain = StepChainFromBody("ForEach", producer);
             var consumer = args.Skip(1).ToArray();
             var consumerChain = StepChainFromBody("ForEach", consumer);
 
             var dynamicState = env.DynamicState;
+            var resultOutput = output;
 
-            producerChain.Try(output, env, (o, u, d) =>
+            producerChain.Try(resultOutput, env, (o, u, d) =>
             {
                 // We've got a solution to the producer in u.
-                // So run the consumer once with u but not d.
-                var initialLength = o.Length;
-                consumerChain.Try(output,
+                // So run the consumer once with u but not d or o.
+                consumerChain.Try(resultOutput,
                     new BindingEnvironment(env, u, dynamicState),
                     (o2, u2, d2) =>
                     {
-                        // Save modifications to dynamic state, throw away binding state
+                        // Save modifications to dynamic state, output; throw away binding state
                         dynamicState = d2;
-                        var chunk = new string[o2.Length - initialLength];
-                        for (var i = initialLength; i < o2.Length; i++)
-                            chunk[i - initialLength] = o.Buffer[i];
-                        results.Add(chunk);
+                        resultOutput = o2;
                         // Accept this one solution to consumer; don't backtrack it.
                         return true;
                     });
@@ -85,7 +81,7 @@ namespace Step.Interpreter
                 return false;
             });
 
-            return k(output.Append(results.SelectMany(strings => strings)), env.Unifications, dynamicState);
+            return k(resultOutput, env.Unifications, dynamicState);
         }
 
         private static bool Once(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
