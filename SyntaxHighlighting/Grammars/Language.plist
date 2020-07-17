@@ -20,13 +20,43 @@
         <key>name</key>
         <string>keyword.other</string>
         <key>match</key>
-        <string>\?[a-zA-Z/]+</string>
+        <string>\?[a-zA-Z/\+]+</string>
       </dict>
       <dict>
         <key>name</key>
         <string>keyword.control</string>
         <key>match</key>
         <string>\[end\]</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.control</string>
+        <key>match</key>
+        <string>\[or\]</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.control</string>
+        <key>match</key>
+        <string>\[else\]</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.control</string>
+        <key>match</key>
+        <string>\[randomly\]</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.control</string>
+        <key>match</key>
+        <string>\[firstOf\]</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.control</string>
+        <key>match</key>
+        <string>\[case [^\]]+\]</string>
       </dict>
       <dict>
         <key>name</key>

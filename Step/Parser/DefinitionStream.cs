@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -126,7 +127,21 @@ namespace Step.Parser
         /// <summary>
         /// True if we're at an "[end]" expression
         /// </summary>
-        private bool ExplicitEndToken => Peek is object[] array && array.Length == 1 && array[0].Equals("end");
+        private bool ExplicitEndToken => KeywordMarker("end");
+
+        private bool KeywordMarker(string keyword) =>
+            Peek is object[] array && array.Length == 1 && array[0].Equals(keyword);
+
+        private bool OneOfKeywordMarkers(params string[] keywords) =>
+            Peek is object[] array && array.Length == 1 && array[0] is string k && Array.IndexOf(keywords, k) >= 0;
+
+        private readonly string[] keywordMarkers = new[] {"end", "or", "else" };
+        private bool AtKeywordMarker => OneOfKeywordMarkers(keywordMarkers);
+
+        private readonly string[] caseBranchKeywords = new[] {"end", "or", "else" };
+        private bool EndCaseBranch() => OneOfKeywordMarkers(caseBranchKeywords);
+
+        private bool ElseToken => KeywordMarker("else");
         #endregion
 
         #region Source-language variables     
@@ -239,29 +254,40 @@ namespace Step.Parser
             }
         }
 
-        private Interpreter.Step firstStep;
-        private Interpreter.Step previousStep;
-
         private int lineNumber;
+
         
         private void InitParserState()
         {
             locals.Clear();
             referenceCounts.Clear();
-            firstStep = previousStep = null;
+            chainBuilder.Clear();
         }
 
-        void AddStep(Interpreter.Step s)
+        class ChainBuilder
         {
-            if (firstStep == null)
-                firstStep = previousStep = s;
-            else
+            public Interpreter.Step FirstStep;
+            private Interpreter.Step previousStep;
+
+            public void AddStep(Interpreter.Step s)
             {
-                // ReSharper disable once PossibleNullReferenceException
-                previousStep.Next = s;
-                previousStep = s;
+                if (FirstStep == null)
+                    FirstStep = previousStep = s;
+                else
+                {
+                    // ReSharper disable once PossibleNullReferenceException
+                    previousStep.Next = s;
+                    previousStep = s;
+                }
+            }
+
+            public void Clear()
+            {
+                FirstStep = previousStep = null;
             }
         }
+
+        private readonly ChainBuilder chainBuilder = new ChainBuilder();
 
         /// <summary>
         /// Read and parse the next method definition
@@ -273,16 +299,9 @@ namespace Step.Parser
             SwallowNewlines();
             lineNumber = expressionStream.LineNumber;
 
-            // READ HEAD
             var (taskName, pattern) = ReadHead();
-            
-            // READ BODY
-            while (!EndOfDefinition)
-            {
-                TryProcessTextBlock();
-                TryProcessMentionExpression();
-                TryProcessMethodCall();
-            }
+
+            ReadBody(chainBuilder, () => EndOfDefinition);
             
             CheckForWarnings();
 
@@ -291,7 +310,7 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), firstStep, expressionStream.FilePath, lineNumber);
+            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, expressionStream.FilePath, lineNumber);
         }
         
         /// <summary>
@@ -313,7 +332,7 @@ namespace Step.Parser
                 {
                     // It has an embedded predicate
                     pattern.Add(call[1]);
-                    AddStep(new Call(Canonicalize(call[0]), new[] {Canonicalize(call[1])}, null));
+                    chainBuilder.AddStep(new Call(Canonicalize(call[0]), new[] {Canonicalize(call[1])}, null));
                 }
                 else
                     pattern.Add(argPattern);
@@ -331,13 +350,23 @@ namespace Step.Parser
 
             return (taskName, pattern);
         }
+
+        private void ReadBody(ChainBuilder chain, Func<bool> endPredicate)
+        {
+            while (!endPredicate())
+            {
+                TryProcessTextBlock(chain);
+                TryProcessMentionExpression(chain);
+                TryProcessMethodCall(chain);
+            }
+        }
         
         /// <summary>
         /// If we're looking at a method call, compile it.
         /// </summary>
-        private void TryProcessMethodCall()
+        private void TryProcessMethodCall(ChainBuilder chain)
         {
-            if (EndOfDefinition || !(Peek is object[] expression)) 
+            if (AtKeywordMarker || !(Peek is object[] expression)) 
                 return;
 
             // It's a call
@@ -352,7 +381,20 @@ namespace Step.Parser
                         throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
                         throw new SyntaxError($"Invalid global variable name in add: {expression[2]}");
-                    AddStep(new AddStep(Canonicalize(expression[1]), GlobalVariableName.Named(vName), null));
+                    chain.AddStep(new AddStep(Canonicalize(expression[1]), GlobalVariableName.Named(vName), null));
+                    break;
+
+                case "case":
+                    if (expression.Length != 2)
+                        throw new ArgumentCountException("case", 1, expression.Skip(1).ToArray());
+                    chain.AddStep(ReadCase(Canonicalize(expression[1])));
+                    break;
+
+                case "firstOf":
+                case "randomly":
+                    if (expression.Length != 1)
+                        throw new ArgumentCountException(targetName, 1, expression.Skip(1).ToArray());
+                    chain.AddStep(ReadBranches(targetName));
                     break;
 
                 case "set":
@@ -362,7 +404,7 @@ namespace Step.Parser
                     if (name == null || !IsGlobalVariableName(name))
                         throw new SyntaxError(
                             $"A Set command can only update a GlobalVariable; it can't update {expression[1]}");
-                    AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
+                    chain.AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
                     break;
                     
                 default:
@@ -372,7 +414,7 @@ namespace Step.Parser
                         : GlobalVariableName.Named(targetName);
                     var args = expression.Skip(1).Where(token => !token.Equals("\n")).ToArray();
                     Canonicalize(args);
-                    AddStep(new Call(target, args, null));
+                    chain.AddStep(new Call(target, args, null));
                     break;
             }
 
@@ -380,9 +422,58 @@ namespace Step.Parser
         }
 
         /// <summary>
+        /// Read a new CompoundTask that takes one argument, that corresponds to the body of an inline case expression.
+        /// </summary>
+        /// <returns></returns>
+        private BranchStep ReadBranches(string type)
+        {
+            var chains = new List<Interpreter.Step>();
+            var chain = new ChainBuilder();
+            while (!ExplicitEndToken)
+            {
+                Get(); // Skip keyword marker
+                chain.Clear();
+                ReadBody(chain, EndCaseBranch);
+                chains.Add(chain.FirstStep);
+            }
+
+            return new BranchStep(type, chains.ToArray(), null, type == "randomly");
+        }
+
+        /// <summary>
+        /// Read a new CompoundTask that takes one argument, that corresponds to the body of an inline case expression.
+        /// </summary>
+        /// <returns></returns>
+        private BranchStep ReadCase(object controlVar)
+        {
+            var chains = new List<Interpreter.Step>();
+            var chain = new ChainBuilder();
+            while (!ExplicitEndToken)
+            {
+                chain.Clear();
+                if (!ElseToken)
+                {
+                    Get(); // Skip keyword
+                    var guard = Get();
+                    var colon = Get();
+                    if (!colon.Equals(":"))
+                        throw new SyntaxError($"Unexpected token {colon} after test in case expression");
+                    chain.AddStep(new Call(Canonicalize(guard), new[] {controlVar}, null));
+                }
+                else 
+                    Get(); // Skip keyword
+
+                ReadBody(chain, EndCaseBranch);
+                chains.Add(chain.FirstStep);
+            }
+
+            return new BranchStep("case", chains.ToArray(), null, false);
+        }
+
+        /// <summary>
         /// If we're looking at a mention expression (?x, ?x/Foo, ?x/Foo/Bar, etc.), compile it.
         /// </summary>
-        private void TryProcessMentionExpression()
+        private void TryProcessMentionExpression(ChainBuilder chain)
         {
             if (EndOfDefinition || !IsLocalVariableName(Peek))
                 return;
@@ -392,19 +483,20 @@ namespace Step.Parser
             if (!Peek.Equals("/"))
             {
                 // This is a simple variable mention
-                AddStep(new Call(local, new object[0], null));
+                chain.AddStep(new Call(local, new object[0], null));
                 return;
             }
 
-            ReadComplexMentionExpression(local);
+            ReadComplexMentionExpression(chain, local);
         }
 
         /// <summary>
         /// Read an expression of the form ?local/STUFF
         /// Called after ?local has already been read.
         /// </summary>
+        /// <param name="chain">Chain to add to</param>
         /// <param name="local">The variable before the /</param>
-        private void ReadComplexMentionExpression(LocalVariableName local)
+        private void ReadComplexMentionExpression(ChainBuilder chain, LocalVariableName local)
         {
 // This is a complex "/" expression
             while (Peek.Equals("/"))
@@ -420,12 +512,12 @@ namespace Step.Parser
                 {
                     var tempVar = GetFreshLocal("temp");
                     // There's another / coming so this is a function call
-                    AddStep(new Call(target, new object[] {local, tempVar}, null));
+                    chain.AddStep(new Call(target, new object[] {local, tempVar}, null));
                     local = tempVar;
                 }
                 else
                 {
-                    ReadMentionExpressionTail(local, target);
+                    ReadMentionExpressionTail(chain, local, target);
                 }
             }
         }
@@ -433,12 +525,12 @@ namespace Step.Parser
         /// <summary>
         /// Called after the last "/" of a complex mention expression.
         /// </summary>
+        /// <param name="chain">Chain to add to</param>
         /// <param name="local">Result of the expression from before the last "/"</param>
         /// <param name="targetVar">Task to call on local</param>
-        /// <param name="t"></param>
-        private void ReadMentionExpressionTail(LocalVariableName local, object targetVar)
+        private void ReadMentionExpressionTail(ChainBuilder chain, LocalVariableName local, object targetVar)
         {
-            AddStep(new Call(targetVar, new object[] {local}, null));
+            chain.AddStep(new Call(targetVar, new object[] {local}, null));
             while (Peek.Equals("+"))
             {
                 Get(); // Swallow slash
@@ -448,14 +540,14 @@ namespace Step.Parser
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : GlobalVariableName.Named(targetName);
-                AddStep(new Call(target, new object[] {local}, null));
+                chain.AddStep(new Call(target, new object[] {local}, null));
             }
         }
 
         /// <summary>
         /// If this is a sequence of fixed text tokens, compile them into an EmitStep.
         /// </summary>
-        private void TryProcessTextBlock()
+        private void TryProcessTextBlock(ChainBuilder chain)
         {
             tokensToEmit.Clear();
             while (!EndOfDefinition && Peek is string && !IsLocalVariableName(Peek))
@@ -470,7 +562,7 @@ namespace Step.Parser
                     tokensToEmit.Add((string) Get());
 
             if (tokensToEmit.Count > 0)
-                AddStep(new EmitStep(tokensToEmit.ToArray(), null));
+                chain.AddStep(new EmitStep(tokensToEmit.ToArray(), null));
         }
 
         /// <summary>

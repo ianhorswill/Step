@@ -57,6 +57,7 @@
     <Compile Include="CompoundTaskTests.cs" />
     <Compile Include="ParserTests.cs" />
     <Compile Include="TestUtils.cs" />
+    <Compile Include="ControlStructureTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

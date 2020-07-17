@@ -81,6 +81,7 @@ namespace Step.Interpreter
                 return false;
             });
 
+            // Use original unifications but accumulated output and state.
             return k(resultOutput, env.Unifications, dynamicState);
         }
 
@@ -91,7 +92,7 @@ namespace Step.Interpreter
             BindingList<GlobalVariableName> finalDynamicState = null;
             bool success = false;
 
-            StepChainFromBody("Once", args).Try(output, env,
+            GenerateSolutionsFromBody("Once", args, output, env,
                 (o, u, d) =>
                 {
                     success = true;
@@ -223,29 +224,6 @@ namespace Step.Interpreter
                 BindingList<GlobalVariableName> dynamicState)
                 : this(PartialOutput.Difference(before, after), bindings, dynamicState)
             { }
-        }
-
-        /// <summary>
-        /// Used to force control transfer to a surrounding call, preventing backtracking over the intervening calls.
-        /// </summary>
-        private class NonLocalExit : Exception
-        {
-            public readonly PartialOutput Output;
-            public readonly BindingList<LogicVariable> Bindings;
-            public readonly BindingList<GlobalVariableName> DynamicState;
-
-            private NonLocalExit(PartialOutput output, BindingList<LogicVariable> bindings, BindingList<GlobalVariableName> dynamicState)
-            {
-                Output = output;
-                Bindings = bindings;
-                DynamicState = dynamicState;
-            }
-
-            public static bool Throw(PartialOutput output, BindingList<LogicVariable> environment,
-                BindingList<GlobalVariableName> dynamicState)
-            {
-                throw new NonLocalExit(output, environment, dynamicState);
-            }
         }
         #endregion
 

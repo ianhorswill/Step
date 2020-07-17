@@ -69,6 +69,8 @@ namespace Step.Interpreter
                 null,
                 collection => collection ?? EmptyArray,
                 null);
+            g["Number"] = Predicate<object>("Number", o => o != null && (o is int || o is float));
+            g["String"] = Predicate<object>("String", o => o is string);
 
             HigherOrderBuiltins.DefineGlobals();
         }
