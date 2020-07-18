@@ -33,8 +33,15 @@ namespace Step.Interpreter
     /// </summary>
     public static class PrimitiveTask
     {
-        internal static readonly Dictionary<object, Delegate>  SurrogateTable = new Dictionary<object, Delegate>();
+        private static readonly Dictionary<object, Delegate>  SurrogateTable = new Dictionary<object, Delegate>();
         private static readonly Dictionary<object, string> PrimitiveNameTable = new Dictionary<object, string>();
+
+        internal static object GetSurrogate(object x)
+        {
+            if (SurrogateTable.TryGetValue(x, out var result))
+                return result;
+            return x;
+        }
 
         internal static T NamePrimitive<T>(string name, T primitive) where T: Delegate
         {
@@ -273,7 +280,7 @@ namespace Step.Interpreter
             Func<T1, IEnumerable<T2>> inOutMode, Func<T2, IEnumerable<T1>> outInMode,
             Func<IEnumerable<(T1, T2)>> outOutMode)
         {
-            return (args, e) => BinaryPredicateTrampoline(name, inInMode, inOutMode, outInMode, outOutMode, args, e);
+            return NamePrimitive<NonDeterministicRelation>("name", (args, e) => BinaryPredicateTrampoline(name, inInMode, inOutMode, outInMode, outOutMode, args, e));
         }
 
         /// <summary>

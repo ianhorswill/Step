@@ -48,6 +48,26 @@ namespace Step.Interpreter
         }
 
         /// <summary>
+        /// Make a new call step to the specified task, with no arguments.
+        /// </summary>
+        public static Call MakeCall(object task, Step next) => new Call(task, new object[0], next);
+
+        /// <summary>
+        /// Make a new call step to the specified task, with the specified argument.
+        /// </summary>
+        public static Call MakeCall(object task, object arg1, Step next) => new Call(task, new[] { arg1 }, next);
+        
+        /// <summary>
+        /// Make a new call step to the specified task, with the specified arguments.
+        /// </summary>
+        public static Call MakeCall(object task, object arg1, object arg2, Step next) => new Call(task, new[] { arg1, arg2 }, next);
+
+        /// <summary>
+        /// Make a new call step to the specified task, with the specified arguments.
+        /// </summary>
+        public static Call MakeCall(object task, object arg1, object arg2, object arg3, Step next) => new Call(task, new[] { arg1, arg2, arg3 }, next);
+
+        /// <summary>
         /// Term (e.g. variable) representing the task to call
         /// </summary>
         public readonly object Task;
@@ -61,7 +81,7 @@ namespace Step.Interpreter
         /// </summary>
         public string SourceText => CallSourceText(Task, Arglist);
 
-        internal readonly GlobalVariableName MentionHook = GlobalVariableName.Named("MentionHook");
+        internal static readonly GlobalVariableName MentionHook = GlobalVariableName.Named("Mention");
 
         /// <summary>
         /// Attempt to run this task
@@ -73,10 +93,7 @@ namespace Step.Interpreter
         public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k)
         {
             var originalTarget = env.Resolve(Task);
-            var target = originalTarget;
-            if (PrimitiveTask.SurrogateTable.TryGetValue(target, out var implementation))
-                target = implementation;
-
+            var target = PrimitiveTask.GetSurrogate(originalTarget);
             var arglist = env.ResolveList(Arglist);
 
             return CallTask(output, env, k, target, arglist, originalTarget);
@@ -163,13 +180,13 @@ namespace Step.Interpreter
                     {
                         var hook = env.Module.FindTask(MentionHook, 1, false);
                         if (hook != null)
-                            return new Call(hook, new[] {target}, Next).Try(output, env, k);
+                            return MakeCall(hook, target, Next).Try(output, env, k);
                         if (target is string[] text)
                             return Continue(output.Append(text), env, k);
                         return Continue(output.Append(target.ToString()), env, k);
                     }
 
-                    throw new ArgumentException($"Unknown task {target} in call");
+                    throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget, arglist)}");
             }
         }
 
@@ -178,9 +195,10 @@ namespace Step.Interpreter
             var b = new StringBuilder();
             b.Append('[');
             b.Append(task);
-            foreach (var a in arglist)
+            foreach (var arg in arglist)
             {
                 b.Append(' ');
+                var a = PrimitiveTask.PrimitiveName(arg);
                 if (a == null)
                     b.Append("null");
                 else if (a is string s)

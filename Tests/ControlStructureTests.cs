@@ -17,6 +17,15 @@ namespace Tests
         }
 
         [TestMethod]
+        public void CaseTest2()
+        {
+            var m = new Module();
+            m.AddDefinitions("Test ?x: [case ?x] [> 5] : big [else] small [end]");
+            Assert.AreEqual("Small", m.Call("Test", 1));
+            Assert.AreEqual("Big", m.Call("Test", 10));
+        }
+
+        [TestMethod]
         public void RandomlyTest()
         {
             var m = new Module();

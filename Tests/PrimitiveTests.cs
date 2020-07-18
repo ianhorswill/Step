@@ -44,16 +44,17 @@ namespace Tests
         public void StringFormTest()
         {
             var m = new Module();
-            m.AddDefinitions("Test: [StringForm 123 ?x] ?x");
+            m.AddDefinitions("Test: [StringForm 123 ?x] ?x",
+                "Mention ?x: [Write ?x]");
             Assert.AreEqual("123",m.Call("Test"));
         }
 
         [TestMethod]
-        public void MentionHookTest()
+        public void MentionTest()
         {
             var m = new Module();
             m.AddDefinitions("Test: [StringForm 123 ?x] ?x",
-                "MentionHook ?x: foo");
+                "Mention ?x: foo");
             Assert.AreEqual("Foo",m.Call("Test"));
         }
 

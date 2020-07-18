@@ -226,6 +226,17 @@ namespace Step.Parser
                         return true;
                     case "false":
                         return false;
+
+                    case "=":
+                        return GlobalVariableName.Named("=");
+                    case ">":
+                        return GlobalVariableName.Named(">");
+                    case ">=":
+                        return GlobalVariableName.Named(">=");
+                    case "<":
+                        return GlobalVariableName.Named("<");
+                    case "<=":
+                        return GlobalVariableName.Named("<=");
                 }
 
                 if (int.TryParse(s, out var result))
@@ -332,7 +343,7 @@ namespace Step.Parser
                 {
                     // It has an embedded predicate
                     pattern.Add(call[1]);
-                    chainBuilder.AddStep(new Call(Canonicalize(call[0]), new[] {Canonicalize(call[1])}, null));
+                    chainBuilder.AddStep(Call.MakeCall(Canonicalize(call[0]), Canonicalize(call[1]), null));
                 }
                 else
                     pattern.Add(argPattern);
@@ -448,17 +459,30 @@ namespace Step.Parser
         {
             var chains = new List<Interpreter.Step>();
             var chain = new ChainBuilder();
+            var arglist = new List<object>();
             while (!ExplicitEndToken)
             {
                 chain.Clear();
                 if (!ElseToken)
                 {
                     Get(); // Skip keyword
+                    arglist.Clear();
+                    arglist.Add(controlVar);
+
                     var guard = Get();
+                    
+                    if (guard is object[] expr)
+                    {
+                        guard = expr[0];
+                        arglist.AddRange(expr.Skip(1));
+                    }
+
                     var colon = Get();
                     if (!colon.Equals(":"))
                         throw new SyntaxError($"Unexpected token {colon} after test in case expression");
-                    chain.AddStep(new Call(Canonicalize(guard), new[] {controlVar}, null));
+                    var argArray = arglist.ToArray();
+                    Canonicalize(argArray);
+                    chain.AddStep(new Call(Canonicalize(guard), argArray, null));
                 }
                 else 
                     Get(); // Skip keyword
@@ -483,7 +507,7 @@ namespace Step.Parser
             if (!Peek.Equals("/"))
             {
                 // This is a simple variable mention
-                chain.AddStep(new Call(local, new object[0], null));
+                chain.AddStep(Call.MakeCall(Call.MentionHook, local, null));
                 return;
             }
 
@@ -512,7 +536,7 @@ namespace Step.Parser
                 {
                     var tempVar = GetFreshLocal("temp");
                     // There's another / coming so this is a function call
-                    chain.AddStep(new Call(target, new object[] {local, tempVar}, null));
+                    chain.AddStep(Call.MakeCall(target, local, tempVar, null));
                     local = tempVar;
                 }
                 else
@@ -530,18 +554,32 @@ namespace Step.Parser
         /// <param name="targetVar">Task to call on local</param>
         private void ReadMentionExpressionTail(ChainBuilder chain, LocalVariableName local, object targetVar)
         {
-            chain.AddStep(new Call(targetVar, new object[] {local}, null));
+            AddMentionExpressionTail(chain, targetVar, local);
             while (Peek.Equals("+"))
             {
-                Get(); // Swallow slash
+                Get(); // Swallow plus
                 var targetToken = Get();
                 if (!(targetToken is string targetName))
                     throw new SyntaxError($"Invalid method name after the /: {local}/{targetToken}");
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : GlobalVariableName.Named(targetName);
-                chain.AddStep(new Call(target, new object[] {local}, null));
+                AddMentionExpressionTail(chain, target, local);
             }
+        }
+
+        static readonly GlobalVariableName BinaryTask = GlobalVariableName.Named("BinaryTask");
+        private void AddMentionExpressionTail(ChainBuilder chain, object target, LocalVariableName local)
+        {
+            var temp = GetFreshLocal("temp");
+            chain.AddStep(new BranchStep(target.ToString(),
+                new []{ 
+                    Call.MakeCall(BinaryTask, target,
+                    Call.MakeCall(target, local, temp, 
+                        Call.MakeCall(Call.MentionHook, temp, null))),
+                    Call.MakeCall(target, local, null)},
+                null,
+                false));
         }
 
         /// <summary>

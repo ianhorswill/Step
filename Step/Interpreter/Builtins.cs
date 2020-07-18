@@ -47,22 +47,22 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g["="] = (MetaTask) ((args, o, e, k) =>
+            g["="] = NamePrimitive("=", (MetaTask) ((args, o, e, k) =>
             {
                 ArgumentCountException.Check("=", 2, args);
                 return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
                            k(o, newBindings, e.DynamicState);
-            });
+            }));
             g[">"] = Predicate<float, float>(">", (a, b) => a > b);
             g["<"] = Predicate<float, float>("<", (a, b) => a < b);
             g[">="] = Predicate<float, float>(">=", (a, b) => a >= b);
             g["<="] = Predicate<float, float>("<=", (a, b) => a <= b);
-            g["Newline"] = (DeterministicTextGenerator0) (() => NewLine);
-            g["Fail"] = (Predicate0)(() => false);
-            g["Break"] = (Predicate0) Break;
-            g["Throw"] = (PredicateN) Throw;
+            g["Newline"] = NamePrimitive("Newline",(DeterministicTextGenerator0) (() => NewLine));
+            g["Fail"] = NamePrimitive("Fail", (Predicate0)(() => false));
+            g["Break"] = NamePrimitive("Break", (Predicate0) Break);
+            g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
-            g["Write"] = (DeterministicTextGenerator1) (o => new []{ o.ToString() });
+            g["Write"] = NamePrimitive("Write", (DeterministicTextGenerator1) (o => new []{ o.ToString() }));
             g["Member"] = GeneralRelation<object, IEnumerable<object>>(
                 "Member",
                 (member, collection) => collection != null && collection.Contains(member),
@@ -71,6 +71,14 @@ namespace Step.Interpreter
                 null);
             g["Number"] = Predicate<object>("Number", o => o != null && (o is int || o is float));
             g["String"] = Predicate<object>("String", o => o is string);
+            g["BinaryTask"] = Predicate<object>("BinaryTask", 
+                o =>
+                {
+                    o = GetSurrogate(o);
+                    return ((o is CompoundTask c && c.ArgCount == 2) || o is Predicate2 ||
+                            o is DeterministicTextGenerator2 || o is NondeterministicTextGenerator2 ||
+                            o is NonDeterministicRelation);
+                });
 
             HigherOrderBuiltins.DefineGlobals();
         }

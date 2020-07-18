@@ -93,6 +93,18 @@ namespace Tests
         }
 
         [TestMethod]
+        public void PathTest2()
+        {
+            var m = new Module();
+            m.AddDefinitions("Map 1 2:",
+                "Map 2 3:",
+                "Method ?x: ?x/Map",
+                "Mention ?x: [Write ?x]",
+                "Test: [Method 1]");
+            Assert.AreEqual("2", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void PathPlusTest()
         {
             var m = new Module();

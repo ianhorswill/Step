@@ -98,6 +98,7 @@ namespace Tests
                 "Generate c:",
                 "TryWrite ?x: ?x",
                 "TryWrite ?x: oops!",
+                "Mention ?x: [Write ?x]",
                 "OnceForEach ?generator ?writer: [DoAll ?generator [ExactlyOnce ?writer]]",
                 "Test: [OnceForEach [Generate ?x]\n    [TryWrite ?x]]");
             Assert.AreEqual("A b c", m.Call("Test"));
@@ -110,6 +111,7 @@ namespace Tests
             m.AddDefinitions("Generate a 1:",
                 "Generate b 2:",
                 "Generate c 1:",
+                "Mention ?x: [Write ?x]",
                 "Test: [Max ?score [Generate ?x ?score]] ?x ?score");
             Assert.AreEqual("B 2", m.Call("Test"));
         }
@@ -121,6 +123,7 @@ namespace Tests
             m.AddDefinitions("Generate a 1:",
                 "Generate b 0:",
                 "Generate c 2:",
+                "Mention ?x: [Write ?x]",
                 "Test: [Min ?score [Generate ?x ?score]] ?x ?score");
             Assert.AreEqual("B 0", m.Call("Test"));
         }
@@ -130,6 +133,7 @@ namespace Tests
         {
             var m = new Module();
             m.AddDefinitions("Test: [Max ?score [Fail]] ?x ?score",
+                "Mention ?x: [Write ?x]",
                 "Test: Max failed");
             Assert.AreEqual("Max failed", m.Call("Test"));
         }

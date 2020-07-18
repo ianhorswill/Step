@@ -320,8 +320,7 @@ namespace Step
             if (value == null)
                 return false;
 
-            if (PrimitiveTask.SurrogateTable.TryGetValue(value, out var implementation))
-                value = implementation;
+            value = PrimitiveTask.GetSurrogate(value);
 
             switch (value)
             {
