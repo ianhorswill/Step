@@ -55,6 +55,7 @@
     <Compile Include="Interpreter\Builtins.cs" />
     <Compile Include="Interpreter\Call.cs" />
     <Compile Include="Interpreter\CallFailedException.cs" />
+    <Compile Include="Interpreter\CoolStep.cs" />
     <Compile Include="Interpreter\EmitStep.cs" />
     <Compile Include="Interpreter\HigherOrderBuiltins.cs" />
     <Compile Include="Interpreter\Method.cs" />

@@ -7,6 +7,33 @@ namespace Tests
     public class ControlStructureTests
     {
         [TestMethod]
+        public void CoolTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("TestCool: [firstOf] [cool] A [or] B [end]",
+                "Test: [TestCool] [TestCool] [TestCool] [TestCool] ");
+            Assert.AreEqual("A B A B", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void CoolTest2()
+        {
+            var m = new Module();
+            m.AddDefinitions("TestCool: [firstOf] [cool 2] A [or] B [end]",
+                "Test: [TestCool] [TestCool] [TestCool] [TestCool] ");
+            Assert.AreEqual("A B B A", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void OnceTest()
+        {
+            var m = new Module();
+            m.AddDefinitions("TestCool: [firstOf] [once] A [or] B [end]",
+                "Test: [TestCool] [TestCool] [TestCool] [TestCool] ");
+            Assert.AreEqual("A B B B", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void CaseTest()
         {
             var m = new Module();

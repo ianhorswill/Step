@@ -420,6 +420,29 @@ namespace Step.Parser
                     chain.AddStep(ReadCase(Canonicalize(expression[1])));
                     break;
 
+                case "cool":
+                    if (expression.Length > 2)
+                        throw new ArgumentCountException("cool", 1, expression.Skip(1).ToArray());
+
+                    var duration = 1;
+                    if (expression.Length == 2)
+                    {
+                        if (int.TryParse(expression[1] as string, out var d))
+                            duration = d;
+                        else
+                            throw new SyntaxError($"Argument to cool must be an integer constant, but got {expression[1]}");
+                    }
+
+                    chain.AddStep(new CoolStep(duration, null));
+                    break;
+
+                case "once":
+                    if (expression.Length != 1)
+                        throw new ArgumentCountException("once", 0, expression.Skip(1).ToArray());
+
+                    chain.AddStep(new CoolStep(int.MaxValue, null));
+                    break;
+
                 case "firstOf":
                 case "randomly":
                     if (expression.Length != 1)

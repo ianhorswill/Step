@@ -52,12 +52,24 @@
         <key>match</key>
         <string>\[firstOf\]</string>
       </dict>
-      <dict>
+	  <dict>
+		<key>name</key>
+		<string>keyword.control</string>
+		<key>match</key>
+		<string>\[once\]</string>
+	  </dict>
+	  <dict>
         <key>name</key>
         <string>keyword.control</string>
         <key>match</key>
         <string>\[case [^\]]+\]</string>
       </dict>
+	  <dict>
+		<key>name</key>
+		<string>keyword.control</string>
+		<key>match</key>
+		<string>\[cool [^\]]+\]</string>
+	  </dict>
       <dict>
         <key>name</key>
         <string>string.interpolated</string>
