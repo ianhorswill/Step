@@ -34,7 +34,7 @@ namespace Step.Parser
     /// <summary>
     /// Reads a stream of method definitions from a TextReader.
     /// </summary>
-    public class DefinitionStream
+    internal class DefinitionStream
     {
         /// <summary>
         /// Reads definitions from the specified stream
@@ -43,7 +43,9 @@ namespace Step.Parser
             : this(new ExpressionStream(stream, filePath), module) 
         { }
 
-        /// <inheritdoc />
+        ///
+        /// Make a new definition stream
+        /// 
         public DefinitionStream(ExpressionStream expressions, Module module)
         {
             Module = module;
@@ -254,7 +256,7 @@ namespace Step.Parser
         /// <summary>
         /// Read, parse, and return the information for all method definitions in the stream
         /// </summary>
-        public IEnumerable<(GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain,
+        internal IEnumerable<(GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
                 string path, int lineNumber)>
             Definitions
         {
@@ -303,11 +305,15 @@ namespace Step.Parser
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain,
+        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
             string path, int lineNumber) ReadDefinition()
         {
             InitParserState();
+
             SwallowNewlines();
+            var flags = ReadFlags();
+            SwallowNewlines();
+
             lineNumber = expressionStream.LineNumber;
 
             var (taskName, pattern) = ReadHead();
@@ -321,7 +327,20 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, expressionStream.FilePath, lineNumber);
+            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
+        }
+
+        private CompoundTask.TaskFlags ReadFlags()
+        {
+            var flags = CompoundTask.TaskFlags.None;
+
+            if (KeywordMarker("randomly"))
+            {
+                Get();
+                flags |= CompoundTask.TaskFlags.Shuffle;
+            }
+
+            return flags;
         }
         
         /// <summary>
@@ -573,7 +592,7 @@ namespace Step.Parser
         {
             var temp = GetFreshLocal("temp");
             chain.AddStep(new BranchStep(target.ToString(),
-                new []{ 
+                new Interpreter.Step[]{ 
                     Call.MakeCall(BinaryTask, target,
                     Call.MakeCall(target, local, temp, 
                         Call.MakeCall(Call.MentionHook, temp, null))),

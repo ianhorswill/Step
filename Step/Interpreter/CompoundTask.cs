@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -46,7 +47,23 @@ namespace Step.Interpreter
         /// <summary>
         /// Methods for accomplishing the task
         /// </summary>
-        internal readonly List<Method> Methods = new List<Method>();
+        public readonly List<Method> Methods = new List<Method>();
+
+        public IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.Shuffle() : Methods;
+
+        [Flags]
+        public enum TaskFlags
+        {
+            None = 0,
+            Shuffle = 1
+        }
+
+        private TaskFlags flags;
+
+        /// <summary>
+        /// True if the methods of the task should be tried in random order
+        /// </summary>
+        public bool Shuffle => (flags & TaskFlags.Shuffle) != 0;
 
         public CompoundTask(string name, int argCount)
         {
@@ -62,8 +79,13 @@ namespace Step.Interpreter
         /// <param name="stepChain">Linked list of Step objects to attempt to execute when running this method</param>
         /// <param name="path">File from which the method was read</param>
         /// <param name="lineNumber">Line number where the method starts in the file</param>
-        public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, string path, int lineNumber) 
-            => Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain, path, lineNumber));
+        /// <param name="newFlags">Additional flags to set for the task</param>
+        public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, TaskFlags newFlags,
+            string path, int lineNumber)
+        {
+            flags |= newFlags;
+            Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain, path, lineNumber));
+        }
 
         public override string ToString() => Name;
     }

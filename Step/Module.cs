@@ -212,7 +212,7 @@ namespace Step
             string result = null;
             BindingList<GlobalVariableName> newState = null;
 
-            foreach (var method in t.Methods)
+            foreach (var method in t.EffectiveMethods)
                 if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; newState = s; return true; }))
                     return (result, new DynamicState(newState));
             return (null, new DynamicState(null));
@@ -245,8 +245,8 @@ namespace Step
         /// </summary>
         public void LoadDefinitions(TextReader stream, string filePath)
         {
-            foreach (var (task, pattern, locals, chain, path, line) in new DefinitionStream(stream, this, filePath).Definitions)
-                FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, path, line);
+            foreach (var (task, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this, filePath).Definitions)
+                FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, flags, path, line);
         }
 
         /// <summary>
