@@ -44,7 +44,13 @@ namespace Step.Interpreter
         {
             foreach (var branch in Branches)
             {
-                if (branch.Try(output, e, (o, u, d)=> Continue(o, new BindingEnvironment(e, u, d), k)))
+                if (branch == null)  // Empty branch, e.g. [case ?x] Something : Something [else] [end]
+                {
+                    if (Continue(output, e, k)) return true;
+                }
+                else if (branch.Try(output, e, 
+                    (o, u, d)=> 
+                        Continue(o, new BindingEnvironment(e, u, d), k)))
                     return true;
             }
 

@@ -24,18 +24,17 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 
 namespace Step.Interpreter
 {
     /// <summary>
     /// Signals a task was called with the wrong kind of argument
     /// </summary>
-    public class ArgumentTypeException : ArgumentException
+    public class ArgumentTypeException : CallException
     {
         /// <inheritdoc />
         public ArgumentTypeException(object task, Type expected, object actual, object[] arglist) 
-            : base($"Wrong argument type in call to {task}, expected {expected.Name}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
+            : base(task, arglist, $"Wrong argument type in call to {task}, expected {expected.Name}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
         { }
 
         /// <summary>

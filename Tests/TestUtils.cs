@@ -7,6 +7,13 @@ namespace Tests
 {
     public static class TestUtils
     {
+        public static Module Module(params string[] definitions)
+        {
+            var m = new Module();
+            m.AddDefinitions(definitions);
+            return m;
+        }
+
         public static string Expand(this Step.Interpreter.Step step, Module g)
         {
             string result = null;

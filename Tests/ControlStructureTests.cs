@@ -98,5 +98,12 @@ namespace Tests
             
             Assert.AreEqual("A.  B.  C.", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void EmptyElseTest()
+        {
+            var m = TestUtils.Module("Test ?x: [case ?x] Number: A [else] [end]");
+            Assert.AreEqual("", m.Call("Test", "string"));
+        }
     }
 }

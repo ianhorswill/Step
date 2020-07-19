@@ -40,6 +40,18 @@
         <key>match</key>
         <string>\[else\]</string>
       </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>\[first success\]</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>\[must work\]</string>
+	    </dict>
       <dict>
         <key>name</key>
         <string>keyword.control</string>

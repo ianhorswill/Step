@@ -123,5 +123,17 @@ namespace Tests
             Assert.IsTrue(gotC > 0);
         }
 
+        [TestMethod, ExpectedException(typeof(CallFailedException))]
+        public void MustWorkTest()
+        {
+            TestUtils.Module("[must work] FailTest: [Fail]", "Test: [FailTest]", "Test: succeeded").Call("Test");
+        }
+
+        [TestMethod]
+        public void FirstSuccessTest()
+        {
+            var m = TestUtils.Module("[first success] First: A", "First: B", "Test: [DoAll [First]]");
+            Assert.AreEqual("A", m.Call("Test"));
+        }
     }
 }

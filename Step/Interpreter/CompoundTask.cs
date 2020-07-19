@@ -55,7 +55,9 @@ namespace Step.Interpreter
         public enum TaskFlags
         {
             None = 0,
-            Shuffle = 1
+            Shuffle = 1,
+            Deterministic = 2,
+            MustSucceed = 4
         }
 
         private TaskFlags flags;
@@ -64,6 +66,16 @@ namespace Step.Interpreter
         /// True if the methods of the task should be tried in random order
         /// </summary>
         public bool Shuffle => (flags & TaskFlags.Shuffle) != 0;
+
+        /// <summary>
+        /// True if this task should only ever generate at most one output
+        /// </summary>
+        public bool Deterministic => (flags & TaskFlags.Deterministic) != 0;
+
+        /// <summary>
+        /// True if it's an error for this call not to succeed at least once
+        /// </summary>
+        public bool MustSucceed => (flags & TaskFlags.MustSucceed) != 0;
 
         public CompoundTask(string name, int argCount)
         {

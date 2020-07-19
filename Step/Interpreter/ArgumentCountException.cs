@@ -23,18 +23,16 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
-
 namespace Step.Interpreter
 {
     /// <summary>
     /// Signals a task was called with the wrong number of arguments
     /// </summary>
-    public class ArgumentCountException : ArgumentException
+    public class ArgumentCountException : CallException
     {
         /// <inheritdoc />
         public ArgumentCountException(object task, int expected, object[] actual) 
-            : base($"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual)}")
+            : base(task,actual, $"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual)}")
         { }
 
         /// <summary>

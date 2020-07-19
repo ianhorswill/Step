@@ -23,18 +23,16 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
-
 namespace Step.Interpreter
 {
     /// <summary>
     /// Signals a task was called with an arg bound/unbound when it shouldn't have been
     /// </summary>
-    public class ArgumentInstantiationException : ArgumentException
+    public class ArgumentInstantiationException : CallException
     {
         /// <inheritdoc />
         public ArgumentInstantiationException(object task, BindingEnvironment e, object[] args) 
-            : base($"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}")
+            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}")
         { }
     }
 }

@@ -106,9 +106,22 @@ namespace Step.Interpreter
             {
                 case CompoundTask p:
                     ArgumentCountException.Check(p, p.ArgCount, arglist);
-                    foreach (var method in p.EffectiveMethods)
-                        if (method.Try(arglist, output, env, (o, u, s) => Continue(o, new BindingEnvironment(env, u, s), k)))
+                    var successCount = 0;
+                    var methods = p.EffectiveMethods;
+                    for (var index = 0; index < methods.Count && !(p.Deterministic && successCount > 0); index++)
+                    {
+                        var method = methods[index];
+                        if (method.Try(arglist, output, env, (o, u, s) =>
+                        {
+                            successCount++;
+                            return Continue(o, new BindingEnvironment(env, u, s), k);
+                        }))
                             return true;
+                    }
+
+                    if (successCount == 0 && p.MustSucceed)
+                        throw new CallFailedException(p, arglist);
+
                     // Failure
                     return false;
 

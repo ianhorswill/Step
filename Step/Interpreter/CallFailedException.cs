@@ -3,7 +3,7 @@
 namespace Step.Interpreter
 {
     /// <inheritdoc />
-    public class CallFailedException : Exception
+    public class CallFailedException : CallException
     {
         /// <summary>
         /// The task that was called and failed
@@ -20,7 +20,7 @@ namespace Step.Interpreter
         /// <param name="task">Task called</param>
         /// <param name="arguments">Arguments</param>
         public CallFailedException(object task, object[] arguments)
-        : base($"Call failed: {Call.CallSourceText(task, arguments)}")
+        : base(task, arguments, $"Call failed: {Call.CallSourceText(task, arguments)}")
         {
             Task = task;
             Arguments = arguments;

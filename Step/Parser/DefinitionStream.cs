@@ -63,6 +63,15 @@ namespace Step.Parser
 
         private readonly ExpressionStream expressionStream;
 
+        public string SourceFile
+        {
+            get
+            {
+                var path = expressionStream.FilePath;
+                return path == null ? "Unknown" : Path.GetFileName(path);
+            }
+        }
+
         /// <summary>
         /// Expressions being read from the stream
         /// </summary>
@@ -332,17 +341,55 @@ namespace Step.Parser
 
         private CompoundTask.TaskFlags ReadFlags()
         {
+            void ThrowInvalid()
+            {
+                throw new SyntaxError($"{SourceFile}:{expressionStream.LineNumber} Invalid task attribute");
+            }
+
             var flags = CompoundTask.TaskFlags.None;
 
-            if (KeywordMarker("randomly"))
+            while (Peek is object[] flagKeyword)
             {
                 Get();
-                flags |= CompoundTask.TaskFlags.Shuffle;
+                if (flagKeyword.Length == 0 || !(flagKeyword[0] is string keyword)) ThrowInvalid();
+
+                void CheckRest(string s)
+                {
+                    if (flagKeyword.Length != 2) ThrowInvalid();
+                    if (!flagKeyword[1].Equals(s))
+                        throw new SyntaxError(
+                            $"{SourceFile}:{expressionStream.LineNumber} Invalid task attribute. Expected \"{s}\" got: {flagKeyword[1]}");
+                }
+
+                switch (keyword)
+                {
+                    // Shuffle rules when calling
+                    case "randomly":
+                        if (flagKeyword.Length != 1) ThrowInvalid();
+                        flags |= CompoundTask.TaskFlags.Shuffle;
+                        break;
+
+                    // Throw an error on total failure
+                    case "must":
+                        CheckRest("work");
+                        flags |= CompoundTask.TaskFlags.MustSucceed;
+                        break;
+
+                    // Limit it to first solution, as if the call were wrapped in Once.
+                    case "first":
+                        CheckRest("success");
+                        flags |= CompoundTask.TaskFlags.Deterministic;
+                        break;
+
+                    default:
+                        ThrowInvalid();
+                        break;
+                }
             }
 
             return flags;
         }
-        
+
         /// <summary>
         /// Read the task name and argument pattern
         /// </summary>
@@ -653,7 +700,7 @@ namespace Step.Parser
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !locals[i].Name.StartsWith("?"))
                     Module.AddWarning(
-                        $"{Path.GetFileName(expressionStream.FilePath)}:{lineNumber} Singleton variable {locals[i].Name}");
+                        $"{SourceFile}:{lineNumber} Singleton variable {locals[i].Name}");
         }
     }
 }
