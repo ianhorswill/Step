@@ -39,6 +39,7 @@ namespace Tests
         public void MatchingNoVariablesTest()
         {
             var t = new CompoundTask("test", 1);
+            t.Flags |= CompoundTask.TaskFlags.Fallible;
             t.AddMethod(new object[]{1}, new LocalVariableName[0], new EmitStep(new []{ "1", "matched"}, null), 0, null, 1);
             t.AddMethod(new object[]{2}, new LocalVariableName[0], new EmitStep(new []{ "2", "matched"}, null), 0, null, 1);
 
@@ -126,13 +127,13 @@ namespace Tests
         [TestMethod, ExpectedException(typeof(CallFailedException))]
         public void MustWorkTest()
         {
-            TestUtils.Module("[must work] FailTest: [Fail]", "Test: [FailTest]", "Test: succeeded").Call("Test");
+            TestUtils.Module("FailTest: [Fail]", "Test: [FailTest]", "Test: succeeded").Call("Test");
         }
 
         [TestMethod]
         public void FirstSuccessTest()
         {
-            var m = TestUtils.Module("[first success] First: A", "First: B", "Test: [DoAll [First]]");
+            var m = TestUtils.Module("First: A", "First: B", "Test: [DoAll [First]]");
             Assert.AreEqual("A", m.Call("Test"));
         }
     }

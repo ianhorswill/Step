@@ -36,7 +36,7 @@ namespace Tests
         public void DoAllTest()
         {
             var m = new Module();
-            m.AddDefinitions("Generate: a",
+            m.AddDefinitions("[generator] Generate: a",
                 "Generate: b",
                 "Generate: c",
                 "Test: [DoAll [Generate]]",
@@ -49,7 +49,7 @@ namespace Tests
         public void ForEachTest()
         {
             var m = new Module();
-            m.AddDefinitions("Generate a:",
+            m.AddDefinitions("[generator] Generate a:",
                 "Generate b:",
                 "Generate c:",
                 "Test: [ForEach [Generate ?x] [Write ?x]]");
@@ -93,7 +93,7 @@ namespace Tests
         public void HigherOrderUserCodeTest()
         {
             var m = new Module();
-            m.AddDefinitions("Generate a:",
+            m.AddDefinitions("[generator] Generate a:",
                 "Generate b:",
                 "Generate c:",
                 "TryWrite ?x: ?x",
@@ -108,7 +108,7 @@ namespace Tests
         public void MaxTest()
         {
             var m = new Module();
-            m.AddDefinitions("Generate a 1:",
+            m.AddDefinitions("[generator] Generate a 1:",
                 "Generate b 2:",
                 "Generate c 1:",
                 "Mention ?x: [Write ?x]",
@@ -120,7 +120,7 @@ namespace Tests
         public void MinTest()
         {
             var m = new Module();
-            m.AddDefinitions("Generate a 1:",
+            m.AddDefinitions("[generator] Generate a 1:",
                 "Generate b 0:",
                 "Generate c 2:",
                 "Mention ?x: [Write ?x]",

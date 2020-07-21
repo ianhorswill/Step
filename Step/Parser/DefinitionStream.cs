@@ -351,34 +351,27 @@ namespace Step.Parser
             while (Peek is object[] flagKeyword)
             {
                 Get();
-                if (flagKeyword.Length == 0 || !(flagKeyword[0] is string keyword)) ThrowInvalid();
-
-                void CheckRest(string s)
-                {
-                    if (flagKeyword.Length != 2) ThrowInvalid();
-                    if (!flagKeyword[1].Equals(s))
-                        throw new SyntaxError(
-                            $"{SourceFile}:{expressionStream.LineNumber} Invalid task attribute. Expected \"{s}\" got: {flagKeyword[1]}");
-                }
+                if (flagKeyword.Length != 1 || !(flagKeyword[0] is string keyword)) ThrowInvalid();
 
                 switch (keyword)
                 {
                     // Shuffle rules when calling
                     case "randomly":
-                        if (flagKeyword.Length != 1) ThrowInvalid();
                         flags |= CompoundTask.TaskFlags.Shuffle;
                         break;
 
                     // Throw an error on total failure
-                    case "must":
-                        CheckRest("work");
-                        flags |= CompoundTask.TaskFlags.MustSucceed;
+                    case "generator":
+                        flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
                         break;
 
                     // Limit it to first solution, as if the call were wrapped in Once.
-                    case "first":
-                        CheckRest("success");
-                        flags |= CompoundTask.TaskFlags.Deterministic;
+                    case "fallible":
+                        flags |= CompoundTask.TaskFlags.Fallible;
+                        break;
+
+                    case "retriable":
+                        flags |= CompoundTask.TaskFlags.MultipleSolutions;
                         break;
 
                     default:

@@ -56,26 +56,26 @@ namespace Step.Interpreter
         {
             None = 0,
             Shuffle = 1,
-            Deterministic = 2,
-            MustSucceed = 4
+            MultipleSolutions = 2,
+            Fallible = 4
         }
 
-        private TaskFlags flags;
+        internal TaskFlags Flags;
 
         /// <summary>
         /// True if the methods of the task should be tried in random order
         /// </summary>
-        public bool Shuffle => (flags & TaskFlags.Shuffle) != 0;
+        public bool Shuffle => (Flags & TaskFlags.Shuffle) != 0;
 
         /// <summary>
         /// True if this task should only ever generate at most one output
         /// </summary>
-        public bool Deterministic => (flags & TaskFlags.Deterministic) != 0;
+        public bool Deterministic => (Flags & TaskFlags.MultipleSolutions) == 0;
 
         /// <summary>
         /// True if it's an error for this call not to succeed at least once
         /// </summary>
-        public bool MustSucceed => (flags & TaskFlags.MustSucceed) != 0;
+        public bool MustSucceed => (Flags & TaskFlags.Fallible) == 0;
 
         public CompoundTask(string name, int argCount)
         {
@@ -95,7 +95,7 @@ namespace Step.Interpreter
         public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, TaskFlags newFlags,
             string path, int lineNumber)
         {
-            flags |= newFlags;
+            Flags |= newFlags;
             Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain, path, lineNumber));
         }
 

@@ -25,6 +25,15 @@ namespace Tests
         }
 
         [TestMethod]
+        public void RandomCoolTest()
+        {
+            var m = TestUtils.Module(
+                "Test: [randomly] [cool] sullen [or] [cool] drunk [or] [cool] vacant [or] [cool] lost [or] [cool] bored [or] crazed [end]");
+            for (var i = 0; i < 100; i++)
+                Assert.AreNotEqual(null, m.Call("Test"));
+        }
+
+        [TestMethod]
         public void OnceTest()
         {
             var m = new Module();
