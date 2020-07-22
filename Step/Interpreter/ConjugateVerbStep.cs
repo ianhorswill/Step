@@ -4,10 +4,14 @@ namespace Step.Interpreter
 {
     internal class ConjugateVerbStep : Step
     {
-        public ConjugateVerbStep(Step next) : base(next)
-        { }
+        public ConjugateVerbStep(string suffix, Step next) : base(next)
+        {
+            Suffix = suffix;
+        }
 
-        static readonly GlobalVariableName Tps = GlobalVariableName.Named("ThirdPersonSingular");
+        public readonly string Suffix;
+
+        private static readonly GlobalVariableName Tps = GlobalVariableName.Named("ThirdPersonSingular");
 
         public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
         {
@@ -16,21 +20,23 @@ namespace Step.Interpreter
             if (!(tps is bool b))
                 throw new ArgumentException($"The Plural variable's value is {tps}, but must be a Boolean");
 
-            if (b)
-            {
-                // We're generating third person singular, so add an s.
-                var lastIndex = output.Length - 1;
-                var lastWord = output.Buffer[lastIndex];
-                output.Buffer[lastIndex] = lastWord + "s";
-                if (Continue(output, e, k))
-                    return true;
-                // Undo change to word
-                // Probably not necessary, but you never know.
-                output.Buffer[lastIndex] = lastWord;
-                return false;
-            }
-            // We're not generating TPS.
-            return Continue(output, e, k);
+            if (!b)
+                // We're not generating TPS.
+                return Continue(output, e, k);
+
+            // We're generating third person singular, so add an s.
+            var lastIndex = output.Length - 1;
+            var lastWord = output.Buffer[lastIndex];
+            if (Suffix == "es" && lastWord.EndsWith("y"))
+                output.Buffer[lastIndex] = lastWord.Substring(0, lastWord.Length-1) + "ies";
+            else
+                output.Buffer[lastIndex] = lastWord + Suffix;
+            if (Continue(output, e, k))
+                return true;
+            // Undo change to word
+            // Probably not necessary, but you never know.
+            output.Buffer[lastIndex] = lastWord;
+            return false;
         }
     }
 }

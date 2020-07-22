@@ -447,9 +447,10 @@ namespace Step.Parser
                     throw new SyntaxError($"Invalid task name {expression[0]} in call.");
 
                 case "s":
+                case "es":
                     if (expression.Length != 1)
                         throw new ArgumentCountException("[s]", 0, expression.Skip(1).ToArray());
-                    chain.AddStep(new ConjugateVerbStep(null));
+                    chain.AddStep(new ConjugateVerbStep(targetName, null));
                     break;
 
                 case "add":

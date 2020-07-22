@@ -32,7 +32,7 @@
 		    <key>name</key>
 		    <string>keyword.control</string>
 		    <key>match</key>
-		    <string>\[s\]</string>
+		    <string>\[e?s\]</string>
 	    </dict>
       <dict>
         <key>name</key>
