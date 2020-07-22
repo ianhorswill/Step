@@ -56,6 +56,7 @@
     <Compile Include="Interpreter\Call.cs" />
     <Compile Include="Interpreter\CallException.cs" />
     <Compile Include="Interpreter\CallFailedException.cs" />
+    <Compile Include="Interpreter\ConjugateVerbStep.cs" />
     <Compile Include="Interpreter\CoolStep.cs" />
     <Compile Include="Interpreter\EmitStep.cs" />
     <Compile Include="Interpreter\HigherOrderBuiltins.cs" />

@@ -58,6 +58,7 @@
     <Compile Include="ParserTests.cs" />
     <Compile Include="TestUtils.cs" />
     <Compile Include="ControlStructureTests.cs" />
+    <Compile Include="MiscTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
