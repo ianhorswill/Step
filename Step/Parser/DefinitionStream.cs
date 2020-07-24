@@ -205,10 +205,57 @@ namespace Step.Parser
         /// Identify tokens that identify non-strings (variables, numbers) and replace them
         /// with their internal representations
         /// </summary>
-        void Canonicalize(IList<object> objects)
+        object[] CanonicalizeArglist(IEnumerable<object> objects)
         {
-            for (var i = 0; i < objects.Count; i++)
-                objects[i] = Canonicalize(objects[i]);
+            var result = new List<object>();
+            using (var enumerator = objects.GetEnumerator())
+            {
+                var end = !enumerator.MoveNext();
+                object Peek() => enumerator.Current;
+
+                object Get()
+                {
+                    var next = Peek();
+                    end = !enumerator.MoveNext();
+                    return next;
+                }
+
+                while (!end)
+                {
+                    if (Peek().Equals("\""))
+                    {
+                        Get();  // Swallow quote
+                        var tokens = new List<string>();
+                        var notDone = true;
+                        while (!end && notDone)
+                        {
+                            var tok = Peek() as string;
+                            switch (tok)
+                            {
+                                case null:
+                                    throw new SyntaxError("Quoted strings may not contain subexpressions", SourceFile, lineNumber);
+
+                                case "\"":
+                                    Get();  // Swallow quote
+                                    notDone = false;
+                                    result.Add(tokens.ToArray());
+                                    break;
+
+                                default:
+                                    tokens.Add(tok);
+                                    Get();
+                                    break;
+                            }
+                        }
+                        if (notDone)
+                            throw new SyntaxError("Quoted strings missing close quote", SourceFile, lineNumber);
+                    }
+                    else 
+                        result.Add(Canonicalize(Get()));
+                }
+            }
+
+            return result.ToArray();
         }
 
         /// <summary>
@@ -254,10 +301,7 @@ namespace Step.Parser
                     return result;
             }
             else if (o is object[] list)
-            {
-                Canonicalize(list);
-                return list;
-            }
+                return CanonicalizeArglist(list);
 
             return o;
         }
@@ -343,7 +387,7 @@ namespace Step.Parser
         {
             void ThrowInvalid()
             {
-                throw new SyntaxError($"{SourceFile}:{expressionStream.LineNumber} Invalid task attribute");
+                throw new SyntaxError($"Invalid task attribute", SourceFile, expressionStream.LineNumber);
             }
 
             var flags = CompoundTask.TaskFlags.None;
@@ -391,7 +435,7 @@ namespace Step.Parser
             // Get the task name
             var taskName = Get() as string;
             if (taskName == null)
-                throw new SyntaxError("Bracketed expression at start of definition");
+                throw new SyntaxError("Bracketed expression at start of definition", SourceFile, lineNumber);
 
             // Read the argument pattern
             var pattern = new List<object>();
@@ -409,7 +453,8 @@ namespace Step.Parser
             }
 
             // Change variable references in pattern to LocalVariableNames
-            Canonicalize(pattern);
+            for (var i = 0; i < pattern.Count; i++)
+                pattern[i] = Canonicalize(pattern[i]);
 
             // SKIP COLON
             Get();
@@ -444,7 +489,7 @@ namespace Step.Parser
             switch (targetName)
             {
                 case null:
-                    throw new SyntaxError($"Invalid task name {expression[0]} in call.");
+                    throw new SyntaxError($"Invalid task name {expression[0]} in call.", SourceFile, lineNumber);
 
                 case "s":
                 case "es":
@@ -457,7 +502,7 @@ namespace Step.Parser
                     if (expression.Length != 3)
                         throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
-                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}");
+                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile, lineNumber);
                     chain.AddStep(new AddStep(Canonicalize(expression[1]), GlobalVariableName.Named(vName), null));
                     break;
 
@@ -477,7 +522,7 @@ namespace Step.Parser
                         if (int.TryParse(expression[1] as string, out var d))
                             duration = d;
                         else
-                            throw new SyntaxError($"Argument to cool must be an integer constant, but got {expression[1]}");
+                            throw new SyntaxError($"Argument to cool must be an integer constant, but got {expression[1]}", SourceFile, lineNumber);
                     }
 
                     chain.AddStep(new CoolStep(duration, null));
@@ -503,7 +548,7 @@ namespace Step.Parser
                     var name = expression[1] as string;
                     if (name == null || !IsGlobalVariableName(name))
                         throw new SyntaxError(
-                            $"A Set command can only update a GlobalVariable; it can't update {expression[1]}");
+                            $"A Set command can only update a GlobalVariable; it can't update {expression[1]}", SourceFile, lineNumber);
                     chain.AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
                     break;
                     
@@ -512,8 +557,7 @@ namespace Step.Parser
                     var target = IsLocalVariableName(targetName)
                         ? (object) GetLocal(targetName)
                         : GlobalVariableName.Named(targetName);
-                    var args = expression.Skip(1).Where(token => !token.Equals("\n")).ToArray();
-                    Canonicalize(args);
+                    var args = CanonicalizeArglist(expression.Skip(1).Where(token => !token.Equals("\n")));
                     chain.AddStep(new Call(target, args, null));
                     break;
             }
@@ -522,7 +566,7 @@ namespace Step.Parser
         }
 
         /// <summary>
-        /// Read a new CompoundTask that takes one argument, that corresponds to the body of an inline case expression.
+        /// Read the text of a branch of a [randomly] or [firstOf] expression
         /// </summary>
         /// <returns></returns>
         private BranchStep ReadBranches(string type)
@@ -559,6 +603,8 @@ namespace Step.Parser
                     arglist.Add(controlVar);
 
                     var guard = Get();
+                    while (guard.Equals("\n"))
+                        guard = Get();
                     
                     if (guard is object[] expr)
                     {
@@ -568,10 +614,8 @@ namespace Step.Parser
 
                     var colon = Get();
                     if (!colon.Equals(":"))
-                        throw new SyntaxError($"Unexpected token {colon} after test in case expression");
-                    var argArray = arglist.ToArray();
-                    Canonicalize(argArray);
-                    chain.AddStep(new Call(Canonicalize(guard), argArray, null));
+                        throw new SyntaxError($"Unexpected token {colon} after test in case expression", SourceFile, lineNumber);
+                    chain.AddStep(new Call(Canonicalize(guard), CanonicalizeArglist(arglist), null));
                 }
                 else 
                     Get(); // Skip keyword
@@ -617,7 +661,7 @@ namespace Step.Parser
                 Get(); // Swallow slash
                 var t = Get();
                 if (!(t is string targetName))
-                    throw new SyntaxError($"Invalid method name after the /: {local}/{t}");
+                    throw new SyntaxError($"Invalid method name after the /: {local}/{t}", SourceFile, lineNumber);
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : GlobalVariableName.Named(targetName);
@@ -649,7 +693,7 @@ namespace Step.Parser
                 Get(); // Swallow plus
                 var targetToken = Get();
                 if (!(targetToken is string targetName))
-                    throw new SyntaxError($"Invalid method name after the /: {local}/{targetToken}");
+                    throw new SyntaxError($"Invalid method name after the /: {local}/{targetToken}", SourceFile, lineNumber);
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : GlobalVariableName.Named(targetName);

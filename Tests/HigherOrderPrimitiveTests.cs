@@ -40,9 +40,16 @@ namespace Tests
                 "Generate: b",
                 "Generate: c",
                 "Test: [DoAll [Generate]]",
-                "SecondTest: [DoAll [Generate] [Newline]]");
+                "SecondTest: [DoAll [Generate] [Paragraph]]");
             Assert.AreEqual("A b c", m.Call("Test"));
-            Assert.AreEqual("A\nB\nC\n", m.Call("SecondTest"));
+            Assert.AreEqual("A\n\nB\n\nC\n\n", m.Call("SecondTest"));
+        }
+
+        [TestMethod]
+        public void BeginTest()
+        {
+            var m = TestUtils.Module("Test: [Write x] [begin [Write a] [Write b] [Write c]] [Write y]");
+            Assert.AreEqual("X a b c y", m.Call("Test"));
         }
 
         [TestMethod]

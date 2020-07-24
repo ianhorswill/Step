@@ -36,7 +36,7 @@ namespace Step
         /// <summary>
         /// Convert a sequence of tokens into a single text string, adding spaces where appropriate.
         /// </summary>
-        public static string Untokenize(this IEnumerable<string> tokens, bool capitalize = true, bool frenchSpacing = true)
+        public static string Untokenize(this IEnumerable<string> tokens, bool capitalize = true, bool frenchSpacing = true, string paragraphDivider = "\n")
         {
             if (tokens == null)
                 return "";
@@ -63,6 +63,9 @@ namespace Step
                 }
 
                 b.Append(token);
+                if (token == "\n")
+                    b.Append(paragraphDivider);
+
                 if (!t.StartsWith("<"))
                     lastToken = token;
             }

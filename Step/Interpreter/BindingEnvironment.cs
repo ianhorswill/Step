@@ -115,6 +115,9 @@ namespace Step.Interpreter
                         return result;
                     return Module[g];
 
+                case string[] tokens:
+                    return tokens;
+
                 case object[] sublist:
                     return ResolveList(sublist);
 

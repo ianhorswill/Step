@@ -57,12 +57,19 @@ namespace Step.Interpreter
             g["<"] = Predicate<float, float>("<", (a, b) => a < b);
             g[">="] = Predicate<float, float>(">=", (a, b) => a >= b);
             g["<="] = Predicate<float, float>("<=", (a, b) => a <= b);
-            g["Newline"] = NamePrimitive("Newline",(DeterministicTextGenerator0) (() => NewLine));
+            g["Paragraph"] = NamePrimitive("Paragraph",(DeterministicTextGenerator0) (() => NewLine));
             g["Fail"] = NamePrimitive("Fail", (Predicate0)(() => false));
             g["Break"] = NamePrimitive("Break", (Predicate0) Break);
             g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
-            g["Write"] = NamePrimitive("Write", (DeterministicTextGenerator1) (o => new []{ o.ToString() }));
+            g["Write"] = NamePrimitive("Write", (DeterministicTextGenerator1) (o =>
+            {
+                if (o == null)
+                    return new[] {"null"};
+                if (o is string[] tokens)
+                    return tokens;
+                return new[] {o.ToString()};
+            }));
             g["Member"] = GeneralRelation<object, IEnumerable<object>>(
                 "Member",
                 (member, collection) => collection != null && collection.Contains(member),

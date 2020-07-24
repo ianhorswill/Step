@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
@@ -39,6 +40,7 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
+            g["begin"] = (MetaTask)Begin;  // This is deliberately lower case
             g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
             g["ForEach"] = (MetaTask) ForEach;
             g["Once"] = (MetaTask) Once;
@@ -47,6 +49,10 @@ namespace Step.Interpreter
             g["Min"] = (MetaTask) Min;
         }
 
+        private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            return StepChainFromBody("begin", args).Try(o, e, k);
+        }
         private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e) 
             => AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings);
 
@@ -161,7 +167,9 @@ namespace Step.Interpreter
                 {
                     gotOne = true;
 
-                    var maybeScore = u.Lookup(scoreVar, scoreVar);
+                    var env = new BindingEnvironment(e, u, d);
+
+                    var maybeScore = env.Resolve(scoreVar);
                     float score;
                     switch (maybeScore)
                     {
@@ -205,7 +213,7 @@ namespace Step.Interpreter
         /// Used to record the results of a call so those results can be reapplied later.
         /// Used for all-solutions and maximization meta-predicates
         /// </summary>
-        private struct CapturedState
+        private readonly struct CapturedState
         {
             public readonly string[] Output;
             public readonly BindingList<LogicVariable> Bindings;

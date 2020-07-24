@@ -196,6 +196,13 @@ namespace Tests
         }
 
         [TestMethod]
+        public void QuotedStringTest()
+        {
+            var m = Module.FromDefinitions("Test: [Write \"This is a test\"]");
+            Assert.AreEqual("This is a test", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void ComplexTest()
         {
             var m = Module.FromDefinitions(
@@ -241,7 +248,7 @@ With a line break in it!
 
 Test: [Multi]
 ");
-            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\nWith a line break in it!",
+            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\n\nWith a line break in it!",
                 m.Call("Test"));
         }
     }

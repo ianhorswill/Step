@@ -110,7 +110,7 @@ namespace Step.Parser
                     {
                         var token = Get();
                         if (token == "]")
-                            throw new SyntaxError("Stray close bracket found without matching open bracket");
+                            throw new SyntaxError("Stray close bracket found without matching open bracket", FilePath, LineNumber);
                         yield return token;
                     }
                     if (!end)
@@ -128,7 +128,7 @@ namespace Step.Parser
                         }
                         if (end)
                             throw new SyntaxError(
-                                "Incomplete expression: open bracket without a matching close bracket");
+                                "Incomplete expression: open bracket without a matching close bracket", FilePath, LineNumber);
                         Get(); // Swallow ]
                         yield return buffer.ToArray();
                     }
@@ -150,7 +150,7 @@ namespace Step.Parser
             }
             if (end)
                 throw new SyntaxError(
-                    "Incomplete expression: open bracket without a matching close bracket");
+                    "Incomplete expression: open bracket without a matching close bracket", FilePath, LineNumber);
             Get(); // Swallow ]
             return buffer.ToArray();
         }
