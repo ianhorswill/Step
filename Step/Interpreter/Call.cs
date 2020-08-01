@@ -24,6 +24,8 @@
 #endregion
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -185,8 +187,21 @@ namespace Step.Interpreter
                             return true;
                     return false;
 
+                case Cons l:
+                    // If it's a list in the operator position, pretend it's a call to member
+                    if (arglist.Length != 1)
+                        throw new ArgumentCountException("<list member>", 1, arglist);
+                    var member = (PrimitiveTask.NonDeterministicRelation) env.Module["Member"];
+                    foreach (var bindings in member(new[] { arglist[0], l }, env))
+                        if (Continue(output, new BindingEnvironment(env, bindings, env.DynamicState), k))
+                            return true;
+                    return false;
+
                 case LogicVariable v:
                     throw new ArgumentException($"Attempt to call an unbound variable {v}");
+
+                case null:
+                    throw new ArgumentException($"Null is not a valid task in call {CallSourceText(originalTarget, arglist)}");
 
                 default:
                     if (arglist.Length == 0)

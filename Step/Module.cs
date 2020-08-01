@@ -328,6 +328,7 @@ namespace Step
                     return false;
                 case CompoundTask _:
                 case Delegate _:
+                case Cons _:
                     return true;
                 default:
                     return false;

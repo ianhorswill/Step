@@ -129,5 +129,13 @@ namespace Tests
             Assert.AreEqual("[Foo 2][Method 1][Test]",
                 Module.StackTrace.Replace("\n", "").Replace("\r", ""));
         }
+
+        [TestMethod]
+        public void ListCallTest()
+        {
+            var m = Module.FromDefinitions("Test: [ForEach [Objects ?x] [Write ?x]]");
+            m["Objects"] = new Cons(1, new Cons(2, new Cons(3, Cons.Empty)));
+            Assert.AreEqual("1 2 3", m.Call("Test"));
+        }
     }
 }
