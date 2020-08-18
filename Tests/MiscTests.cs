@@ -16,5 +16,12 @@ namespace Tests
             Assert.AreEqual("He cries, they cry.", m.Call("Test" ,2));
             Assert.AreEqual("He buzzes, they buzz.", m.Call("Test", 3));
         }
+
+        [TestMethod]
+        public void InitializationTest()
+        {
+            var m = TestUtils.Module("Initially: [set X 1]");
+            Assert.AreEqual(1, (int)m["X"]);
+        }
     }
 }

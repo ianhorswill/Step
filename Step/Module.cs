@@ -245,8 +245,40 @@ namespace Step
         /// </summary>
         public void LoadDefinitions(TextReader stream, string filePath)
         {
-            foreach (var (task, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this, filePath).Definitions)
-                FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, flags, path, line);
+            foreach (var (task, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this,
+                filePath).Definitions)
+            {
+                if (task.Name == "Initially")
+                    RunLoadTimeInitialization(pattern, locals, chain, path, line);
+                else 
+                    FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, flags, path, line);
+            }
+        }
+
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
+        private void RunLoadTimeInitialization(object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, string path, int line)
+        {
+            if (pattern.Length != 0)
+                throw new SyntaxError("Initially command cannot take arguments", path, line);
+            BindingList<GlobalVariableName> bindings = null;
+            if (!chain.Try(new PartialOutput(0),
+                new BindingEnvironment(this,
+                    new MethodCallFrame(null, null, locals.Select(name => new LogicVariable(name)).ToArray(), null)),
+                (o, u, d ) =>
+                {
+                    bindings = d;
+                    return true;
+                }))
+                throw new InvalidOperationException($"{Path.GetFileName(path)}:{line} Initialization failed.");
+            LoadBindingList(bindings);
+        }
+
+        private void LoadBindingList(BindingList<GlobalVariableName> bindings)
+        {
+            if (bindings == null)
+                return;
+            LoadBindingList(bindings.Next);
+            this[bindings.Variable] = bindings.Value;
         }
 
         /// <summary>

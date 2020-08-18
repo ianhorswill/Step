@@ -210,24 +210,24 @@ namespace Step.Parser
             var result = new List<object>();
             using (var enumerator = objects.GetEnumerator())
             {
-                var end = !enumerator.MoveNext();
+                var endOfArglist = !enumerator.MoveNext();
                 object Peek() => enumerator.Current;
 
                 object Get()
                 {
                     var next = Peek();
-                    end = !enumerator.MoveNext();
+                    endOfArglist = !enumerator.MoveNext();
                     return next;
                 }
 
-                while (!end)
+                while (!endOfArglist)
                 {
                     if (Peek().Equals("\""))
                     {
                         Get();  // Swallow quote
                         var tokens = new List<string>();
                         var notDone = true;
-                        while (!end && notDone)
+                        while (!endOfArglist && notDone)
                         {
                             var tok = Peek() as string;
                             switch (tok)

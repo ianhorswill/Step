@@ -86,6 +86,7 @@ namespace Step.Interpreter
                             o is DeterministicTextGenerator2 || o is NondeterministicTextGenerator2 ||
                             o is NonDeterministicRelation);
                 });
+            g["Empty"] = Cons.Empty;
 
             HigherOrderBuiltins.DefineGlobals();
         }
