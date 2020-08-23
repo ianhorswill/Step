@@ -44,7 +44,7 @@
   <ItemGroup>
     <Compile Include="Cons.cs" />
     <Compile Include="DynamicState.cs" />
-    <Compile Include="Extensions.cs" />
+    <Compile Include="Utilities\RngExtensions.cs" />
     <Compile Include="Interpreter\AddStep.cs" />
     <Compile Include="Interpreter\ArgumentCountException.cs" />
     <Compile Include="Interpreter\ArgumentTypeException.cs" />
@@ -77,11 +77,12 @@
     <Compile Include="Parser\SyntaxError.cs" />
     <Compile Include="Parser\TokenStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TextUtilities.cs" />
+    <Compile Include="Utilities\TextUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Interpreter\README.md" />
     <None Include="Parser\README.md" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

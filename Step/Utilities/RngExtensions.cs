@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Step
+namespace Step.Utilities
 {
-    internal static class Extensions
+    internal static class RngExtensions
     {
         private static readonly Random Random = new Random();
         /// <summary>
