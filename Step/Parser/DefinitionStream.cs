@@ -272,7 +272,7 @@ namespace Step.Parser
                     return v;
                 }
                 if (IsGlobalVariableName(s))
-                    return GlobalVariableName.Named(s);
+                    return StateVariableName.Named(s);
 
                 switch (s)
                 {
@@ -286,15 +286,15 @@ namespace Step.Parser
                         return false;
 
                     case "=":
-                        return GlobalVariableName.Named("=");
+                        return StateVariableName.Named("=");
                     case ">":
-                        return GlobalVariableName.Named(">");
+                        return StateVariableName.Named(">");
                     case ">=":
-                        return GlobalVariableName.Named(">=");
+                        return StateVariableName.Named(">=");
                     case "<":
-                        return GlobalVariableName.Named("<");
+                        return StateVariableName.Named("<");
                     case "<=":
-                        return GlobalVariableName.Named("<=");
+                        return StateVariableName.Named("<=");
                 }
 
                 if (int.TryParse(s, out var result))
@@ -309,7 +309,7 @@ namespace Step.Parser
         /// <summary>
         /// Read, parse, and return the information for all method definitions in the stream
         /// </summary>
-        internal IEnumerable<(GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
+        internal IEnumerable<(StateVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
                 string path, int lineNumber)>
             Definitions
         {
@@ -358,7 +358,7 @@ namespace Step.Parser
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (GlobalVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
+        private (StateVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
             string path, int lineNumber) ReadDefinition()
         {
             InitParserState();
@@ -380,7 +380,7 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (GlobalVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
+            return (StateVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
         }
 
         private CompoundTask.TaskFlags ReadFlags()
@@ -503,7 +503,7 @@ namespace Step.Parser
                         throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
                         throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile, lineNumber);
-                    chain.AddStep(new AddStep(Canonicalize(expression[1]), GlobalVariableName.Named(vName), null));
+                    chain.AddStep(new AddStep(Canonicalize(expression[1]), StateVariableName.Named(vName), null));
                     break;
 
                 case "case":
@@ -549,14 +549,14 @@ namespace Step.Parser
                     if (name == null || !IsGlobalVariableName(name))
                         throw new SyntaxError(
                             $"A Set command can only update a GlobalVariable; it can't update {expression[1]}", SourceFile, lineNumber);
-                    chain.AddStep(new AssignmentStep(GlobalVariableName.Named(name), Canonicalize(expression[2]), null));
+                    chain.AddStep(new AssignmentStep(StateVariableName.Named(name), Canonicalize(expression[2]), null));
                     break;
                     
                 default:
                     // This is a call
                     var target = IsLocalVariableName(targetName)
                         ? (object) GetLocal(targetName)
-                        : GlobalVariableName.Named(targetName);
+                        : StateVariableName.Named(targetName);
                     var args = CanonicalizeArglist(expression.Skip(1).Where(token => !token.Equals("\n")));
                     chain.AddStep(new Call(target, args, null));
                     break;
@@ -664,7 +664,7 @@ namespace Step.Parser
                     throw new SyntaxError($"Invalid method name after the /: {local}/{t}", SourceFile, lineNumber);
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
-                    : GlobalVariableName.Named(targetName);
+                    : StateVariableName.Named(targetName);
                 if (Peek.Equals("/"))
                 {
                     var tempVar = GetFreshLocal("temp");
@@ -696,12 +696,12 @@ namespace Step.Parser
                     throw new SyntaxError($"Invalid method name after the /: {local}/{targetToken}", SourceFile, lineNumber);
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
-                    : GlobalVariableName.Named(targetName);
+                    : StateVariableName.Named(targetName);
                 AddMentionExpressionTail(chain, target, local);
             }
         }
 
-        static readonly GlobalVariableName BinaryTask = GlobalVariableName.Named("BinaryTask");
+        static readonly StateVariableName BinaryTask = StateVariableName.Named("BinaryTask");
         private void AddMentionExpressionTail(ChainBuilder chain, object target, LocalVariableName local)
         {
             var temp = GetFreshLocal("temp");

@@ -52,43 +52,43 @@ namespace Step.Interpreter
         /// <summary>
         /// Bindings mapping global variables to their values, when overriding the Module's values
         /// </summary>
-        public readonly BindingList<GlobalVariableName> DynamicState;
+        public readonly State State;
 
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
         internal BindingEnvironment(BindingEnvironment e, MethodCallFrame frame)
-            : this(e.Module, frame, e.Unifications, e.DynamicState)
+            : this(e.Module, frame, e.Unifications, e.State)
         { }
 
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
         internal BindingEnvironment(Module module, MethodCallFrame frame)
-            : this(module, frame, null, null)
+            : this(module, frame, null, State.Empty)
         { }
 
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
-        public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
-            : this(e.Module, e.Frame, unifications, dynamicState)
+        public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, State state)
+            : this(e.Module, e.Frame, unifications, state)
         { }
 
         /// <summary>
         /// Make a binding environment identical to e but with v bound to newValue
         /// </summary>
-        public BindingEnvironment(BindingEnvironment e, GlobalVariableName v, object newValue)
-            : this(e.Module, e.Frame, e.Unifications, new BindingList<GlobalVariableName>(v, newValue, e.DynamicState))
+        public BindingEnvironment(BindingEnvironment e, StateVariableName v, object newValue)
+            : this(e.Module, e.Frame, e.Unifications, e.State.Bind(v, newValue))
         { }
 
         internal BindingEnvironment(Module module, MethodCallFrame frame,
-            BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState)
+            BindingList<LogicVariable> unifications, State state)
         {
             Module = module;
             Frame = frame;
             Unifications = unifications;
-            DynamicState = dynamicState;
+            State = state;
         }
 
         /// <summary>
@@ -110,8 +110,8 @@ namespace Step.Interpreter
                 case LocalVariableName l:
                     return Deref(Local[l.Index]);
 
-                case GlobalVariableName g:
-                    if (BindingList<GlobalVariableName>.TryLookup(DynamicState, g, out var result))
+                case StateVariableName g:
+                    if (State.TryLookup(g, out var result))
                         return result;
                     return Module[g];
 
@@ -190,7 +190,7 @@ namespace Step.Interpreter
         {
             if (UnifyArrays(a, b, out BindingList<LogicVariable> outUnifications))
             {
-                e = new BindingEnvironment(Module, Frame, outUnifications, DynamicState);
+                e = new BindingEnvironment(Module, Frame, outUnifications, State);
                 return true;
             }
 

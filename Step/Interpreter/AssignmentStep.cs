@@ -4,10 +4,10 @@ namespace Step.Interpreter
 {
     internal class AssignmentStep : Step
     {
-        public readonly GlobalVariableName Variable;
+        public readonly StateVariableName Variable;
         public readonly object Value;
 
-        public AssignmentStep(GlobalVariableName variable, object value, Step next)
+        public AssignmentStep(StateVariableName variable, object value, Step next)
         : base(next)
         {
             Variable = variable;
@@ -22,7 +22,7 @@ namespace Step.Interpreter
             return Continue(output,
                 new BindingEnvironment(e,
                     e.Unifications,
-                    BindingList<GlobalVariableName>.Bind(e.DynamicState, Variable, value)),
+                    e.State.Bind(Variable, value)),
                 k);
         }
     }

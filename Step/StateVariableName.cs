@@ -1,6 +1,6 @@
 ﻿#region Copyright
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="GlobalVariableName.cs" company="Ian Horswill">
+// <copyright file="StateVariableName.cs" company="Ian Horswill">
 // Copyright (C) 2020 Ian Horswill
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -25,8 +25,9 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using Step.Interpreter;
 
-namespace Step.Interpreter
+namespace Step
 {
     /// <summary>
     /// An object representing the name of a variable held in a Module
@@ -34,37 +35,28 @@ namespace Step.Interpreter
     /// tables in the Modules.  So it's like a symbol in lisp.
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class GlobalVariableName
+    public class StateVariableName : StateElement
     {
-        /// <summary>
-        /// Name of the variable.
-        /// Names are unique to GlobalVariables; two different GlobalVariable objects must always have different names.
-        /// </summary>
-        public readonly string Name;
+
 
         /// <summary>
         /// Table mapping names to existing global variables
         /// </summary>
-        private static readonly Dictionary<string,GlobalVariableName> SymbolTable = new Dictionary<string, GlobalVariableName>();
+        private static readonly Dictionary<string,StateVariableName> SymbolTable = new Dictionary<string, StateVariableName>();
 
-        private GlobalVariableName(string name)
-        {
-            Name = name;
-        }
+        private StateVariableName(string name) : base(name)
+        { }
 
         /// <summary>
         /// Return the unique global variable with this name.
         /// Creates and stores the variable if necessary.
         /// </summary>
         /// <param name="name">Name for the variable</param>
-        public static GlobalVariableName Named(string name)
+        public static StateVariableName Named(string name)
         {
             if (SymbolTable.TryGetValue(name, out var global))
                 return global;
-            return SymbolTable[name] = new GlobalVariableName(name);
+            return SymbolTable[name] = new StateVariableName(name);
         }
-
-        /// <inheritdoc />
-        public override string ToString() => Name;
     }
 }

@@ -42,7 +42,7 @@ namespace Step
         /// <summary>
         /// Table of values assigned by this module to different global variables
         /// </summary>
-        private readonly Dictionary<GlobalVariableName, object> dictionary = new Dictionary<GlobalVariableName, object>();
+        private readonly Dictionary<StateVariableName, object> dictionary = new Dictionary<StateVariableName, object>();
         /// <summary>
         /// Parent module to try if a variable can't be found in this module;
         /// </summary>
@@ -54,7 +54,7 @@ namespace Step
         /// <param name="name">Variable to look up</param>
         /// <param name="value">Value found, if any</param>
         /// <returns>True if variable found</returns>
-        public delegate bool BindHook(GlobalVariableName name, out object value);
+        public delegate bool BindHook(StateVariableName name, out object value);
 
         /// <summary>
         /// Optional list of hooks to try when a variable can't be found.
@@ -112,8 +112,8 @@ namespace Step
         /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
         public object this[string variableName]
         {
-            get => this[GlobalVariableName.Named(variableName)];
-            set => this[GlobalVariableName.Named(variableName)] = value;
+            get => this[StateVariableName.Named(variableName)];
+            set => this[StateVariableName.Named(variableName)] = value;
         }
 
         /// <summary>
@@ -122,13 +122,13 @@ namespace Step
         /// <param name="v">The variable</param>
         /// <returns>Value</returns>
         /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
-        public object this[GlobalVariableName v]
+        public object this[StateVariableName v]
         {
             get => Lookup(v);
             set => dictionary[v] = value;
         }
 
-        private object Lookup(GlobalVariableName v, bool throwOnFailure = true)
+        private object Lookup(StateVariableName v, bool throwOnFailure = true)
         {
 // First see if it's stored in this or some ancestor module
             for (var module = this; module != null; module = module.Parent)
@@ -158,7 +158,7 @@ namespace Step
         /// <param name="lineNumber">Source file line number of method referencing this task, if relevant</param>
         /// <returns>The task</returns>
         /// <exception cref="ArgumentException">If variable is defined but isn't a CompoundTask</exception>
-        internal CompoundTask FindTask(GlobalVariableName v, int argCount, bool createIfNeeded = true, string path = "Unknown", int lineNumber = 0)
+        internal CompoundTask FindTask(StateVariableName v, int argCount, bool createIfNeeded = true, string path = "Unknown", int lineNumber = 0)
         {
             CompoundTask Recur(Module m)
             {
@@ -195,27 +195,27 @@ namespace Step
         /// <summary>
         /// Calls the named task with the specified arguments and returns the text it generates
         /// </summary>
-        /// <param name="dynamicState">Global variable bindings to use in the call, if any.</param>
+        /// <param name="state">Global variable bindings to use in the call, if any.</param>
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
-        public (string output, DynamicState newDynamicState) Call(
-            DynamicState dynamicState, string taskName, params object[] args)
+        public (string output, State newDynamicState) Call(
+            State state, string taskName, params object[] args)
         {
-            var maybeTask = this[GlobalVariableName.Named(taskName)];
+            var maybeTask = this[StateVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
             var output = PartialOutput.NewEmpty();
-            var env = new BindingEnvironment(this, null, null, dynamicState.Bindings);
+            var env = new BindingEnvironment(this, null, null, state);
 
             string result = null;
-            BindingList<GlobalVariableName> newState = null;
+            State newState = State.Empty;
 
             foreach (var method in t.EffectiveMethods)
                 if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; newState = s; return true; }))
-                    return (result, new DynamicState(newState));
-            return (null, new DynamicState(null));
+                    return (result, newState);
+            return (null, State.Empty);
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace Step
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
         public string Call(string taskName, params object[] args)
         {
-            var (output, _) = Call(new DynamicState(null), taskName, args);
+            var (output, _) = Call(State.Empty, taskName, args);
             return output;
         }
 
@@ -260,7 +260,7 @@ namespace Step
         {
             if (pattern.Length != 0)
                 throw new SyntaxError("Initially command cannot take arguments", path, line);
-            BindingList<GlobalVariableName> bindings = null;
+            State bindings = State.Empty;
             if (!chain.Try(new PartialOutput(0),
                 new BindingEnvironment(this,
                     new MethodCallFrame(null, null, locals.Select(name => new LogicVariable(name)).ToArray(), null)),
@@ -273,12 +273,11 @@ namespace Step
             LoadBindingList(bindings);
         }
 
-        private void LoadBindingList(BindingList<GlobalVariableName> bindings)
+        private void LoadBindingList(State state)
         {
-            if (bindings == null)
-                return;
-            LoadBindingList(bindings.Next);
-            this[bindings.Variable] = bindings.Value;
+            foreach (var pair in state.Bindings)
+                if (pair.Key is StateVariableName g)
+                    this[g] = pair.Value;
         }
 
         /// <summary>
@@ -334,7 +333,7 @@ namespace Step
                 if (pair.Value != null && pair.Value is CompoundTask task)
                     foreach (var method in task.Methods)
                         for (var step = method.StepChain; step != null; step = step.Next)
-                            if (step is Call c && c.Task is GlobalVariableName g && !TaskDefined(g))
+                            if (step is Call c && c.Task is StateVariableName g && !TaskDefined(g))
                             {
                                 var fileName = method.FilePath == null ? "Unknown" : Path.GetFileName(method.FilePath);
                                 yield return
@@ -343,12 +342,12 @@ namespace Step
             }
         }
 
-        private bool TaskDefined(GlobalVariableName globalVariableName)
+        private bool TaskDefined(StateVariableName stateVariableName)
         {
-            if (globalVariableName == null)
+            if (stateVariableName == null)
                 return false;
 
-            var value = Lookup(globalVariableName, false);
+            var value = Lookup(stateVariableName, false);
             if (value == null)
                 return false;
 

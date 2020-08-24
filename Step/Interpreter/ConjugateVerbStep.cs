@@ -11,12 +11,12 @@ namespace Step.Interpreter
 
         public readonly string Suffix;
 
-        private static readonly GlobalVariableName Tps = GlobalVariableName.Named("ThirdPersonSingular");
+        private static readonly StateVariableName Tps = StateVariableName.Named("ThirdPersonSingular");
 
         public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
         {
             
-            var tps = BindingList<GlobalVariableName>.Lookup(e.DynamicState, Tps, true);
+            var tps = e.State.LookupOrDefault(Tps, true);
             if (!(tps is bool b))
                 throw new ArgumentException($"The Plural variable's value is {tps}, but must be a Boolean");
 

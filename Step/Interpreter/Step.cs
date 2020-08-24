@@ -49,7 +49,7 @@ namespace Step.Interpreter
         /// It takes as arguments the things that might have changed in the process of running the step.
         /// </summary>
         /// <returns>True if everything completed successfully, false if we need to backtrack</returns>
-        public delegate bool Continuation(PartialOutput o, BindingList<LogicVariable> unifications, BindingList<GlobalVariableName> dynamicState);
+        public delegate bool Continuation(PartialOutput o, BindingList<LogicVariable> unifications, State state);
 
         /// <summary>
         /// Attempt to run this step.
@@ -68,7 +68,7 @@ namespace Step.Interpreter
         {
             if (Next != null)
                 return Next.Try(p, e, k);
-            return k == null || k(p, e.Unifications, e.DynamicState);
+            return k == null || k(p, e.Unifications, e.State);
         }
     }
 }

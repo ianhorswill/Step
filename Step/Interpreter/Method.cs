@@ -82,7 +82,7 @@ namespace Step.Interpreter
             if (newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv))
             {
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
-                if (StepChain?.Try(output, finalEnv, k) ?? k(output, finalEnv.Unifications, finalEnv.DynamicState))
+                if (StepChain?.Try(output, finalEnv, k) ?? k(output, finalEnv.Unifications, finalEnv.State))
                     return true;
             }
 

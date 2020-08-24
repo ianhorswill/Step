@@ -83,7 +83,7 @@ namespace Step.Interpreter
         /// </summary>
         public string SourceText => CallSourceText(Task, Arglist);
 
-        internal static readonly GlobalVariableName MentionHook = GlobalVariableName.Named("Mention");
+        internal static readonly StateVariableName MentionHook = StateVariableName.Named("Mention");
 
         /// <summary>
         /// Attempt to run this task
@@ -183,7 +183,7 @@ namespace Step.Interpreter
 
                 case PrimitiveTask.NonDeterministicRelation r:
                     foreach (var bindings in r(arglist, env))
-                        if (Continue(output, new BindingEnvironment(env, bindings, env.DynamicState), k))
+                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k))
                             return true;
                     return false;
 
@@ -193,7 +193,7 @@ namespace Step.Interpreter
                         throw new ArgumentCountException("<list member>", 1, arglist);
                     var member = (PrimitiveTask.NonDeterministicRelation) env.Module["Member"];
                     foreach (var bindings in member(new[] { arglist[0], l }, env))
-                        if (Continue(output, new BindingEnvironment(env, bindings, env.DynamicState), k))
+                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k))
                             return true;
                     return false;
 

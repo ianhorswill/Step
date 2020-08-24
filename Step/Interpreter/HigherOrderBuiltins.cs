@@ -66,7 +66,7 @@ namespace Step.Interpreter
             var consumer = args.Skip(1).ToArray();
             var consumerChain = StepChainFromBody("ForEach", consumer);
 
-            var dynamicState = env.DynamicState;
+            var dynamicState = env.State;
             var resultOutput = output;
 
             producerChain.Try(resultOutput, env, (o, u, d) =>
@@ -95,7 +95,7 @@ namespace Step.Interpreter
         {
             PartialOutput finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
-            BindingList<GlobalVariableName> finalDynamicState = null;
+            State finalState = State.Empty;
             bool success = false;
 
             GenerateSolutionsFromBody("Once", args, output, env,
@@ -104,11 +104,11 @@ namespace Step.Interpreter
                     success = true;
                     finalOutput = o;
                     finalBindings = u;
-                    finalDynamicState = d;
+                    finalState = d;
                     return true;
                 });
 
-            return success && k(finalOutput, finalBindings, finalDynamicState);
+            return success && k(finalOutput, finalBindings, finalState);
         }
 
         private static bool ExactlyOnce(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
@@ -116,7 +116,7 @@ namespace Step.Interpreter
             ArgumentCountException.Check("ExactlyOnce", 1, args);
             PartialOutput finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
-            BindingList<GlobalVariableName> finalDynamicState = null;
+            State finalState = State.Empty;
             bool failure = true;
 
             var chain = StepChainFromBody("ExactlyOnce", args);
@@ -126,7 +126,7 @@ namespace Step.Interpreter
                     failure = false;
                     finalOutput = o;
                     finalBindings = u;
-                    finalDynamicState = d;
+                    finalState = d;
                     return true;
                 });
 
@@ -135,7 +135,7 @@ namespace Step.Interpreter
                 var failedCall = (Call)chain;
                 throw new CallFailedException(env.Resolve(failedCall.Task), env.ResolveList(failedCall.Arglist));
             }
-            return k(finalOutput, finalBindings, finalDynamicState);
+            return k(finalOutput, finalBindings, finalState);
         }
 
         private static bool Max(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
@@ -205,7 +205,7 @@ namespace Step.Interpreter
             // When we get here, we've iterated through all solutions and kept the best one.
             // So pass it on to our continuation
             return gotOne
-                   && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.DynamicState);
+                   && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.State);
         }
 
         #region Data structures for recording execution state
@@ -217,20 +217,20 @@ namespace Step.Interpreter
         {
             public readonly string[] Output;
             public readonly BindingList<LogicVariable> Bindings;
-            public readonly BindingList<GlobalVariableName> DynamicState;
+            public readonly State State;
 
             //private static readonly string[] EmptyOutput = new string[0];
 
-            private CapturedState(string[] output, BindingList<LogicVariable> bindings, BindingList<GlobalVariableName> dynamicState)
+            private CapturedState(string[] output, BindingList<LogicVariable> bindings, State state)
             {
                 Output = output;
                 Bindings = bindings;
-                DynamicState = dynamicState;
+                State = state;
             }
 
             public CapturedState(PartialOutput before, PartialOutput after, BindingList<LogicVariable> bindings,
-                BindingList<GlobalVariableName> dynamicState)
-                : this(PartialOutput.Difference(before, after), bindings, dynamicState)
+                State state)
+                : this(PartialOutput.Difference(before, after), bindings, state)
             { }
         }
         #endregion
@@ -242,7 +242,7 @@ namespace Step.Interpreter
         /// </summary>
         internal static void GenerateSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
         {
-            new Call(GlobalVariableName.Named(taskName), args, null).Try(o, e, k);
+            new Call(StateVariableName.Named(taskName), args, null).Try(o, e, k);
         }
 
         /// <summary>

@@ -51,7 +51,7 @@ namespace Step.Interpreter
             {
                 ArgumentCountException.Check("=", 2, args);
                 return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
-                           k(o, newBindings, e.DynamicState);
+                           k(o, newBindings, e.State);
             }));
             g[">"] = Predicate<float, float>(">", (a, b) => a > b);
             g["<"] = Predicate<float, float>("<", (a, b) => a < b);

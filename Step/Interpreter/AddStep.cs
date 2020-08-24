@@ -3,9 +3,9 @@
     internal class AddStep : Step
     {
         private readonly object element;
-        private readonly GlobalVariableName listVariable;
+        private readonly StateVariableName listVariable;
 
-        public AddStep(object element, GlobalVariableName listVariable, Step next)
+        public AddStep(object element, StateVariableName listVariable, Step next)
             : base(next)
         {
             this.element = element;
@@ -24,7 +24,7 @@
             return Continue(output,
                 new BindingEnvironment(e,
                     e.Unifications, 
-                    e.DynamicState.Bind(listVariable, new Cons(elt, list))),
+                    e.State.Bind(listVariable, new Cons(elt, list))),
                 k);
         }
     }
