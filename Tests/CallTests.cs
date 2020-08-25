@@ -64,7 +64,7 @@ namespace Tests
         [TestMethod]
         public void MatchGlobalTest()
         {
-            var m = new Module {["X"] = 1};
+            var m = new Module("test") {["X"] = 1};
             m.AddDefinitions("Test X: hit",
                 "Test ?x: miss");
             Assert.AreEqual("Hit",m.Call("Test", 1));
@@ -74,7 +74,7 @@ namespace Tests
         [TestMethod]
         public void InlineCallTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Inline ?x: inline",
                 "Method ?x: ?x/Inline",
                 "Test: [Method 1]");
@@ -84,7 +84,7 @@ namespace Tests
         [TestMethod]
         public void PathTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
                 "Method ?x: ?x/Map/Write",
@@ -95,7 +95,7 @@ namespace Tests
         [TestMethod]
         public void PathTest2()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
                 "Method ?x: ?x/Map",
@@ -107,7 +107,7 @@ namespace Tests
         [TestMethod]
         public void PathPlusTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
                 "Foo ?x: foo",
@@ -119,7 +119,7 @@ namespace Tests
         [TestMethod]
         public void StackTraceTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
                 "Foo ?x: foo",
@@ -136,6 +136,21 @@ namespace Tests
             var m = Module.FromDefinitions("Test: [ForEach [Objects ?x] [Write ?x]]");
             m["Objects"] = new Cons(1, new Cons(2, new Cons(3, Cons.Empty)));
             Assert.AreEqual("1 2 3", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void CallPredicateTest()
+        {
+            var m = Module.FromDefinitions("[fallible] Test [Number ?x]:");
+            Assert.IsTrue(m.CallPredicate(State.Empty, "Test", 1));
+            Assert.IsFalse(m.CallPredicate(State.Empty, "Test", "test"));
+        }
+
+        [TestMethod]
+        public void CallFunctionTest()
+        {
+            var m = Module.FromDefinitions("Test ?x ?x:");
+            Assert.AreEqual(1, m.CallFunction<int>(State.Empty, "Test", 1));
         }
     }
 }

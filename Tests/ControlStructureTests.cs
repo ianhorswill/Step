@@ -9,7 +9,7 @@ namespace Tests
         [TestMethod]
         public void CoolTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("TestCool: [firstOf] [cool] A [or] B [end]",
                 "Test: [TestCool] [TestCool] [TestCool] [TestCool] ");
             Assert.AreEqual("A B A B", m.Call("Test"));
@@ -18,7 +18,7 @@ namespace Tests
         [TestMethod]
         public void CoolTest2()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("TestCool: [firstOf] [cool 2] A [or] B [end]",
                 "Test: [TestCool] [TestCool] [TestCool] [TestCool] ");
             Assert.AreEqual("A B B A", m.Call("Test"));
@@ -36,7 +36,7 @@ namespace Tests
         [TestMethod]
         public void OnceTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("TestCool: [firstOf] [once] A [or] B [end]",
                 "Test: [TestCool] [TestCool] [TestCool] [TestCool] ");
             Assert.AreEqual("A B B B", m.Call("Test"));
@@ -45,7 +45,7 @@ namespace Tests
         [TestMethod]
         public void CaseTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test ?x: [case ?x] Number : number [or] String: string [else] other [end]");
             Assert.AreEqual("Number", m.Call("Test", 1));
             Assert.AreEqual("String", m.Call("Test", "foo"));
@@ -55,7 +55,7 @@ namespace Tests
         [TestMethod]
         public void CaseTest2()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test ?x: [case ?x] [> 5] : big [else] small [end]");
             Assert.AreEqual("Small", m.Call("Test", 1));
             Assert.AreEqual("Big", m.Call("Test", 10));
@@ -64,7 +64,7 @@ namespace Tests
         [TestMethod]
         public void RandomlyTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test: [randomly] a [or] b [else] c [end]");
             var gotA = 0;
             var gotB = 0;
@@ -101,7 +101,7 @@ namespace Tests
         [TestMethod]
         public void FirstOfTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Generate: [firstOf] a [or] b [else] c [end].",
                 "Test: [DoAll [Generate]]");
             

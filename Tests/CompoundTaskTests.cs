@@ -90,7 +90,7 @@ namespace Tests
         [TestMethod]
         public void RandomlyTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("[randomly] Test: a", "Test: b", "Test: c ");
             var gotA = 0;
             var gotB = 0;

@@ -35,7 +35,7 @@ namespace Tests
         [TestMethod, ExpectedException(typeof(Exception))]
         public void ThrowTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test: [Throw a b c]");
             m.Call("Test");
         }
@@ -43,7 +43,7 @@ namespace Tests
         [TestMethod]
         public void StringFormTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test: [StringForm 123 ?x] ?x",
                 "Mention ?x: [Write ?x]");
             Assert.AreEqual("123",m.Call("Test"));
@@ -52,7 +52,7 @@ namespace Tests
         [TestMethod]
         public void MentionTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test: [StringForm 123 ?x] ?x",
                 "Mention ?x: foo");
             Assert.AreEqual("Foo",m.Call("Test"));
@@ -61,7 +61,7 @@ namespace Tests
         [TestMethod]
         public void SetTest()
         {
-            var m = new Module {["X"] = 1};
+            var m = new Module("test") {["X"] = 1};
             m.AddDefinitions("Test: [X] [set X 2] [X]");
             Assert.AreEqual("1 2", m.Call("Test"));
         }
@@ -69,7 +69,7 @@ namespace Tests
         [TestMethod]
         public void SetTest2()
         {
-            var m = new Module {["X"] = 1};
+            var m = new Module("test") {["X"] = 1};
             m.AddDefinitions("Test ?x: [X] [set X ?x] [X]");
             Assert.AreEqual("1 5", m.Call("Test", 5));
         }
@@ -77,7 +77,7 @@ namespace Tests
         [TestMethod]
         public void EqualsTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test ?x ?y: [= ?x ?z] [= ?z ?y] succeeded",
                 "TextX ?x: [Test ?x ?y] [= ?y 1] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 1));
@@ -90,7 +90,7 @@ namespace Tests
         [TestMethod]
         public void LessThanTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test ?x ?y: [< ?x ?y] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 2));
             Assert.AreEqual(null, m.Call("Test", 1, 1));
@@ -99,7 +99,7 @@ namespace Tests
         [TestMethod]
         public void ErrorPrintingTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test ?x ?y: [< = ?x ?y] Succeeded");
             var result = "";
             try
@@ -116,7 +116,7 @@ namespace Tests
         [TestMethod]
         public void ListTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test: [set List empty] [PrintList] [add 1 List] [PrintList] [add 2 List] [PrintList]",
                 "PrintList: [DoAll [Member ?e List] [Write ?e]]");
             Assert.AreEqual("1 2 1", m.Call("Test"));
@@ -125,7 +125,7 @@ namespace Tests
         [TestMethod]
         public void ListTest2()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Add ?x: [add ?x List] [PrintList]",
                 "PrintList: [DoAll [Member ?e List] [Write ?e]]",
                 "Test: [set List empty] [Add 1] [Add 2] [Add 3]");

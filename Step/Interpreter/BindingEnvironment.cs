@@ -96,7 +96,7 @@ namespace Step.Interpreter
         /// Used for Unit tests.  Don't use this yourself.
         /// </summary>
         internal static BindingEnvironment NewEmpty() =>
-            new BindingEnvironment(new Module(), 
+            new BindingEnvironment(new Module("empty"), 
                 new MethodCallFrame(null, null, new LogicVariable[0], null));
 
         /// <summary>

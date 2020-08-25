@@ -9,7 +9,7 @@ namespace Tests
     {
         public static Module Module(params string[] definitions)
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions(definitions);
             return m;
         }
@@ -28,7 +28,7 @@ namespace Tests
 
         public static string Expand(this Step.Interpreter.Step step)
         {
-            return step.Expand(new Module());
+            return step.Expand(new Module("test"));
         }
 
         internal static Step.Interpreter.Step Sequence(params object[] steps)

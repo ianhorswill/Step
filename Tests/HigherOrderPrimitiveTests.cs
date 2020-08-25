@@ -35,7 +35,7 @@ namespace Tests
         [TestMethod]
         public void DoAllTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("[generator] Generate: a",
                 "Generate: b",
                 "Generate: c",
@@ -55,7 +55,7 @@ namespace Tests
         [TestMethod]
         public void ForEachTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("[generator] Generate a:",
                 "Generate b:",
                 "Generate c:",
@@ -66,7 +66,7 @@ namespace Tests
         [TestMethod]
         public void OnceTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Generate: a",
                 "Generate: b",
                 "Generate: c",
@@ -77,7 +77,7 @@ namespace Tests
         [TestMethod]
         public void ExactlyOnceTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Generate: a",
                 "Generate: b",
                 "Generate: c",
@@ -88,7 +88,7 @@ namespace Tests
         [TestMethod, ExpectedException(typeof(CallFailedException))]
         public void ExactlyOnceFailureTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Generate: a",
                 "Generate: b",
                 "Generate: c",
@@ -99,7 +99,7 @@ namespace Tests
         [TestMethod]
         public void HigherOrderUserCodeTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("[generator] Generate a:",
                 "Generate b:",
                 "Generate c:",
@@ -114,7 +114,7 @@ namespace Tests
         [TestMethod]
         public void MaxTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("[generator] Generate a 1:",
                 "Generate b 2:",
                 "Generate c 1:",
@@ -126,7 +126,7 @@ namespace Tests
         [TestMethod]
         public void MinTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("[generator] Generate a 1:",
                 "Generate b 0:",
                 "Generate c 2:",
@@ -138,7 +138,7 @@ namespace Tests
         [TestMethod]
         public void MaxFailTest()
         {
-            var m = new Module();
+            var m = new Module("test");
             m.AddDefinitions("Test: [Max ?score [Fail]] ?x ?score",
                 "Mention ?x: [Write ?x]",
                 "Test: Max failed");

@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,6 +37,7 @@ namespace Step
     /// <summary>
     /// Stores values of global state variables
     /// </summary>
+    [DebuggerDisplay("{" + nameof(Name) + "}")]
     public class Module
     {
         #region Fields
@@ -67,28 +69,34 @@ namespace Step
         public static readonly Module Global;
 
         private List<string> loadTimeWarnings;
+
+        /// <summary>
+        /// Name of the module for debugging purposes
+        /// </summary>
+        public readonly string Name;
         #endregion
 
         #region Constructors
         static Module()
         {
-            Global = new Module(null);
+            Global = new Module("Global", null);
             Builtins.DefineGlobals();
         }
 
         /// <summary>
         /// Make a module that inherits from Global
         /// </summary>
-        public Module() : this(Global)
+        public Module(string name) : this(name, Global)
         { }
 
         /// <summary>
         /// Make a module with the Global module as parent and load the specified source files into it.
         /// </summary>
+        /// <param name="name">Name of the Module, for debugging purposes</param>
         /// <param name="parent">Parent module for this module.  This will usually be Module.Global</param>
         /// <param name="sourceFiles">Definition files to load</param>
-        public Module(Module parent, params string[] sourceFiles)
-            : this(parent)
+        public Module(string name, Module parent, params string[] sourceFiles)
+            : this(name, parent)
         {
             foreach (var f in sourceFiles)
                 LoadDefinitions(f);
@@ -97,9 +105,10 @@ namespace Step
         /// <summary>
         /// Make a module that inherits from the specified parent
         /// </summary>
-        public Module(Module parent)
+        public Module(string name, Module parent)
         {
             Parent = parent;
+            Name = name;
         }
         #endregion
 
@@ -231,6 +240,77 @@ namespace Step
         }
 
         /// <summary>
+        /// Calls the named task with the specified arguments as a predicate and returns true if it succeeds
+        /// This call will fail if the task attempts to generate output.
+        /// </summary>
+        /// <param name="state">Global variable bindings to use in the call, if any.</param>
+        /// <param name="taskName">Name of the task</param>
+        /// <param name="args">Arguments to task, if any</param>
+        public bool CallPredicate(
+            State state, string taskName, params object[] args)
+        {
+            var maybeTask = this[StateVariableName.Named(taskName)];
+            var t = maybeTask as CompoundTask;
+            if (t == null)
+                throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
+            var output = new PartialOutput(0);
+            var env = new BindingEnvironment(this, null, null, state);
+
+            foreach (var method in t.EffectiveMethods)
+                if (method.Try(args, output, env, (o, u, s) => true))
+                    return true;
+            return false;
+        }
+
+        private static readonly LocalVariableName FunctionResult = new LocalVariableName("??result", 0);
+        /// <summary>
+        /// Calls the named task with the specified arguments as a function and returns the value of its last argument
+        /// This call will fail if the task attempts to generate output.
+        /// </summary>
+        /// <param name="state">Global variable bindings to use in the call, if any.</param>
+        /// <param name="taskName">Name of the task</param>
+        /// <param name="args">Arguments to task, if any</param>
+        public T CallFunction<T>(
+            State state, string taskName, params object[] args)
+        {
+            var maybeTask = this[StateVariableName.Named(taskName)];
+            var t = maybeTask as CompoundTask;
+            if (t == null)
+                throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
+
+            var env = new BindingEnvironment(this, null, null, state);
+            var resultVar = new LogicVariable(FunctionResult);
+            var extendedArgs = args.Append(resultVar).ToArray();
+
+            var output = new PartialOutput(0);
+
+            BindingList<LogicVariable> bindings = null;
+
+            foreach (var method in t.EffectiveMethods)
+                if (method.Try(extendedArgs, output, env, (o, u, s) => 
+                {
+                    bindings = u;
+                    return true; 
+                }))
+                {
+                    // Call succeeded; pull out the binding of the result variable and return it
+                    for (var v = resultVar; ;)
+                    {
+                        var probe = bindings.Lookup(v, v);
+                        if (ReferenceEquals(probe, v))
+                            // resultVar is unbound or bound to an unbound variable
+                            throw new ArgumentInstantiationException(taskName, env, extendedArgs);
+                        if (probe is LogicVariable l)
+                            v = l;
+                        else
+                            return (T) probe;
+                    }
+                }
+            // Call failed
+            throw new CallFailedException(taskName, args);
+        }
+
+        /// <summary>
         /// Load the definitions in the specified file
         /// </summary>
         /// <param name="path">Path to the file</param>
@@ -294,7 +374,7 @@ namespace Step
         /// </summary>
         public static Module FromDefinitions(params string[] definitions)
         {
-            var m = new Module();
+            var m = new Module("anonymous");
             m.AddDefinitions(definitions);
             return m;
         }
