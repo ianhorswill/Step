@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
@@ -47,6 +46,7 @@ namespace Step.Interpreter
             g["ExactlyOnce"] = (MetaTask) ExactlyOnce;
             g["Max"] = (MetaTask) Max;
             g["Min"] = (MetaTask) Min;
+            g["SaveText"] = (MetaTask) SaveText;
         }
 
         private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
@@ -207,6 +207,36 @@ namespace Step.Interpreter
             return gotOne
                    && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.State);
         }
+
+        private static bool SaveText(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            ArgumentCountException.Check("SaveText", 2, args);
+
+            var textVar = e.Resolve(args[1]);
+            if (textVar == null)
+                throw new ArgumentInstantiationException("SaveText", e, args);
+
+            var invocation = args[0] as object[];
+            if (invocation == null || invocation.Length == 0)
+                throw new ArgumentTypeException("SaveText", typeof(Call), args[0], args);
+            var arglist = new object[invocation.Length - 1];
+            Array.Copy(invocation, 1, arglist, 0, arglist.Length);
+            var call = new Call(invocation[0], arglist, null);
+            var initialLength = o.Length;
+            string[] chunk = null;
+
+            if (call.Try(o, e, (output, b, d) =>
+                                    {
+                                        chunk = new string[output.Length - initialLength];
+                                        Array.Copy(o.Buffer, initialLength, chunk, 0, output.Length-initialLength);
+                                        return true;
+                                    })
+                && e.Unify(textVar, chunk, e.Unifications, out var newUnifications))
+                return k(o, newUnifications, e.State);
+
+            return false;
+        }
+
 
         #region Data structures for recording execution state
         /// <summary>

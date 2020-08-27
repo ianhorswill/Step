@@ -144,5 +144,13 @@ namespace Tests
                 "Test: Max failed");
             Assert.AreEqual("Max failed", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void SaveTextTest()
+        {
+            var m = Module.FromDefinitions("[fallible] Text 1: foo", "Test ?a: [SaveText [Text ?a] ?x] start [Write ?x] end", "Test ?x: failed");
+            Assert.AreEqual("Start foo end", m.Call("Test", 1));
+            Assert.AreEqual("Failed", m.Call("Test", 2));
+        }
     }
 }
