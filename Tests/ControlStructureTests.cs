@@ -109,6 +109,18 @@ namespace Tests
         }
 
         [TestMethod]
+        public void SequenceTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[fallible]Generate: [sequence] a [then] b [then] c [end]",
+                "[fallible]Test: [Generate] 1 [Generate] 2 [Generate] 3",
+                "TestFail: [Test][Test]", "TestFail: Failed");
+
+            Assert.AreEqual("A 1 b 2 c 3", m.Call("Test"));
+            Assert.AreEqual("Failed", m.Call("TestFail"));
+        }
+
+        [TestMethod]
         public void EmptyElseTest()
         {
             var m = TestUtils.Module("Test ?x: [case ?x] Number: A [else] [end]");

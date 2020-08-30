@@ -19,9 +19,23 @@ namespace Step.Interpreter
         public readonly string Name;
 
         /// <summary>
+        /// True if this state element has a default value
+        /// </summary>
+        public readonly bool HasDefault;
+        /// <summary>
+        /// Default value of state element if HasDefault is true
+        /// </summary>
+        public readonly object DefaultValue;
+
+        /// <summary>
         /// Make a new StateElement with the specified name
         /// </summary>
-        public StateElement(string name) => Name = name;
+        public StateElement(string name, bool hasDefault, object defaultValue)
+        {
+            Name = name;
+            HasDefault = hasDefault;
+            DefaultValue = defaultValue;
+        }
 
         /// <inheritdoc />
         public override string ToString() => Name;

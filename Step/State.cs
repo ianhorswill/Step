@@ -31,7 +31,14 @@ namespace Step
         /// <summary>
         /// Returns the value of the specified dynamic state element
         /// </summary>
-        public object Lookup(StateElement e) => Bindings[e];
+        public object Lookup(StateElement e)
+        {
+            if (Bindings.TryGetValue(e, out var result))
+                return result;
+            if (e.HasDefault)
+                return e.DefaultValue;
+            throw new KeyNotFoundException($"State contains no value for state element {e.Name}");
+        }
 
         /// <summary>
         /// Returns the value of the specified dynamic state element or the specified default value, if the state element

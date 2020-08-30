@@ -44,7 +44,7 @@ namespace Step
         /// </summary>
         private static readonly Dictionary<string,StateVariableName> SymbolTable = new Dictionary<string, StateVariableName>();
 
-        private StateVariableName(string name) : base(name)
+        private StateVariableName(string name) : base(name, false, null)
         { }
 
         /// <summary>

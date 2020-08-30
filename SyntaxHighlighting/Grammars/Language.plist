@@ -50,6 +50,12 @@
 		    <key>name</key>
 		    <string>keyword.control</string>
 		    <key>match</key>
+		    <string>\[then\]</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
 		    <string>\[generator\]</string>
 	    </dict>
 	    <dict>
@@ -76,6 +82,12 @@
         <key>match</key>
         <string>\[firstOf\]</string>
       </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>\[sequence\]</string>
+	    </dict>
 	  <dict>
 		<key>name</key>
 		<string>keyword.control</string>

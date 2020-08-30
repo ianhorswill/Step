@@ -146,10 +146,10 @@ namespace Step.Parser
         private bool OneOfKeywordMarkers(params string[] keywords) =>
             Peek is object[] array && array.Length == 1 && array[0] is string k && Array.IndexOf(keywords, k) >= 0;
 
-        private readonly string[] keywordMarkers = new[] {"end", "or", "else" };
+        private readonly string[] keywordMarkers = new[] {"end", "or", "else", "then" };
         private bool AtKeywordMarker => OneOfKeywordMarkers(keywordMarkers);
 
-        private readonly string[] caseBranchKeywords = new[] {"end", "or", "else" };
+        private readonly string[] caseBranchKeywords = new[] {"end", "or", "else", "then" };
         private bool EndCaseBranch() => OneOfKeywordMarkers(caseBranchKeywords);
 
         private bool ElseToken => KeywordMarker("else");
@@ -537,9 +537,10 @@ namespace Step.Parser
 
                 case "firstOf":
                 case "randomly":
+                case "sequence":
                     if (expression.Length != 1)
                         throw new ArgumentCountException(targetName, 1, expression.Skip(1).ToArray());
-                    chain.AddStep(ReadBranches(targetName));
+                    chain.AddStep(ReadAlternativeBranches(targetName));
                     break;
 
                 case "set":
@@ -569,7 +570,7 @@ namespace Step.Parser
         /// Read the text of a branch of a [randomly] or [firstOf] expression
         /// </summary>
         /// <returns></returns>
-        private BranchStep ReadBranches(string type)
+        private Interpreter.Step ReadAlternativeBranches(string type)
         {
             var chains = new List<Interpreter.Step>();
             var chain = new ChainBuilder();
@@ -581,6 +582,8 @@ namespace Step.Parser
                 chains.Add(chain.FirstStep);
             }
 
+            if (type == "sequence")
+                return new SequenceStep(chains.ToArray(), null);
             return new BranchStep(type, chains.ToArray(), null, type == "randomly");
         }
 

@@ -78,7 +78,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Make a binding environment identical to e but with v bound to newValue
         /// </summary>
-        public BindingEnvironment(BindingEnvironment e, StateVariableName v, object newValue)
+        public BindingEnvironment(BindingEnvironment e, StateElement v, object newValue)
             : this(e.Module, e.Frame, e.Unifications, e.State.Bind(v, newValue))
         { }
 
