@@ -251,5 +251,16 @@ Test: [Multi]
             Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\n\nWith a line break in it!",
                 m.Call("Test"));
         }
+
+        [TestMethod]
+        public void CommentTest()
+        {
+            var m = Module.FromDefinitions(@"#A comment at start of line
+   # An indented comment
+   Test: foo bar [Baz] # a comment at end of line
+Baz: baz
+# Comment ends with eof");
+            Assert.AreEqual("Foo bar baz", m.Call("Test"));
+        }
     }
 }

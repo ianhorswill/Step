@@ -35,7 +35,11 @@ namespace Step.Parser
     /// </summary>
     public class TokenStream
     {
-        /// <inheritdoc />
+        /// <summary>
+        /// Make a new token stream reading from the specified text stream
+        /// </summary>
+        /// <param name="input">Stream to read from</param>
+        /// <param name="filePath">Path of the stream if it comes from a file (for debug messages)</param>
         public TokenStream(TextReader input, string filePath)
         {
             this.input = input;
@@ -103,8 +107,22 @@ namespace Step.Parser
         private char Get()
         {
             var c = (char) (input.Read());
-            if (c == '\n')
-                LineNumber++;
+            switch (c)
+            {
+                case '\n':
+                    LineNumber++;
+                    break;
+
+                case '#':
+                    int ch;
+                    // Skip the rest of the line
+                    while ((ch = input.Read()) != '\n' && ch >= 0) { }
+                    LineNumber++;
+                    if (ch < 0)
+                        return '\n';
+                    // Return the next thing
+                    return (char)ch;
+            }
             return c;
         }
 
