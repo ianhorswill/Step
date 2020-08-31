@@ -36,6 +36,15 @@ namespace Step.Parser
     public class TokenStream
     {
         /// <summary>
+        /// The Unicode left double quote
+        /// </summary>
+        public const char LeftDoubleQuote = '\u201C';
+        /// <summary>
+        /// The Unicode right double quote
+        /// </summary>
+        public const char RightDoubleQuote = '\u201D';
+
+        /// <summary>
         /// Make a new token stream reading from the specified text stream
         /// </summary>
         /// <param name="input">Stream to read from</param>
@@ -122,6 +131,14 @@ namespace Step.Parser
                         return '\n';
                     // Return the next thing
                     return (char)ch;
+
+                case '"':
+                    var nextCode = input.Peek();
+                    var next = (char) nextCode;
+                    if (nextCode < 0 || char.IsWhiteSpace(next) || char.IsPunctuation(next))
+                        return RightDoubleQuote;
+                    else 
+                        return LeftDoubleQuote;
             }
             return c;
         }

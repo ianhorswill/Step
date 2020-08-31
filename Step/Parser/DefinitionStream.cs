@@ -162,6 +162,11 @@ namespace Step.Parser
         private static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
 
         /// <summary>
+        /// The token is a valid name of a non-anonymous local variable
+        /// </summary>
+        private static bool IsNonAnonymousLocalVariableName(object token) => token is string s && s.StartsWith("?") && s.Any(char.IsLetter);
+
+        /// <summary>
         /// True if the string is a valid global variable name
         /// </summary>
         private static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
@@ -222,7 +227,7 @@ namespace Step.Parser
 
                 while (!endOfArglist)
                 {
-                    if (Peek().Equals("\""))
+                    if (Peek().Equals("\"") || Peek().Equals("\u201C"))  // Check for open quote
                     {
                         Get();  // Swallow quote
                         var tokens = new List<string>();
@@ -236,6 +241,7 @@ namespace Step.Parser
                                     throw new SyntaxError("Quoted strings may not contain subexpressions", SourceFile, lineNumber);
 
                                 case "\"":
+                                case "\u201D":  // Right double quote
                                     Get();  // Swallow quote
                                     notDone = false;
                                     result.Add(tokens.ToArray());
@@ -724,7 +730,7 @@ namespace Step.Parser
         private void TryProcessTextBlock(ChainBuilder chain)
         {
             tokensToEmit.Clear();
-            while (!EndOfDefinition && Peek is string && !IsLocalVariableName(Peek))
+            while (!EndOfDefinition && Peek is string && !IsNonAnonymousLocalVariableName(Peek))
                 if (EndOfLineToken)
                 {
                     // Skip unless double newline

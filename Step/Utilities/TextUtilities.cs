@@ -24,6 +24,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Step
@@ -33,6 +34,9 @@ namespace Step
     /// </summary>
     public static class TextUtilities
     {
+        private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
+
+        private static readonly string[] Abbreviations = {"Mr", "Ms", "Mrs", "Dr"};
         /// <summary>
         /// Convert a sequence of tokens into a single text string, adding spaces where appropriate.
         /// </summary>
@@ -49,24 +53,27 @@ namespace Step
                     continue;
 
                 var token = t;
-                if (t != "" && !PunctuationToken(t) && !t.StartsWith("<") && t != "\n")
+                if (t != "" && (!PunctuationToken(t) || t == "\u201c") && !t.StartsWith("<") && t != "\n")
                 {
                     if (capitalize && (firstOne || lastToken == "."  || lastToken == "\n") && char.IsLower(t[0]))
                         token = Capitalize(token);
                     if (firstOne)
                         firstOne = false;
-                    else if (lastToken != "-" && lastToken != "\n" && !lastToken.StartsWith("<"))
+                    else if (!NoSpaceAfterTokens.Contains(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'"))
                         b.Append(' ');
                     if (frenchSpacing && lastToken == ".")
                         // Double the space after period.
                         b.Append(' ');
                 }
 
+                if (lastToken == "," && token == "\"")
+                    b.Append(' ');
+
                 b.Append(token);
                 if (token == "\n")
                     b.Append(paragraphDivider);
 
-                if (!t.StartsWith("<"))
+                if (!t.StartsWith("<") && !(lastToken == "." && token == "\"") && !(token == "." && Abbreviations.Contains(lastToken)))
                     lastToken = token;
             }
 
