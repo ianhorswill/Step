@@ -150,7 +150,7 @@ namespace Step.Parser
         /// Current character is some punctuation symbol other than '?'
         /// '?' is treated specially because it's allowed to start a variable-name token.
         /// </summary>
-        private bool IsPunctuationNotQuestionMark => MyIsPunctuation(Peek) && Peek != '?';
+        private bool IsPunctuationNotQuestionMarkOrLT => MyIsPunctuation(Peek) && Peek != '?' && Peek != '<';
 
         private static bool MyIsPunctuation(char c) => char.IsPunctuation(c) || char.IsSymbol(c);
 
@@ -180,14 +180,30 @@ namespace Step.Parser
                     // Start of token
                     Debug.Assert(token.Length == 0);
                     // Handle any single-character tokens
-                    while (IsPunctuationNotQuestionMark || Peek == '\n')
+                    while (IsPunctuationNotQuestionMarkOrLT || Peek == '\n')
                         yield return Get().ToString();
-                    // Allow ?'s at the start of word tokens
-                    if (Peek == '?')
+                    if (Peek == '<')
+                    {
                         AddCharToToken();
-                    // Now we should be at something like a word or number
-                    while (!End && !IsEndOfWord)
-                        AddCharToToken();
+                        if (Peek == '/' || char.IsLetter(Peek))
+                        {
+                            // It's an HTML markup token
+                            while (!End && Peek != '>')
+                                AddCharToToken();
+                            if (Peek == '>')
+                                AddCharToToken();
+                        }
+                    }
+                    else
+                    {
+                        // Allow ?'s at the start of word tokens
+                        if (Peek == '?')
+                            AddCharToToken();
+                        // Now we should be at something like a word or number
+                        while (!End && !IsEndOfWord)
+                            AddCharToToken();
+                    }
+
                     if (HaveToken)
                         yield return ConsumeToken();
                 }

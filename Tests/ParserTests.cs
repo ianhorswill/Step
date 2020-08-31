@@ -46,6 +46,7 @@ namespace Tests
                 Assert.AreEqual(output, tokens.Untokenize(false));
             }
 
+            Test("This <i>is also</i> a test", 7, "This<i> is also</i> a test");
             Test("this is a test", 4, null);
             Test(" this is a test ", 4, "this is a test");
             Test("     ", 0, "");
