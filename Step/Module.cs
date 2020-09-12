@@ -137,6 +137,16 @@ namespace Step
             set => dictionary[v] = value;
         }
 
+        /// <summary>
+        /// True if this module has its own definition of the specified variable
+        /// </summary>
+        public bool Defines(string variableName) => Defines(StateVariableName.Named(variableName));
+
+        /// <summary>
+        /// True if this module has its own definition of the specified variable
+        /// </summary>
+        public bool Defines(StateVariableName v) => dictionary.ContainsKey(v);
+
         private object Lookup(StateVariableName v, bool throwOnFailure = true)
         {
 // First see if it's stored in this or some ancestor module
