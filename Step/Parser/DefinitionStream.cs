@@ -505,11 +505,23 @@ namespace Step.Parser
                     break;
 
                 case "add":
+                {
                     if (expression.Length != 3)
                         throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
                         throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile, lineNumber);
                     chain.AddStep(new AddStep(Canonicalize(expression[1]), StateVariableName.Named(vName), null));
+                }
+                    break;
+
+                case "removeNext":
+                {
+                    if (expression.Length != 3)
+                        throw new ArgumentCountException("removeNext", 2, expression.Skip(1).ToArray());
+                    if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
+                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile, lineNumber);
+                    chain.AddStep(new RemoveNextStep(Canonicalize(expression[1]), StateVariableName.Named(vName), null));
+                }
                     break;
 
                 case "case":

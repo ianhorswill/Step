@@ -168,6 +168,16 @@ namespace Step.Interpreter
             return a.Equals(b);
         }
 
+        /// <summary>
+        /// Attempt to unify two terms
+        /// </summary>
+        /// <param name="a">First term</param>
+        /// <param name="b">Other term</param>
+        /// <param name="outUnifications">Substitutions in place after unification, if unification successful</param>
+        /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
+        public bool Unify(object a, object b, out BindingList<LogicVariable> outUnifications)
+            => Unify(a, b, Unifications, out outUnifications);
+        
         private bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
         {
             if (a.Length != b.Length)

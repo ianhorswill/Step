@@ -156,6 +156,18 @@
       <key>match</key>
       <string>set</string>
     </dict>
+	  <dict>
+		  <key>name</key>
+		  <string>keyword.control</string>
+		  <key>match</key>
+		  <string>add</string>
+	  </dict>
+	  <dict>
+		  <key>name</key>
+		  <string>keyword.control</string>
+		  <key>match</key>
+		  <string>removeNext</string>
+	  </dict>
     <key>scopeName</key>
     <string>source.step</string>
     <key>uuid</key>

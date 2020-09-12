@@ -75,6 +75,18 @@ namespace Tests
         }
 
         [TestMethod]
+        public void AddRemoveTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [set X Empty] [Push 1] [Push 2] [Push 3] [Pop] [Pop] [Pop]",
+                "Push ?x: [add ?x X]",
+                "[generator] Pop: [removeNext ?x X] [Write ?x]",
+                "FailTest: [set X Empty] [Pop]");
+            Assert.AreEqual("3 2 1", m.Call("Test"));
+            Assert.IsFalse(m.CallPredicate(State.Empty, "FailTest"));
+        }
+
+        [TestMethod]
         public void EqualsTest()
         {
             var m = new Module("test");
