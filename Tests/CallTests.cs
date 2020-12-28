@@ -152,5 +152,45 @@ namespace Tests
             var m = Module.FromDefinitions("Test ?x ?x:");
             Assert.AreEqual(1, m.CallFunction<int>(State.Empty, "Test", 1));
         }
+
+        [TestMethod]
+        public void DestructuringCallTest()
+        {
+            var m = Module.FromDefinitions("Target [foo ?x]: [Write ?x]", "Test: [Target [foo 1]]");
+            Assert.AreEqual("1", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void StructureCreationTest()
+        {
+            var m = Module.FromDefinitions("Test ?x [foo ?x].",
+                "[fallible] TestB: [Test 1 ?x] [Test 2 ?y] [= ?x ?y]");
+            var result1 = m.CallFunction<object[]>(State.Empty, "Test", 1);
+            var result2 = m.CallFunction<object[]>(State.Empty, "Test", 2);
+            Assert.AreNotEqual(result1, result2);
+            Assert.AreEqual("foo", result1[0]);
+            Assert.AreEqual(1, result1[1]);
+            Assert.AreEqual("foo", result2[0]);
+            Assert.AreEqual(2, result2[1]);
+            Assert.IsFalse(m.CallPredicate(State.Empty, "TestB"));
+        }
+
+        [TestMethod]
+        public void StructureCreationStackTraceTest()
+        {
+            var m = Module.FromDefinitions("Test ?x [foo ?x].",
+                "[fallible] TestB: [Test 1 ?x] [Test 2 ?y] [= ?x ?y]");
+            var result1 = m.CallFunction<object[]>(State.Empty, "Test", 1);
+            Assert.AreEqual("[Test 1 [foo 1]]", Module.StackTrace.Trim());
+        }
+
+        [TestMethod]
+        public void CallStructureBindingTest()
+        {
+            var m = Module.FromDefinitions("Rescue ?rescued ?saver [medicalSituation ?who ?x]: [Write ?rescued]");
+            
+            Assert.AreEqual("ManicPixieDreamPeep",
+                m.ParseAndExecute("[Rescue manicPixieDreamPeep billionaire [medicalSituation manicPixieDreamPeep rareDisease]]"));
+        }
     }
 }

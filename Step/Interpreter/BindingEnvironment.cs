@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Linq;
 
 namespace Step.Interpreter
 {
@@ -103,12 +104,12 @@ namespace Step.Interpreter
         /// Canonicalize a term, i.e. get its value, or reduce it to a logic variable
         /// if it doesn't have a value yet
         /// </summary>
-        public object Resolve(object term)
+        public object Resolve(object term, BindingList<LogicVariable> unifications)
         {
             switch (term)
             {
                 case LocalVariableName l:
-                    return Deref(Local[l.Index]);
+                    return Deref(Local[l.Index], unifications);
 
                 case StateVariableName g:
                     if (State.TryLookup(g, out var result))
@@ -119,10 +120,10 @@ namespace Step.Interpreter
                     return tokens;
 
                 case object[] sublist:
-                    return ResolveList(sublist);
+                    return ResolveList(sublist, unifications);
 
                 case LogicVariable v:
-                    return Deref(v);
+                    return Deref(v, unifications);
 
                 default:
                     return term;
@@ -132,13 +133,23 @@ namespace Step.Interpreter
         /// <summary>
         /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
         /// </summary>
-        public object[] ResolveList(object[] arglist)
+        public object Resolve(object term) => Resolve(term, Unifications);
+
+        /// <summary>
+        /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
+        /// </summary>
+        public object[] ResolveList(object[] arglist, BindingList<LogicVariable> unifications)
         {
             var result = new object[arglist.Length];
             for (var i = 0; i < arglist.Length; i++)
-                result[i] = Resolve(arglist[i]);
+                result[i] = Resolve(arglist[i], unifications);
             return result;
         }
+
+        /// <summary>
+        /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
+        /// </summary>
+        public object[] ResolveList(object[] arglist) => ResolveList(arglist, Unifications);
 
         /// <summary>
         /// Attempt to unify two terms
@@ -150,11 +161,20 @@ namespace Step.Interpreter
         /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
         public bool Unify(object a, object b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
         {
-            a = Resolve(a);
-            b = Resolve(b);
+            a = Resolve(a, inUnifications);
+            b = Resolve(b, inUnifications);
+            if (a.Equals(b))
+            {
+                outUnifications = inUnifications;
+                return true;
+            }
             if (a is LogicVariable va)
             {
-                outUnifications = new BindingList<LogicVariable>(va, b, inUnifications);
+                if (b is LogicVariable vbb && va.Uid < vbb.Uid)
+                    // a is older than b, so make b point to a
+                    outUnifications = new BindingList<LogicVariable>(vbb, va, inUnifications);
+                else
+                    outUnifications = new BindingList<LogicVariable>(va, b, inUnifications);
                 return true;
             }
 
@@ -164,8 +184,11 @@ namespace Step.Interpreter
                 return true;
             }
 
+            if (a is object[] aa && b is object[] ba && aa.Length == ba.Length)
+                return UnifyArrays(aa, ba, inUnifications, out outUnifications);
+
             outUnifications = inUnifications;
-            return a.Equals(b);
+            return false;
         }
 
         /// <summary>
@@ -178,16 +201,19 @@ namespace Step.Interpreter
         public bool Unify(object a, object b, out BindingList<LogicVariable> outUnifications)
             => Unify(a, b, Unifications, out outUnifications);
         
-        private bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
+        private bool UnifyArrays(object[] a, object[] b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
         {
             if (a.Length != b.Length)
                 throw new ArgumentException("Argument arrays to UnifyArrays are of different lengths!");
-            outUnifications = Unifications;
+            outUnifications = inUnifications;
             for (var i = 0; i < a.Length; i++)
                 if (!Unify(a[i], b[i], outUnifications, out outUnifications))
                     return false;
             return true;
         }
+
+        private bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
+            => UnifyArrays(a, b, Unifications, out outUnifications);
 
         /// <summary>
         /// Attempt to unify two arrays of terms
@@ -214,17 +240,44 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="value">Term</param>
         /// <returns>Reduced value of term.  Could be a LogicVariable, in which case it reduces to an unbound variable.</returns>
-        private object Deref(object value)
+        private object Deref(object value) => Deref(value, Unifications);
+
+        /// <summary>
+        /// If value is a LogicVariable, follow the chain of substitutions in Unifications to reduce it to its normal form.
+        /// If it's not a logic variable, just returns the value.
+        /// </summary>
+        public static object Deref(object value, BindingList<LogicVariable> unifications)
         {
             while (value is LogicVariable v)
             {
-                value = BindingList<LogicVariable>.Lookup(Unifications, v, v);
+                value = BindingList<LogicVariable>.Lookup(unifications, v, v);
                 if (value == v)
                     // Isn't aliased to a value
                     return v;
             }
 
             return value;
+        }
+        
+        /// <summary>
+        /// Dereference all variables in term
+        /// This behaves identically to Deref except in the case where term is a tuple (i.e. object[]), in which case it
+        /// recursively recopies the array and dereferences its elements
+        /// </summary>
+        public object CopyTerm(object term)
+        {
+            switch (term)
+            {
+                case LogicVariable l:
+                    var d = Deref(l);
+                    return d is LogicVariable ? d : CopyTerm(d);
+
+                case object[] tuple:
+                    return tuple.Select(CopyTerm).ToArray();
+
+                default:
+                    return term;
+            }
         }
     }
 }

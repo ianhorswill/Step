@@ -35,7 +35,7 @@ namespace Step.Interpreter
     /// Tasks defined by user code are CompoundTasks
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    internal class CompoundTask
+    public class CompoundTask
     {
         /// <summary>
         /// Name, for debugging purposes
@@ -50,10 +50,10 @@ namespace Step.Interpreter
         /// </summary>
         public readonly List<Method> Methods = new List<Method>();
 
-        public IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.Shuffle() : Methods;
+        internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.Shuffle() : Methods;
 
         [Flags]
-        public enum TaskFlags
+        internal enum TaskFlags
         {
             None = 0,
             Shuffle = 1,
@@ -78,7 +78,7 @@ namespace Step.Interpreter
         /// </summary>
         public bool MustSucceed => (Flags & TaskFlags.Fallible) == 0;
 
-        public CompoundTask(string name, int argCount)
+        internal CompoundTask(string name, int argCount)
         {
             Name = name;
             ArgCount = argCount;
@@ -93,13 +93,22 @@ namespace Step.Interpreter
         /// <param name="path">File from which the method was read</param>
         /// <param name="lineNumber">Line number where the method starts in the file</param>
         /// <param name="newFlags">Additional flags to set for the task</param>
-        public void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, TaskFlags newFlags,
+        internal void AddMethod(object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, TaskFlags newFlags,
             string path, int lineNumber)
         {
             Flags |= newFlags;
             Methods.Add(new Method(this, argumentPattern, localVariableNames, stepChain, path, lineNumber));
         }
 
+        /// <inheritdoc />
         public override string ToString() => Name;
+
+        /// <summary>
+        /// Remove all defined methods for this task
+        /// </summary>
+        public void EraseMethods()
+        {
+            Methods.Clear();
+        }
     }
 }

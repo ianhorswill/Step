@@ -445,10 +445,10 @@ namespace Step.Parser
 
             // Read the argument pattern
             var pattern = new List<object>();
-            while (!Peek.Equals(":"))
+            while (!Peek.Equals(":") && !Peek.Equals(".") && !end)
             {
                 var argPattern = Get();
-                if (argPattern is object[] call)
+                if (argPattern is object[] call && call.Length > 0 && IsGlobalVariableName(call[0]))
                 {
                     // It has an embedded predicate
                     pattern.Add(call[1]);
@@ -458,14 +458,18 @@ namespace Step.Parser
                     pattern.Add(argPattern);
             }
 
+            if (end)
+                throw new SyntaxError("Head of method does not end with a colon", SourceFile, lineNumber);
+
             // Change variable references in pattern to LocalVariableNames
             for (var i = 0; i < pattern.Count; i++)
                 pattern[i] = Canonicalize(pattern[i]);
 
+            var headTerminator = Peek;
             // SKIP COLON
             Get();
 
-            multiLine = EndOfLineToken;
+            multiLine = EndOfLineToken && !headTerminator.Equals(".");
             if (multiLine)
                 Get();  // Swallow the end of line
 
@@ -476,6 +480,8 @@ namespace Step.Parser
         {
             while (!endPredicate())
             {
+                if (end)
+                    throw new SyntaxError("File ended unexpectedly inside method", SourceFile, lineNumber);
                 TryProcessTextBlock(chain);
                 TryProcessMentionExpression(chain);
                 TryProcessMethodCall(chain);

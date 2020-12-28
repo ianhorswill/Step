@@ -24,8 +24,6 @@
 #endregion
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -122,7 +120,10 @@ namespace Step.Interpreter
                     }
 
                     if (successCount == 0 && p.MustSucceed)
+                    {
+                        MethodCallFrame.CurrentFrame.BindingsAtCallTime = env.Unifications;
                         throw new CallFailedException(p, arglist);
+                    }
 
                     // Failure
                     return false;
@@ -218,18 +219,22 @@ namespace Step.Interpreter
             }
         }
 
-        internal static string CallSourceText(object task, object[] arglist)
+        internal static string CallSourceText(object task, object[] arglist, BindingList<LogicVariable> unifications = null)
         {
             var b = new StringBuilder();
-            b.Append('[');
+            b.Append("[");
+            if (Module.RichTextStackTraces)
+                b.Append("<b>");
             b.Append(task);
-            foreach (var arg in arglist)
+            if (Module.RichTextStackTraces)
+                b.Append("</b>");
+
+            void WriteAtomicTerm(object o)
             {
-                b.Append(' ');
-                var a = PrimitiveTask.PrimitiveName(arg);
+                var a = PrimitiveTask.PrimitiveName(o);
                 if (a == null)
                     b.Append("null");
-                else if (a is string s)
+                else if (a is string s && s.Contains(" "))
                 {
                     b.Append("\"");
                     b.Append(s);
@@ -243,6 +248,34 @@ namespace Step.Interpreter
                     else
                         b.Append($"<{asString}>");
                 }
+            }
+
+            void WriteTerm(object o)
+            {
+                o = BindingEnvironment.Deref(o, unifications);
+                if (o is object[] tuple)
+                {
+                    b.Append('[');
+                    bool first = true;
+                    foreach (var e in tuple)
+                    {
+                        if (first)
+                            first = false;
+                        else 
+                            b.Append(' ');
+                        WriteTerm(e);
+                    }
+
+                    b.Append("]");
+                }
+                else 
+                    WriteAtomicTerm(o);
+            }
+
+            foreach (var arg in arglist)
+            {
+                b.Append(' ');
+                WriteTerm(arg);
             }
 
             b.Append(']');

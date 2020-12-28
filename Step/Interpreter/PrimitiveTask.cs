@@ -43,7 +43,11 @@ namespace Step.Interpreter
             return x;
         }
 
-        internal static T NamePrimitive<T>(string name, T primitive) where T: Delegate
+        /// <summary>
+        /// Assign a name to a delegate implementing a primitive so that it can be written properly in stack traces
+        /// This is necessary because delegates are otherwise anonymous
+        /// </summary>
+        public static T NamePrimitive<T>(string name, T primitive) where T: Delegate
         {
             PrimitiveNameTable[primitive] = name;
             return primitive;

@@ -77,7 +77,10 @@ namespace Step.Interpreter
                 collection => collection ?? EmptyArray,
                 null);
             g["Number"] = Predicate<object>("Number", o => o != null && (o is int || o is float));
+            g["Var"] = Predicate<object>("Var", o => o is LogicVariable);
+            g["NonVar"] = Predicate<object>("NonVar", o => !(o is LogicVariable));
             g["String"] = Predicate<object>("String", o => o is string);
+            g["Tuple"] = Predicate<object>("Tuple", o => o is object[]);
             g["BinaryTask"] = Predicate<object>("BinaryTask", 
                 o =>
                 {

@@ -53,6 +53,14 @@ namespace Tests
         }
 
         [TestMethod]
+        public void NotTest()
+        {
+            var m = Module.FromDefinitions("Succeed.", "FailTest: [Not [Succeed]]", "SucceedTest: [Not [Fail]]");
+            Assert.IsTrue(m.CallPredicate(State.Empty, "SucceedTest"));
+            Assert.IsFalse(m.CallPredicate(State.Empty, "FailTest"));
+        }
+
+        [TestMethod]
         public void ForEachTest()
         {
             var m = new Module("test");

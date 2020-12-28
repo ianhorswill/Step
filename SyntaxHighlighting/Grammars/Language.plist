@@ -14,8 +14,14 @@
         <key>name</key>
         <string>entity.name.function</string>
         <key>match</key>
-        <string>^[^:]*:</string>
+        <string>^[^ ][^:]*:</string>
       </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>entity.name.function</string>
+		    <key>match</key>
+		    <string>^[^ ][^:]*\.</string>
+	    </dict>
       <dict>
         <key>name</key>
         <string>keyword.other</string>

@@ -40,6 +40,11 @@ namespace Step
     [DebuggerDisplay("{" + nameof(Name) + "}")]
     public class Module
     {
+        /// <summary>
+        /// Stack traces should be generated with Unity rich text markup
+        /// </summary>
+        public static bool RichTextStackTraces;
+        
         #region Fields
         /// <summary>
         /// Table of values assigned by this module to different global variables
@@ -304,17 +309,13 @@ namespace Step
                 }))
                 {
                     // Call succeeded; pull out the binding of the result variable and return it
-                    for (var v = resultVar; ;)
-                    {
-                        var probe = bindings.Lookup(v, v);
-                        if (ReferenceEquals(probe, v))
+                    var finalEnv = new BindingEnvironment(this, null, bindings, State.Empty);
+                    var result = finalEnv.CopyTerm(resultVar);
+                        if (result is LogicVariable)
                             // resultVar is unbound or bound to an unbound variable
                             throw new ArgumentInstantiationException(taskName, env, extendedArgs);
-                        if (probe is LogicVariable l)
-                            v = l;
                         else
-                            return (T) probe;
-                    }
+                            return (T) result;
                 }
             // Call failed
             throw new CallFailedException(taskName, args);
@@ -387,6 +388,19 @@ namespace Step
             var m = new Module("anonymous");
             m.AddDefinitions(definitions);
             return m;
+        }
+
+        /// <summary>
+        /// Parse and run the specified code
+        /// </summary>
+        /// <param name="code">Code to run.  This will be used as the RHS of a method for the task TopLevelCall</param>
+        /// <returns></returns>
+        public string ParseAndExecute(string code)
+        {
+            if (Defines("TopLevelCall"))
+                ((CompoundTask) (this["TopLevelCall"])).EraseMethods();
+            AddDefinitions($"TopLevelCall: {code}");
+            return Call("TopLevelCall");
         }
 
         /// <summary>
@@ -471,11 +485,27 @@ namespace Step
             get
             {
                 var b = new StringBuilder();
-                for (var frame = MethodCallFrame.CurrentFrame; frame != null; frame = frame.Parent) 
-                    b.AppendLine(frame.CallSourceText);
+                for (var frame = MethodCallFrame.CurrentFrame; frame != null; frame = frame.Parent)
+                    b.AppendLine(frame.GetCallSourceText(MethodCallFrame.CurrentFrame.BindingsAtCallTime));
                 return b.ToString();
             }
         }
         #endregion
+
+        /// <summary>
+        /// An event handler to be called on every method call.
+        /// Used to implement single-stepping in a debugger
+        /// </summary>
+        public delegate void TraceHandler();
+
+        /// <summary>
+        /// An event handler to be called on every method call.
+        /// Used to implement single-stepping in a debugger
+        /// </summary>
+        public TraceHandler Trace;
+        internal void OnEnterMethod(Method method)
+        {
+            Trace?.Invoke();
+        }
     }
 }

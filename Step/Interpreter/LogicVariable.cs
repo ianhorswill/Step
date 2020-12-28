@@ -48,13 +48,21 @@ namespace Step.Interpreter
             Name = name;
         }
 
-        private string DebuggerName => ToString();
+        /// <summary>
+        /// The name as it should appear in the debugger.
+        /// This name has the UID appended rather than just the raw Name field
+        /// so that different variables with the same Name can be distinguished.
+        /// </summary>
+        public string DebuggerName => ToString();
 
 #if DEBUG
         private static int uidCounter;
-        private readonly int uid = uidCounter++;
+        /// <summary>
+        /// A unique counter distinguishing this LogicVariable from all others
+        /// </summary>
+        internal readonly int Uid = uidCounter++;
         /// <inheritdoc />
-        public override string ToString() => Name.Name + uid;
+        public override string ToString() => Name.Name + Uid;
 #else
         /// <inheritdoc />
         public override string ToString() => Name.Name;

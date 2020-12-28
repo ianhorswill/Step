@@ -27,7 +27,7 @@ namespace Step.Interpreter
     /// <summary>
     /// Internal representation of a method for performing a CompoundTask
     /// </summary>
-    internal class Method
+    public class Method
     {
         /// <summary>
         /// Task for which this is a method
@@ -39,7 +39,14 @@ namespace Step.Interpreter
         /// </summary>
         public readonly object[] ArgumentPattern;
 
+        /// <summary>
+        /// File from which this method was loaded
+        /// </summary>
         public readonly string FilePath;
+        
+        /// <summary>
+        /// Starting line number of this method in FilePath
+        /// </summary>
         public readonly int LineNumber;
 
         /// <summary>
@@ -52,7 +59,7 @@ namespace Step.Interpreter
         /// </summary>
         public readonly Step StepChain;
 
-        public Method(CompoundTask task, object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, string filePath, int lineNumber)
+        internal Method(CompoundTask task, object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, string filePath, int lineNumber)
         {
             Task = task;
             ArgumentPattern = argumentPattern;
@@ -81,6 +88,7 @@ namespace Step.Interpreter
             var newEnv = new BindingEnvironment(env, newFrame);
             if (newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv))
             {
+                env.Module.OnEnterMethod(this);
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
                 if (StepChain?.Try(output, finalEnv, k) ?? k(output, finalEnv.Unifications, finalEnv.State))
                     return true;
@@ -89,6 +97,7 @@ namespace Step.Interpreter
             return false;
         }
 
+        /// <inheritdoc />
         public override string ToString() => $"Method of {Task.Name}";
     }
 }

@@ -135,6 +135,70 @@ namespace Tests
         }
 
         [TestMethod, ExpectedException(typeof(SyntaxError))]
+        public void IncompleteDefinitionTest()
+        {
+            var m = Module.FromDefinitions("Test ?a [foo ?a]");
+        }
+
+        [TestMethod]
+        public void ParseFactTest()
+        {
+            var m = Module.FromDefinitions(
+                @"[randomly] 
+Compatibility ? ? [sharedInterest lolcats].
+Compatibility ? ? [sharedInterest [love dearLeader]].
+Compatibility ? ? [sharedInterest [hate negativePeople]].
+
+MentionTuple [sharedInterest [love dearLeader]]: their deep and abiding love of Dear Leader
+MentionTuple [sharedInterest [hate negativePeople]]: how they both hate people with negative energy
+MentionTuple [sharedInterest ?what]: their shared interest in ?what
+
+[randomly]
+Incompatibility ?a ?b [unsharedInterest2 ?i]: [Interest ?a ?i] [Not [Interest ?b ?i]]
+Incompatibility ?a ?b [unsharedInterest1 ?i]: [Not [Interest ?a ?i]] [Interest ?b ?i]
+Incompatibility ?a ?b [incompatibleTraits ?a ?b ?ta ?tb]: [Trait ?a ?ta] [Trait ?b ?tb]
+Incompatibility ?a ?b [GenericIncompatibility ?g].
+
+MentionTuple [unsharedInterest1 ?i]: their lack of interest in ?i
+MentionTuple [unsharedInterest2 ?i]: their annoying obsession with ?i
+MentionTuple [incompatibleTraits ?a ?b ?ta ?tb]: ?a being ?ta
+
+[randomly]
+GenericIncompatibility toothpaste.
+GenericIncompatibility toiletPaper.
+GenericIncompatibility snoring.");
+        }
+
+        [TestMethod, ExpectedException(typeof(SyntaxError))]
+        public void ParseBadFactTest()
+        {
+            var m = Module.FromDefinitions(
+                @"[randomly] 
+Compatibility ? ? [sharedInterest lolcats]:
+Compatibility ? ? [sharedInterest [love dearLeader]]:
+Compatibility ? ? [sharedInterest [hate negativePeople]]:
+
+MentionTuple [sharedInterest [love dearLeader]]: their deep and abiding love of Dear Leader
+MentionTuple [sharedInterest [hate negativePeople]]: how they both hate people with negative energy
+MentionTuple [sharedInterest ?what]: their shared interest in ?what
+
+[randomly]
+Incompatibility ?a ?b [unsharedInterest2 ?i]: [Interest ?a ?i] [Not [Interest ?b ?i]]
+Incompatibility ?a ?b [unsharedInterest1 ?i]: [Not [Interest ?a ?i]] [Interest ?b ?i]
+Incompatibility ?a ?b [incompatibleTraits ?a ?b ?ta ?tb]: [Trait ?a ?ta] [Trait ?b ?tb]
+Incompatibility ?a ?b [GenericIncompatibility ?g].
+
+MentionTuple [unsharedInterest1 ?i]: their lack of interest in ?i
+MentionTuple [unsharedInterest2 ?i]: their annoying obsession with ?i
+MentionTuple [incompatibleTraits ?a ?b ?ta ?tb]: ?a being ?ta
+
+[randomly]
+GenericIncompatibility toothpaste.
+GenericIncompatibility toiletPaper.
+GenericIncompatibility snoring.");
+        }
+
+        [TestMethod, ExpectedException(typeof(SyntaxError))]
         public void NestingErrorTest()
         {
             void Test(string input, params object[] expectedResult)

@@ -40,6 +40,7 @@ namespace Step.Interpreter
             var g = Module.Global;
 
             g["begin"] = (MetaTask)Begin;  // This is deliberately lower case
+            g["Not"] = (MetaTask) Not;
             g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
             g["ForEach"] = (MetaTask) ForEach;
             g["Once"] = (MetaTask) Once;
@@ -53,6 +54,26 @@ namespace Step.Interpreter
         {
             return StepChainFromBody("begin", args).Try(o, e, k);
         }
+
+        private static bool Not(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        {
+            // Whether the call to args below succeeded
+            var success = false;
+            
+            // This always fails, since its continuation fails too
+            StepChainFromBody("Not", args)
+                .Try(o, e,
+                    (newOut, newE, newK) =>
+                    {
+                        // Remember that we succeeded, then fail
+                        success = true;
+                        return false;
+                    });
+
+            // If the call to args succeeded, fail; otherwise call continuation
+            return !success && k(o, e.Unifications, e.State);
+        }
+        
         private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e) 
             => AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings);
 

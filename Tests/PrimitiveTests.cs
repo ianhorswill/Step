@@ -122,7 +122,7 @@ namespace Tests
             {
                 result = e.Message;
             }
-            Assert.AreEqual("Wrong number of arguments for <, expected 2, got 3: [< \"=\" 1 2]", result);
+            Assert.AreEqual("Wrong number of arguments for <, expected 2, got 3: [< = 1 2]", result);
         }
 
         [TestMethod]
