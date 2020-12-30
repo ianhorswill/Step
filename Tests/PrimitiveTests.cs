@@ -143,5 +143,12 @@ namespace Tests
                 "Test: [set List empty] [Add 1] [Add 2] [Add 3]");
             Assert.AreEqual("1 2 1 3 2 1", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void CountAttemptsTest()
+        {
+            var m = Module.FromDefinitions("Test: [CountAttempts ?a] [Write ?a] [= ?a 10] done");
+            Assert.AreEqual("10 done", m.Call("Test"));
+        }
     }
 }

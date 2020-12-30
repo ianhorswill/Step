@@ -91,6 +91,22 @@ namespace Step.Interpreter
                 });
             g["Empty"] = Cons.Empty;
 
+            g["CountAttempts"] = NamePrimitive("CountAttempts", (MetaTask) ((args, o, bindings, k, p) =>
+            {
+                ArgumentCountException.Check("CountAttempts", 1, args);
+                ArgumentInstantiationException.Check("CountAttempts", args[0], false, bindings, args);
+                int count = 0;
+                while (true)
+                    if (k(o,
+                        BindingList<LogicVariable>.Bind(bindings.Unifications, (LogicVariable) args[0], count++),
+                        bindings.State,
+                        p))
+                        return true;
+                // ReSharper disable once FunctionNeverReturns
+            }));
+
+
+
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
         }
