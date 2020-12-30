@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cons.cs" />
+    <Compile Include="Interpreter\ReflectionBuiltins.cs" />
     <Compile Include="Interpreter\SequenceStep.cs" />
     <Compile Include="Interpreter\RemoveStep.cs" />
     <Compile Include="State.cs" />

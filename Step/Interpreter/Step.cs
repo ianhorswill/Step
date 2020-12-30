@@ -23,6 +23,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Step.Interpreter
 {
     /// <summary>
@@ -71,5 +74,32 @@ namespace Step.Interpreter
                 return Next.Try(p, e, k, predecessor);
             return k == null || k(p, e.Unifications, e.State, predecessor);
         }
+
+        /// <summary>
+        /// An empty callee list for use in Callees
+        /// </summary>
+        internal static object[] EmptyCalleeList = new object[0];
+        
+        /// <summary>
+        /// The callees of just this step, if any
+        /// </summary>
+        public virtual IEnumerable<object> Callees => EmptyCalleeList;
+
+        /// <summary>
+        /// All the steps in the chain starting with this step
+        /// </summary>
+        public IEnumerable<Step> ChainSteps
+        {
+            get
+            {
+                for (var step = this; step != null; step = step.Next)
+                    yield return step;
+            }
+        }
+
+        /// <summary>
+        /// All the callees of all the calls in this chain
+        /// </summary>
+        public IEnumerable<object> CalleesOfChain => ChainSteps.SelectMany(s => s.Callees);
     }
 }

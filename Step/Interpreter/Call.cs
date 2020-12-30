@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -83,6 +84,9 @@ namespace Step.Interpreter
 
         internal static readonly StateVariableName MentionHook = StateVariableName.Named("Mention");
 
+        /// <inheritdoc />
+        public override IEnumerable<object> Callees => new[] { Task };
+        
         /// <summary>
         /// Attempt to run this task
         /// </summary>

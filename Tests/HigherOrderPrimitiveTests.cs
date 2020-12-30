@@ -48,7 +48,7 @@ namespace Tests
         [TestMethod]
         public void BeginTest()
         {
-            var m = TestUtils.Module("Test: [Write x] [begin [Write a] [Write b] [Write c]] [Write y]");
+            var m = TestUtils.Module("Test: [Write x] [Begin [Write a] [Write b] [Write c]] [Write y]");
             Assert.AreEqual("X a b c y", m.Call("Test"));
         }
 

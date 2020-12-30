@@ -74,6 +74,12 @@
 		    <key>name</key>
 		    <string>keyword.control</string>
 		    <key>match</key>
+		    <string>\[main\]</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
 		    <string>\[fallible\]</string>
 	    </dict>
 	    <dict>

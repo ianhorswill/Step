@@ -44,9 +44,12 @@ namespace Step.Interpreter
         /// <param name="expected">Type expected</param>
         /// <param name="actual">Value provided</param>
         /// <param name="arglist">Full argument list of the task</param>
+        /// <param name="allowUninstantiated">If true, accept an unbound variable as a value</param>
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
-        public static void Check(object task, Type expected, object actual, object[] arglist)
+        public static void Check(object task, Type expected, object actual, object[] arglist, bool allowUninstantiated = false)
         {
+            if (allowUninstantiated && actual is LogicVariable)
+                return;
             if (actual == null || (!expected.IsInstanceOfType(actual) && !(expected == typeof(float) && actual is int)))
                 throw new ArgumentTypeException(task, expected, actual, arglist);
         }

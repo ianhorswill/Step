@@ -28,19 +28,19 @@ namespace Tests
         [TestMethod]
         public void SingletonVariableTest()
         {
-            var m = Module.FromDefinitions("Test ?x.");
+            var m = Module.FromDefinitions("[main] Test ?x.");
             Assert.AreEqual(1, m.Warnings().Count(s => s.Contains("Singleton variable")));
 
-            m = Module.FromDefinitions("Test ?.");
+            m = Module.FromDefinitions("[main] Test ?.");
             Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
 
-            m = Module.FromDefinitions("Test ?_singleton.");
+            m = Module.FromDefinitions("[main] Test ?_singleton.");
             Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
 
-            m = Module.FromDefinitions("Test ?x: [Write ?x]");
+            m = Module.FromDefinitions("[main] Test ?x: [Write ?x]");
             Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
             
-            m = Module.FromDefinitions("Test ?x: ?x");
+            m = Module.FromDefinitions("[main] Test ?x: ?x");
             Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
         }
     }

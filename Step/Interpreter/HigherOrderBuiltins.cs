@@ -39,7 +39,7 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g["begin"] = (MetaTask)Begin;  // This is deliberately lower case
+            g["Begin"] = (MetaTask)Begin;  // This is deliberately lower case
             g["Not"] = (MetaTask) Not;
             g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
             g["ForEach"] = (MetaTask) ForEach;
@@ -52,7 +52,7 @@ namespace Step.Interpreter
 
         private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            return StepChainFromBody("begin", args).Try(o, e, k, predecessor);
+            return StepChainFromBody("Begin", args).Try(o, e, k, predecessor);
         }
 
         private static bool Not(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)

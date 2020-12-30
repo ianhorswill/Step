@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Step.Utilities;
 
 namespace Step.Interpreter
@@ -58,7 +59,8 @@ namespace Step.Interpreter
             None = 0,
             Shuffle = 1,
             MultipleSolutions = 2,
-            Fallible = 4
+            Fallible = 4,
+            Main = 8
         }
 
         internal TaskFlags Flags;
@@ -110,5 +112,10 @@ namespace Step.Interpreter
         {
             Methods.Clear();
         }
+
+        /// <summary>
+        /// All the tasks called by this task
+        /// </summary>
+        public IEnumerable<object> Callees => Methods.SelectMany(m => m.Callees).Distinct();
     }
 }

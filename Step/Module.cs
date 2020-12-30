@@ -178,6 +178,17 @@ namespace Step
         }
 
         /// <summary>
+        /// All the variable bindings in this module.
+        /// </summary>
+        public IEnumerable<KeyValuePair<StateVariableName, object>> Bindings => dictionary;
+
+        /// <summary>
+        /// All CompoundTasks defined in this Module
+        /// </summary>
+        public IEnumerable<CompoundTask> DefinedTasks =>
+            dictionary.Values.Where(x => x is CompoundTask).Cast<CompoundTask>();
+
+        /// <summary>
         /// Find the CompoundTask named by the specified variable, creating one if necessary.
         /// </summary>
         /// <param name="v">Task variable</param>
@@ -289,6 +300,14 @@ namespace Step
                     return true;
             return false;
         }
+
+        /// <summary>
+        /// Calls the named task with the specified arguments as a predicate and returns true if it succeeds
+        /// This call will fail if the task attempts to generate output.
+        /// </summary>
+        /// <param name="taskName">Name of the task</param>
+        /// <param name="args">Arguments to task, if any</param>
+        public bool CallPredicate(string taskName, params object[] args) => CallPredicate(State.Empty, taskName, args);
 
         private static readonly LocalVariableName FunctionResult = new LocalVariableName("??result", 0);
         /// <summary>
@@ -475,6 +494,21 @@ namespace Step
                                     $"{fileName}:{method.LineNumber} {variable.Name} called undefined task {g.Name}";
                             }
             }
+
+            foreach (var t in DefinedTasks)
+                if ((t.Flags & CompoundTask.TaskFlags.Main) == 0)
+                {
+                    var called = false;
+                    foreach (var potentialCaller in DefinedTasks)
+                        if (Callees(potentialCaller).Contains(t))
+                        {
+                            called = true;
+                            break;
+                        }
+
+                    if (!called)
+                        yield return RichTextStackTraces?$"<b>{t}</b> is defined but never called." : $"{t} is defined but never called.";
+                }
         }
 
         private bool TaskDefined(StateVariableName stateVariableName)
@@ -507,6 +541,32 @@ namespace Step
                 loadTimeWarnings = new List<string>();
             loadTimeWarnings.Add(warning);
         }
+
+        private readonly Dictionary<CompoundTask, HashSet<object>> calleeTable = new Dictionary<CompoundTask, HashSet<object>>();
+        internal HashSet<object> Callees(CompoundTask t)
+        {
+            if (calleeTable.TryGetValue(t, out var result))
+                return result;
+            
+            var callees = new HashSet<object>();
+            foreach (var c in t.Callees)
+            {
+                if (c is StateVariableName v)
+                    callees.Add(this[v]);
+                else
+                    callees.Add(c);
+            }
+
+            calleeTable[t] = callees;
+            return callees;
+        }
+
+        /// <summary>
+        /// True if caller has a method that calls callee
+        /// </summary>
+        /// <param name="caller">Caller (but be a CompoundTask)</param>
+        /// <param name="callee">Target of call (can be a CompoundTask or a primitive task, i.e. a delegate)</param>
+        public bool TaskCalls(CompoundTask caller, object callee) => Callees(caller).Contains(callee);
 
         /// <summary>
         /// Return a trace of the method calls from the current frame.

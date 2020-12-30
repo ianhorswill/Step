@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Collections.Generic;
 using System.Linq;
 using Step.Utilities;
 
@@ -120,5 +121,10 @@ namespace Step.Interpreter
         /// The argument pattern for this method expressed as the course code for a call
         /// </summary>
         public string HeadString => Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
+
+        /// <summary>
+        /// All the tasks called by this method
+        /// </summary>
+        public IEnumerable<object> Callees => StepChain == null ? Step.EmptyCalleeList : StepChain.CalleesOfChain;
     }
 }

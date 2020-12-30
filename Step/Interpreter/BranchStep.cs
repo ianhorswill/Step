@@ -23,6 +23,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Collections.Generic;
+using System.Linq;
 using Step.Utilities;
 
 namespace Step.Interpreter
@@ -39,6 +41,9 @@ namespace Step.Interpreter
             this.branches = branches;
             this.shuffle = shuffle;
         }
+
+        /// <inheritdoc />
+        public override IEnumerable<object> Callees => branches.SelectMany(s => s.CalleesOfChain);
 
         private Step[] Branches => shuffle ? branches.Shuffle() : branches;
 

@@ -440,6 +440,10 @@ namespace Step.Parser
                         flags |= CompoundTask.TaskFlags.MultipleSolutions;
                         break;
 
+                    case "main":
+                        flags |= CompoundTask.TaskFlags.Main;
+                        break;
+
                     default:
                         ThrowInvalid();
                         break;

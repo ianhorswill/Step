@@ -1,4 +1,7 @@
-﻿namespace Step.Interpreter
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace Step.Interpreter
 {
     /// <summary>
     /// Implements a sequence in which each successive call invokes the next branch
@@ -7,6 +10,9 @@
     {
         private readonly Step[] branches;
         private readonly StateElement branchNumber = new StateElement("sequencePosition", true, 0);
+
+        /// <inheritdoc />
+        public override IEnumerable<object> Callees => branches.SelectMany(s => s.CalleesOfChain);
 
         /// <summary>
         /// Makes a step that first calls the first branch, then on successive calls, invokes successive branches.

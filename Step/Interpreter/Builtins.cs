@@ -92,6 +92,7 @@ namespace Step.Interpreter
             g["Empty"] = Cons.Empty;
 
             HigherOrderBuiltins.DefineGlobals();
+            ReflectionBuiltins.DefineGlobals();
         }
 
         private static bool Break()
