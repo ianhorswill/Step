@@ -169,7 +169,7 @@ namespace Step.Parser
         /// </summary>
         private bool IsPunctuationNotQuestionMarkOrLT => MyIsPunctuation(Peek) && Peek != '?' && Peek != '<';
 
-        private static bool MyIsPunctuation(char c) => char.IsPunctuation(c) || char.IsSymbol(c);
+        private static bool MyIsPunctuation(char c) => c != '_' && (char.IsPunctuation(c) || char.IsSymbol(c));
 
         /// <summary>
         /// True if the current character can't be a continuation of a word token.

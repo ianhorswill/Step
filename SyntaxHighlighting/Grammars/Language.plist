@@ -68,6 +68,12 @@
 		    <key>name</key>
 		    <string>keyword.control</string>
 		    <key>match</key>
+		    <string>\[predicate\]</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
 		    <string>\[fallible\]</string>
 	    </dict>
 	    <dict>
@@ -162,6 +168,12 @@
       <key>match</key>
       <string>set</string>
     </dict>
+	  <dict>
+		  <key>name</key>
+		  <string>keyword.control</string>
+		  <key>match</key>
+		  <string>initially</string>
+	  </dict>
 	  <dict>
 		  <key>name</key>
 		  <string>keyword.control</string>

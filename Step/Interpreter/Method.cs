@@ -22,6 +22,10 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
+
+using System.Linq;
+using Step.Utilities;
+
 namespace Step.Interpreter
 {
     /// <summary>
@@ -88,16 +92,32 @@ namespace Step.Interpreter
             var newEnv = new BindingEnvironment(env, newFrame);
             if (newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv))
             {
-                env.Module.OnEnterMethod(this);
+                env.Module.TraceMethod(Module.MethodTraceEvent.Enter, this, args, output, env);
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
-                if (StepChain?.Try(output, finalEnv, k) ?? k(output, finalEnv.Unifications, finalEnv.State))
+                var traceK = env.Module.Trace == null
+                    ? k
+                    : (newO, newU, newState) =>
+                    {
+                        MethodCallFrame.CurrentFrame = newFrame;
+                        env.Module.TraceMethod(Module.MethodTraceEvent.Succeed, this, args, newO,
+                            new BindingEnvironment(env, newU, newState));
+                        return k(newO, newU, newState);
+                    };
+                if (StepChain?.Try(output, finalEnv, traceK) ?? traceK(output, finalEnv.Unifications, finalEnv.State))
                     return true;
             }
 
+            MethodCallFrame.CurrentFrame = newFrame;
+            env.Module.TraceMethod(Module.MethodTraceEvent.Fail, this, args, output, env);
             return false;
         }
 
         /// <inheritdoc />
         public override string ToString() => $"Method of {Task.Name}";
+
+        /// <summary>
+        /// The argument pattern for this method expressed as the course code for a call
+        /// </summary>
+        public string HeadString => Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Step;
 
 namespace Tests
 {
@@ -20,8 +22,27 @@ namespace Tests
         [TestMethod]
         public void InitializationTest()
         {
-            var m = TestUtils.Module("Initially: [set X 1]");
+            var m = TestUtils.Module("initially: [set X 1]");
             Assert.AreEqual(1, (int)m["X"]);
+        }
+
+        [TestMethod]
+        public void SingletonVariableTest()
+        {
+            var m = Module.FromDefinitions("Test ?x.");
+            Assert.AreEqual(1, m.Warnings().Count(s => s.Contains("Singleton variable")));
+
+            m = Module.FromDefinitions("Test ?.");
+            Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
+
+            m = Module.FromDefinitions("Test ?_singleton.");
+            Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
+
+            m = Module.FromDefinitions("Test ?x: [Write ?x]");
+            Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
+            
+            m = Module.FromDefinitions("Test ?x: ?x");
+            Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("Singleton variable")));
         }
     }
 }

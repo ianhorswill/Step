@@ -66,6 +66,9 @@ namespace Step
         {
             get
             {
+                if (Bindings == null)
+                    return new KeyValuePair<string, object>[0];
+                
                 var bindings = Bindings.Select(p => new KeyValuePair<string, object>(p.Key.Name, p.Value)).ToArray(); 
                 Array.Sort(bindings,
                     (a, b) => String.CompareOrdinal(a.Key, b.Key));

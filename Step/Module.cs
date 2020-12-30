@@ -79,6 +79,11 @@ namespace Step
         /// Name of the module for debugging purposes
         /// </summary>
         public readonly string Name;
+
+        /// <summary>
+        /// Extension used for source files
+        /// </summary>
+        public string SourceExtension = ".step";
         #endregion
 
         #region Constructors
@@ -322,6 +327,21 @@ namespace Step
         }
 
         /// <summary>
+        /// Load all source files in the specified directory
+        /// </summary>
+        /// <param name="path">Path for the directory</param>
+        /// <param name="recursive">If true, load files from all directories in the subtree under path</param>
+        public void LoadDirectory(string path, bool recursive = false)
+        {
+            foreach (var file in Directory.GetFiles(path))
+                if (Path.GetExtension(file) == SourceExtension)
+                    LoadDefinitions(file);
+            if (recursive)
+                foreach (var sub in Directory.GetDirectories(path))
+                    LoadDirectory(sub, true);
+        }
+
+        /// <summary>
         /// Load the definitions in the specified file
         /// </summary>
         /// <param name="path">Path to the file</param>
@@ -339,7 +359,7 @@ namespace Step
             foreach (var (task, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this,
                 filePath).Definitions)
             {
-                if (task.Name == "Initially")
+                if (task.Name == "initially")
                     RunLoadTimeInitialization(pattern, locals, chain, path, line);
                 else 
                     FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, flags, path, line);
@@ -434,7 +454,7 @@ namespace Step
             foreach (var pair in dictionary.ToArray())  // Copy the dictionary because it might get modified by TaskDefined
             {
                 var variable = pair.Key;
-                if (pair.Value != null && pair.Value is CompoundTask task)
+                if (pair.Value is CompoundTask task)
                     foreach (var method in task.Methods)
                         for (var step = method.StepChain; step != null; step = step.Next)
                             if (step is Call c && c.Task is StateVariableName g && !TaskDefined(g))
@@ -485,7 +505,7 @@ namespace Step
             get
             {
                 var b = new StringBuilder();
-                for (var frame = MethodCallFrame.CurrentFrame; frame != null; frame = frame.Parent)
+                for (var frame = MethodCallFrame.CurrentFrame; frame != null; frame = frame.LexicalParent)
                     b.AppendLine(frame.GetCallSourceText(MethodCallFrame.CurrentFrame.BindingsAtCallTime));
                 return b.ToString();
             }
@@ -496,16 +516,36 @@ namespace Step
         /// An event handler to be called on every method call.
         /// Used to implement single-stepping in a debugger
         /// </summary>
-        public delegate void TraceHandler();
+        public delegate void TraceHandler(MethodTraceEvent traceEvent, Method method, object[] args, PartialOutput output, BindingEnvironment env);
 
         /// <summary>
         /// An event handler to be called on every method call.
         /// Used to implement single-stepping in a debugger
         /// </summary>
         public TraceHandler Trace;
-        internal void OnEnterMethod(Method method)
+
+        /// <summary>
+        /// Which event is being traced (a call, success, or failure)
+        /// </summary>
+        public enum MethodTraceEvent
         {
-            Trace?.Invoke();
+            /// <summary>
+            /// The arguments have been matched to the head of this method and we will now try running its body
+            /// </summary>
+            Enter,
+            /// <summary>
+            /// The method succeeded
+            /// </summary>
+            Succeed,
+            /// <summary>
+            /// The method failed
+            /// </summary>
+            Fail
+        };
+        
+        internal void TraceMethod(MethodTraceEvent e, Method method, object[] args, PartialOutput output, BindingEnvironment env)
+        {
+            Trace?.Invoke(e, method, args, output, env);
         }
     }
 }

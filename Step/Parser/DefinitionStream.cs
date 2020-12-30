@@ -167,6 +167,16 @@ namespace Step.Parser
         private static bool IsNonAnonymousLocalVariableName(object token) => token is string s && s.StartsWith("?") && s.Any(char.IsLetter);
 
         /// <summary>
+        /// The local variable name indicates the programmer intended it to be a singleton.
+        /// </summary>
+        private static bool IsSingletonVariableName(string name) => name == "?" || name.StartsWith("?_");
+
+        /// <summary>
+        /// The local variable name indicates the programmer intended it to be a singleton.
+        /// </summary>
+        private static bool IsIntendedAsSingleton(LocalVariableName l) => IsSingletonVariableName(l.Name);
+
+        /// <summary>
         /// True if the string is a valid global variable name
         /// </summary>
         private static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
@@ -218,6 +228,7 @@ namespace Step.Parser
                 var endOfArglist = !enumerator.MoveNext();
                 object Peek() => enumerator.Current;
 
+                // ReSharper disable once LocalFunctionHidesMethod
                 object Get()
                 {
                     var next = Peek();
@@ -274,7 +285,7 @@ namespace Step.Parser
                 if (IsLocalVariableName(s))
                 {
                     var v = GetLocal(s);
-                    referenceCounts[v.Index] += 1;
+                    IncrementReferenceCount(v);
                     return v;
                 }
                 if (IsGlobalVariableName(s))
@@ -310,6 +321,11 @@ namespace Step.Parser
                 return CanonicalizeArglist(list);
 
             return o;
+        }
+
+        private void IncrementReferenceCount(LocalVariableName v)
+        {
+            referenceCounts[v.Index] += 1;
         }
 
         /// <summary>
@@ -410,8 +426,8 @@ namespace Step.Parser
                         flags |= CompoundTask.TaskFlags.Shuffle;
                         break;
 
-                    // Throw an error on total failure
                     case "generator":
+                    case "predicate":
                         flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
                         break;
 
@@ -663,6 +679,7 @@ namespace Step.Parser
                 return;
 
             var local = GetLocal((string) Get());
+            IncrementReferenceCount(local);
 
             if (!Peek.Equals("/"))
             {
@@ -769,7 +786,7 @@ namespace Step.Parser
         private void CheckForWarnings()
         {
             for (var i = 0; i < locals.Count; i++)
-                if (referenceCounts[i] == 1 && !locals[i].Name.StartsWith("?"))
+                if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]))
                     Module.AddWarning(
                         $"{SourceFile}:{lineNumber} Singleton variable {locals[i].Name}");
         }

@@ -42,14 +42,14 @@ namespace Step.Interpreter
         ///    C -> D -> B -> A
         /// Because if C fails, we have to backtrack to D, not to A.  
         /// </summary>
-        public readonly MethodCallFrame Parent;
-
-        internal MethodCallFrame(Method method, BindingList<LogicVariable> bindings, LogicVariable[] locals, MethodCallFrame parent)
+        public readonly MethodCallFrame LexicalParent;
+        
+        internal MethodCallFrame(Method method, BindingList<LogicVariable> bindings, LogicVariable[] locals, MethodCallFrame lexicalParent)
         {
             Method = method;
             BindingsAtCallTime = bindings;
             Locals = locals;
-            Parent = parent;
+            LexicalParent = lexicalParent;
         }
 
         /// <summary>
