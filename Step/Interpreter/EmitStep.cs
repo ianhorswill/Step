@@ -47,7 +47,9 @@ namespace Step.Interpreter
         /// <param name="output">When to write the text</param>
         /// <param name="e">Variable info.  Not used, but passed on to continuation</param>
         /// <param name="k">Continuation to run after the end of this method.</param>
+        /// <param name="predecessor">Predecessor frame</param>
         /// <returns></returns>
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k) => Continue(output.Append(Text), e, k);
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor) =>
+            Continue(output.Append(Text), e, k, predecessor);
     }
 }

@@ -14,7 +14,7 @@ namespace Step.Interpreter
             this.collectionVariable = collectionVariable;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var collectionValue = e.Resolve(collectionVariable);
 
@@ -28,7 +28,7 @@ namespace Step.Interpreter
                             new BindingEnvironment(e,
                                 bindings,
                                 e.State.Bind(collectionVariable, list.Rest)),
-                            k);
+                            k, predecessor);
 
                 }
 
@@ -40,7 +40,7 @@ namespace Step.Interpreter
                                new BindingEnvironment(e,
                                    bindings,
                                    e.State.Bind(collectionVariable, stack.Pop())),
-                               k);
+                               k, predecessor);
                 }
 
                 case ImmutableQueue<object> queue:
@@ -51,7 +51,7 @@ namespace Step.Interpreter
                                new BindingEnvironment(e,
                                    bindings,
                                    e.State.Bind(collectionVariable, queue.Dequeue())),
-                               k);
+                               k, predecessor);
                 }
 
                 default:

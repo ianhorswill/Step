@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Step.Interpreter
+﻿namespace Step.Interpreter
 {
     /// <inheritdoc />
     public class CallFailedException : CallException

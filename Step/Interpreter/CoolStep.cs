@@ -15,12 +15,12 @@
             Duration = duration;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             if (fuse == 0)
             {
                 fuse = Duration;
-                if (Continue(output, e, k))
+                if (Continue(output, e, k, predecessor))
                     return true;
 
                 // The continuation failed, so the user never saw its results.

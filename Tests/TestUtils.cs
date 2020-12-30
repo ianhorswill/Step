@@ -18,11 +18,14 @@ namespace Tests
         {
             string result = null;
             step.Try(PartialOutput.NewEmpty(),
-                new BindingEnvironment(g, new MethodCallFrame(null, null, new LogicVariable[0], null)), (o, u, s) =>
-            {
-                result = o.AsString;
-                return true;
-            }); 
+                new BindingEnvironment(g,
+                    new MethodCallFrame(null, null, new LogicVariable[0], null, null)),
+                (o, u, s, p) =>
+                {
+                    result = o.AsString;
+                    return true;
+                },
+                null);
             return result;
         }
 

@@ -19,15 +19,16 @@
         /// <summary>
         /// Run the next branch, or fail if we've run out of branches
         /// </summary>
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var position = (int)e.State.Lookup(branchNumber);
             if (position == branches.Length)
                 return false;
             return branches[position].Try(output,
                 new BindingEnvironment(e, branchNumber, position+1), 
-                (o, u, d) =>
-                    Continue(o, new BindingEnvironment(e, u, d), k));
+                (o, u, d, newP) =>
+                    Continue(o, new BindingEnvironment(e, u, d), k, newP),
+                predecessor);
         }
     }
 }

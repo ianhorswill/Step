@@ -14,7 +14,7 @@ namespace Step.Interpreter
             this.collectionVariable = collectionVariable;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var elt = e.Resolve(element);
             var collectionValue = e.Resolve(collectionVariable);
@@ -26,28 +26,28 @@ namespace Step.Interpreter
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, new Cons(elt, list))),
-                        k);
+                        k, predecessor);
 
                 case IImmutableSet<object> set:
                     return Continue(output,
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, set.Add(elt))),
-                        k);
+                        k, predecessor);
 
                 case ImmutableStack<object> stack:
                     return Continue(output,
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, stack.Push(elt))),
-                        k);
+                        k, predecessor);
 
                 case ImmutableQueue<object> queue:
                     return Continue(output,
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, queue.Enqueue(elt))),
-                        k);
+                        k, predecessor);
 
                 default:
                     throw new ArgumentTypeException("add", typeof(Cons), collectionValue,

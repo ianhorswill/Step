@@ -14,7 +14,7 @@ namespace Step.Interpreter
             Value = value;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var value = e.Resolve(Value);
             if (value is LogicVariable)
@@ -23,7 +23,7 @@ namespace Step.Interpreter
                 new BindingEnvironment(e,
                     e.Unifications,
                     e.State.Bind(Variable, value)),
-                k);
+                k, predecessor);
         }
     }
 }

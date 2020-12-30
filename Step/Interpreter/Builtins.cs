@@ -47,11 +47,11 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g["="] = NamePrimitive("=", (MetaTask) ((args, o, e, k) =>
+            g["="] = NamePrimitive("=", (MetaTask) ((args, o, e, k, predecessor) =>
             {
                 ArgumentCountException.Check("=", 2, args);
                 return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
-                           k(o, newBindings, e.State);
+                           k(o, newBindings, e.State, predecessor);
             }));
             g[">"] = Predicate<float, float>(">", (a, b) => a > b);
             g["<"] = Predicate<float, float>("<", (a, b) => a < b);

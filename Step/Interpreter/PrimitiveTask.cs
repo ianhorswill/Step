@@ -175,7 +175,9 @@ namespace Step.Interpreter
         /// <param name="o">Partial output accumulated so far</param>
         /// <param name="e">Binding environment to use</param>
         /// <param name="k">Continuation to call when successful</param>
-        public delegate bool MetaTask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k);
+        /// <param name="predecessor">Frame of the call that most recently succeeded</param>
+        public delegate bool MetaTask(object[] args, PartialOutput o, BindingEnvironment e,
+            Step.Continuation k, MethodCallFrame predecessor);
 
         /// <summary>
         /// A primitive task that generates text and always succeeds once (i.e. you can't backtrack to get different alternative versions of the text.
@@ -199,7 +201,9 @@ namespace Step.Interpreter
         /// <param name="args">Raw, unevaled arguments</param>
         /// <param name="o">Partial output accumulated so far</param>
         /// <param name="e">Binding environment to use</param>
-        public delegate IEnumerable<string> DeterministicTextGeneratorMetaTask(object[] args, PartialOutput o, BindingEnvironment e);
+        /// <param name="predecessor">Method call that succeeded immediately before this call</param>
+        public delegate IEnumerable<string> DeterministicTextGeneratorMetaTask(object[] args, PartialOutput o, BindingEnvironment e, 
+            MethodCallFrame predecessor);
 
         /// <summary>
         /// Wrap a C# procedure in type checking code and return it as a DeterministicTextGenerator1

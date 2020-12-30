@@ -42,17 +42,18 @@ namespace Step.Interpreter
 
         private Step[] Branches => shuffle ? branches.Shuffle() : branches;
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             foreach (var branch in Branches)
             {
                 if (branch == null)  // Empty branch, e.g. [case ?x] Something : Something [else] [end]
                 {
-                    if (Continue(output, e, k)) return true;
+                    if (Continue(output, e, k, predecessor)) return true;
                 }
                 else if (branch.Try(output, e, 
-                    (o, u, d)=> 
-                        Continue(o, new BindingEnvironment(e, u, d), k)))
+                    (o, u, d, newP)=> 
+                        Continue(o, new BindingEnvironment(e, u, d), k, newP)
+                    , predecessor))
                     return true;
             }
 

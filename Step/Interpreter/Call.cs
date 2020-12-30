@@ -89,18 +89,19 @@ namespace Step.Interpreter
         /// <param name="output">Output to which to write text</param>
         /// <param name="env">Variable binding information</param>
         /// <param name="k">Continuation to call at the end of this step's step-chain</param>
+        /// <param name="predecessor">Predecessor frame</param>
         /// <returns>True if this steps, the rest of its step-chain, and the continuation all succeed.</returns>
-        public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k)
+        public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k, MethodCallFrame predecessor)
         {
             var originalTarget = env.Resolve(Task);
             var target = PrimitiveTask.GetSurrogate(originalTarget);
             var arglist = env.ResolveList(Arglist);
 
-            return CallTask(output, env, k, target, arglist, originalTarget);
+            return CallTask(output, env, k, target, arglist, originalTarget, predecessor);
         }
 
         private bool CallTask(PartialOutput output, BindingEnvironment env, Continuation k, object target, object[] arglist,
-            object originalTarget)
+            object originalTarget, MethodCallFrame predecessor)
         {
             switch (target)
             {
@@ -111,10 +112,10 @@ namespace Step.Interpreter
                     for (var index = 0; index < methods.Count && !(p.Deterministic && successCount > 0); index++)
                     {
                         var method = methods[index];
-                        if (method.Try(arglist, output, env, (o, u, s) =>
+                        if (method.Try(arglist, output, env, predecessor, (o, u, s, newPredecessor) =>
                         {
                             successCount++;
-                            return Continue(o, new BindingEnvironment(env, u, s), k);
+                            return Continue(o, new BindingEnvironment(env, u, s), k, newPredecessor);
                         }))
                             return true;
                     }
@@ -129,62 +130,64 @@ namespace Step.Interpreter
                     return false;
 
                 case PrimitiveTask.MetaTask m:
-                    return m(arglist, output, env, (o, u, s) => Continue(o, new BindingEnvironment(env, u, s), k));
+                    return m(arglist, output, env, (o, u, s, newP) =>
+                        Continue(o, new BindingEnvironment(env, u, s), k, newP),
+                        predecessor);
 
                 case PrimitiveTask.Predicate0 p:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
-                    return p() && Continue(output, env, k);
+                    return p() && Continue(output, env, k, predecessor);
 
                 case PrimitiveTask.Predicate1 p:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
-                    return p(arglist[0]) && Continue(output, env, k);
+                    return p(arglist[0]) && Continue(output, env, k, predecessor);
 
                 case PrimitiveTask.Predicate2 p:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
-                    return p(arglist[0], arglist[1]) && Continue(output, env, k);
+                    return p(arglist[0], arglist[1]) && Continue(output, env, k, predecessor);
 
                 case PrimitiveTask.PredicateN p:
-                    return p(arglist, env) && Continue(output, env, k);
+                    return p(arglist, env) && Continue(output, env, k, predecessor);
 
                 case PrimitiveTask.DeterministicTextGenerator0 g:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
-                    return Continue(output.Append(g()), env, k);
+                    return Continue(output.Append(g()), env, k, predecessor);
 
                 case PrimitiveTask.DeterministicTextGenerator1 g:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
-                    return Continue(output.Append(g(arglist[0])), env, k);
+                    return Continue(output.Append(g(arglist[0])), env, k, predecessor);
 
                 case PrimitiveTask.DeterministicTextGenerator2 g:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
-                    return Continue(output.Append(g(arglist[0], arglist[1])), env, k);
+                    return Continue(output.Append(g(arglist[0], arglist[1])), env, k, predecessor);
 
                 case PrimitiveTask.DeterministicTextGeneratorMetaTask g:
-                    return Continue(output.Append(g(arglist, output, env)), env, k);
+                    return Continue(output.Append(g(arglist, output, env, predecessor)), env, k, predecessor);
 
                 case PrimitiveTask.NondeterministicTextGenerator0 g:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
                     foreach (var tokens in g())
-                        if (Continue(output.Append(tokens), env, k))
+                        if (Continue(output.Append(tokens), env, k, predecessor))
                             return true;
                     return false;
 
                 case PrimitiveTask.NondeterministicTextGenerator1 g:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
                     foreach (var tokens in g(arglist[0]))
-                        if (Continue(output.Append(tokens), env, k))
+                        if (Continue(output.Append(tokens), env, k, predecessor))
                             return true;
                     return false;
 
                 case PrimitiveTask.NondeterministicTextGenerator2 g:
                     ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
                     foreach (var tokens in g(arglist[0], arglist[1]))
-                        if (Continue(output.Append(tokens), env, k))
+                        if (Continue(output.Append(tokens), env, k, predecessor))
                             return true;
                     return false;
 
                 case PrimitiveTask.NonDeterministicRelation r:
                     foreach (var bindings in r(arglist, env))
-                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k))
+                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k, predecessor))
                             return true;
                     return false;
 
@@ -194,7 +197,7 @@ namespace Step.Interpreter
                         throw new ArgumentCountException("<list member>", 1, arglist);
                     var member = (PrimitiveTask.NonDeterministicRelation) env.Module["Member"];
                     foreach (var bindings in member(new[] { arglist[0], l }, env))
-                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k))
+                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k, predecessor))
                             return true;
                     return false;
 
@@ -209,10 +212,10 @@ namespace Step.Interpreter
                     {
                         var hook = env.Module.FindTask(MentionHook, 1, false);
                         if (hook != null)
-                            return MakeCall(hook, target, Next).Try(output, env, k);
+                            return MakeCall(hook, target, Next).Try(output, env, k, predecessor);
                         if (target is string[] text)
-                            return Continue(output.Append(text), env, k);
-                        return Continue(output.Append(target.ToString()), env, k);
+                            return Continue(output.Append(text), env, k, predecessor);
+                        return Continue(output.Append(target.ToString()), env, k, predecessor);
                     }
 
                     throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget, arglist)}");

@@ -242,7 +242,14 @@ namespace Step
             State newState = State.Empty;
 
             foreach (var method in t.EffectiveMethods)
-                if (method.Try(args, output, env, (o, u, s) => { result = o.AsString; newState = s; return true; }))
+                if (method.Try(args, output, env, null,
+                    (o, u, s, predecessor) =>
+                    {
+                        result = o.AsString; 
+                        newState = s;
+                        MethodCallFrame.CurrentFrame = predecessor;
+                        return true;
+                    }))
                     return (result, newState);
             return (null, State.Empty);
         }
@@ -277,7 +284,8 @@ namespace Step
             var env = new BindingEnvironment(this, null, null, state);
 
             foreach (var method in t.EffectiveMethods)
-                if (method.Try(args, output, env, (o, u, s) => true))
+                if (method.Try(args, output, env, null, 
+                    (o, u, s, p) => true))
                     return true;
             return false;
         }
@@ -307,7 +315,8 @@ namespace Step
             BindingList<LogicVariable> bindings = null;
 
             foreach (var method in t.EffectiveMethods)
-                if (method.Try(extendedArgs, output, env, (o, u, s) => 
+                if (method.Try(extendedArgs, output, env, null,
+                    (o, u, s, p) => 
                 {
                     bindings = u;
                     return true; 
@@ -374,12 +383,14 @@ namespace Step
             State bindings = State.Empty;
             if (!chain.Try(new PartialOutput(0),
                 new BindingEnvironment(this,
-                    new MethodCallFrame(null, null, locals.Select(name => new LogicVariable(name)).ToArray(), null)),
-                (o, u, d ) =>
+                    new MethodCallFrame(null, null, locals.Select(name => new LogicVariable(name)).ToArray(), 
+                        null, null)),
+                (o, u, d, p ) =>
                 {
                     bindings = d;
                     return true;
-                }))
+                },
+                null))
                 throw new InvalidOperationException($"{Path.GetFileName(path)}:{line} Initialization failed.");
             LoadBindingList(bindings);
         }
@@ -505,7 +516,7 @@ namespace Step
             get
             {
                 var b = new StringBuilder();
-                for (var frame = MethodCallFrame.CurrentFrame; frame != null; frame = frame.LexicalParent)
+                foreach (var frame in MethodCallFrame.CurrentFrame.CallerChain)
                     b.AppendLine(frame.GetCallSourceText(MethodCallFrame.CurrentFrame.BindingsAtCallTime));
                 return b.ToString();
             }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -9,6 +10,7 @@ namespace Step.Interpreter
     /// Used only so that there's a data structure that can be walked to generate a stack backtrace
     /// NOT THREAD SAFE
     /// </summary>
+    [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
     public class MethodCallFrame
     {
         /// <summary>
@@ -33,7 +35,7 @@ namespace Step.Interpreter
         public readonly LogicVariable[] Locals;
         
         /// <summary>
-        /// Parent frame - this is the frame of the calling method, not the most recently executed task
+        /// Caller's frame - this is the frame of the calling method, not the most recently executed task
         /// The two are the same for deterministic languages, but can be different for non-deterministic ones
         /// For example, if A calls B then C and B calls D, then on entry to D, then the method call frame chain
         /// entry to C is just C -> A.
@@ -42,14 +44,44 @@ namespace Step.Interpreter
         ///    C -> D -> B -> A
         /// Because if C fails, we have to backtrack to D, not to A.  
         /// </summary>
-        public readonly MethodCallFrame LexicalParent;
-        
-        internal MethodCallFrame(Method method, BindingList<LogicVariable> bindings, LogicVariable[] locals, MethodCallFrame lexicalParent)
+        public readonly MethodCallFrame Caller;
+
+        /// <summary>
+        /// The method that succeeded immediately before this call
+        /// </summary>
+        public readonly MethodCallFrame Predecessor;
+
+        /// <summary>
+        /// The chain of this frame and its callers
+        /// </summary>
+        public IEnumerable<MethodCallFrame> CallerChain
+        {
+            get
+            {
+                for (var frame = this; frame != null; frame = frame.Caller)
+                    yield return frame;
+            }
+        }
+
+        /// <summary>
+        /// The chain of this frame and its predecessors
+        /// </summary>
+        public IEnumerable<MethodCallFrame> GoalChain
+        {
+            get
+            {
+                for (var frame = this; frame != null; frame = frame.Predecessor)
+                    yield return frame;
+            }
+        }
+
+        internal MethodCallFrame(Method method, BindingList<LogicVariable> bindings, LogicVariable[] locals, MethodCallFrame caller, MethodCallFrame predecessor)
         {
             Method = method;
             BindingsAtCallTime = bindings;
             Locals = locals;
-            LexicalParent = lexicalParent;
+            Caller = caller;
+            Predecessor = predecessor;
         }
 
         /// <summary>
@@ -98,6 +130,14 @@ namespace Step.Interpreter
             var start = Module.RichTextStackTraces ? "\n     <i>" : "(";
             var end = Module.RichTextStackTraces ? "</i>" : ")";
             return $"{source} {start}at {Path.GetFileName(Method.FilePath)}:{Method.LineNumber}{end}";
+        }
+
+        private string DebuggerDisplay => ToString();
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"Call to {Method}";
         }
     }
 }

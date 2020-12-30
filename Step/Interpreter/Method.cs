@@ -80,14 +80,15 @@ namespace Step.Interpreter
         /// <param name="output">Output buffer to write to</param>
         /// <param name="env">Variable binding information</param>
         /// <param name="k">Continuation to call if method succeeds</param>
+        /// <param name="pre">Predecessor frame</param>
         /// <returns>True if the method and its continuation succeeded</returns>
-        public bool Try(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
+        public bool Try(object[] args, PartialOutput output, BindingEnvironment env, MethodCallFrame pre, Step.Continuation k)
         {
             // Make stack frame for locals
             var locals = new LogicVariable[LocalVariableNames.Length];
             for (var i = 0; i < LocalVariableNames.Length; i++)
                 locals[i] = new LogicVariable(LocalVariableNames[i]);
-            var newFrame = new MethodCallFrame(this, env.Unifications, locals, env.Frame);
+            var newFrame = new MethodCallFrame(this, env.Unifications, locals, env.Frame, pre);
             MethodCallFrame.CurrentFrame = newFrame;
             var newEnv = new BindingEnvironment(env, newFrame);
             if (newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv))
@@ -96,14 +97,14 @@ namespace Step.Interpreter
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
                 var traceK = env.Module.Trace == null
                     ? k
-                    : (newO, newU, newState) =>
+                    : (newO, newU, newState, predecessor) =>
                     {
                         MethodCallFrame.CurrentFrame = newFrame;
                         env.Module.TraceMethod(Module.MethodTraceEvent.Succeed, this, args, newO,
                             new BindingEnvironment(env, newU, newState));
-                        return k(newO, newU, newState);
+                        return k(newO, newU, newState, predecessor);
                     };
-                if (StepChain?.Try(output, finalEnv, traceK) ?? traceK(output, finalEnv.Unifications, finalEnv.State))
+                if (StepChain?.Try(output, finalEnv, traceK, newFrame) ?? traceK(output, finalEnv.Unifications, finalEnv.State, newFrame))
                     return true;
             }
 
@@ -113,7 +114,7 @@ namespace Step.Interpreter
         }
 
         /// <inheritdoc />
-        public override string ToString() => $"Method of {Task.Name}";
+        public override string ToString() => $"Method {HeadString}";
 
         /// <summary>
         /// The argument pattern for this method expressed as the course code for a call

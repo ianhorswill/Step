@@ -98,7 +98,7 @@ namespace Step.Interpreter
         /// </summary>
         internal static BindingEnvironment NewEmpty() =>
             new BindingEnvironment(new Module("empty"), 
-                new MethodCallFrame(null, null, new LogicVariable[0], null));
+                new MethodCallFrame(null, null, new LogicVariable[0], null, null));
 
         /// <summary>
         /// Canonicalize a term, i.e. get its value, or reduce it to a logic variable

@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
 using Step.Interpreter;
@@ -37,7 +38,7 @@ namespace Tests
 
         bool Succeeds(Step.Interpreter.Step s)
         {
-            return s.Try(PartialOutput.NewEmpty(), BindingEnvironment.NewEmpty(), (o, e, ds) => true);
+            return s.Try(PartialOutput.NewEmpty(), BindingEnvironment.NewEmpty(), (o, e, ds, p) => true, null);
         }
 
         [TestMethod]
@@ -128,6 +129,21 @@ namespace Tests
             m.Call("Test");
             Assert.AreEqual("[Foo 2][Method 1][Test]",
                 Module.StackTrace.Replace("\n", "").Replace("\r", ""));
+        }
+
+        [TestMethod]
+        public void DynamicTestTrace()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [A] [B] [C]",
+                "A: [C] [D]",
+                "B: [C]",
+                "C.",
+                "D.");
+            m.Call("Test");
+            Assert.AreEqual("C C B D C A Test",
+                string.Join(" ",
+                    MethodCallFrame.CurrentFrame.GoalChain.Select(f => f.Method.Task.Name)));
         }
 
         [TestMethod]

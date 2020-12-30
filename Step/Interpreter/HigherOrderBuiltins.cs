@@ -50,12 +50,12 @@ namespace Step.Interpreter
             g["SaveText"] = (MetaTask) SaveText;
         }
 
-        private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            return StepChainFromBody("begin", args).Try(o, e, k);
+            return StepChainFromBody("begin", args).Try(o, e, k, predecessor);
         }
 
-        private static bool Not(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool Not(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             // Whether the call to args below succeeded
             var success = false;
@@ -63,21 +63,22 @@ namespace Step.Interpreter
             // This always fails, since its continuation fails too
             StepChainFromBody("Not", args)
                 .Try(o, e,
-                    (newOut, newE, newK) =>
+                    (newOut, newE, newK, newP) =>
                     {
                         // Remember that we succeeded, then fail
                         success = true;
                         return false;
-                    });
+                    },
+                    predecessor);
 
             // If the call to args succeeded, fail; otherwise call continuation
-            return !success && k(o, e.Unifications, e.State);
+            return !success && k(o, e.Unifications, e.State, predecessor);
         }
         
-        private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e) 
-            => AllSolutionTextFromBody("DoAll", args, o, e).SelectMany(strings => strings);
+        private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e, MethodCallFrame predecessor) 
+            => AllSolutionTextFromBody("DoAll", args, o, e, predecessor).SelectMany(strings => strings);
 
-        private static bool ForEach(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
+        private static bool ForEach(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
         {
             if (args.Length < 2)
                 throw new ArgumentCountException("ForEach", 2, args);
@@ -90,101 +91,113 @@ namespace Step.Interpreter
             var dynamicState = env.State;
             var resultOutput = output;
 
-            producerChain.Try(resultOutput, env, (o, u, d) =>
-            {
-                // We've got a solution to the producer in u.
-                // So run the consumer once with u but not d or o.
-                consumerChain.Try(resultOutput,
-                    new BindingEnvironment(env, u, dynamicState),
-                    (o2, u2, d2) =>
-                    {
-                        // Save modifications to dynamic state, output; throw away binding state
-                        dynamicState = d2;
-                        resultOutput = o2;
-                        // Accept this one solution to consumer; don't backtrack it.
-                        return true;
-                    });
-                // Backtrack to generate the next solution for producer
-                return false;
-            });
+            producerChain.Try(resultOutput, env,
+                (o, u, d, p) =>
+                {
+                    // We've got a solution to the producer in u.
+                    // So run the consumer once with u but not d or o.
+                    consumerChain.Try(resultOutput,
+                        new BindingEnvironment(env, u, dynamicState),
+                        (o2, u2, d2, newP) =>
+                        {
+                            // Save modifications to dynamic state, output; throw away binding state
+                            dynamicState = d2;
+                            resultOutput = o2;
+                            // Accept this one solution to consumer; don't backtrack it.
+                            return true;
+                        },
+                        p);
+                    // Backtrack to generate the next solution for producer
+                    return false;
+                },
+                predecessor);
 
             // Use original unifications but accumulated output and state.
-            return k(resultOutput, env.Unifications, dynamicState);
+            return k(resultOutput, env.Unifications, dynamicState, predecessor);
         }
 
-        private static bool Once(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
+        private static bool Once(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
         {
             PartialOutput finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
             State finalState = State.Empty;
+            MethodCallFrame finalFrame = predecessor;
             bool success = false;
 
             GenerateSolutionsFromBody("Once", args, output, env,
-                (o, u, d) =>
+                (o, u, d, p) =>
                 {
                     success = true;
                     finalOutput = o;
                     finalBindings = u;
                     finalState = d;
+                    finalFrame = p;
                     return true;
-                });
+                },
+                predecessor);
 
-            return success && k(finalOutput, finalBindings, finalState);
+            return success && k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool ExactlyOnce(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k)
+        private static bool ExactlyOnce(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("ExactlyOnce", 1, args);
             PartialOutput finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
             State finalState = State.Empty;
+            MethodCallFrame finalFrame = predecessor;
             bool failure = true;
 
             var chain = StepChainFromBody("ExactlyOnce", args);
             chain.Try(output, env,
-                (o, u, d) =>
+                (o, u, d, p) =>
                 {
                     failure = false;
                     finalOutput = o;
                     finalBindings = u;
                     finalState = d;
+                    finalFrame = p;
                     return true;
-                });
+                },
+                predecessor);
 
             if (failure)
             {
                 var failedCall = (Call)chain;
                 throw new CallFailedException(env.Resolve(failedCall.Task), env.ResolveList(failedCall.Arglist));
             }
-            return k(finalOutput, finalBindings, finalState);
+            return k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool Max(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool Max(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            return MaxMinDriver("Max", args, 1, o, e, k);
+            return MaxMinDriver("Max", args, 1, o, e, k, predecessor);
         }
 
-        private static bool Min(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool Min(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            return MaxMinDriver("Min", args, -1, o, e, k);
+            return MaxMinDriver("Min", args, -1, o, e, k, predecessor);
         }
 
         /// <summary>
         /// Core implementation of both Max and Min
         /// </summary>
         private static bool MaxMinDriver(string taskName, object[] args,
-            int multiplier, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+            int multiplier, PartialOutput o, BindingEnvironment e,
+            Step.Continuation k,
+            MethodCallFrame predecessor)
         {
             var scoreVar = args[0] as LogicVariable;
             if (scoreVar == null)
                 throw new ArgumentInstantiationException(taskName, e, args);
 
             var bestScore = multiplier * float.NegativeInfinity;
+            var bestFrame = predecessor;
             CapturedState bestResult = new CapturedState();
             var gotOne = false;
 
             GenerateSolutionsFromBody(taskName, args.Skip(1).ToArray(), o, e,
-                (output, u, d) =>
+                (output, u, d, p) =>
                 {
                     gotOne = true;
 
@@ -217,19 +230,21 @@ namespace Step.Interpreter
                     {
                         bestScore = score;
                         bestResult = new CapturedState(o, output, u, d);
+                        bestFrame = p;
                     }
 
                     // Always ask for another solution
                     return false;
-                });
+                },
+                predecessor);
 
             // When we get here, we've iterated through all solutions and kept the best one.
             // So pass it on to our continuation
             return gotOne
-                   && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.State);
+                   && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.State, bestFrame);
         }
 
-        private static bool SaveText(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        private static bool SaveText(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("SaveText", 2, args);
 
@@ -245,15 +260,19 @@ namespace Step.Interpreter
             var call = new Call(invocation[0], arglist, null);
             var initialLength = o.Length;
             string[] chunk = null;
+            var frame = predecessor;
 
-            if (call.Try(o, e, (output, b, d) =>
-                                    {
-                                        chunk = new string[output.Length - initialLength];
-                                        Array.Copy(o.Buffer, initialLength, chunk, 0, output.Length-initialLength);
-                                        return true;
-                                    })
+            if (call.Try(o, e,
+                    (output, b, d, p) =>
+                    {
+                        frame = p;
+                        chunk = new string[output.Length - initialLength];
+                        Array.Copy(o.Buffer, initialLength, chunk, 0, output.Length - initialLength);
+                        return true;
+                    },
+                    predecessor)
                 && e.Unify(textVar, chunk, e.Unifications, out var newUnifications))
-                return k(o, newUnifications, e.State);
+                return k(o, newUnifications, e.State, frame);
 
             return false;
         }
@@ -291,40 +310,43 @@ namespace Step.Interpreter
         /// Calls a task with the specified arguments and allows the user to provide their own continuation.
         /// The only (?) use case for this is when you want to forcibly generate multiple solutions
         /// </summary>
-        internal static void GenerateSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        internal static void GenerateSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            new Call(StateVariableName.Named(taskName), args, null).Try(o, e, k);
+            new Call(StateVariableName.Named(taskName), args, null).Try(o, e, k, predecessor);
         }
 
         /// <summary>
         /// Find all solutions to the specified task and arguments.  Return a list of the arglists for each solution.
         /// </summary>
-        internal static List<object[]> AllSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e)
+        internal static List<object[]> AllSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<object[]>();
-            GenerateSolutions(taskName, args, o, e, (output, b, d) =>
+            GenerateSolutions(taskName, args, o, e, (output, b, d, p) =>
             {
                 results.Add(new BindingEnvironment(e, b, d).ResolveList(args));
                 return false;
-            });
+            },
+                predecessor);
             return results;
         }
 
         /// <summary>
         /// Find all solutions to the specified task and arguments.  Return a list of the text outputs of each solution.
         /// </summary>
-        internal static List<string[]> AllSolutionText(string taskName, object[] args, PartialOutput o, BindingEnvironment e)
+        internal static List<string[]> AllSolutionText(string taskName, object[] args, PartialOutput o, BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<string[]>();
             var initialLength = o.Length;
-            GenerateSolutions(taskName, args, o, e, (output, b, d) =>
-            {
-                var chunk = new string[output.Length - initialLength];
-                for (var i = initialLength; i < output.Length; i++)
-                    chunk[i - initialLength] = o.Buffer[i];
-                results.Add(chunk);
-                return false;
-            });
+            GenerateSolutions(taskName, args, o, e,
+                (output, b, d, p) =>
+                {
+                    var chunk = new string[output.Length - initialLength];
+                    for (var i = initialLength; i < output.Length; i++)
+                        chunk[i - initialLength] = o.Buffer[i];
+                    results.Add(chunk);
+                    return false;
+                },
+                predecessor);
             return results;
         }
 
@@ -332,9 +354,11 @@ namespace Step.Interpreter
         /// Calls all the tasks in the body and allows the user to provide their own continuation.
         /// The only (?) use case for this is when you want to forcibly generate multiple solutions
         /// </summary>
-        internal static void GenerateSolutionsFromBody(string callingTaskName, object[] body, PartialOutput o, BindingEnvironment e, Step.Continuation k)
+        internal static void GenerateSolutionsFromBody(string callingTaskName, object[] body, PartialOutput o, BindingEnvironment e,
+            Step.Continuation k,
+            MethodCallFrame predecessor)
         {
-            StepChainFromBody(callingTaskName, body).Try(o, e, k);
+            StepChainFromBody(callingTaskName, body).Try(o, e, k, predecessor);
         }
 
         internal static Step StepChainFromBody(string callingTaskName, params object[] body)
@@ -358,20 +382,24 @@ namespace Step.Interpreter
         /// <summary>
         /// Find all solutions to the specified sequence of calls.  Return a list of the text outputs of each solution.
         /// </summary>
-        internal static List<string[]> AllSolutionTextFromBody(string callingTaskName, object[] body, PartialOutput o, BindingEnvironment e)
+        internal static List<string[]> AllSolutionTextFromBody(string callingTaskName, object[] body, PartialOutput o,
+            BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<string[]>();
             var initialLength = o.Length;
-            GenerateSolutionsFromBody(callingTaskName, body, o, e, (output, b, d) =>
-            {
-                var chunk = new string[output.Length - initialLength];
-                for (var i = initialLength; i < output.Length; i++)
-                    chunk[i - initialLength] = o.Buffer[i];
-                results.Add(chunk);
-                return false;
-            });
+            GenerateSolutionsFromBody(callingTaskName, body, o, e,
+                (output, b, d, p) =>
+                {
+                    var chunk = new string[output.Length - initialLength];
+                    for (var i = initialLength; i < output.Length; i++)
+                        chunk[i - initialLength] = o.Buffer[i];
+                    results.Add(chunk);
+                    return false;
+                },
+                predecessor);
             return results;
         }
+
         #endregion
     }
 }
