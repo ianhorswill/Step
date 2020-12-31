@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -195,14 +196,69 @@ namespace Step.Interpreter
                             return true;
                     return false;
 
-                case Cons l:
+                case string[] text:
+                    return Continue(output.Append(text), env, k, predecessor);
+
+                case IDictionary d:
+                    ArgumentCountException.Check(d, 2, arglist);
+                    var arg0 = arglist[0];
+                    var v0 = arg0 as LogicVariable;
+                    var arg1 = arglist[1];
+                    var v1 = arg1 as LogicVariable;
+                    if (v0 == null)
+                    {
+                        // Arg 0 is in
+                        if (v1 == null)
+                        {
+                            // InIn
+                            if (d.Contains(arg0) && d[arg0].Equals(arg1) &&
+                                Continue(output, env, k, predecessor))
+                                return true;
+                        }
+                        else
+                        {
+                            // In Out
+                            if (d.Contains(arg0)
+                                && Continue(output,
+                                    new BindingEnvironment(env,
+                                        BindingList<LogicVariable>.Bind(env.Unifications, v1, d[arg0]),
+                                        env.State),
+                                    k,
+                                    predecessor))
+                                return true;
+                        }
+                    }
+                    else
+                    {
+                        // Arg 0 is out
+                        foreach (DictionaryEntry e in d)
+                            if (env.Unify(arg0, e.Key, out var unif1)
+                                && env.Unify(arg1, e.Value, unif1, out var unif2)
+                                && Continue(output, new BindingEnvironment(env, unif2, env.State), k, predecessor))
+                                return true;
+                    }
+                    return false;
+
+                case IList l:
                     // If it's a list in the operator position, pretend it's a call to member
                     if (arglist.Length != 1)
                         throw new ArgumentCountException("<list member>", 1, arglist);
-                    var member = (PrimitiveTask.NonDeterministicRelation) env.Module["Member"];
-                    foreach (var bindings in member(new[] { arglist[0], l }, env))
-                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k, predecessor))
+
+                    if (arglist[0] is LogicVariable l0)
+                    {
+                        foreach (var e in l)
+                            if (Continue(output,
+                                new BindingEnvironment(env, BindingList<LogicVariable>.Bind(env.Unifications, l0, e),
+                                    env.State),
+                                k,
+                                predecessor))
+                                return true;
+                    }
+                    else
+                    {
+                        if (l.Contains(arglist[0]) && Continue(output, env, k, predecessor))
                             return true;
+                    }
                     return false;
 
                 case LogicVariable v:
@@ -217,8 +273,7 @@ namespace Step.Interpreter
                         var hook = env.Module.FindTask(MentionHook, 1, false);
                         if (hook != null)
                             return MakeCall(hook, target, Next).Try(output, env, k, predecessor);
-                        if (target is string[] text)
-                            return Continue(output.Append(text), env, k, predecessor);
+
                         return Continue(output.Append(target.ToString()), env, k, predecessor);
                     }
 

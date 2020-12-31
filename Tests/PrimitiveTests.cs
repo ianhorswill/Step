@@ -130,8 +130,10 @@ namespace Tests
         {
             var m = new Module("test");
             m.AddDefinitions("Test: [set List empty] [PrintList] [add 1 List] [PrintList] [add 2 List] [PrintList]",
-                "PrintList: [DoAll [Member ?e List] [Write ?e]]");
+                "PrintList: [DoAll [Member ?e List] [Write ?e]]",
+                "TestEmpty: [Member 1 Empty]");
             Assert.AreEqual("1 2 1", m.Call("Test"));
+            Assert.IsFalse(m.CallPredicate("TestEmpty"));
         }
 
         [TestMethod]

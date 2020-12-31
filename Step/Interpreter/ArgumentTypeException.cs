@@ -53,5 +53,19 @@ namespace Step.Interpreter
             if (actual == null || (!expected.IsInstanceOfType(actual) && !(expected == typeof(float) && actual is int)))
                 throw new ArgumentTypeException(task, expected, actual, arglist);
         }
+
+        /// <summary>
+        /// Check the specified argument value is of the right type.
+        /// If so, return the argument cast to the type.  If not, throw exception
+        /// </summary>
+        /// <param name="task">Name of task - used in error message if necessary</param>
+        /// <param name="actual">Value provided</param>
+        /// <param name="arglist">Full argument list of the task</param>
+        /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
+        public static TExpected Cast<TExpected>(object task, object actual, object[] arglist)
+        {
+            Check(task, typeof(TExpected), actual, arglist);
+            return (TExpected) actual;
+        }
     }
 }
