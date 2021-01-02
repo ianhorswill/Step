@@ -86,8 +86,49 @@ namespace Step.Interpreter
         internal static readonly StateVariableName MentionHook = StateVariableName.Named("Mention");
 
         /// <inheritdoc />
-        public override IEnumerable<object> Callees => new[] { Task };
+        public override IEnumerable<object> Callees
+        {
+            get
+            {
+                yield return Task;
+                foreach (var a in Arglist)
+                    switch (a)
+                    {
+                        case StateVariableName _:
+                            yield return a;
+                            break;
+                        
+                        case object[] tuple:
+                        {
+                            foreach (var e in TupleCallees(tuple))
+                                yield return e;
+                            break;
+                        }
+                    }
+            }
+        }
+
+        private IEnumerable TupleCallees(object[] tuple)
+        {
+            foreach (var e in tuple)
+                switch (e)
+                {
+                    case StateVariableName _:
+                        yield return e;
+                        break;
+                    case object[] tuple2:
+                    {
+                        foreach (var e2 in TupleCallees(tuple2))
+                            yield return e2;
+                        break;
+                    }
+                }
+        }
+
+        internal override IEnumerable<Call> Calls => new[] {this};
         
+        
+
         /// <summary>
         /// Attempt to run this task
         /// </summary>

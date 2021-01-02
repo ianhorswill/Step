@@ -11,44 +11,51 @@ namespace Step.Interpreter
             var g = Module.Global;
 
             // Argument is a compound task
-            g["CompoundTask"] = (MetaTask) CompoundTask;
+            g["CompoundTask"] = NamePrimitive("CompoundTask", (MetaTask) CompoundTask);
 
             // Second arg is a method of the first arg
             g["TaskMethod"] =
-                GeneralRelation<CompoundTask, Method>(
+                NamePrimitive("TaskMethod", 
+                    GeneralRelation<CompoundTask, Method>(
                     "TaskMethod",
                     (t, m) => m.Task == t,
                     t => t.Methods,
                     m => new[] {m.Task},
-                    null);
+                    null));
 
             // Gets the MethodCallFrame of the most recent call
-            g["LastMethodCallFrame"] = GeneralRelation("LastMethodCallFrame",
+            g["LastMethodCallFrame"] = NamePrimitive("LastMethodCallFrame", 
+                GeneralRelation("LastMethodCallFrame",
                 f => f == MethodCallFrame.CurrentFrame,
-                () => new[] {MethodCallFrame.CurrentFrame});
+                () => new[] {MethodCallFrame.CurrentFrame}));
 
             // Second argument is in the caller chain leading to the first argument
-            g["CallerChainAncestor"] = GeneralRelation<MethodCallFrame, Method>(
+            g["CallerChainAncestor"] = NamePrimitive("CallerChainAncestor",
+                GeneralRelation<MethodCallFrame, Method>(
                 "CallerChainAncestor",
                 // Is this method in this chain?
                 (f, m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null,
                 // What methods are in this chain?
                 f => f.CallerChain.Select(a => a.Method),
                 null,
-                null);
+                null));
 
             // Second argument is in the goal chain leading to the first argument
-            g["GoalChainAncestor"] = GeneralRelation<MethodCallFrame, Method>(
+            g["GoalChainAncestor"] = NamePrimitive("GoalChainAncestor",
+                GeneralRelation<MethodCallFrame, Method>(
                 "GoalChainAncestor",
                 // Is this method in this chain?
                 (f, m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null,
                 // What methods are in this chain?
                 f => f.GoalChain.Select(a => a.Method),
                 null,
-                null);
+                null));
 
             // First argument calls the second argument
-            g["TaskCalls"] = (MetaTask) TaskCalls;
+            g["TaskCalls"] = NamePrimitive("TaskCalls", (MetaTask) TaskCalls);
+
+            // Second argument is a call expression for a call in some method of first argument.
+            g["TaskSubtask"] = NamePrimitive("TaskSubtask", (MetaTask) TaskSubtask);
         }
 
         private static bool CompoundTask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
@@ -59,8 +66,9 @@ namespace Step.Interpreter
             if (l == null)
                 // Argument is instantiated; test if it's a compound task
                 return (arg is CompoundTask) && k(o, e.Unifications, e.State, predecessor);
-            foreach (var t in e.Module.DefinedTasks) 
-                k(o, BindingList<LogicVariable>.Bind(e.Unifications, l, t), e.State, predecessor);
+            foreach (var t in e.Module.DefinedTasks)
+                if (k(o, BindingList<LogicVariable>.Bind(e.Unifications, l, t), e.State, predecessor))
+                    return true;
 
             return false;
         }
@@ -116,6 +124,17 @@ namespace Step.Interpreter
                 }
             }
 
+            return false;
+        }
+
+        private static bool TaskSubtask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        {
+            ArgumentCountException.Check("TaskSubtask", 2, args);
+            var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args);
+            foreach (var callExpression in e.Module.Subtasks(task))
+                if (e.Unify(args[1], callExpression, out var unifications))
+                    if (k(o, unifications, e.State, predecessor))
+                        return true;
             return false;
         }
     }

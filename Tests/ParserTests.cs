@@ -28,12 +28,31 @@ using System.Linq;
 using Step;
 using Step.Parser;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Step.Interpreter;
 
 namespace Tests
 {
     [TestClass]
     public class ParserTests
     {
+        [TestMethod]
+        public void DeclarationTests()
+        {
+            var m = Module.FromDefinitions("task Foo.\npredicate Bar ?.");
+            Assert.IsInstanceOfType(m["Foo"], typeof(CompoundTask));
+            Assert.AreEqual(CompoundTask.TaskFlags.None, ((CompoundTask)m["Foo"]).Flags);
+            Assert.IsInstanceOfType(m["Bar"], typeof(CompoundTask));
+            Assert.AreEqual(CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions,
+                ((CompoundTask)m["Bar"]).Flags);
+            
+            m = Module.FromDefinitions("[randomly] task Foo.\n[randomly] predicate Bar ?.");
+            Assert.IsInstanceOfType(m["Foo"], typeof(CompoundTask));
+            Assert.AreEqual(CompoundTask.TaskFlags.Shuffle, ((CompoundTask)m["Foo"]).Flags);
+            Assert.IsInstanceOfType(m["Bar"], typeof(CompoundTask));
+            Assert.AreEqual(CompoundTask.TaskFlags.Shuffle | CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions,
+                ((CompoundTask)m["Bar"]).Flags);
+        }
+        
         [TestMethod]
         public void TokenStreamTest()
         {
@@ -137,13 +156,13 @@ namespace Tests
         [TestMethod, ExpectedException(typeof(SyntaxError))]
         public void IncompleteDefinitionTest()
         {
-            var m = Module.FromDefinitions("Test ?a [foo ?a]");
+            Module.FromDefinitions("Test ?a [foo ?a]");
         }
 
         [TestMethod]
         public void ParseFactTest()
         {
-            var m = Module.FromDefinitions(
+            Module.FromDefinitions(
                 @"[randomly] 
 Compatibility ? ? [sharedInterest lolcats].
 Compatibility ? ? [sharedInterest [love dearLeader]].
@@ -172,7 +191,7 @@ GenericIncompatibility snoring.");
         [TestMethod, ExpectedException(typeof(SyntaxError))]
         public void ParseBadFactTest()
         {
-            var m = Module.FromDefinitions(
+            Module.FromDefinitions(
                 @"[randomly] 
 Compatibility ? ? [sharedInterest lolcats]:
 Compatibility ? ? [sharedInterest [love dearLeader]]:

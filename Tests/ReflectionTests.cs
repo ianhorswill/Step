@@ -88,9 +88,31 @@ namespace Tests
             Assert.IsTrue(m.CallPredicate("TestInInSucceed"));
             Assert.IsFalse(m.CallPredicate("TestInInFail"));
             Assert.AreEqual("C D", m.Call("TestInOut"));
-            Assert.AreEqual("Test A B", m.Call("TestOutIn"));
-            Assert.AreEqual("Test A, Test B, Test C, A C, A D, B C,", m.Call("TestOutOut"));
-            Assert.AreEqual("TestInInSucceed TestInInFail TestInOut TestOutIn TestOutOut UncalledTask TestUncalled Test Unused", m.Call("TestUncalled"));
+            Assert.AreEqual("TestOutIn Test A B", m.Call("TestOutIn"));
+            Assert.AreEqual(
+                "TestInInSucceed Test, TestInInSucceed A, TestInInFail A, TestInInFail Test, TestInOut A, TestOutIn C, TestUncalled UncalledTask, Test A, Test B, Test C, A C, A D, B C,",
+                m.Call("TestOutOut"));
+            Assert.AreEqual("TestInInSucceed TestInInFail TestInOut TestOutIn TestOutOut TestUncalled Unused",
+                m.Call("TestUncalled"));
+        }
+
+        [TestMethod]
+        public void TaskSubtaskTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [ForEach [TaskSubtask A [B  ?x]] [Write ?x]]",
+                "TestSuccess: [TaskSubtask A [B 1]]",
+                "TestFail: [TaskSubtask A [B 10]]",
+                "TestFail2: [TaskSubtask A [B 1 1]]",
+                "A: [B 1]",
+                "A: [B 2] [B 3] [C 4 5]",
+                "B ?.",
+                "C ? ?.");
+            
+            Assert.AreEqual("1 2 3", m.Call("Test"));
+            Assert.IsTrue(m.CallPredicate("TestSuccess"));
+            Assert.IsFalse(m.CallPredicate("TestFail"));
+            Assert.IsFalse(m.CallPredicate("TestFail2"));
         }
     }
 }

@@ -28,6 +28,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Step.Utilities;
 using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
@@ -69,7 +70,15 @@ namespace Step.Interpreter
                     return new[] {"null"};
                 if (o is string[] tokens)
                     return tokens;
-                return new[] {o.ToString()};
+                return new[] {Writer.TermToString(o)};
+            }));
+            g["WriteWithoutUnderscores"] = NamePrimitive("WriteWithoutUnderscores", (DeterministicTextGenerator1)(o =>
+            {
+                if (o == null)
+                    return new[] { "null" };
+                if (o is string[] tokens)
+                    return tokens;
+                return new[] { Writer.TermToString(o).Replace('_', ' ') };
             }));
             g["Member"] = GeneralRelation<object, IEnumerable<object>>(
                 "Member",

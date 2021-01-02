@@ -117,5 +117,10 @@ namespace Step.Interpreter
         /// All the tasks called by this task
         /// </summary>
         public IEnumerable<object> Callees => Methods.SelectMany(m => m.Callees).Distinct();
+
+        /// <summary>
+        /// All the Call steps of all the methods of this task
+        /// </summary>
+        public IEnumerable<Call> Calls => Methods.SelectMany(m => m.Calls).Distinct();
     }
 }

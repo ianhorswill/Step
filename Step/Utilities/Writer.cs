@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Text;
 using Step.Interpreter;
 
@@ -54,6 +55,10 @@ namespace Step.Utilities
                             b.Append(l);
                         else
                             Walk(d);
+                        break;
+
+                    case Delegate prim:
+                        b.Append(PrimitiveTask.PrimitiveName(prim));
                         break;
 
                     default:

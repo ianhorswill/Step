@@ -111,6 +111,7 @@ namespace Step.Interpreter
 
             MethodCallFrame.CurrentFrame = newFrame;
             env.Module.TraceMethod(Module.MethodTraceEvent.Fail, this, args, output, env);
+            MethodCallFrame.CurrentFrame = newFrame.Predecessor;
             return false;
         }
 
@@ -126,5 +127,10 @@ namespace Step.Interpreter
         /// All the tasks called by this method
         /// </summary>
         public IEnumerable<object> Callees => StepChain == null ? Step.EmptyCalleeList : StepChain.CalleesOfChain;
+
+        /// <summary>
+        /// All the Call steps inside this method
+        /// </summary>
+        public IEnumerable<Call> Calls => StepChain == null ? Step.EmptyCallList : StepChain.CallsOfChain;
     }
 }

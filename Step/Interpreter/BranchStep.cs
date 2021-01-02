@@ -45,6 +45,9 @@ namespace Step.Interpreter
         /// <inheritdoc />
         public override IEnumerable<object> Callees => branches.SelectMany(s => s.CalleesOfChain);
 
+        /// <inheritdoc />
+        internal override IEnumerable<Call> Calls => branches.SelectMany(s => s.CallsOfChain);
+
         private Step[] Branches => shuffle ? branches.Shuffle() : branches;
 
         public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)

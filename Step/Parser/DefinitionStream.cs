@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Step.Interpreter;
+using Step.Utilities;
 
 namespace Step.Parser
 {
@@ -331,7 +332,10 @@ namespace Step.Parser
         /// <summary>
         /// Read, parse, and return the information for all method definitions in the stream
         /// </summary>
-        internal IEnumerable<(StateVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
+        internal IEnumerable<(StateVariableName task, object[] pattern,
+                LocalVariableName[] locals, 
+                Interpreter.Step chain, 
+                CompoundTask.TaskFlags flags,
                 string path, int lineNumber)>
             Definitions
         {
@@ -380,17 +384,26 @@ namespace Step.Parser
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (StateVariableName task, object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, CompoundTask.TaskFlags flags,
-            string path, int lineNumber) ReadDefinition()
+        private (StateVariableName task, object[] pattern,
+            LocalVariableName[] locals, 
+            Interpreter.Step chain, 
+            CompoundTask.TaskFlags flags,
+                string path, int lineNumber) ReadDefinition()
         {
             InitParserState();
 
             SwallowNewlines();
+
+            lineNumber = expressionStream.LineNumber;
+
             var flags = ReadFlags();
             SwallowNewlines();
 
             lineNumber = expressionStream.LineNumber;
 
+            if (Peek.Equals("predicate") || Peek.Equals("task"))
+                return ReadDeclaration(flags);
+            
             var (taskName, pattern) = ReadHead();
 
             ReadBody(chainBuilder, () => EndOfDefinition);
@@ -403,6 +416,28 @@ namespace Step.Parser
             SwallowNewlines();
 
             return (StateVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
+        }
+
+        private (StateVariableName task, object[] pattern, 
+            LocalVariableName[] locals,
+            Interpreter.Step chain,
+            CompoundTask.TaskFlags flags, 
+            string path, int lineNumber)
+            ReadDeclaration(CompoundTask.TaskFlags flags)
+        {
+            var declType = Get(); // swallow "task" or "predicate
+
+            if (declType.Equals("predicate"))
+                flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
+
+            var (taskName, pattern) = ReadHead();
+
+            if (multiLine)
+                throw new SyntaxError(
+                    $"{declType} declarations must end with a period after the name of this task, but this declaration ends with a colon.",
+                    SourceFile, lineNumber);
+            
+            return (StateVariableName.Named(taskName), pattern.ToArray(), null, null, flags, SourceFile, lineNumber);
         }
 
         private CompoundTask.TaskFlags ReadFlags()

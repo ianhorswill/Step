@@ -112,9 +112,7 @@ namespace Step.Interpreter
                     return Deref(Local[l.Index], unifications);
 
                 case StateVariableName g:
-                    if (State.TryLookup(g, out var result))
-                        return result;
-                    return Module[g];
+                    return State.TryLookup(g, out var result) ? result : Module[g];
 
                 case string[] tokens:
                     return tokens;

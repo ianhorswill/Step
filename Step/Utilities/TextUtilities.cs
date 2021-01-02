@@ -34,7 +34,7 @@ namespace Step
     /// </summary>
     public static class TextUtilities
     {
-        private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
+        private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */, "<br>" };
 
         private static readonly string[] Abbreviations = {"Mr", "Ms", "Mrs", "Dr"};
         /// <summary>
@@ -73,7 +73,7 @@ namespace Step
                 if (token == "\n")
                     b.Append(paragraphDivider);
 
-                if (!t.StartsWith("<") && !(lastToken == "." && token == "\"") && !(token == "." && Abbreviations.Contains(lastToken)))
+                if ((t == "<br>" || !t.StartsWith("<")) && !(lastToken == "." && token == "\"") && !(token == "." && Abbreviations.Contains(lastToken)))
                     lastToken = token;
             }
 

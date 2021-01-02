@@ -78,12 +78,19 @@ namespace Step.Interpreter
         /// <summary>
         /// An empty callee list for use in Callees
         /// </summary>
-        internal static object[] EmptyCalleeList = new object[0];
+        internal static readonly object[] EmptyCalleeList = new object[0];
         
         /// <summary>
         /// The callees of just this step, if any
         /// </summary>
         public virtual IEnumerable<object> Callees => EmptyCalleeList;
+
+        internal static readonly Call[] EmptyCallList = new Call[0];
+        
+        /// <summary>
+        /// All the Calls contained in this Step.
+        /// </summary>
+        internal virtual IEnumerable<Call> Calls => EmptyCallList;
 
         /// <summary>
         /// All the steps in the chain starting with this step
@@ -101,5 +108,10 @@ namespace Step.Interpreter
         /// All the callees of all the calls in this chain
         /// </summary>
         public IEnumerable<object> CalleesOfChain => ChainSteps.SelectMany(s => s.Callees);
+
+        /// <summary>
+        /// All the Calls in this chain
+        /// </summary>
+        public IEnumerable<Call> CallsOfChain => ChainSteps.SelectMany(s => s.Calls);
     }
 }

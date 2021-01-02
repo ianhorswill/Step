@@ -389,7 +389,10 @@ namespace Step
             {
                 if (task.Name == "initially")
                     RunLoadTimeInitialization(pattern, locals, chain, path, line);
-                else 
+                else if (locals == null)
+                    // Declaration
+                    FindTask(task, pattern.Length, true, path, line).Flags |= flags;
+                else
                     FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, flags, path, line);
             }
         }
@@ -542,6 +545,21 @@ namespace Step
             loadTimeWarnings.Add(warning);
         }
 
+        private object ResolveVariables(object o)
+        {
+            switch (o)
+            {
+                case StateVariableName v when dictionary.TryGetValue(v, out var result):
+                    return result;
+                case LocalVariableName l:
+                    return new LogicVariable(l);
+                case object[] tuple:
+                    return tuple.Select(ResolveVariables).ToArray();
+                default:
+                    return o;
+            }
+        }
+
         private readonly Dictionary<CompoundTask, HashSet<object>> calleeTable = new Dictionary<CompoundTask, HashSet<object>>();
         internal HashSet<object> Callees(CompoundTask t)
         {
@@ -549,13 +567,7 @@ namespace Step
                 return result;
             
             var callees = new HashSet<object>();
-            foreach (var c in t.Callees)
-            {
-                if (c is StateVariableName v)
-                    callees.Add(this[v]);
-                else
-                    callees.Add(c);
-            }
+            foreach (var c in t.Callees) callees.Add(ResolveVariables(c));
 
             calleeTable[t] = callees;
             return callees;
@@ -567,6 +579,19 @@ namespace Step
         /// <param name="caller">Caller (but be a CompoundTask)</param>
         /// <param name="callee">Target of call (can be a CompoundTask or a primitive task, i.e. a delegate)</param>
         public bool TaskCalls(CompoundTask caller, object callee) => Callees(caller).Contains(callee);
+
+        private readonly Dictionary<CompoundTask, object[][]> subtaskTable = new Dictionary<CompoundTask, object[][]>();
+
+        internal object[][] Subtasks(CompoundTask t)
+        {
+            if (subtaskTable.TryGetValue(t, out var result))
+                return result;
+
+            var subtasks = t.Calls.Select(c => c.Arglist.Select(ResolveVariables).Prepend(ResolveVariables(c.Task)).ToArray()).ToArray();
+
+            subtaskTable[t] = subtasks;
+            return subtasks;
+        }
 
         /// <summary>
         /// Return a trace of the method calls from the current frame.

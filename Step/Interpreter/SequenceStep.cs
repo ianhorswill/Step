@@ -14,6 +14,9 @@ namespace Step.Interpreter
         /// <inheritdoc />
         public override IEnumerable<object> Callees => branches.SelectMany(s => s.CalleesOfChain);
 
+        /// <inheritdoc />
+        internal override IEnumerable<Call> Calls => branches.SelectMany(s => s.CallsOfChain);
+
         /// <summary>
         /// Makes a step that first calls the first branch, then on successive calls, invokes successive branches.
         /// </summary>
