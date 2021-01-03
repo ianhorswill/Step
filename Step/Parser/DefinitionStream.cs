@@ -320,6 +320,8 @@ namespace Step.Parser
             }
             else if (o is object[] list)
                 return CanonicalizeArglist(list);
+            else if (o is TupleExpression t)
+                return CanonicalizeArglist(t.Elements);
 
             return o;
         }
@@ -503,7 +505,7 @@ namespace Step.Parser
             while (!Peek.Equals(":") && !Peek.Equals(".") && !end)
             {
                 var argPattern = Get();
-                if (argPattern is object[] call && call.Length > 0 && IsGlobalVariableName(call[0]))
+                if (argPattern is object[] call && call.Length == 2 && IsGlobalVariableName(call[0]))
                 {
                     // It has an embedded predicate
                     pattern.Add(call[1]);

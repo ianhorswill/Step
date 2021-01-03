@@ -62,6 +62,7 @@
     <Compile Include="Interpreter\ReflectionBuiltins.cs" />
     <Compile Include="Interpreter\SequenceStep.cs" />
     <Compile Include="Interpreter\RemoveStep.cs" />
+    <Compile Include="Parser\TupleExpression.cs" />
     <Compile Include="State.cs" />
     <Compile Include="Interpreter\StateElement.cs" />
     <Compile Include="Utilities\RngExtensions.cs" />

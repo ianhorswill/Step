@@ -36,6 +36,14 @@ namespace Tests
     public class ParserTests
     {
         [TestMethod]
+        public void LocalsInTuplesTest()
+        {
+            var warnings = Module.FromDefinitions("[main] Subquest [DefeatHenchpeep ?H ?Hench ?A] [DefeatAntagonist ?H ?A]: [Henchpeep ?Hench ?A]")
+                .Warnings().Where(w => w.Contains("ingleton")).ToArray();
+            Assert.AreEqual(0, warnings.Count());
+        }
+        
+        [TestMethod]
         public void DeclarationTests()
         {
             var m = Module.FromDefinitions("task Foo.\npredicate Bar ?.");

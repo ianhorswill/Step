@@ -10,17 +10,29 @@
     <string>Step</string>
     <key>patterns</key>
     <array>
-      <dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>^predicate .+\.</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>^predicate .+\.</string>
+	    </dict>
+	    <dict>
         <key>name</key>
         <string>entity.name.function</string>
         <key>match</key>
-        <string>^[^ ][^:]*:</string>
+        <string>^[^ ][^:.]*:</string>
       </dict>
 	    <dict>
 		    <key>name</key>
 		    <string>entity.name.function</string>
 		    <key>match</key>
-		    <string>^[^ ][^:]*\.</string>
+		    <string>^[^ ][^:.]*\.</string>
 	    </dict>
       <dict>
         <key>name</key>

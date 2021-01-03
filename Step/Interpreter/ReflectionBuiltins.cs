@@ -24,10 +24,7 @@ namespace Step.Interpreter
                     null));
 
             // Gets the MethodCallFrame of the most recent call
-            g["LastMethodCallFrame"] = NamePrimitive("LastMethodCallFrame", 
-                GeneralRelation("LastMethodCallFrame",
-                f => f == MethodCallFrame.CurrentFrame,
-                () => new[] {MethodCallFrame.CurrentFrame}));
+            g["LastMethodCallFrame"] = NamePrimitive("LastMethodCallFrame", (MetaTask)LastMethodCallFrame);
 
             // Second argument is in the caller chain leading to the first argument
             g["CallerChainAncestor"] = NamePrimitive("CallerChainAncestor",
@@ -56,6 +53,13 @@ namespace Step.Interpreter
 
             // Second argument is a call expression for a call in some method of first argument.
             g["TaskSubtask"] = NamePrimitive("TaskSubtask", (MetaTask) TaskSubtask);
+        }
+
+        private static bool LastMethodCallFrame(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        {
+            ArgumentCountException.Check("LastMethodCallFrame", 1, args);
+            return e.Unify(args[0], predecessor, out var u)
+                   && k(o, u, e.State, predecessor);
         }
 
         private static bool CompoundTask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)

@@ -139,6 +139,7 @@ namespace Step.Interpreter
         /// <returns>True if this steps, the rest of its step-chain, and the continuation all succeed.</returns>
         public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k, MethodCallFrame predecessor)
         {
+            MethodCallFrame.CurrentFrame = env.Frame;
             var originalTarget = env.Resolve(Task);
             var target = PrimitiveTask.GetSurrogate(originalTarget);
             var arglist = env.ResolveList(Arglist);
@@ -166,10 +167,18 @@ namespace Step.Interpreter
                             return true;
                     }
 
+                    var currentFrame = MethodCallFrame.CurrentFrame = env.Frame;
+                    if (currentFrame != null)
+                        currentFrame.BindingsAtCallTime = env.Unifications;
                     if (successCount == 0 && p.MustSucceed)
                     {
-                        MethodCallFrame.CurrentFrame.BindingsAtCallTime = env.Unifications;
                         throw new CallFailedException(p, arglist);
+                    }
+
+                    if (currentFrame != null)
+                    {
+                        env.Module.TraceMethod(Module.MethodTraceEvent.CallFail, currentFrame.Method, currentFrame.Arglist, output, env);
+                        MethodCallFrame.CurrentFrame = currentFrame.Predecessor;
                     }
 
                     // Failure
@@ -358,7 +367,7 @@ namespace Step.Interpreter
                 o = BindingEnvironment.Deref(o, unifications);
                 if (o is object[] tuple)
                 {
-                    b.Append('[');
+                    b.Append('{');
                     bool first = true;
                     foreach (var e in tuple)
                     {
@@ -369,7 +378,7 @@ namespace Step.Interpreter
                         WriteTerm(e);
                     }
 
-                    b.Append("]");
+                    b.Append("}");
                 }
                 else 
                     WriteAtomicTerm(o);

@@ -103,6 +103,7 @@ namespace Step.Interpreter
                         MethodCallFrame.CurrentFrame = newFrame;
                         env.Module.TraceMethod(Module.MethodTraceEvent.Succeed, this, args, newO,
                             new BindingEnvironment(env, newU, newState));
+                        MethodCallFrame.CurrentFrame = newFrame.Caller;
                         return k(newO, newU, newState, predecessor);
                     };
                 if (StepChain?.Try(output, finalEnv, traceK, newFrame) ?? traceK(output, finalEnv.Unifications, finalEnv.State, newFrame))
@@ -110,8 +111,7 @@ namespace Step.Interpreter
             }
 
             MethodCallFrame.CurrentFrame = newFrame;
-            env.Module.TraceMethod(Module.MethodTraceEvent.Fail, this, args, output, env);
-            MethodCallFrame.CurrentFrame = newFrame.Predecessor;
+            env.Module.TraceMethod(Module.MethodTraceEvent.MethodFail, this, args, output, env);
             return false;
         }
 

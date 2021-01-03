@@ -114,6 +114,9 @@ namespace Step.Interpreter
                     }
                 }
 
+                if (Method == null)
+                    return new object[0];
+                
                 return Method.ArgumentPattern.Select(Resolve).ToArray();
             }
         }

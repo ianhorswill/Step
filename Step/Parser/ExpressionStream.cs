@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -106,53 +107,75 @@ namespace Step.Parser
                 List<object> buffer = new List<object>();
                 while (!end)
                 {
-                    while (!end && Peek != "[")
+                    // Read tokens up to bracketed expressions
+                    while (!end && Peek != "[" && Peek != "{")
                     {
                         var token = Get();
-                        if (token == "]")
+                        if (token == "]" || token == "}")
                             throw new SyntaxError("Stray close bracket found without matching open bracket", FilePath, LineNumber);
                         yield return token;
                     }
                     if (!end)
                     {
                         // We're at the start of a bracketed expression
-                        Get(); // Swallow [
+                        var openBracket = Get();
                         buffer.Clear();
-                        while (!end && Peek != "]")
+                        while (!end && Peek != "]" && Peek != "}")
                         {
                             var token = Get();
-                            if (token == "[")
-                                buffer.Add(ReadSubExpression());
+                            if (token == "[" || token == "{")
+                                buffer.Add(ReadSubExpression(token));
                             else
                                 buffer.Add(token);
                         }
                         if (end)
                             throw new SyntaxError(
                                 "Incomplete expression: open bracket without a matching close bracket", FilePath, LineNumber);
-                        Get(); // Swallow ]
-                        yield return buffer.ToArray();
+ 
+                        var closeBracket = Get();
+                        if (closeBracket != MatchingCloseBracket(openBracket))
+                            throw new SyntaxError(
+                                $"Nested expression begun with '{openBracket}' is matched with an incompatible closing '{closeBracket}'",
+                                FilePath, LineNumber);
+                        yield return openBracket == "{" ? (object)new TupleExpression(buffer.ToArray()) : buffer.ToArray();
                     }
                 }
             }
         }
 
-        private object[] ReadSubExpression()
+        string MatchingCloseBracket(string openBracket)
+        {
+            switch (openBracket)
+            {
+                case "[": return "]";
+                case "{": return "}";
+                default:
+                    throw new InvalidOperationException($"'{openBracket}' is not an appropriate token for marking a nested expression.");
+            }
+        }
+
+        private object ReadSubExpression(string openBracket)
         {
             var buffer = new List<object>();
 
-            while (!end && Peek != "]")
+            while (!end && Peek != "]" && Peek != "}")
             {
                 var token = Get();
-                if (token == "[")
-                    buffer.Add(ReadSubExpression());
+                if (token == "[" || token == "{")
+                    buffer.Add(ReadSubExpression(token));
                 else
                     buffer.Add(token);
             }
+
             if (end)
                 throw new SyntaxError(
                     "Incomplete expression: open bracket without a matching close bracket", FilePath, LineNumber);
-            Get(); // Swallow ]
-            return buffer.ToArray();
+            var closeBracket = Get(); // Swallow ]
+            if (closeBracket != MatchingCloseBracket(openBracket))
+                throw new SyntaxError(
+                    $"Nested expression begun with '{openBracket}' is matched with an incompatible closing '{closeBracket}'",
+                    FilePath, LineNumber);
+            return openBracket == "{" ? (object) new TupleExpression(buffer.ToArray()) : buffer.ToArray();
         }
     }
 }

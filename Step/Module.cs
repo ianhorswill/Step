@@ -636,7 +636,11 @@ namespace Step
             /// <summary>
             /// The method failed
             /// </summary>
-            Fail
+            MethodFail,
+            /// <summary>
+            /// The call completely failed
+            /// </summary>
+            CallFail
         };
         
         internal void TraceMethod(MethodTraceEvent e, Method method, object[] args, PartialOutput output, BindingEnvironment env)
