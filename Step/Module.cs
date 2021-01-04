@@ -384,7 +384,7 @@ namespace Step
         /// </summary>
         public void LoadDefinitions(TextReader stream, string filePath)
         {
-            foreach (var (task, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this,
+            foreach (var (task, weight, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this,
                 filePath).Definitions)
             {
                 if (task.Name == "initially")
@@ -393,7 +393,7 @@ namespace Step
                     // Declaration
                     FindTask(task, pattern.Length, true, path, line).Flags |= flags;
                 else
-                    FindTask(task, pattern.Length, true, path, line).AddMethod(pattern, locals, chain, flags, path, line);
+                    FindTask(task, pattern.Length, true, path, line).AddMethod(weight, pattern, locals, chain, flags, path, line);
             }
         }
 

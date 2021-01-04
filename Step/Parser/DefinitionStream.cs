@@ -334,7 +334,7 @@ namespace Step.Parser
         /// <summary>
         /// Read, parse, and return the information for all method definitions in the stream
         /// </summary>
-        internal IEnumerable<(StateVariableName task, object[] pattern,
+        internal IEnumerable<(StateVariableName task, float weight, object[] pattern,
                 LocalVariableName[] locals, 
                 Interpreter.Step chain, 
                 CompoundTask.TaskFlags flags,
@@ -386,7 +386,7 @@ namespace Step.Parser
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (StateVariableName task, object[] pattern,
+        private (StateVariableName task, float weight, object[] pattern,
             LocalVariableName[] locals, 
             Interpreter.Step chain, 
             CompoundTask.TaskFlags flags,
@@ -398,7 +398,7 @@ namespace Step.Parser
 
             lineNumber = expressionStream.LineNumber;
 
-            var flags = ReadFlags();
+            var (flags, weight) = ReadOptions();
             SwallowNewlines();
 
             lineNumber = expressionStream.LineNumber;
@@ -417,10 +417,10 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (StateVariableName.Named(taskName), pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
+            return (StateVariableName.Named(taskName), weight, pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
         }
 
-        private (StateVariableName task, object[] pattern, 
+        private (StateVariableName task, float weight, object[] pattern, 
             LocalVariableName[] locals,
             Interpreter.Step chain,
             CompoundTask.TaskFlags flags, 
@@ -439,22 +439,43 @@ namespace Step.Parser
                     $"{declType} declarations must end with a period after the name of this task, but this declaration ends with a colon.",
                     SourceFile, lineNumber);
             
-            return (StateVariableName.Named(taskName), pattern.ToArray(), null, null, flags, SourceFile, lineNumber);
+            return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, SourceFile, lineNumber);
         }
 
-        private CompoundTask.TaskFlags ReadFlags()
+        private (CompoundTask.TaskFlags, float weight) ReadOptions()
         {
-            void ThrowInvalid()
+            var weight = 1f;
+            void ThrowInvalid(object[] attr)
             {
-                throw new SyntaxError($"Invalid task attribute", SourceFile, expressionStream.LineNumber);
+                throw new SyntaxError($"Invalid task attribute {Writer.TermToString(attr)}", SourceFile, expressionStream.LineNumber);
             }
 
             var flags = CompoundTask.TaskFlags.None;
 
-            while (Peek is object[] flagKeyword)
+            while (Peek is object[] optionKeyword)
             {
                 Get();
-                if (flagKeyword.Length != 1 || !(flagKeyword[0] is string keyword)) ThrowInvalid();
+                string keyword = null;
+                switch (optionKeyword.Length)
+                {
+                    case 1 when optionKeyword[0] is string op0:
+                        keyword = op0;
+                        break;
+
+                    case 2 when optionKeyword[0] is string op0 && int.TryParse(op0, out var _) &&
+                                optionKeyword[1].Equals("."):
+                        keyword = op0;
+                        break;
+
+                    case 3 when optionKeyword[0] is string op0 && optionKeyword[1].Equals(".") &&
+                                optionKeyword[2] is string op2:
+                        keyword = op0 + "." + op2;
+                        break;
+
+                    default:
+                        ThrowInvalid(optionKeyword);
+                        break;
+                }
 
                 switch (keyword)
                 {
@@ -482,12 +503,13 @@ namespace Step.Parser
                         break;
 
                     default:
-                        ThrowInvalid();
+                        if (!float.TryParse(keyword, out weight))
+                            ThrowInvalid(optionKeyword);
                         break;
                 }
             }
 
-            return flags;
+            return (flags, weight);
         }
 
         /// <summary>

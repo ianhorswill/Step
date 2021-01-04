@@ -64,9 +64,15 @@ namespace Step.Interpreter
         /// </summary>
         public readonly Step StepChain;
 
-        internal Method(CompoundTask task, object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, string filePath, int lineNumber)
+        /// <summary>
+        /// The relative probability of this method being tried first
+        /// </summary>
+        public readonly float Weight;
+
+        internal Method(CompoundTask task, float weight, object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, string filePath, int lineNumber)
         {
             Task = task;
+            Weight = weight;
             ArgumentPattern = argumentPattern;
             LocalVariableNames = localVariableNames;
             StepChain = stepChain;

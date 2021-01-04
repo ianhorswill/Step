@@ -38,7 +38,10 @@ namespace Tests
         [TestMethod]
         public void LocalsInTuplesTest()
         {
+            // ReSharper disable StringLiteralTypo
             var warnings = Module.FromDefinitions("[main] Subquest [DefeatHenchpeep ?H ?Hench ?A] [DefeatAntagonist ?H ?A]: [Henchpeep ?Hench ?A]")
+                // ReSharper restore StringLiteralTypo
+                // ReSharper disable once StringLiteralTypo
                 .Warnings().Where(w => w.Contains("ingleton")).ToArray();
             Assert.AreEqual(0, warnings.Count());
         }
@@ -59,6 +62,16 @@ namespace Tests
             Assert.IsInstanceOfType(m["Bar"], typeof(CompoundTask));
             Assert.AreEqual(CompoundTask.TaskFlags.Shuffle | CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions,
                 ((CompoundTask)m["Bar"]).Flags);
+        }
+
+        [TestMethod]
+        public void ParseWeightTest()
+        {
+            var m = Module.FromDefinitions("[10.5] Test ?x.", "[2] Test a.", "Test ?: foo");
+            var test = (CompoundTask) m["Test"];
+            Assert.AreEqual(10.5f, test.Methods[0].Weight);
+            Assert.AreEqual(2, test.Methods[1].Weight);
+            Assert.AreEqual(1, test.Methods[2].Weight);
         }
         
         [TestMethod]

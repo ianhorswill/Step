@@ -40,8 +40,8 @@ namespace Tests
         {
             var t = new CompoundTask("test", 1);
             t.Flags |= CompoundTask.TaskFlags.Fallible;
-            t.AddMethod(new object[]{1}, new LocalVariableName[0], new EmitStep(new []{ "1", "matched"}, null), 0, null, 1);
-            t.AddMethod(new object[]{2}, new LocalVariableName[0], new EmitStep(new []{ "2", "matched"}, null), 0, null, 1);
+            t.AddMethod(1, new object[]{1}, new LocalVariableName[0], new EmitStep(new []{ "1", "matched"}, null), 0, null, 1);
+            t.AddMethod(1, new object[]{2}, new LocalVariableName[0], new EmitStep(new []{ "2", "matched"}, null), 0, null, 1);
 
             Assert.AreEqual("1 matched", new Call(t, new object[]{1}, null).Expand());
             Assert.AreEqual("2 matched", new Call(t, new object[]{2}, null).Expand());
@@ -55,7 +55,7 @@ namespace Tests
             // ReSharper disable once InconsistentNaming
             var X = new LocalVariableName("X", 0);
             var locals = new[] { X };
-            t.AddMethod(new object[] {X}, locals,
+            t.AddMethod(1, new object[] {X}, locals,
                 TestUtils.Sequence(new object[] {toString, X}, new[] {"matched"}), 0,
                 null, 1);
 
@@ -67,20 +67,20 @@ namespace Tests
         public void UpwardUnifyTest1()
         {
             var up = new CompoundTask("up", 1);
-            up.AddMethod(new object[] {"xyz"}, new LocalVariableName[0],
+            up.AddMethod(1, new object[] {"xyz"}, new LocalVariableName[0],
                 null, 0, null, 1);
 
             var down = new CompoundTask("down", 1);
             // ReSharper disable once InconsistentNaming
             var X = new LocalVariableName("X", 0);
-            down.AddMethod(new object[] {X}, new[] { X },
+            down.AddMethod(1, new object[] {X}, new[] { X },
                 TestUtils.Sequence(new object[] {toString, X}, new[] {"matched"}), 0,
                 null, 1);
 
             var test = new CompoundTask("test", 0);
             // ReSharper disable once InconsistentNaming
             var Y = new LocalVariableName("Y", 0);
-            test.AddMethod(new object[0], new [] { Y },
+            test.AddMethod(1, new object[0], new [] { Y },
                 TestUtils.Sequence(new object[] { up, Y }, new object[] { down, Y } ), 0,
                 null, 1);
 
@@ -122,6 +122,41 @@ namespace Tests
             Assert.IsTrue(gotA > 0);
             Assert.IsTrue(gotB > 0);
             Assert.IsTrue(gotC > 0);
+        }
+
+        [TestMethod]
+        public void WeightedRandomlyTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[randomly] [9999999999] Test: a", "Test: b", "Test: c ");
+            var gotA = 0;
+            var gotB = 0;
+            var gotC = 0;
+
+            for (var i = 0; i < 100; i++)
+            {
+                var s = m.Call("Test");
+                switch (s)
+                {
+                    case "A":
+                        gotA++;
+                        break;
+
+                    case "B":
+                        gotB++;
+                        break;
+
+                    case "C":
+                        gotC++;
+                        break;
+
+                    default:
+                        Assert.Fail($"Invalid result: {s}");
+                        break;
+                }
+            }
+
+            Assert.IsTrue(gotA > 99);
         }
 
         [TestMethod, ExpectedException(typeof(CallFailedException))]
