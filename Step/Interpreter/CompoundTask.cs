@@ -111,11 +111,12 @@ namespace Step.Interpreter
             for (var index = 0; index < methods.Count && !(this.Deterministic && successCount > 0); index++)
             {
                 var method = methods[index];
-                if (method.Try(arglist, output, env, predecessor, (o, u, s, newPredecessor) =>
-                {
-                    successCount++;
-                    return k(o, u, s, newPredecessor);
-                }))
+                if (method.Try(arglist, output, env, predecessor,
+                    (o, u, s, newPredecessor) =>
+                    {
+                        successCount++;
+                        return k(o, u, s, newPredecessor);
+                    }))
                     return true;
             }
 

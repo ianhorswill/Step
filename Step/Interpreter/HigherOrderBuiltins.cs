@@ -49,6 +49,7 @@ namespace Step.Interpreter
             g[nameof(Min)] = (MetaTask) Min;
             g[nameof(SaveText)] = (MetaTask) SaveText;
             g[nameof(PreviousCall)] = (MetaTask) PreviousCall;
+            g[nameof(UniqueCall)] = (MetaTask)UniqueCall;
         }
 
         private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
@@ -414,6 +415,39 @@ namespace Step.Interpreter
                     && k(output, unifications, env.State, predecessor))
                     return true;
             }
+            return false;
+        }
+
+        private static bool UniqueCall(object[] args, PartialOutput output, BindingEnvironment env,
+            Step.Continuation k, MethodCallFrame predecessor)
+        {
+            ArgumentCountException.Check(nameof(PreviousCall), 1, args);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall), args[0], args);
+            var task = call[0] as CompoundTask;
+            if (task == null)
+                throw new InvalidOperationException(
+                    "Task argument to UniqueCall must be a compound task, i.e. a user-defined task with methods.");
+
+            var taskArgs = call.Skip(1).ToArray();
+
+            if (task.Call(taskArgs, output, env, predecessor,
+                (o, u, s, newPredecessor) =>
+                {
+                    foreach (var priorGoal in predecessor.GoalChain)
+                    {
+                        var e = priorGoal.CallExpression;
+                        if (env.Unify(call, e, u, out BindingList<LogicVariable> _))
+                            // We already did a call that matches this call
+                            // So have the continuation return false, forcing the task.Call above to backtrack
+                            // and try to generate a new solution
+                            return false;
+                    }
+
+                    return k(o, u, s, newPredecessor);
+                }
+                ))
+                return true;
+            
             return false;
         }
         #endregion

@@ -169,5 +169,18 @@ namespace Tests
                 "A ?.");
             Assert.AreEqual("Foo 3 2 1", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void UniqueCallTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [UniqueCall [Foo ?a]] [UniqueCall [Foo ?b]] [UniqueCall [Foo ?c]]",
+                "[fallible] FailTest: [UniqueCall [Foo ?a]] [UniqueCall [Foo ?b]] [UniqueCall [Foo ?c]] [UniqueCall [Foo ?c]]",
+                "[generator] Foo 1: 1",
+                "Foo 2: 2",
+                "Foo 3: 3");
+            Assert.AreEqual("1 2 3", m.Call("Test"));
+            Assert.AreEqual(null, m.Call("FailTest"));
+        }
     }
 }
