@@ -36,9 +36,11 @@ namespace Step.Utilities
                 this.Key = key;
             }
         }
-        
+
         /// <summary>
         /// Return a shuffled version of the elements in sequence, given the specified weights.
+        /// This is based on Weighted Random Sampling (2005; Efraimidis, Spirakis), Encyclopedia of Algorithms.
+        /// http://utopia.duth.gr/~pefraimi/research/data/2007EncOfAlg.pdf
         /// </summary>
         public static T[] WeightedShuffle<T>(this IList<T> sequence, Func<T, float> weight)
         {

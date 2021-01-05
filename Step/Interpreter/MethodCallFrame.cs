@@ -135,6 +135,28 @@ namespace Step.Interpreter
             return $"{source} {start}at {Path.GetFileName(Method.FilePath)}:{Method.LineNumber}{end}";
         }
 
+        private object[] cachedCallExpression;
+        
+        /// <summary>
+        /// Regenerate a tuple representing this call.
+        /// </summary>
+        public object[] CallExpression
+        {
+            get
+            {
+                if (cachedCallExpression != null)
+                    return cachedCallExpression;
+                
+                var result = new object[Arglist.Length + 1];
+                result[0] = Method.Task;
+                for (var i = 0; i < Arglist.Length; i++)
+                    result[i + 1] = Arglist[i];
+
+                cachedCallExpression = result;
+                return result;
+            }
+        }
+
         private string DebuggerDisplay => ToString();
 
         /// <inheritdoc />

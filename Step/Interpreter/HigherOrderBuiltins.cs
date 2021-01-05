@@ -39,15 +39,16 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g["Begin"] = (MetaTask)Begin;  // This is deliberately lower case
-            g["Not"] = (MetaTask) Not;
-            g["DoAll"] = (DeterministicTextGeneratorMetaTask) DoAll;
-            g["ForEach"] = (MetaTask) ForEach;
-            g["Once"] = (MetaTask) Once;
-            g["ExactlyOnce"] = (MetaTask) ExactlyOnce;
-            g["Max"] = (MetaTask) Max;
-            g["Min"] = (MetaTask) Min;
-            g["SaveText"] = (MetaTask) SaveText;
+            g[nameof(Begin)] = (MetaTask)Begin;  // This is deliberately lower case
+            g[nameof(Not)] = (MetaTask) Not;
+            g[nameof(DoAll)] = (DeterministicTextGeneratorMetaTask) DoAll;
+            g[nameof(ForEach)] = (MetaTask) ForEach;
+            g[nameof(Once)] = (MetaTask) Once;
+            g[nameof(ExactlyOnce)] = (MetaTask) ExactlyOnce;
+            g[nameof(Max)] = (MetaTask) Max;
+            g[nameof(Min)] = (MetaTask) Min;
+            g[nameof(SaveText)] = (MetaTask) SaveText;
+            g[nameof(PreviousCall)] = (MetaTask) PreviousCall;
         }
 
         private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
@@ -400,6 +401,21 @@ namespace Step.Interpreter
             return results;
         }
 
+        private static bool PreviousCall(object[] args, PartialOutput output, BindingEnvironment env,
+            Step.Continuation k, MethodCallFrame predecessor)
+        {
+            ArgumentCountException.Check(nameof(PreviousCall), 1, args);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall),args[0], args);
+            foreach (var priorGoal in predecessor.GoalChain)
+            {
+                var e = priorGoal.CallExpression;
+                if (call.Length == e.Length 
+                    && env.UnifyArrays(call, e, out BindingList<LogicVariable> unifications)
+                    && k(output, unifications, env.State, predecessor))
+                    return true;
+            }
+            return false;
+        }
         #endregion
     }
 }

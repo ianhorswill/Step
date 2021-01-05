@@ -160,5 +160,14 @@ namespace Tests
             Assert.AreEqual("Start foo end", m.Call("Test", 1));
             Assert.AreEqual("Failed", m.Call("Test", 2));
         }
+
+        [TestMethod]
+        public void PreviousCallTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [A 1] [A 2] [Write foo] [A 3] [ForEach [PreviousCall [A ?x]] [Write ?x]]",
+                "A ?.");
+            Assert.AreEqual("Foo 3 2 1", m.Call("Test"));
+        }
     }
 }

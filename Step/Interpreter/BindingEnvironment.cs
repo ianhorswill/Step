@@ -210,7 +210,7 @@ namespace Step.Interpreter
             return true;
         }
 
-        private bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
+        public bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
             => UnifyArrays(a, b, Unifications, out outUnifications);
 
         /// <summary>
