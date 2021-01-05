@@ -252,16 +252,15 @@ namespace Step
             string result = null;
             State newState = State.Empty;
 
-            foreach (var method in t.EffectiveMethods)
-                if (method.Try(args, output, env, null,
-                    (o, u, s, predecessor) =>
-                    {
-                        result = o.AsString; 
-                        newState = s;
-                        MethodCallFrame.CurrentFrame = predecessor;
-                        return true;
-                    }))
-                    return (result, newState);
+            if (t.Call(args, output, env, null,
+                (o, u, s, predecessor) =>
+                {
+                    result = o.AsString;
+                    newState = s;
+                    MethodCallFrame.CurrentFrame = predecessor;
+                    return true;
+                }))
+                return (result, newState);
             return (null, State.Empty);
         }
 
@@ -294,11 +293,8 @@ namespace Step
             var output = new PartialOutput(0);
             var env = new BindingEnvironment(this, null, null, state);
 
-            foreach (var method in t.EffectiveMethods)
-                if (method.Try(args, output, env, null, 
-                    (o, u, s, p) => true))
-                    return true;
-            return false;
+            return t.Call(args, output, env, null,
+                (o, u, s, p) => true);
         }
 
         /// <summary>
@@ -310,6 +306,7 @@ namespace Step
         public bool CallPredicate(string taskName, params object[] args) => CallPredicate(State.Empty, taskName, args);
 
         private static readonly LocalVariableName FunctionResult = new LocalVariableName("??result", 0);
+
         /// <summary>
         /// Calls the named task with the specified arguments as a function and returns the value of its last argument
         /// This call will fail if the task attempts to generate output.
@@ -333,25 +330,22 @@ namespace Step
 
             BindingList<LogicVariable> bindings = null;
 
-            foreach (var method in t.EffectiveMethods)
-                if (method.Try(extendedArgs, output, env, null,
-                    (o, u, s, p) => 
+            if (!t.Call(extendedArgs, output, env, null,
+                (o, u, s, p) =>
                 {
                     bindings = u;
-                    return true; 
-                }))
-                {
-                    // Call succeeded; pull out the binding of the result variable and return it
-                    var finalEnv = new BindingEnvironment(this, null, bindings, State.Empty);
-                    var result = finalEnv.CopyTerm(resultVar);
-                        if (result is LogicVariable)
-                            // resultVar is unbound or bound to an unbound variable
-                            throw new ArgumentInstantiationException(taskName, env, extendedArgs);
-                        else
-                            return (T) result;
-                }
-            // Call failed
-            throw new CallFailedException(taskName, args);
+                    return true;
+                })) 
+                throw new CallFailedException(taskName, args);
+            
+            // Call succeeded; pull out the binding of the result variable and return it
+            var finalEnv = new BindingEnvironment(this, null, bindings, State.Empty);
+            var result = finalEnv.CopyTerm(resultVar);
+            if (result is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(taskName, env, extendedArgs);
+            else
+                return (T) result;
         }
 
         /// <summary>

@@ -73,7 +73,7 @@ namespace Tests
         {
             var m = Module.FromDefinitions(
                 "TestInInSucceed: [TaskCalls Test A]",
-                "TestInInFail: [TaskCalls A Test]",
+                "[fallible] TestInInFail: [TaskCalls A Test]",
                 "TestInOut: [ForEach [TaskCalls A ?callee] [Write ?callee]]",
                 "TestOutIn: [ForEach [TaskCalls ?caller C] [Write ?caller]]",
                 "TestOutOut: [ForEach [Begin [TaskCalls ?caller ?callee] [CompoundTask ?callee]] [Write ?caller] [Write ?callee] [Write ,]]",
@@ -102,8 +102,8 @@ namespace Tests
             var m = Module.FromDefinitions(
                 "Test: [ForEach [TaskSubtask A [B  ?x]] [Write ?x]]",
                 "TestSuccess: [TaskSubtask A [B 1]]",
-                "TestFail: [TaskSubtask A [B 10]]",
-                "TestFail2: [TaskSubtask A [B 1 1]]",
+                "[fallible] TestFail: [TaskSubtask A [B 10]]",
+                "[fallible] TestFail2: [TaskSubtask A [B 1 1]]",
                 "A: [B 1]",
                 "A: [B 2] [B 3] [C 4 5]",
                 "B ?.",

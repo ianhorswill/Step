@@ -103,6 +103,41 @@ namespace Step.Interpreter
             Methods.Add(new Method(this, weight, argumentPattern, localVariableNames, stepChain, path, lineNumber));
         }
 
+        public bool Call(object[] arglist, PartialOutput output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(this, this.ArgCount, arglist);
+            var successCount = 0;
+            var methods = this.EffectiveMethods;
+            for (var index = 0; index < methods.Count && !(this.Deterministic && successCount > 0); index++)
+            {
+                var method = methods[index];
+                if (method.Try(arglist, output, env, predecessor, (o, u, s, newPredecessor) =>
+                {
+                    successCount++;
+                    return k(o, u, s, newPredecessor);
+                }))
+                    return true;
+            }
+
+            var currentFrame = MethodCallFrame.CurrentFrame = env.Frame;
+            if (currentFrame != null)
+                currentFrame.BindingsAtCallTime = env.Unifications;
+            if (successCount == 0 && this.MustSucceed)
+            {
+                throw new CallFailedException(this, arglist);
+            }
+
+            if (currentFrame != null)
+            {
+                env.Module.TraceMethod(Module.MethodTraceEvent.CallFail, currentFrame.Method, currentFrame.Arglist, output,
+                    env);
+                MethodCallFrame.CurrentFrame = currentFrame.Predecessor;
+            }
+
+            // Failure
+            return false;
+        }
+
         /// <inheritdoc />
         public override string ToString() => Name;
 

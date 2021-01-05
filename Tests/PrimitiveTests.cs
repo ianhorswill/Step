@@ -81,7 +81,7 @@ namespace Tests
                 "Test: [set X Empty] [Push 1] [Push 2] [Push 3] [Pop] [Pop] [Pop]",
                 "Push ?x: [add ?x X]",
                 "[generator] Pop: [removeNext ?x X] [Write ?x]",
-                "FailTest: [set X Empty] [Pop]");
+                "[fallible] FailTest: [set X Empty] [Pop]");
             Assert.AreEqual("3 2 1", m.Call("Test"));
             Assert.IsFalse(m.CallPredicate(State.Empty, "FailTest"));
         }
@@ -90,8 +90,8 @@ namespace Tests
         public void EqualsTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Test ?x ?y: [= ?x ?z] [= ?z ?y] succeeded",
-                "TextX ?x: [Test ?x ?y] [= ?y 1] Succeeded");
+            m.AddDefinitions("[fallible] Test ?x ?y: [= ?x ?z] [= ?z ?y] succeeded",
+                "[fallible] TextX ?x: [Test ?x ?y] [= ?y 1] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 1));
             Assert.AreEqual(null, m.Call("Test", 1, 2));
             
@@ -103,7 +103,7 @@ namespace Tests
         public void LessThanTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Test ?x ?y: [< ?x ?y] Succeeded");
+            m.AddDefinitions("[fallible] Test ?x ?y: [< ?x ?y] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 2));
             Assert.AreEqual(null, m.Call("Test", 1, 1));
         }
@@ -131,7 +131,7 @@ namespace Tests
             var m = new Module("test");
             m.AddDefinitions("Test: [set List empty] [PrintList] [add 1 List] [PrintList] [add 2 List] [PrintList]",
                 "PrintList: [DoAll [Member ?e List] [Write ?e]]",
-                "TestEmpty: [Member 1 Empty]");
+                "[fallible] TestEmpty: [Member 1 Empty]");
             Assert.AreEqual("1 2 1", m.Call("Test"));
             Assert.IsFalse(m.CallPredicate("TestEmpty"));
         }

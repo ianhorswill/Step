@@ -153,36 +153,7 @@ namespace Step.Interpreter
             switch (target)
             {
                 case CompoundTask p:
-                    ArgumentCountException.Check(p, p.ArgCount, arglist);
-                    var successCount = 0;
-                    var methods = p.EffectiveMethods;
-                    for (var index = 0; index < methods.Count && !(p.Deterministic && successCount > 0); index++)
-                    {
-                        var method = methods[index];
-                        if (method.Try(arglist, output, env, predecessor, (o, u, s, newPredecessor) =>
-                        {
-                            successCount++;
-                            return Continue(o, new BindingEnvironment(env, u, s), k, newPredecessor);
-                        }))
-                            return true;
-                    }
-
-                    var currentFrame = MethodCallFrame.CurrentFrame = env.Frame;
-                    if (currentFrame != null)
-                        currentFrame.BindingsAtCallTime = env.Unifications;
-                    if (successCount == 0 && p.MustSucceed)
-                    {
-                        throw new CallFailedException(p, arglist);
-                    }
-
-                    if (currentFrame != null)
-                    {
-                        env.Module.TraceMethod(Module.MethodTraceEvent.CallFail, currentFrame.Method, currentFrame.Arglist, output, env);
-                        MethodCallFrame.CurrentFrame = currentFrame.Predecessor;
-                    }
-
-                    // Failure
-                    return false;
+                    return CallCompoundTask(output, env, k, arglist, predecessor, p);
 
                 case PrimitiveTask.MetaTask m:
                     return m(arglist, output, env, (o, u, s, newP) =>
@@ -329,6 +300,13 @@ namespace Step.Interpreter
 
                     throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget, arglist)}");
             }
+        }
+
+        private bool CallCompoundTask(PartialOutput output, BindingEnvironment env, Continuation k, object[] arglist,
+            MethodCallFrame predecessor, CompoundTask p)
+        {
+            return p.Call(arglist, output, env, predecessor,
+                (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));
         }
 
         internal static string CallSourceText(object task, object[] arglist, BindingList<LogicVariable> unifications = null)
