@@ -39,7 +39,8 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g[nameof(Begin)] = (MetaTask)Begin;  // This is deliberately lower case
+            g[nameof(Call)] = (MetaTask)Call;
+            g[nameof(Begin)] = (MetaTask)Begin;
             g[nameof(Not)] = (MetaTask) Not;
             g[nameof(DoAll)] = (DeterministicTextGeneratorMetaTask) DoAll;
             g[nameof(ForEach)] = (MetaTask) ForEach;
@@ -50,6 +51,21 @@ namespace Step.Interpreter
             g[nameof(SaveText)] = (MetaTask) SaveText;
             g[nameof(PreviousCall)] = (MetaTask) PreviousCall;
             g[nameof(UniqueCall)] = (MetaTask)UniqueCall;
+        }
+
+        private static bool Call(object[] args, PartialOutput output, BindingEnvironment env,
+            Step.Continuation k, MethodCallFrame predecessor)
+        {
+            ArgumentCountException.Check(nameof(Call), 1, args);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args);
+
+            var task = call[0] as CompoundTask;
+            if (task == null)
+                throw new InvalidOperationException(
+                    "Task argument to Call must be a compound task, i.e. a user-defined task with methods.");
+
+            var taskArgs = call.Skip(1).ToArray();
+            return task.Call(taskArgs, output, env, predecessor, k);
         }
 
         private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
@@ -409,6 +425,10 @@ namespace Step.Interpreter
             var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall),args[0], args);
             foreach (var priorGoal in predecessor.GoalChain)
             {
+                if (priorGoal.Method.Task != call[0])
+                    // Don't bother making the call expression and trying to unify.
+                    continue;
+
                 var e = priorGoal.CallExpression;
                 if (call.Length == e.Length 
                     && env.UnifyArrays(call, e, out BindingList<LogicVariable> unifications)
@@ -435,8 +455,11 @@ namespace Step.Interpreter
                 {
                     foreach (var priorGoal in predecessor.GoalChain)
                     {
-                        var e = priorGoal.CallExpression;
-                        if (env.Unify(call, e, u, out BindingList<LogicVariable> _))
+                        if (priorGoal.Method.Task != task)
+                            // Don't bother making the call expression and trying to unify.
+                            continue;
+
+                        if (env.Unify(call, priorGoal.CallExpression, u, out BindingList<LogicVariable> _))
                             // We already did a call that matches this call
                             // So have the continuation return false, forcing the task.Call above to backtrack
                             // and try to generate a new solution

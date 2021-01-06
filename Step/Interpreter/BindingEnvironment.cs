@@ -210,6 +210,13 @@ namespace Step.Interpreter
             return true;
         }
 
+        /// <summary>
+        /// Unifies the elements of two arrays using this environment's binding list
+        /// </summary>
+        /// <param name="a">First array</param>
+        /// <param name="b">Second array</param>
+        /// <param name="outUnifications">Extended binding list</param>
+        /// <returns>True if successful</returns>
         public bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
             => UnifyArrays(a, b, Unifications, out outUnifications);
 

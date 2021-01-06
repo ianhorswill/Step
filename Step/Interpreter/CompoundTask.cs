@@ -103,6 +103,16 @@ namespace Step.Interpreter
             Methods.Add(new Method(this, weight, argumentPattern, localVariableNames, stepChain, path, lineNumber));
         }
 
+        /// <summary>
+        /// Call this task with the specified arguments
+        /// </summary>
+        /// <param name="arglist">Task arguments</param>
+        /// <param name="output">Output accumulated so far</param>
+        /// <param name="env">Binding environment</param>
+        /// <param name="predecessor">Most recently succeeded MethodCallFrame</param>
+        /// <param name="k">Continuation</param>
+        /// <returns>True if task succeeded and continuation succeeded</returns>
+        /// <exception cref="CallFailedException">If the task fails</exception>
         public bool Call(object[] arglist, PartialOutput output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(this, this.ArgCount, arglist);

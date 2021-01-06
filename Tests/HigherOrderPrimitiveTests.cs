@@ -33,6 +33,13 @@ namespace Tests
     public class HigherOrderPrimitiveTests
     {
         [TestMethod]
+        public void CallTest()
+        {
+            var m = Module.FromDefinitions("Test: [A [B 1]]", "A ?t: ?t/Call", "B ?a: foo ?a/Write");
+            Assert.AreEqual("Foo 1", m.Call("Test"));
+        }
+        
+        [TestMethod]
         public void DoAllTest()
         {
             var m = new Module("test");
