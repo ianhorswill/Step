@@ -56,7 +56,7 @@ namespace Step.Interpreter
         private static bool Call(object[] args, PartialOutput output, BindingEnvironment env,
             Step.Continuation k, MethodCallFrame predecessor)
         {
-            ArgumentCountException.Check(nameof(Call), 1, args);
+            ArgumentCountException.CheckAtLeast(nameof(Call), 1, args);
             var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args);
 
             var task = call[0] as CompoundTask;
@@ -64,7 +64,14 @@ namespace Step.Interpreter
                 throw new InvalidOperationException(
                     "Task argument to Call must be a compound task, i.e. a user-defined task with methods.");
 
-            var taskArgs = call.Skip(1).ToArray();
+            var taskArgs = new object[call.Length - 1 + args.Length - 1];
+
+            var i = 0;
+            for (var callIndex = 1; callIndex < call.Length; callIndex++)
+                taskArgs[i++] = call[callIndex];
+            for (var argsIndex = 1; argsIndex < args.Length; argsIndex++)
+                taskArgs[i++] = args[argsIndex];
+
             return task.Call(taskArgs, output, env, predecessor, k);
         }
 
@@ -441,14 +448,29 @@ namespace Step.Interpreter
         private static bool UniqueCall(object[] args, PartialOutput output, BindingEnvironment env,
             Step.Continuation k, MethodCallFrame predecessor)
         {
-            ArgumentCountException.Check(nameof(PreviousCall), 1, args);
+            ArgumentCountException.CheckAtLeast(nameof(UniqueCall), 1, args);
             var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall), args[0], args);
             var task = call[0] as CompoundTask;
             if (task == null)
                 throw new InvalidOperationException(
                     "Task argument to UniqueCall must be a compound task, i.e. a user-defined task with methods.");
+            
+            var taskArgs = new object[call.Length - 1 + args.Length - 1];
 
-            var taskArgs = call.Skip(1).ToArray();
+            var i = 0;
+            for (var callIndex = 1; callIndex < call.Length; callIndex++)
+                taskArgs[i++] = call[callIndex];
+            for (var argsIndex = 1; argsIndex < args.Length; argsIndex++)
+                taskArgs[i++] = args[argsIndex];
+
+            var fullCall = call;
+            if (args.Length > 1)
+            {
+                fullCall = new object[taskArgs.Length + 1];
+                fullCall[0] = task;
+                for (var j = 0; j < taskArgs.Length; j++)
+                    fullCall[j + 1] = taskArgs[j];
+            }
 
             if (task.Call(taskArgs, output, env, predecessor,
                 (o, u, s, newPredecessor) =>
@@ -459,7 +481,7 @@ namespace Step.Interpreter
                             // Don't bother making the call expression and trying to unify.
                             continue;
 
-                        if (env.Unify(call, priorGoal.CallExpression, u, out BindingList<LogicVariable> _))
+                        if (env.Unify(fullCall, priorGoal.CallExpression, u, out BindingList<LogicVariable> _))
                             // We already did a call that matches this call
                             // So have the continuation return false, forcing the task.Call above to backtrack
                             // and try to generate a new solution

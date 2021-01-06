@@ -181,7 +181,7 @@ namespace Tests
         public void UniqueCallTest()
         {
             var m = Module.FromDefinitions(
-                "Test: [UniqueCall [Foo ?a]] [UniqueCall [Foo ?b]] [UniqueCall [Foo ?c]]",
+                "Test: [UniqueCall [Foo ?a]] [UniqueCall [Foo] ?b] [UniqueCall [Foo ?c]]",
                 "[fallible] FailTest: [UniqueCall [Foo ?a]] [UniqueCall [Foo ?b]] [UniqueCall [Foo ?c]] [UniqueCall [Foo ?c]]",
                 "[generator] Foo 1: 1",
                 "Foo 2: 2",
