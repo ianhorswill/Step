@@ -25,6 +25,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization.Formatters;
 using System.Text;
 
 namespace Step
@@ -34,16 +35,29 @@ namespace Step
     /// </summary>
     public static class TextUtilities
     {
-        private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */, "<br>" };
+        internal static string NewLineToken = "--newline--";
+        internal static string NewParagraphToken = "--paragraph--";
+        internal static string FreshLineToken = "--fresh line--";
+
+        private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
+
+        private static bool LineChange(string token) => ReferenceEquals(token, NewLineToken) || ReferenceEquals(token, NewParagraphToken);
+        private static bool NoSpaceAfter(string token) => NoSpaceAfterTokens.Contains(token) || LineChange(token);
+        
+        private static bool LineEnding(string token) => token == "." || LineChange(token);
 
         private static readonly string[] Abbreviations = {"Mr", "Ms", "Mrs", "Dr"};
         /// <summary>
         /// Convert a sequence of tokens into a single text string, adding spaces where appropriate.
         /// </summary>
-        public static string Untokenize(this IEnumerable<string> tokens, bool capitalize = true, bool frenchSpacing = true, string paragraphDivider = "\n")
+        public static string Untokenize(this IEnumerable<string> tokens, FormattingOptions format = null)
         {
             if (tokens == null)
                 return "";
+            
+            if (format == null)
+                format = FormattingOptions.Default;
+            
             var b = new StringBuilder();
             var firstOne = true;
             var lastToken = "";
@@ -53,15 +67,22 @@ namespace Step
                     continue;
 
                 var token = t;
+                if (ReferenceEquals(token, FreshLineToken))
+                {
+                    if (LineChange(lastToken))
+                        continue;
+                    token = NewLineToken;
+                }
+                
                 if (t != "" && (!PunctuationToken(t) || t == "\u201c") && !t.StartsWith("<") && t != "\n")
                 {
-                    if (capitalize && (firstOne || lastToken == "."  || lastToken == "\n") && char.IsLower(t[0]))
-                        token = Capitalize(token);
+                    if (format.Capitalize && (firstOne || LineEnding(lastToken)) && char.IsLower(t[0]))
+                        token = TextUtilities.Capitalize(token);
                     if (firstOne)
                         firstOne = false;
-                    else if (!NoSpaceAfterTokens.Contains(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'"))
+                    else if (!NoSpaceAfter(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'") && !LineChange(token))
                         b.Append(' ');
-                    if (frenchSpacing && lastToken == ".")
+                    if (format.FrenchSpacing && lastToken == "."  && !LineChange(lastToken))
                         // Double the space after period.
                         b.Append(' ');
                 }
@@ -69,11 +90,17 @@ namespace Step
                 if (lastToken == "," && token == "\"")
                     b.Append(' ');
 
-                b.Append(token);
-                if (token == "\n")
-                    b.Append(paragraphDivider);
-
-                if ((t == "<br>" || !t.StartsWith("<")) && !(lastToken == "." && token == "\"") && !(token == "." && Abbreviations.Contains(lastToken)))
+                if (ReferenceEquals(token, NewParagraphToken))
+                {
+                    if (!ReferenceEquals(lastToken, NewParagraphToken))
+                        b.Append(format.ParagraphMarker);
+                }
+                else if (ReferenceEquals(token, NewLineToken))
+                    b.Append(format.LineSeparator);
+                else 
+                    b.Append(token);
+                
+                if (!t.StartsWith("<") && !(lastToken == "." && token == "\"") && !(token == "." && Abbreviations.Contains(lastToken)))
                     lastToken = token;
             }
 

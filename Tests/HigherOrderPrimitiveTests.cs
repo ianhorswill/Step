@@ -49,7 +49,7 @@ namespace Tests
                 "Test: [DoAll [Generate]]",
                 "SecondTest: [DoAll [Generate] [Paragraph]]");
             Assert.AreEqual("A b c", m.Call("Test"));
-            Assert.AreEqual("A\n\nB\n\nC\n\n", m.Call("SecondTest"));
+            Assert.AreEqual("A\nB\nC\n", m.Call("SecondTest"));
         }
 
         [TestMethod]

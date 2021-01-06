@@ -489,8 +489,7 @@ namespace Step.Interpreter
                     }
 
                     return k(o, u, s, newPredecessor);
-                }
-                ))
+                }))
                 return true;
             
             return false;

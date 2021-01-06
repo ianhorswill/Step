@@ -83,7 +83,7 @@ namespace Tests
                     output = input;
                 var tokens = new TokenStream(new StringReader(input), null).Tokens.ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
-                Assert.AreEqual(output, tokens.Untokenize(false));
+                Assert.AreEqual(output, tokens.Untokenize(new FormattingOptions() { Capitalize = false }));
             }
 
             Test("\"Foo,\" I said.  \"I don't like this.\"", 16, "\u201cFoo,\u201d I said.  \u201cI don't like this.\u201d");
@@ -106,7 +106,7 @@ namespace Tests
                     output = input;
                 var tokens = new ExpressionStream(new StringReader(input), null).Expressions.Cast<string>().ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
-                Assert.AreEqual(output, tokens.Untokenize(false));
+                Assert.AreEqual(output, tokens.Untokenize(new FormattingOptions() { Capitalize = false }));
             }
 
             Test("this is a test", 4, null);
@@ -354,7 +354,7 @@ With a line break in it!
 
 Test: [Multi]
 ");
-            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\n\nWith a line break in it!",
+            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\nWith a line break in it!",
                 m.Call("Test"));
         }
 

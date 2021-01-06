@@ -24,7 +24,6 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -59,7 +58,9 @@ namespace Step.Interpreter
             g["<"] = Predicate<float, float>("<", (a, b) => a < b);
             g[">="] = Predicate<float, float>(">=", (a, b) => a >= b);
             g["<="] = Predicate<float, float>("<=", (a, b) => a <= b);
-            g["Paragraph"] = NamePrimitive("Paragraph",(DeterministicTextGenerator0) (() => NewLine));
+            g["Paragraph"] = NamePrimitive("Paragraph",(DeterministicTextGenerator0) (() => new [] { TextUtilities.NewParagraphToken }));
+            g["NewLine"] = NamePrimitive("NewLine", (DeterministicTextGenerator0)(() => new[] { TextUtilities.NewLineToken }));
+            g["FreshLine"] = NamePrimitive("FreshLine", (DeterministicTextGenerator0)(() => new[] { TextUtilities.FreshLineToken }));
             g["Fail"] = NamePrimitive("Fail", (Predicate0)(() => false));
             g["Break"] = NamePrimitive("Break", (Predicate0) Break);
             g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);

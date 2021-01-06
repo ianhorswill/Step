@@ -81,6 +81,11 @@ namespace Step
         public readonly string Name;
 
         /// <summary>
+        /// Formatting options to use in Call.
+        /// </summary>
+        public FormattingOptions FormattingOptions = new FormattingOptions();
+
+        /// <summary>
         /// Extension used for source files
         /// </summary>
         public string SourceExtension = ".step";
@@ -255,7 +260,7 @@ namespace Step
             if (t.Call(args, output, env, null,
                 (o, u, s, predecessor) =>
                 {
-                    result = o.AsString;
+                    result = o.Output.Untokenize(FormattingOptions);
                     newState = s;
                     MethodCallFrame.CurrentFrame = predecessor;
                     return true;

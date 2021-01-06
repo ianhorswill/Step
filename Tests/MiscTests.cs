@@ -8,13 +8,6 @@ namespace Tests
     public class MiscTests
     {
         [TestMethod]
-        public void HtmlBreakTest()
-        {
-            var m = Module.FromDefinitions("Test: a <br> b");
-            Assert.AreEqual("A<br>b", m.Call("Test"));
-        }
-        
-        [TestMethod]
         public void VerbConjugationTest()
         {
             var m = TestUtils.Module("Test 1: He eat[s], [set ThirdPersonSingular false] they eat[s].",

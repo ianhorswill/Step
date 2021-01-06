@@ -60,10 +60,10 @@ namespace Tests
                 tokens.Untokenize());
             Assert.AreEqual(
                 "this is a test.  and this is a test.",
-                tokens.Untokenize(false));
+                tokens.Untokenize(new FormattingOptions() { Capitalize = false }));
             Assert.AreEqual(
                 "this is a test. and this is a test.",
-                tokens.Untokenize(false, false));
+                tokens.Untokenize(new FormattingOptions() { Capitalize = false, FrenchSpacing = false }));
         }
     }
 }
