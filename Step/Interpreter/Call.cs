@@ -108,7 +108,7 @@ namespace Step.Interpreter
             }
         }
 
-        private IEnumerable TupleCallees(object[] tuple)
+        internal static IEnumerable TupleCallees(object[] tuple)
         {
             foreach (var e in tuple)
                 switch (e)

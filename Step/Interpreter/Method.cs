@@ -132,7 +132,22 @@ namespace Step.Interpreter
         /// <summary>
         /// All the tasks called by this method
         /// </summary>
-        public IEnumerable<object> Callees => StepChain == null ? Step.EmptyCalleeList : StepChain.CalleesOfChain;
+        public IEnumerable<object> Callees
+        {
+            get
+            {
+                foreach (var a in ArgumentPattern)
+                    if (a is object[] tuple)
+                    {
+                        foreach (var c in Call.TupleCallees(tuple))
+                            yield return c;
+                    }
+
+                if (StepChain != null)
+                    foreach (var c in StepChain.CalleesOfChain)
+                        yield return c;
+            }
+        }
 
         /// <summary>
         /// All the Call steps inside this method
