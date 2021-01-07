@@ -25,7 +25,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization.Formatters;
 using System.Text;
 
 namespace Step
@@ -61,6 +60,7 @@ namespace Step
             var b = new StringBuilder();
             var firstOne = true;
             var lastToken = "";
+            var forceFreshLine = false;
             foreach (var t in tokens)
             {
                 if (t == null)
@@ -69,10 +69,16 @@ namespace Step
                 var token = t;
                 if (ReferenceEquals(token, FreshLineToken))
                 {
-                    if (LineChange(lastToken))
-                        continue;
-                    token = NewLineToken;
+                    forceFreshLine = true;
+                    continue;
                 }
+
+                if (forceFreshLine && !LineChange(lastToken) && !LineChange(token) && !firstOne)
+                {
+                    b.Append(format.LineSeparator);
+                    lastToken = NewLineToken;
+                }
+                forceFreshLine = false;
                 
                 if (t != "" && (!PunctuationToken(t) || t == "\u201c") && !t.StartsWith("<") && t != "\n")
                 {
@@ -97,7 +103,7 @@ namespace Step
                 }
                 else if (ReferenceEquals(token, NewLineToken))
                     b.Append(format.LineSeparator);
-                else 
+                else
                     b.Append(token);
                 
                 if (!t.StartsWith("<") && !(lastToken == "." && token == "\"") && !(token == "." && Abbreviations.Contains(lastToken)))
