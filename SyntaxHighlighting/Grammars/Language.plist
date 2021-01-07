@@ -12,15 +12,22 @@
     <array>
 	    <dict>
 		    <key>name</key>
-		    <string>keyword.control</string>
+		    <string>comment.line</string>
+		    <key>match</key>
+		    <string>^#\s*.*</string>
+	    </dict>
+
+		<dict>
+		    <key>name</key>
+		    <string>entity.name.function</string>
 		    <key>match</key>
 		    <string>^predicate .+\.</string>
 	    </dict>
 	    <dict>
 		    <key>name</key>
-		    <string>keyword.control</string>
+		    <string>entity.name.function</string>
 		    <key>match</key>
-		    <string>^predicate .+\.</string>
+		    <string>^task .+\.</string>
 	    </dict>
 	    <dict>
         <key>name</key>
