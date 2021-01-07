@@ -24,7 +24,7 @@
         /// <summary>
         /// Text marking the end of a paragraph
         /// </summary>
-        public string ParagraphMarker = "\n";
+        public string ParagraphMarker = "\n\n";
 
         /// <summary>
         /// Make a new FormattingOptions object
