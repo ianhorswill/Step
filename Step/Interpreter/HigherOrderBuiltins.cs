@@ -41,6 +41,7 @@ namespace Step.Interpreter
 
             g[nameof(Call)] = (MetaTask)Call;
             g[nameof(Begin)] = (MetaTask)Begin;
+            g[nameof(IgnoreOutput)] = (MetaTask)IgnoreOutput;
             g[nameof(Not)] = (MetaTask) Not;
             g[nameof(DoAll)] = (DeterministicTextGeneratorMetaTask) DoAll;
             g[nameof(ForEach)] = (MetaTask) ForEach;
@@ -78,6 +79,14 @@ namespace Step.Interpreter
         private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             return StepChainFromBody("Begin", args).Try(o, e, k, predecessor);
+        }
+
+        private static bool IgnoreOutput(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        {
+            return StepChainFromBody("IgnoreOutput", args).Try(
+                o, e,
+                (_, u,s, p) => k(o, u, s, p),
+                predecessor);
         }
 
         private static bool Not(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
