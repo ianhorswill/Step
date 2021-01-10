@@ -33,7 +33,7 @@ namespace Step.Interpreter
     public class UndefinedVariableException : Exception
     {
         /// <inheritdoc />
-        public UndefinedVariableException(StateVariableName v) : base($"Undefined variable {v.Name}")
+        public UndefinedVariableException(StateVariableName v) : base($"There is no variable named '{v.Name}'")
         { }
     }
 }
