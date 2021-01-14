@@ -304,8 +304,11 @@ GenericIncompatibility snoring.");
         [TestMethod]
         public void QuotedStringTest()
         {
-            var m = Module.FromDefinitions("Test: [Write \"This is a test\"]");
+            var m = Module.FromDefinitions("Test: [Write \"This is a test\"]",
+                "Foo \"this is a string in a head\".",
+                "Test2: [Foo ?x] ?x/Write");
             Assert.AreEqual("This is a test", m.Call("Test"));
+            Assert.AreEqual("This is a string in a head", m.Call("Test2"));
         }
 
         [TestMethod]

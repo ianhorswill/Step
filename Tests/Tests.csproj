@@ -60,6 +60,7 @@
     <Compile Include="ControlStructureTests.cs" />
     <Compile Include="MiscTests.cs" />
     <Compile Include="ReflectionTests.cs" />
+    <Compile Include="FunctionalExpressionTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Step\Step.csproj">

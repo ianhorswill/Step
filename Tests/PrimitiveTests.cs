@@ -75,6 +75,22 @@ namespace Tests
         }
 
         [TestMethod]
+        public void SetArithmeticTest()
+        {
+            var m = new Module("test") { ["X"] = 1 };
+            m.AddDefinitions("Test ?x: [set X X+?x] [Write X]");
+            Assert.AreEqual("6", m.Call("Test", 5));
+        }
+        
+        [TestMethod]
+        public void SetFloatTest()
+        {
+            var m = new Module("test") { ["X"] = 1 };
+            m.AddDefinitions("Test: [set X X+1.5] [Write X]");
+            Assert.AreEqual("2.5", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void AddRemoveTest()
         {
             var m = Module.FromDefinitions(

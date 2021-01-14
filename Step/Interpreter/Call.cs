@@ -345,7 +345,7 @@ namespace Step.Interpreter
                 o = BindingEnvironment.Deref(o, unifications);
                 if (o is object[] tuple)
                 {
-                    b.Append('{');
+                    b.Append('[');
                     bool first = true;
                     foreach (var e in tuple)
                     {
@@ -356,7 +356,7 @@ namespace Step.Interpreter
                         WriteTerm(e);
                     }
 
-                    b.Append("}");
+                    b.Append("]");
                 }
                 else 
                     WriteAtomicTerm(o);

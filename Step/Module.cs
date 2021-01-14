@@ -354,6 +354,14 @@ namespace Step
         }
 
         /// <summary>
+        /// Calls the named task with the specified arguments as a function and returns the value of its last argument
+        /// This call will fail if the task attempts to generate output.
+        /// </summary>
+        /// <param name="taskName">Name of the task</param>
+        /// <param name="args">Arguments to task, if any</param>
+        public T CallFunction<T>(string taskName, params object[] args) => CallFunction<T>(State.Empty, taskName, args);
+
+        /// <summary>
         /// Load all source files in the specified directory
         /// </summary>
         /// <param name="path">Path for the directory</param>

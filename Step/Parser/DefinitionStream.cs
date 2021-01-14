@@ -281,47 +281,55 @@ namespace Step.Parser
         /// </summary>
         object Canonicalize(object o)
         {
-            if (o is string s)
+            switch (o)
             {
-                if (IsLocalVariableName(s))
+                case string s when IsLocalVariableName(s):
                 {
                     var v = GetLocal(s);
                     IncrementReferenceCount(v);
                     return v;
                 }
-                if (IsGlobalVariableName(s))
+                case string s when IsGlobalVariableName(s):
                     return StateVariableName.Named(s);
-
-                switch (s)
+                case string s:
                 {
-                    case "null":
-                        return null;
-                    case "empty":
-                        return Cons.Empty;
-                    case "true":
-                        return true;
-                    case "false":
-                        return false;
+                    switch (s)
+                    {
+                        case "null":
+                            return null;
+                        case "empty":
+                            return Cons.Empty;
+                        case "true":
+                            return true;
+                        case "false":
+                            return false;
 
-                    case "=":
-                        return StateVariableName.Named("=");
-                    case ">":
-                        return StateVariableName.Named(">");
-                    case ">=":
-                        return StateVariableName.Named(">=");
-                    case "<":
-                        return StateVariableName.Named("<");
-                    case "<=":
-                        return StateVariableName.Named("<=");
+                        case "=":
+                            return StateVariableName.Named("=");
+                        case ">":
+                            return StateVariableName.Named(">");
+                        case ">=":
+                            return StateVariableName.Named(">=");
+                        case "<":
+                            return StateVariableName.Named("<");
+                        case "<=":
+                            return StateVariableName.Named("<=");
+                    }
+
+                    if (int.TryParse(s, out var result))
+                        return result;
+                    if (float.TryParse(s, out var fResult))
+                        return fResult;
+                    break;
                 }
-
-                if (int.TryParse(s, out var result))
-                    return result;
+                
+                case string[] text:
+                    return text;
+                case object[] list:
+                    return CanonicalizeArglist(list);
+                case TupleExpression t:
+                    return CanonicalizeArglist(t.Elements);
             }
-            else if (o is object[] list)
-                return CanonicalizeArglist(list);
-            else if (o is TupleExpression t)
-                return CanonicalizeArglist(t.Elements);
 
             return o;
         }
@@ -456,26 +464,10 @@ namespace Step.Parser
             {
                 Get();
                 string keyword = null;
-                switch (optionKeyword.Length)
-                {
-                    case 1 when optionKeyword[0] is string op0:
-                        keyword = op0;
-                        break;
-
-                    case 2 when optionKeyword[0] is string op0 && int.TryParse(op0, out var _) &&
-                                optionKeyword[1].Equals("."):
-                        keyword = op0;
-                        break;
-
-                    case 3 when optionKeyword[0] is string op0 && optionKeyword[1].Equals(".") &&
-                                optionKeyword[2] is string op2:
-                        keyword = op0 + "." + op2;
-                        break;
-
-                    default:
-                        ThrowInvalid(optionKeyword);
-                        break;
-                }
+                if (optionKeyword.Length == 1 && optionKeyword[0] is string op0)
+                    keyword = op0;
+                else
+                    ThrowInvalid(optionKeyword);
 
                 switch (keyword)
                 {
@@ -527,14 +519,37 @@ namespace Step.Parser
             while (!Peek.Equals(":") && !Peek.Equals(".") && !end)
             {
                 var argPattern = Get();
-                if (argPattern is object[] call && call.Length == 2 && IsGlobalVariableName(call[0]))
+                switch (argPattern)
                 {
-                    // It has an embedded predicate
-                    pattern.Add(call[1]);
-                    chainBuilder.AddStep(Call.MakeCall(Canonicalize(call[0]), Canonicalize(call[1]), null));
+                    case string quote when quote == "“":
+                        var strings = new List<string>();
+                        while (!Peek.Equals("”") && !end)
+                        {
+                            var next = Get();
+                            if (next is string s)
+                                strings.Add(s);
+                            else 
+                                throw new SyntaxError("Bracketed expressions are not allowed inside string constants", SourceFile, lineNumber);
+                        }
+
+                        if (end)
+                            throw new SyntaxError("Unexpected end of file inside a quoted string", SourceFile,
+                                lineNumber);
+                        else
+                            // Skip close quote
+                            Get();
+                        pattern.Add(strings.ToArray());
+                        break;
+                    
+                    case object[] call when call.Length == 2 && IsGlobalVariableName(call[0]):
+                        // It has an embedded predicate
+                        pattern.Add(call[1]);
+                        chainBuilder.AddStep(Call.MakeCall(Canonicalize(call[0]), Canonicalize(call[1]), null));
+                        break;
+                    default:
+                        pattern.Add(argPattern);
+                        break;
                 }
-                else
-                    pattern.Add(argPattern);
             }
 
             if (end)
@@ -647,13 +662,15 @@ namespace Step.Parser
                     break;
 
                 case "set":
-                    if (expression.Length != 3)
+                    if (expression.Length < 3)
                         throw new ArgumentCountException("set", 2, expression.Skip(1).ToArray());
                     var name = expression[1] as string;
                     if (name == null || !IsGlobalVariableName(name))
                         throw new SyntaxError(
                             $"A Set command can only update a GlobalVariable; it can't update {expression[1]}", SourceFile, lineNumber);
-                    chain.AddStep(new AssignmentStep(StateVariableName.Named(name), Canonicalize(expression[2]), null));
+                    chain.AddStep(new AssignmentStep(StateVariableName.Named(name), 
+                        FunctionalExpression.FromTuple(CanonicalizeArglist(expression), 2, SourceFile, lineNumber),
+                        null));
                     break;
                     
                 default:

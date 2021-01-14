@@ -103,7 +103,7 @@ namespace Step.Parser
         /// True if we're at the end of the stream
         /// </summary>
         bool End => input.Peek() < 0;
-
+        
         /// <summary>
         /// Return the current character, without advancing
         /// </summary>
@@ -209,6 +209,28 @@ namespace Step.Parser
                                 AddCharToToken();
                             if (Peek == '>')
                                 AddCharToToken();
+                        }
+                    }
+                    else if (char.IsDigit(Peek) || Peek == '+' || Peek == '-')
+                    {
+                        AddCharToToken();
+                        while (char.IsDigit(Peek)) AddCharToToken();
+
+                        if (Peek == '.')
+                        {
+                            Get();
+                            if (char.IsDigit(Peek))
+                            {
+                                token.Append('.');
+                                while (char.IsDigit(Peek)) AddCharToToken();
+                            }
+                            else
+                            {
+                                // This was an integer followed by a period.  "1." and ".1" are not valid
+                                // floats in this language.
+                                yield return ConsumeToken();
+                                yield return ".";
+                            }
                         }
                     }
                     else

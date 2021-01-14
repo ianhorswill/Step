@@ -53,17 +53,43 @@ namespace Step.Interpreter
 
         internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
 
+        /// <summary>
+        /// Declared properties of the task
+        /// </summary>
         [Flags]
-        internal enum TaskFlags
+        public enum TaskFlags
         {
+            /// <summary>
+            /// No properties declared
+            /// </summary>
             None = 0,
+            /// <summary>
+            /// Shuffle methods during execution.  Corresponds to the [randomly] declaration.
+            /// </summary>
             Shuffle = 1,
+            /// <summary>
+            /// Allow this task to retry during backtracking
+            /// </summary>
             MultipleSolutions = 2,
+            /// <summary>
+            /// Don't throw an exception if this task fails
+            /// </summary>
             Fallible = 4,
+            /// <summary>
+            /// This task is called form outside the Step code, so don't show a warning if it isn't called.
+            /// </summary>
             Main = 8
         }
 
         internal TaskFlags Flags;
+
+        /// <summary>
+        /// Programmatic interface for declaring attributes of task
+        /// </summary>
+        public void Declare(TaskFlags declarationFlags)
+        {
+            Flags |= declarationFlags;
+        }
 
         /// <summary>
         /// True if the methods of the task should be tried in random order
