@@ -581,13 +581,13 @@ namespace Step.Parser
                 TryProcessMethodCall(chain);
             }
         }
-        
+
         /// <summary>
         /// If we're looking at a method call, compile it.
         /// </summary>
         private void TryProcessMethodCall(ChainBuilder chain)
         {
-            if (AtKeywordMarker || !(Peek is object[] expression)) 
+            if (AtKeywordMarker || !(Peek is object[] expression))
                 return;
 
             // It's a call
@@ -609,7 +609,8 @@ namespace Step.Parser
                     if (expression.Length != 3)
                         throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
-                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile, lineNumber);
+                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile,
+                            lineNumber);
                     chain.AddStep(new AddStep(Canonicalize(expression[1]), StateVariableName.Named(vName), null));
                 }
                     break;
@@ -619,8 +620,10 @@ namespace Step.Parser
                     if (expression.Length != 3)
                         throw new ArgumentCountException("removeNext", 2, expression.Skip(1).ToArray());
                     if (!(expression[2] is string vName && IsGlobalVariableName(vName)))
-                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile, lineNumber);
-                    chain.AddStep(new RemoveNextStep(Canonicalize(expression[1]), StateVariableName.Named(vName), null));
+                        throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", SourceFile,
+                            lineNumber);
+                    chain.AddStep(new RemoveNextStep(Canonicalize(expression[1]), StateVariableName.Named(vName),
+                        null));
                 }
                     break;
 
@@ -640,7 +643,9 @@ namespace Step.Parser
                         if (int.TryParse(expression[1] as string, out var d))
                             duration = d;
                         else
-                            throw new SyntaxError($"Argument to cool must be an integer constant, but got {expression[1]}", SourceFile, lineNumber);
+                            throw new SyntaxError(
+                                $"Argument to cool must be an integer constant, but got {expression[1]}", SourceFile,
+                                lineNumber);
                     }
 
                     chain.AddStep(new CoolStep(duration, null));
@@ -662,17 +667,36 @@ namespace Step.Parser
                     break;
 
                 case "set":
-                    if (expression.Length < 3)
-                        throw new ArgumentCountException("set", 2, expression.Skip(1).ToArray());
-                    var name = expression[1] as string;
-                    if (name == null || !IsGlobalVariableName(name))
+                    if (expression.Length < 4)
                         throw new SyntaxError(
-                            $"A Set command can only update a GlobalVariable; it can't update {expression[1]}", SourceFile, lineNumber);
-                    chain.AddStep(new AssignmentStep(StateVariableName.Named(name), 
-                        FunctionalExpression.FromTuple(CanonicalizeArglist(expression), 2, SourceFile, lineNumber),
-                        null));
+                            $"A set command has the format [set name = value], which doesn't match the expression {Writer.TermToString(expression)}.",
+                            SourceFile, lineNumber);
+                    if (!expression[2].Equals("="))
+                        throw new SyntaxError(
+                            $"A set command has the format [set name = value], but this expression has {Writer.TermToString(expression[2])} instead of =.",
+                            SourceFile, lineNumber);
+
+                    if (!(expression[1] is string name))
+                        throw new SyntaxError(
+                            $"A set command has the format [set name = value], which doesn't match the expression {Writer.TermToString(expression)}.",
+                            SourceFile, lineNumber);
+
+                    if (IsGlobalVariableName(name))
+                        chain.AddStep(new AssignmentStep(StateVariableName.Named(name),
+                            FunctionalExpressionParser.FromTuple(CanonicalizeArglist(expression), 3, SourceFile,
+                                lineNumber),
+                            null));
+                    else if (IsLocalVariableName(name))
+                        chain.AddStep(new AssignmentStep(GetLocal(name),
+                            FunctionalExpressionParser.FromTuple(CanonicalizeArglist(expression), 3, SourceFile,
+                                lineNumber),
+                            null));
+                    else
+                        throw new SyntaxError(
+                            $"A set command can only update a variable; it can't update {expression[1]}",
+                            SourceFile, lineNumber);
                     break;
-                    
+
                 default:
                     // This is a call
                     var target = IsLocalVariableName(targetName)

@@ -62,7 +62,7 @@ namespace Tests
         public void SetTest()
         {
             var m = new Module("test") {["X"] = 1};
-            m.AddDefinitions("Test: [X] [set X 2] [X]");
+            m.AddDefinitions("Test: [X] [set X = 2] [X]");
             Assert.AreEqual("1 2", m.Call("Test"));
         }
 
@@ -70,7 +70,7 @@ namespace Tests
         public void SetTest2()
         {
             var m = new Module("test") {["X"] = 1};
-            m.AddDefinitions("Test ?x: [X] [set X ?x] [X]");
+            m.AddDefinitions("Test ?x: [X] [set X = ?x] [X]");
             Assert.AreEqual("1 5", m.Call("Test", 5));
         }
 
@@ -78,7 +78,7 @@ namespace Tests
         public void SetArithmeticTest()
         {
             var m = new Module("test") { ["X"] = 1 };
-            m.AddDefinitions("Test ?x: [set X X+?x] [Write X]");
+            m.AddDefinitions("Test ?x: [set X = X+?x] [Write X]");
             Assert.AreEqual("6", m.Call("Test", 5));
         }
         
@@ -86,18 +86,28 @@ namespace Tests
         public void SetFloatTest()
         {
             var m = new Module("test") { ["X"] = 1 };
-            m.AddDefinitions("Test: [set X X+1.5] [Write X]");
+            m.AddDefinitions("Test: [set X = X+1.5] [Write X]");
             Assert.AreEqual("2.5", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void SetLocalTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("SucceedTest: [set ?x = 4 / 2] [Write ?x]");
+            m.AddDefinitions("[fallible] FailTest: [= ?x 1] [set ?x = 2] [Write ?x]");
+            Assert.AreEqual("2", m.Call("SucceedTest"));
+            Assert.IsFalse(m.CallPredicate("FailTest"));
         }
 
         [TestMethod]
         public void AddRemoveTest()
         {
             var m = Module.FromDefinitions(
-                "Test: [set X Empty] [Push 1] [Push 2] [Push 3] [Pop] [Pop] [Pop]",
+                "Test: [set X = Empty] [Push 1] [Push 2] [Push 3] [Pop] [Pop] [Pop]",
                 "Push ?x: [add ?x X]",
                 "[generator] Pop: [removeNext ?x X] [Write ?x]",
-                "[fallible] FailTest: [set X Empty] [Pop]");
+                "[fallible] FailTest: [set X = Empty] [Pop]");
             Assert.AreEqual("3 2 1", m.Call("Test"));
             Assert.IsFalse(m.CallPredicate(State.Empty, "FailTest"));
         }
@@ -145,7 +155,7 @@ namespace Tests
         public void ListTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Test: [set List empty] [PrintList] [add 1 List] [PrintList] [add 2 List] [PrintList]",
+            m.AddDefinitions("Test: [set List = empty] [PrintList] [add 1 List] [PrintList] [add 2 List] [PrintList]",
                 "PrintList: [DoAll [Member ?e List] [Write ?e]]",
                 "[fallible] TestEmpty: [Member 1 Empty]");
             Assert.AreEqual("1 2 1", m.Call("Test"));
@@ -158,7 +168,7 @@ namespace Tests
             var m = new Module("test");
             m.AddDefinitions("Add ?x: [add ?x List] [PrintList]",
                 "PrintList: [DoAll [Member ?e List] [Write ?e]]",
-                "Test: [set List empty] [Add 1] [Add 2] [Add 3]");
+                "Test: [set List = empty] [Add 1] [Add 2] [Add 3]");
             Assert.AreEqual("1 2 1 3 2 1", m.Call("Test"));
         }
 

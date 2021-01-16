@@ -61,7 +61,7 @@
     <Compile Include="Cons.cs" />
     <Compile Include="FormattingOptions.cs" />
     <Compile Include="Interpreter\FunctionalExpression.cs" />
-    <Compile Include="Interpreter\FunctionalExpressionParser.cs" />
+    <Compile Include="Parser\FunctionalExpressionParser.cs" />
     <Compile Include="Interpreter\FunctionalOperator.cs" />
     <Compile Include="Interpreter\ReflectionBuiltins.cs" />
     <Compile Include="Interpreter\SequenceStep.cs" />

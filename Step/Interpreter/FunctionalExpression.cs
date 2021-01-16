@@ -19,25 +19,6 @@ namespace Step.Interpreter
         }
 
         private string DebugName => ToString();
-
-        public static FunctionalExpression FromValueOrVariable(object v)
-        {
-            switch (v)
-            {
-                case StateVariableName _:
-                case LocalVariableName _:
-                    return new VariableReference(v);
-
-                default:
-                    return new Constant(v);
-            }
-        }
-
-        public static FunctionalExpression FromTuple(object[] tuple, int start = 0, string path = null,
-            int lineNumber = 0) =>
-            FunctionalExpressionParser.Parse(tuple, start, path, lineNumber);
-
-        public static FunctionalExpression Parse(params object[] expression) => FromTuple(expression);
     }
 
     class Constant : FunctionalExpression
