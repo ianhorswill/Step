@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
 
 namespace Tests
@@ -98,6 +99,25 @@ namespace Tests
             Assert.IsTrue(gotC > 0);
         }
 
+        [TestMethod]
+        public void RememberedTextTest()
+        {
+            var m = Module.FromDefinitions("[randomly] Generate ?: a",
+                "Generate ?: b",
+                "Generate ?: c",
+                "Generate ?: d",
+                "Generate ?: e",
+                "[remembered] Remember ?x: [Generate ?x]",
+                "Test: [Remember 1] [Remember 1] [Remember 1] [Remember 1] [Remember 1]");
+            var validResults = new[] {"A a a a a", "B b b b b", "C c c c c", "D d d d d", "E e e e e"};
+            
+            for (int i = 0; i < 100; i++)
+            {
+                var result = m.Call("Test");
+                Assert.IsTrue(validResults.Contains(result));    
+            }
+        }
+        
         [TestMethod]
         public void FirstOfTest()
         {

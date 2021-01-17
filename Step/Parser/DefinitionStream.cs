@@ -160,7 +160,7 @@ namespace Step.Parser
         /// <summary>
         /// True if the string is a valid local variable name
         /// </summary>
-        private static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
+        public static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
 
         /// <summary>
         /// The token is a valid name of a non-anonymous local variable
@@ -180,7 +180,7 @@ namespace Step.Parser
         /// <summary>
         /// True if the string is a valid global variable name
         /// </summary>
-        private static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
+        public static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
 
         /// <summary>
         /// Local variables of the definition currently being parsed.
@@ -411,7 +411,7 @@ namespace Step.Parser
 
             lineNumber = expressionStream.LineNumber;
 
-            if (Peek.Equals("predicate") || Peek.Equals("task"))
+            if (Peek.Equals("predicate") || Peek.Equals("task") || Peek.Equals("fluent"))
                 return ReadDeclaration(flags);
             
             var (taskName, pattern) = ReadHead();
@@ -437,8 +437,10 @@ namespace Step.Parser
         {
             var declType = Get(); // swallow "task" or "predicate
 
-            if (declType.Equals("predicate"))
+            if (declType.Equals("predicate")  || declType.Equals("fluent"))
                 flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
+            if (declType.Equals("fluent"))
+                flags |= CompoundTask.TaskFlags.ReadCache;
 
             var (taskName, pattern) = ReadHead();
 
@@ -474,6 +476,14 @@ namespace Step.Parser
                     // Shuffle rules when calling
                     case "randomly":
                         flags |= CompoundTask.TaskFlags.Shuffle;
+                        break;
+
+                    case "remembered":
+                        flags |= CompoundTask.TaskFlags.ReadCache | CompoundTask.TaskFlags.WriteCache;
+                        break;
+
+                    case "fluent":
+                        flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions | CompoundTask.TaskFlags.ReadCache;
                         break;
 
                     case "generator":

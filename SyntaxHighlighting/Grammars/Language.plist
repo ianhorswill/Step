@@ -52,6 +52,12 @@
 		    <string>^task .+\.</string>
 	    </dict>
 	    <dict>
+		    <key>name</key>
+		    <string>entity.name.function</string>
+		    <key>match</key>
+		    <string>^fluent .+\.</string>
+	    </dict>
+	    <dict>
         <key>name</key>
         <string>entity.name.function</string>
         <key>match</key>
@@ -104,6 +110,18 @@
 		    <string>keyword.control</string>
 		    <key>match</key>
 		    <string>\[predicate\]</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>\[fluent\]</string>
+	    </dict>
+	    <dict>
+		    <key>name</key>
+		    <string>keyword.control</string>
+		    <key>match</key>
+		    <string>\[remembered\]</string>
 	    </dict>
 	    <dict>
 		    <key>name</key>

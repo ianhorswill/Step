@@ -24,7 +24,9 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Step.Utilities;
@@ -50,6 +52,33 @@ namespace Step.Interpreter
         /// Methods for accomplishing the task
         /// </summary>
         public readonly List<Method> Methods = new List<Method>();
+
+        private static readonly StateElement ResultCacheTable = new StateElement("result cache", false, null);
+        
+        private ImmutableDictionary<IStructuralEquatable, CachedResult> ResultCache(State state)
+        {
+            if (state.TryLookup(ResultCacheTable, out var table) 
+                &&  ((ImmutableDictionary<CompoundTask, ImmutableDictionary<IStructuralEquatable, CachedResult>>)table).TryGetValue(this, out var result))
+                return result;
+            return null;
+        }
+
+        private State StoreResult(State oldState, object[] arglist, CachedResult result)
+        {
+            if ((Flags & TaskFlags.ReadCache) == 0)
+                throw new InvalidOperationException("Attempt to store result to a task without caching enabled.");
+            var cacheTable = oldState.TryLookup(ResultCacheTable, out var table)
+                ? (ImmutableDictionary<CompoundTask, ImmutableDictionary<IStructuralEquatable, CachedResult>>) table
+                : ImmutableDictionary<CompoundTask, ImmutableDictionary<IStructuralEquatable, CachedResult>>.Empty;
+            
+            if (!cacheTable.TryGetValue(this, out var myTable))
+                myTable = ImmutableDictionary<IStructuralEquatable, CachedResult>.Empty;
+
+            var newMyTable = myTable.Add(arglist, result);
+            var newCacheTable = cacheTable.Add(this, newMyTable);
+            var newState = oldState.Bind(ResultCacheTable, newCacheTable);
+            return newState;
+        }
 
         internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
 
@@ -78,7 +107,27 @@ namespace Step.Interpreter
             /// <summary>
             /// This task is called form outside the Step code, so don't show a warning if it isn't called.
             /// </summary>
-            Main = 8
+            Main = 8,
+            /// <summary>
+            /// Use results stored in the cache
+            /// </summary>
+            ReadCache = 16,
+            /// <summary>
+            /// Add results to the cache
+            /// </summary>
+            WriteCache = 32
+        }
+
+        private readonly struct CachedResult
+        {
+            public readonly bool Success;
+            public readonly string[] Text;
+
+            public CachedResult(bool success, string[] text)
+            {
+                Success = success;
+                Text = text;
+            }
         }
 
         internal TaskFlags Flags;
@@ -86,6 +135,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Programmatic interface for declaring attributes of task
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public void Declare(TaskFlags declarationFlags)
         {
             Flags |= declarationFlags;
@@ -105,6 +155,17 @@ namespace Step.Interpreter
         /// True if it's an error for this call not to succeed at least once
         /// </summary>
         public bool MustSucceed => (Flags & TaskFlags.Fallible) == 0;
+
+        /// <summary>
+        /// If true, this task should check its ResultCache for saved results.
+        /// </summary>
+        public bool ReadCache => (Flags & TaskFlags.ReadCache) != 0;
+
+        /// <summary>
+        /// If true, the task should write results back to the cache on successful calls
+        /// in which all arguments are instantiated.
+        /// </summary>
+        public bool WriteCache => (Flags & TaskFlags.WriteCache) != 0;
 
         internal CompoundTask(string name, int argCount)
         {
@@ -143,6 +204,36 @@ namespace Step.Interpreter
         {
             ArgumentCountException.Check(this, this.ArgCount, arglist);
             var successCount = 0;
+
+            ImmutableDictionary<IStructuralEquatable, CachedResult> cache;
+            if (ReadCache && ((cache = ResultCache(env.State)) != null))
+            {
+                if (cache.TryGetValue(arglist, out var result))
+                {
+                    if (result.Success)
+                    {
+                        successCount++;
+                        if (k(output.Append(result.Text), env.Unifications, env.State, predecessor))
+                            return true;
+                    }
+                    else 
+                        // We have a match on a cached fail result, so force a failure, skipping over the methods.
+                        goto failed;
+                }
+                else
+                    foreach (var pair in cache)
+                    {
+                        if (pair.Value.Success
+                            && env.UnifyArrays((object[]) pair.Key, arglist,
+                                out BindingList<LogicVariable> unifications))
+                        {
+                            successCount++;
+                            if (k(output.Append(pair.Value.Text), unifications, env.State, predecessor))
+                                return true;
+                        }
+                    }
+            }
+
             var methods = this.EffectiveMethods;
             for (var index = 0; index < methods.Count && !(this.Deterministic && successCount > 0); index++)
             {
@@ -151,11 +242,18 @@ namespace Step.Interpreter
                     (o, u, s, newPredecessor) =>
                     {
                         successCount++;
+                        if (WriteCache)
+                        {
+                            var final = env.ResolveList(arglist, u);
+                            if (Term.IsGround(final))
+                                s = StoreResult(s, final, new CachedResult(true, PartialOutput.Difference(output, o)));
+                        }
                         return k(o, u, s, newPredecessor);
                     }))
                     return true;
             }
 
+            failed:
             var currentFrame = MethodCallFrame.CurrentFrame = env.Frame;
             if (currentFrame != null)
                 currentFrame.BindingsAtCallTime = env.Unifications;

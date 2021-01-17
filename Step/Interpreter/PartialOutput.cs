@@ -57,11 +57,13 @@ namespace Step.Interpreter
 
         private const int DefaultCapacity = 500;
 
+        private static readonly string[] EmptyStringBuffer = new string[0];
+
         /// <summary>
         /// Make an empty PartialOutput with a new buffer.
         /// </summary>
         public PartialOutput(int capacity)
-            : this(new string[capacity])
+            : this(capacity == 0 ? EmptyStringBuffer : new string[capacity])
         { }
 
         /// <summary>
@@ -129,7 +131,9 @@ namespace Step.Interpreter
         {
             Debug.Assert(before.Buffer == after.Buffer);
             var size = after.Length - before.Length;
-            Debug.Assert(size >= 0);
+            if (size == 0)
+                return EmptyStringBuffer;
+            Debug.Assert(size > 0);
             var result = new string[size];
             Array.Copy(before.Buffer, before.Length, result, 0, size);
             return result;
