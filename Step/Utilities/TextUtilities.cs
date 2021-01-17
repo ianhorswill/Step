@@ -34,9 +34,18 @@ namespace Step
     /// </summary>
     public static class TextUtilities
     {
-        internal static string NewLineToken = "--newline--";
-        internal static string NewParagraphToken = "--paragraph--";
-        internal static string FreshLineToken = "--fresh line--";
+        /// <summary>
+        /// Internal token used to signify the start of a new line
+        /// </summary>
+        public static string NewLineToken = "--newline--";
+        /// <summary>
+        /// Internal token used to signify the start of a new paragraph
+        /// </summary>
+        public static string NewParagraphToken = "--paragraph--";
+        /// <summary>
+        /// Internal token used to signify that any future tokens should start on a fresh line.
+        /// </summary>
+        public static string FreshLineToken = "--fresh line--";
 
         private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
 

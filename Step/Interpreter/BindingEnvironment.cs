@@ -41,7 +41,10 @@ namespace Step.Interpreter
         /// </summary>
         public readonly Module Module;
 
-        internal readonly MethodCallFrame Frame;
+        /// <summary>
+        /// MethodCallFrame of this environment
+        /// </summary>
+        public readonly MethodCallFrame Frame;
         /// <summary>
         /// Logic variables holding the values of the current method's local variables
         /// </summary>
@@ -112,7 +115,7 @@ namespace Step.Interpreter
                     return Deref(Local[l.Index], unifications);
 
                 case StateVariableName g:
-                    return State.TryLookup(g, out var result) ? result : Module[g];
+                    return State.TryGetValue(g, out var result) ? result : Module[g];
 
                 case string[] tokens:
                     return tokens;

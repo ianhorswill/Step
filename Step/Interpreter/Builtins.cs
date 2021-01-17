@@ -65,6 +65,7 @@ namespace Step.Interpreter
             g["Break"] = NamePrimitive("Break", (Predicate0) Break);
             g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
+            
             g["Write"] = NamePrimitive("Write", (DeterministicTextGenerator1) (o =>
             {
                 if (o == null)
@@ -73,6 +74,7 @@ namespace Step.Interpreter
                     return tokens;
                 return new[] {Writer.TermToString(o)};
             }));
+            
             g["WriteWithoutUnderscores"] = NamePrimitive("WriteWithoutUnderscores", (DeterministicTextGenerator1)(o =>
             {
                 if (o == null)
@@ -81,6 +83,11 @@ namespace Step.Interpreter
                     return tokens;
                 return new[] { Writer.TermToString(o).Replace('_', ' ') };
             }));
+            g["WriteConcatenated"] = NamePrimitive("Write", (DeterministicTextGenerator2)((s1, s2) =>
+            {
+                return new[] { $"{s1}{s2}" };
+            }));
+            
             g["Member"] = GeneralRelation<object, IEnumerable<object>>(
                 "Member",
                 (member, collection) => collection != null && collection.Contains(member),

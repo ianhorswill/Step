@@ -117,6 +117,14 @@ namespace Tests
                 Assert.IsTrue(validResults.Contains(result));    
             }
         }
+
+        [TestMethod]
+        public void SuffixTest()
+        {
+            var m = Module.FromDefinitions("Test: walk[Ed]",
+                "[suffix] Ed ?token: [WriteConcatenated ?token ed]");
+            Assert.AreEqual("Walked", m.Call("Test"));
+        } 
         
         [TestMethod]
         public void FirstOfTest()

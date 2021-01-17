@@ -53,31 +53,24 @@ namespace Step.Interpreter
         /// </summary>
         public readonly List<Method> Methods = new List<Method>();
 
-        private static readonly StateElement ResultCacheTable = new StateElement("result cache", false, null);
-        
-        private ImmutableDictionary<IStructuralEquatable, CachedResult> ResultCache(State state)
+        private DictionaryStateElement<IStructuralEquatable, CachedResult> _cache;
+
+        private DictionaryStateElement<IStructuralEquatable, CachedResult> Cache
         {
-            if (state.TryLookup(ResultCacheTable, out var table) 
-                &&  ((ImmutableDictionary<CompoundTask, ImmutableDictionary<IStructuralEquatable, CachedResult>>)table).TryGetValue(this, out var result))
-                return result;
-            return null;
+            get
+            {
+                if (_cache != null)
+                    return _cache;
+                return _cache = new DictionaryStateElement<IStructuralEquatable, CachedResult>(Name + " cache");
+            }
         }
 
         private State StoreResult(State oldState, object[] arglist, CachedResult result)
         {
             if ((Flags & TaskFlags.ReadCache) == 0)
                 throw new InvalidOperationException("Attempt to store result to a task without caching enabled.");
-            var cacheTable = oldState.TryLookup(ResultCacheTable, out var table)
-                ? (ImmutableDictionary<CompoundTask, ImmutableDictionary<IStructuralEquatable, CachedResult>>) table
-                : ImmutableDictionary<CompoundTask, ImmutableDictionary<IStructuralEquatable, CachedResult>>.Empty;
-            
-            if (!cacheTable.TryGetValue(this, out var myTable))
-                myTable = ImmutableDictionary<IStructuralEquatable, CachedResult>.Empty;
-
-            var newMyTable = myTable.Add(arglist, result);
-            var newCacheTable = cacheTable.Add(this, newMyTable);
-            var newState = oldState.Bind(ResultCacheTable, newCacheTable);
-            return newState;
+         
+            return Cache.Add(oldState, arglist, result);
         }
 
         internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
@@ -115,7 +108,11 @@ namespace Step.Interpreter
             /// <summary>
             /// Add results to the cache
             /// </summary>
-            WriteCache = 32
+            WriteCache = 32,
+            /// <summary>
+            /// This task is a suffix that modifies the last generated token.
+            /// </summary>
+            Suffix = 64
         }
 
         private readonly struct CachedResult
@@ -167,6 +164,11 @@ namespace Step.Interpreter
         /// </summary>
         public bool WriteCache => (Flags & TaskFlags.WriteCache) != 0;
 
+        /// <summary>
+        /// This task replaces the previous token in the output
+        /// </summary>
+        public bool Suffix => (Flags & TaskFlags.Suffix) != 0;
+
         internal CompoundTask(string name, int argCount)
         {
             Name = name;
@@ -202,13 +204,20 @@ namespace Step.Interpreter
         /// <exception cref="CallFailedException">If the task fails</exception>
         public bool Call(object[] arglist, PartialOutput output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
+            string lastToken = null;
+            if (Suffix)
+            {
+                (lastToken, output) = output.Unappend();
+                arglist = new object[] {lastToken};
+            }
+            
             ArgumentCountException.Check(this, this.ArgCount, arglist);
             var successCount = 0;
 
             ImmutableDictionary<IStructuralEquatable, CachedResult> cache;
-            if (ReadCache && ((cache = ResultCache(env.State)) != null))
+            if (ReadCache)
             {
-                if (cache.TryGetValue(arglist, out var result))
+                if (Cache.TryGetValue(env.State, arglist, out var result))
                 {
                     if (result.Success)
                     {
@@ -221,7 +230,7 @@ namespace Step.Interpreter
                         goto failed;
                 }
                 else
-                    foreach (var pair in cache)
+                    foreach (var pair in Cache.Bindings(env.State))
                     {
                         if (pair.Value.Success
                             && env.UnifyArrays((object[]) pair.Key, arglist,
@@ -251,6 +260,9 @@ namespace Step.Interpreter
                         return k(o, u, s, newPredecessor);
                     }))
                     return true;
+                if (Suffix)
+                    // Undo any overwriting that the method might have done
+                    output.Buffer[output.Length - 1] = lastToken;
             }
 
             failed:

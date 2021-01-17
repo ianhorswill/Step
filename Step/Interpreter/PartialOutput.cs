@@ -138,5 +138,13 @@ namespace Step.Interpreter
             Array.Copy(before.Buffer, before.Length, result, 0, size);
             return result;
         }
+
+        /// <summary>
+        /// Remove and return the last token in this output
+        /// </summary>
+        public (string token, PartialOutput newBuffer) Unappend()
+        {
+            return (Buffer[Length - 1], new PartialOutput(Buffer, Length - 1));
+        }
     }
 }

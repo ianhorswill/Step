@@ -50,7 +50,7 @@ namespace Step
         /// <summary>
         /// Set result to the value of e and return true, if e is bound, else return false
         /// </summary>
-        public bool TryLookup(StateElement e, out object result) => Bindings.TryGetValue(e, out result);
+        public bool TryGetValue(StateElement e, out object result) => Bindings.TryGetValue(e, out result);
 
         /// <summary>
         /// A State containing no bindings
