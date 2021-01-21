@@ -94,7 +94,7 @@
     <Compile Include="StateVariableName.cs" />
     <Compile Include="Interpreter\LocalVariableName.cs" />
     <Compile Include="Interpreter\LogicVariable.cs" />
-    <Compile Include="Interpreter\PartialOutput.cs" />
+    <Compile Include="Interpreter\TextBuffer.cs" />
     <Compile Include="Interpreter\PrimitiveTask.cs" />
     <Compile Include="Interpreter\CompoundTask.cs" />
     <Compile Include="Interpreter\Step.cs" />

@@ -14,7 +14,7 @@ namespace Step.Interpreter
             this.collectionVariable = collectionVariable;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var elt = e.Resolve(element);
             var collectionValue = e.Resolve(collectionVariable);

@@ -28,7 +28,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Run the next branch, or fail if we've run out of branches
         /// </summary>
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var position = (int)e.State.Lookup(branchNumber);
             if (position == branches.Length)

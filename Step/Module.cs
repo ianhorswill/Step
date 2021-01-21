@@ -251,7 +251,7 @@ namespace Step
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
-            var output = PartialOutput.NewEmpty();
+            var output = TextBuffer.NewEmpty();
             var env = new BindingEnvironment(this, null, null, state);
 
             string result = null;
@@ -295,7 +295,7 @@ namespace Step
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
-            var output = new PartialOutput(0);
+            var output = new TextBuffer(0);
             var env = new BindingEnvironment(this, null, null, state);
 
             return t.Call(args, output, env, null,
@@ -331,7 +331,7 @@ namespace Step
             var resultVar = new LogicVariable(FunctionResult);
             var extendedArgs = args.Append(resultVar).ToArray();
 
-            var output = new PartialOutput(0);
+            var output = new TextBuffer(0);
 
             BindingList<LogicVariable> bindings = null;
 
@@ -410,7 +410,7 @@ namespace Step
             if (pattern.Length != 0)
                 throw new SyntaxError("Initially command cannot take arguments", path, line);
             State bindings = State.Empty;
-            if (!chain.Try(new PartialOutput(0),
+            if (!chain.Try(new TextBuffer(0),
                 new BindingEnvironment(this,
                     new MethodCallFrame(null, null, locals.Select(name => new LogicVariable(name)).ToArray(), 
                         null, null)),
@@ -619,7 +619,7 @@ namespace Step
         /// An event handler to be called on every method call.
         /// Used to implement single-stepping in a debugger
         /// </summary>
-        public delegate void TraceHandler(MethodTraceEvent traceEvent, Method method, object[] args, PartialOutput output, BindingEnvironment env);
+        public delegate void TraceHandler(MethodTraceEvent traceEvent, Method method, object[] args, TextBuffer output, BindingEnvironment env);
 
         /// <summary>
         /// An event handler to be called on every method call.
@@ -650,7 +650,7 @@ namespace Step
             CallFail
         };
         
-        internal void TraceMethod(MethodTraceEvent e, Method method, object[] args, PartialOutput output, BindingEnvironment env)
+        internal void TraceMethod(MethodTraceEvent e, Method method, object[] args, TextBuffer output, BindingEnvironment env)
         {
             Trace?.Invoke(e, method, args, output, env);
         }

@@ -13,7 +13,7 @@ namespace Step.Interpreter
 
         private static readonly StateVariableName Tps = StateVariableName.Named("ThirdPersonSingular");
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             
             var tps = e.State.LookupOrDefault(Tps, true);

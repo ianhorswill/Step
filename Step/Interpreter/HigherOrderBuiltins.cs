@@ -52,9 +52,10 @@ namespace Step.Interpreter
             g[nameof(SaveText)] = (MetaTask) SaveText;
             g[nameof(PreviousCall)] = (MetaTask) PreviousCall;
             g[nameof(UniqueCall)] = (MetaTask)UniqueCall;
+            g[nameof(Parse)] = (MetaTask)Parse;
         }
 
-        private static bool Call(object[] args, PartialOutput output, BindingEnvironment env,
+        private static bool Call(object[] args, TextBuffer output, BindingEnvironment env,
             Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.CheckAtLeast(nameof(Call), 1, args);
@@ -76,12 +77,12 @@ namespace Step.Interpreter
             return task.Call(taskArgs, output, env, predecessor, k);
         }
 
-        private static bool Begin(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             return StepChainFromBody("Begin", args).Try(o, e, k, predecessor);
         }
 
-        private static bool IgnoreOutput(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool IgnoreOutput(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             return StepChainFromBody("IgnoreOutput", args).Try(
                 o, e,
@@ -89,7 +90,7 @@ namespace Step.Interpreter
                 predecessor);
         }
 
-        private static bool Not(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Not(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             // Whether the call to args below succeeded
             var success = false;
@@ -109,10 +110,10 @@ namespace Step.Interpreter
             return !success && k(o, e.Unifications, e.State, predecessor);
         }
         
-        private static IEnumerable<string> DoAll(object[] args, PartialOutput o, BindingEnvironment e, MethodCallFrame predecessor) 
+        private static IEnumerable<string> DoAll(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor) 
             => AllSolutionTextFromBody("DoAll", args, o, e, predecessor).SelectMany(strings => strings);
 
-        private static bool ForEach(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool ForEach(object[] args, TextBuffer output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
         {
             if (args.Length < 2)
                 throw new ArgumentCountException("ForEach", 2, args);
@@ -150,9 +151,9 @@ namespace Step.Interpreter
             return k(resultOutput, env.Unifications, dynamicState, predecessor);
         }
 
-        private static bool Once(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Once(object[] args, TextBuffer output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
         {
-            PartialOutput finalOutput = output;
+            TextBuffer finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
             State finalState = State.Empty;
             MethodCallFrame finalFrame = predecessor;
@@ -173,10 +174,10 @@ namespace Step.Interpreter
             return success && k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool ExactlyOnce(object[] args, PartialOutput output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool ExactlyOnce(object[] args, TextBuffer output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("ExactlyOnce", 1, args);
-            PartialOutput finalOutput = output;
+            TextBuffer finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
             State finalState = State.Empty;
             MethodCallFrame finalFrame = predecessor;
@@ -203,12 +204,12 @@ namespace Step.Interpreter
             return k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool Max(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Max(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             return MaxMinDriver("Max", args, 1, o, e, k, predecessor);
         }
 
-        private static bool Min(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Min(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             return MaxMinDriver("Min", args, -1, o, e, k, predecessor);
         }
@@ -217,7 +218,7 @@ namespace Step.Interpreter
         /// Core implementation of both Max and Min
         /// </summary>
         private static bool MaxMinDriver(string taskName, object[] args,
-            int multiplier, PartialOutput o, BindingEnvironment e,
+            int multiplier, TextBuffer o, BindingEnvironment e,
             Step.Continuation k,
             MethodCallFrame predecessor)
         {
@@ -278,7 +279,7 @@ namespace Step.Interpreter
                    && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.State, bestFrame);
         }
 
-        private static bool SaveText(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool SaveText(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("SaveText", 2, args);
 
@@ -311,6 +312,28 @@ namespace Step.Interpreter
             return false;
         }
 
+        private static bool Parse(object[] args, TextBuffer output, BindingEnvironment env,
+            Step.Continuation k, MethodCallFrame predecessor)
+        {
+            ArgumentCountException.CheckAtLeast(nameof(Parse), 2, args);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(Parse),env.Resolve(args[0]), args);
+            var text = ArgumentTypeException.Cast<string[]>(nameof(Parse), env.Resolve(args[1]), args);
+
+            var task = call[0] as CompoundTask;
+            if (task == null)
+                throw new InvalidOperationException(
+                    "Task argument to Parse must be a compound task, i.e. a user-defined task with methods.");
+
+            var taskArgs = new object[call.Length - 1];
+
+            var i = 0;
+            for (var callIndex = 1; callIndex < call.Length; callIndex++)
+                taskArgs[i++] = call[callIndex];
+
+            var parseBuffer = TextBuffer.MakeReadModeTextBuffer(text);
+            return task.Call(taskArgs, parseBuffer, env, predecessor,
+                (buffer, u, s, p) => buffer.ReadCompleted && k(output, u, s, p));
+        }
 
         #region Data structures for recording execution state
         /// <summary>
@@ -332,9 +355,9 @@ namespace Step.Interpreter
                 State = state;
             }
 
-            public CapturedState(PartialOutput before, PartialOutput after, BindingList<LogicVariable> bindings,
+            public CapturedState(TextBuffer before, TextBuffer after, BindingList<LogicVariable> bindings,
                 State state)
-                : this(PartialOutput.Difference(before, after), bindings, state)
+                : this(TextBuffer.Difference(before, after), bindings, state)
             { }
         }
         #endregion
@@ -344,7 +367,7 @@ namespace Step.Interpreter
         /// Calls a task with the specified arguments and allows the user to provide their own continuation.
         /// The only (?) use case for this is when you want to forcibly generate multiple solutions
         /// </summary>
-        internal static void GenerateSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        internal static void GenerateSolutions(string taskName, object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             new Call(StateVariableName.Named(taskName), args, null).Try(o, e, k, predecessor);
         }
@@ -352,7 +375,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Find all solutions to the specified task and arguments.  Return a list of the arglists for each solution.
         /// </summary>
-        internal static List<object[]> AllSolutions(string taskName, object[] args, PartialOutput o, BindingEnvironment e, MethodCallFrame predecessor)
+        internal static List<object[]> AllSolutions(string taskName, object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<object[]>();
             GenerateSolutions(taskName, args, o, e, (output, b, d, p) =>
@@ -367,7 +390,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Find all solutions to the specified task and arguments.  Return a list of the text outputs of each solution.
         /// </summary>
-        internal static List<string[]> AllSolutionText(string taskName, object[] args, PartialOutput o, BindingEnvironment e, MethodCallFrame predecessor)
+        internal static List<string[]> AllSolutionText(string taskName, object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<string[]>();
             var initialLength = o.Length;
@@ -388,7 +411,7 @@ namespace Step.Interpreter
         /// Calls all the tasks in the body and allows the user to provide their own continuation.
         /// The only (?) use case for this is when you want to forcibly generate multiple solutions
         /// </summary>
-        internal static void GenerateSolutionsFromBody(string callingTaskName, object[] body, PartialOutput o, BindingEnvironment e,
+        internal static void GenerateSolutionsFromBody(string callingTaskName, object[] body, TextBuffer o, BindingEnvironment e,
             Step.Continuation k,
             MethodCallFrame predecessor)
         {
@@ -416,7 +439,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Find all solutions to the specified sequence of calls.  Return a list of the text outputs of each solution.
         /// </summary>
-        internal static List<string[]> AllSolutionTextFromBody(string callingTaskName, object[] body, PartialOutput o,
+        internal static List<string[]> AllSolutionTextFromBody(string callingTaskName, object[] body, TextBuffer o,
             BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<string[]>();
@@ -434,7 +457,7 @@ namespace Step.Interpreter
             return results;
         }
 
-        private static bool PreviousCall(object[] args, PartialOutput output, BindingEnvironment env,
+        private static bool PreviousCall(object[] args, TextBuffer output, BindingEnvironment env,
             Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check(nameof(PreviousCall), 1, args);
@@ -454,7 +477,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        private static bool UniqueCall(object[] args, PartialOutput output, BindingEnvironment env,
+        private static bool UniqueCall(object[] args, TextBuffer output, BindingEnvironment env,
             Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.CheckAtLeast(nameof(UniqueCall), 1, args);

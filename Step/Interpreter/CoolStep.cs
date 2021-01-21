@@ -15,7 +15,7 @@
             Duration = duration;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             if (fuse == 0)
             {

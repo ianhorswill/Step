@@ -37,7 +37,7 @@ namespace Step.Interpreter
     /// The read-only-ness is to make backtracking easy.
     /// </summary>
     [DebuggerDisplay("{" + nameof(AsString) + "}")]
-    public readonly struct PartialOutput
+    public readonly struct TextBuffer
     {
         /// <summary>
         /// Fixed buffer in which to hold the output
@@ -49,10 +49,17 @@ namespace Step.Interpreter
         /// </summary>
         public readonly int Length;
 
-        private PartialOutput(string[] buffer, int length)
+        /// <summary>
+        /// True means this is a buffer we're writing new text into (write mode/generate mode).
+        /// False means it's a buffer pre-loaded with text we're matching against (read mode/parse mode).
+        /// </summary>
+        public readonly bool WriteMode;
+
+        private TextBuffer(string[] buffer, int length, bool writeMode)
         {
             Buffer = buffer;
             Length = length;
+            WriteMode = writeMode;
         }
 
         private const int DefaultCapacity = 500;
@@ -62,20 +69,26 @@ namespace Step.Interpreter
         /// <summary>
         /// Make an empty PartialOutput with a new buffer.
         /// </summary>
-        public PartialOutput(int capacity)
+        public TextBuffer(int capacity)
             : this(capacity == 0 ? EmptyStringBuffer : new string[capacity])
         { }
+
+        /// <summary>
+        /// Make buffer with text to be matched by a program running in parse mode
+        /// </summary>
+        /// <param name="text">Text to be parsed</param>
+        public static TextBuffer MakeReadModeTextBuffer(string[] text) => new TextBuffer(text, 0, false);
 
         /// <summary>
         /// Make an empty PartialOutput that stores output in the specified buffer.
         /// </summary>
         /// <param name="buffer"></param>
-        public PartialOutput(string[] buffer) : this(buffer, 0) { }
+        public TextBuffer(string[] buffer) : this(buffer, 0, true) { }
 
         /// <summary>
         /// Make an empty PartialOutput with a new buffer.
         /// </summary>
-        public static PartialOutput NewEmpty() => new PartialOutput(DefaultCapacity);
+        public static TextBuffer NewEmpty() => new TextBuffer(DefaultCapacity);
 
         /// <summary>
         /// Add tokens to buffer and return a new PartialOutput with the updated length.
@@ -84,10 +97,12 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="tokens">Tokens to add to output</param>
         /// <returns>New buffer state</returns>
-        public PartialOutput Append(params string[] tokens)
+        public TextBuffer Append(params string[] tokens)
         {
+            if (!WriteMode)
+                throw new InvalidOperationException("Attempt to write to a read mode Text buffer");
             Array.Copy(tokens, 0, Buffer, Length, tokens.Length);
-            return new PartialOutput(Buffer, Length + tokens.Length);
+            return new TextBuffer(Buffer, Length + tokens.Length, true);
         }
 
         /// <summary>
@@ -97,11 +112,65 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="tokens">Tokens to add to output</param>
         /// <returns>New buffer state</returns>
-        public PartialOutput Append(IEnumerable<string> tokens)
+        public TextBuffer Append(IEnumerable<string> tokens)
         {
+            if (!WriteMode)
+                throw new InvalidOperationException("Attempt to write to a read mode Text buffer");
+            
             var count = 0;
             foreach (var token in tokens) Buffer[Length + count++] = token;
-            return new PartialOutput(Buffer, Length + count);
+            return new TextBuffer(Buffer, Length + count, true);
+        }
+
+        /// <summary>
+        /// Write tokens to buffer, if write mode, otherwise attempt to match them
+        /// </summary>
+        /// <param name="tokens">Tokens to match to buffer</param>
+        /// <param name="result">expanded or consumed buffer</param>
+        /// <returns>True on success</returns>
+        public bool Unify(string[] tokens, out TextBuffer result)
+        {
+            if (WriteMode)
+            {
+                result = Append(tokens);
+                return true;
+            }
+            // Read mode - try matching the tokens
+            if (Buffer.Length - Length < tokens.Length) 
+            {
+                // Not enough tokens left
+                result = this;
+                return false;
+            }
+            for (var i = 0; i < tokens.Length; i++)
+                if (tokens[i] != Buffer[Length + i])
+                {
+                    result = this;
+                    return false;
+                }
+
+            result = new TextBuffer(Buffer, Length + tokens.Length, false);
+            return true;
+        }
+
+        /// <summary>
+        /// Return the next token from a read-mode buffer, or null if at the end.
+        /// </summary>
+        /// <param name="newBuffer">Resulting updated buffer state</param>
+        /// <returns>Next token or null if end of buffer</returns>
+        /// <exception cref="InvalidOperationException">If buffer is write mode</exception>
+        public string NextToken(out TextBuffer newBuffer)
+        {
+            if (WriteMode)
+                throw new InvalidOperationException("Attempt to read from a write mode text buffer");
+            if (Length == Buffer.Length)
+                // EOF
+            {
+                newBuffer = this;
+                return null;
+            }
+            newBuffer = new TextBuffer(Buffer, Length + 1, false);
+            return Buffer[Length];
         }
 
         /// <summary>
@@ -121,13 +190,27 @@ namespace Step.Interpreter
         /// </summary>
         public string AsString => Output.Untokenize();
 
+        /// <summary>
+        /// True if all tokens have been read from the buffer
+        /// </summary>
+        /// <exception cref="InvalidOperationException">If the buffer isn't in read mode</exception>
+        public bool ReadCompleted
+        {
+            get
+            {
+                if (WriteMode)
+                    throw new InvalidOperationException("Checking read completion on a write mode text buffer");
+                return Length == Buffer.Length;
+            }
+        }
+
         /// <inheritdoc />
         public override string ToString() => AsString;
 
         /// <summary>
         /// Return an array of the strings added to an output buffer between before and after
         /// </summary>
-        public static string[] Difference(in PartialOutput before, in PartialOutput after)
+        public static string[] Difference(in TextBuffer before, in TextBuffer after)
         {
             Debug.Assert(before.Buffer == after.Buffer);
             var size = after.Length - before.Length;
@@ -142,9 +225,12 @@ namespace Step.Interpreter
         /// <summary>
         /// Remove and return the last token in this output
         /// </summary>
-        public (string token, PartialOutput newBuffer) Unappend()
+        public (string token, TextBuffer newBuffer) Unappend()
         {
-            return (Buffer[Length - 1], new PartialOutput(Buffer, Length - 1));
+            if (!WriteMode)
+                throw new InvalidOperationException("Attempt to write to a read mode Text buffer");
+
+            return (Buffer[Length - 1], new TextBuffer(Buffer, Length - 1, true));
         }
     }
 }

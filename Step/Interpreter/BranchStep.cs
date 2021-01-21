@@ -50,7 +50,7 @@ namespace Step.Interpreter
 
         private Step[] Branches => shuffle ? branches.Shuffle() : branches;
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             foreach (var branch in Branches)
             {

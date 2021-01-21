@@ -17,7 +17,7 @@ namespace Tests
         public static string Expand(this Step.Interpreter.Step step, Module g)
         {
             string result = null;
-            step.Try(PartialOutput.NewEmpty(),
+            step.Try(TextBuffer.NewEmpty(),
                 new BindingEnvironment(g,
                     new MethodCallFrame(null, null, new LogicVariable[0], null, null)),
                 (o, u, s, p) =>

@@ -89,7 +89,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation to call if method succeeds</param>
         /// <param name="pre">Predecessor frame</param>
         /// <returns>True if the method and its continuation succeeded</returns>
-        public bool Try(object[] args, PartialOutput output, BindingEnvironment env, MethodCallFrame pre, Step.Continuation k)
+        public bool Try(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame pre, Step.Continuation k)
         {
             // Make stack frame for locals
             var locals = new LogicVariable[LocalVariableNames.Length];

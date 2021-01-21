@@ -66,22 +66,30 @@ namespace Step.Interpreter
             g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
             
-            g["Write"] = NamePrimitive("Write", (DeterministicTextGenerator1) (o =>
+            g["Write"] = DeterministicTextMatcher("Write", (o =>
             {
-                if (o == null)
-                    return new[] {"null"};
-                if (o is string[] tokens)
-                    return tokens;
-                return new[] {Writer.TermToString(o)};
+                switch (o)
+                {
+                    case null:
+                        return new[] {"null"};
+                    case string[] tokens:
+                        return tokens;
+                    default:
+                        return new[] {Writer.TermToString(o)};
+                }
             }));
             
-            g["WriteWithoutUnderscores"] = NamePrimitive("WriteWithoutUnderscores", (DeterministicTextGenerator1)(o =>
+            g["WriteWithoutUnderscores"] = DeterministicTextMatcher("WriteWithoutUnderscores", (o =>
             {
-                if (o == null)
-                    return new[] { "null" };
-                if (o is string[] tokens)
-                    return tokens;
-                return new[] { Writer.TermToString(o).Replace('_', ' ') };
+                switch (o)
+                {
+                    case null:
+                        return new[] { "null" };
+                    case string[] tokens:
+                        return tokens;
+                    default:
+                        return new[] { Writer.TermToString(o).Replace('_', ' ') };
+                }
             }));
             g["WriteConcatenated"] = NamePrimitive("Write", (DeterministicTextGenerator2)((s1, s2) =>
             {

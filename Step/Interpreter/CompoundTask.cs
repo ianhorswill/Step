@@ -26,7 +26,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Step.Utilities;
@@ -53,6 +52,7 @@ namespace Step.Interpreter
         /// </summary>
         public readonly List<Method> Methods = new List<Method>();
 
+        // ReSharper disable once InconsistentNaming
         private DictionaryStateElement<IStructuralEquatable, CachedResult> _cache;
 
         private DictionaryStateElement<IStructuralEquatable, CachedResult> Cache
@@ -202,7 +202,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation</param>
         /// <returns>True if task succeeded and continuation succeeded</returns>
         /// <exception cref="CallFailedException">If the task fails</exception>
-        public bool Call(object[] arglist, PartialOutput output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
             string lastToken = null;
             if (Suffix)
@@ -214,7 +214,6 @@ namespace Step.Interpreter
             ArgumentCountException.Check(this, this.ArgCount, arglist);
             var successCount = 0;
 
-            ImmutableDictionary<IStructuralEquatable, CachedResult> cache;
             if (ReadCache)
             {
                 if (Cache.TryGetValue(env.State, arglist, out var result))
@@ -255,7 +254,7 @@ namespace Step.Interpreter
                         {
                             var final = env.ResolveList(arglist, u);
                             if (Term.IsGround(final))
-                                s = StoreResult(s, final, new CachedResult(true, PartialOutput.Difference(output, o)));
+                                s = StoreResult(s, final, new CachedResult(true, TextBuffer.Difference(output, o)));
                         }
                         return k(o, u, s, newPredecessor);
                     }))

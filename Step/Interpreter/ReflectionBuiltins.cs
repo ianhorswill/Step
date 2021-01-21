@@ -55,14 +55,14 @@ namespace Step.Interpreter
             g["TaskSubtask"] = NamePrimitive("TaskSubtask", (MetaTask) TaskSubtask);
         }
 
-        private static bool LastMethodCallFrame(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool LastMethodCallFrame(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("LastMethodCallFrame", 1, args);
             return e.Unify(args[0], predecessor, out var u)
                    && k(o, u, e.State, predecessor);
         }
 
-        private static bool CompoundTask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool CompoundTask(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("CompoundTask", 1, args);
             var arg = e.Resolve(args[0]);
@@ -77,7 +77,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        private static bool TaskCalls(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k,
+        private static bool TaskCalls(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k,
             MethodCallFrame predecessor)
         {
             var m = e.Module;
@@ -131,7 +131,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        private static bool TaskSubtask(object[] args, PartialOutput o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool TaskSubtask(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             ArgumentCountException.Check("TaskSubtask", 2, args);
             var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args);

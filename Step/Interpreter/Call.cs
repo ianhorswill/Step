@@ -137,7 +137,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation to call at the end of this step's step-chain</param>
         /// <param name="predecessor">Predecessor frame</param>
         /// <returns>True if this steps, the rest of its step-chain, and the continuation all succeed.</returns>
-        public override bool Try(PartialOutput output, BindingEnvironment env, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment env, Continuation k, MethodCallFrame predecessor)
         {
             MethodCallFrame.CurrentFrame = env.Frame;
             var originalTarget = env.Resolve(Task);
@@ -147,7 +147,7 @@ namespace Step.Interpreter
             return CallTask(output, env, k, target, arglist, originalTarget, predecessor);
         }
 
-        private bool CallTask(PartialOutput output, BindingEnvironment env, Continuation k, object target, object[] arglist,
+        private bool CallTask(TextBuffer output, BindingEnvironment env, Continuation k, object target, object[] arglist,
             object originalTarget, MethodCallFrame predecessor)
         {
             switch (target)
@@ -302,7 +302,7 @@ namespace Step.Interpreter
             }
         }
 
-        private bool CallCompoundTask(PartialOutput output, BindingEnvironment env, Continuation k, object[] arglist,
+        private bool CallCompoundTask(TextBuffer output, BindingEnvironment env, Continuation k, object[] arglist,
             MethodCallFrame predecessor, CompoundTask p)
         {
             return p.Call(arglist, output, env, predecessor,

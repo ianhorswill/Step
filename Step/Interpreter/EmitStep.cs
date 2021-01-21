@@ -49,7 +49,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation to run after the end of this method.</param>
         /// <param name="predecessor">Predecessor frame</param>
         /// <returns></returns>
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor) =>
-            Continue(output.Append(Text), e, k, predecessor);
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor) => 
+            output.Unify(Text, out var result) && Continue(result, e, k, predecessor);
     }
 }

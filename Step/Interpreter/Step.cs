@@ -52,7 +52,7 @@ namespace Step.Interpreter
         /// It takes as arguments the things that might have changed in the process of running the step.
         /// </summary>
         /// <returns>True if everything completed successfully, false if we need to backtrack</returns>
-        public delegate bool Continuation(PartialOutput o, BindingList<LogicVariable> unifications, State state, MethodCallFrame predecessor);
+        public delegate bool Continuation(TextBuffer o, BindingList<LogicVariable> unifications, State state, MethodCallFrame predecessor);
 
         /// <summary>
         /// Attempt to run this step.
@@ -62,13 +62,13 @@ namespace Step.Interpreter
         /// <param name="k">Procedure to run if this step and the other steps in its chain are successful</param>
         /// <param name="predecessor">Predecessor frame</param>
         /// <returns>True if all steps in the chain, and the continuation are all successful.  False means we're backtracking</returns>
-        public abstract bool Try(PartialOutput output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor);
+        public abstract bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor);
 
         /// <summary>
         /// Run any remaining steps in the chain, otherwise run the continuation.
         /// </summary>
         /// <returns>True if all steps in the chain, and the continuation are all successful.  False means we're backtracking</returns>
-        protected bool Continue(PartialOutput p, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        protected bool Continue(TextBuffer p, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             if (Next != null)
                 return Next.Try(p, e, k, predecessor);

@@ -176,8 +176,63 @@ namespace Step.Interpreter
         /// <param name="e">Binding environment to use</param>
         /// <param name="k">Continuation to call when successful</param>
         /// <param name="predecessor">Frame of the call that most recently succeeded</param>
-        public delegate bool MetaTask(object[] args, PartialOutput o, BindingEnvironment e,
+        public delegate bool MetaTask(object[] args, TextBuffer o, BindingEnvironment e,
             Step.Continuation k, MethodCallFrame predecessor);
+
+        /// <summary>
+        /// A primitive that takes one argument and either prints it to the output, or in read mode, unifies it with the next token.
+        /// </summary>
+        /// <param name="name">Name of the primitive (for use in error messages)</param>
+        /// <param name="renderer">Procedure to use to convert the input to one or more tokens, if necessary</param>
+        public static MetaTask DeterministicTextMatcher(string name, Func<object, string[]> renderer) =>
+            NamePrimitive<MetaTask>(name, (args, buffer, env, k, predecessor) =>
+            {
+                ArgumentCountException.Check(name, 1, args);
+                var arg = env.Resolve(args[0]);
+                var text = arg as string[];
+                if (buffer.WriteMode)
+                {
+                    if (text == null)
+                        text = renderer(arg);
+
+                    return k(buffer.Append(text), env.Unifications, env.State, predecessor);
+                }
+
+                // Read mode
+                if (arg is LogicVariable l)
+                {
+                    var token = buffer.NextToken(out var newBuffer);
+                    if (token == null)
+                        return false;
+                    object value = token;
+                    switch (token)
+                    {
+                        case "null":
+                            value = null;
+                            break;
+                        case "true":
+                            value = true;
+                            break;
+                        case "false":
+                            value = false;
+                            break;
+                        default:
+                            if (int.TryParse(token, out var iValue))
+                                value = iValue;
+                            else if (float.TryParse(token, out var fValue))
+                                value = fValue;
+                            break;
+                    }
+                    return k(newBuffer,
+                               BindingList<LogicVariable>.Bind(env.Unifications, l, value),
+                               env.State, predecessor);
+                }
+
+                if (text == null)
+                    text = renderer(arg);
+                return buffer.Unify(text, out var result)
+                       && k(result, env.Unifications, env.State, predecessor);
+            });
 
         /// <summary>
         /// A primitive task that generates text and always succeeds once (i.e. you can't backtrack to get different alternative versions of the text.
@@ -202,7 +257,7 @@ namespace Step.Interpreter
         /// <param name="o">Partial output accumulated so far</param>
         /// <param name="e">Binding environment to use</param>
         /// <param name="predecessor">Method call that succeeded immediately before this call</param>
-        public delegate IEnumerable<string> DeterministicTextGeneratorMetaTask(object[] args, PartialOutput o, BindingEnvironment e, 
+        public delegate IEnumerable<string> DeterministicTextGeneratorMetaTask(object[] args, TextBuffer o, BindingEnvironment e, 
             MethodCallFrame predecessor);
 
         /// <summary>

@@ -26,7 +26,7 @@ namespace Step.Interpreter
             Value = value;
         }
 
-        public override bool Try(PartialOutput output, BindingEnvironment e, Continuation k,
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k,
             MethodCallFrame predecessor)
         {
             if (LocalVariable == null)

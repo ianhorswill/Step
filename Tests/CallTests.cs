@@ -38,7 +38,7 @@ namespace Tests
 
         bool Succeeds(Step.Interpreter.Step s)
         {
-            return s.Try(PartialOutput.NewEmpty(), BindingEnvironment.NewEmpty(), (o, e, ds, p) => true, null);
+            return s.Try(TextBuffer.NewEmpty(), BindingEnvironment.NewEmpty(), (o, e, ds, p) => true, null);
         }
 
         [TestMethod]
@@ -207,6 +207,44 @@ namespace Tests
             
             Assert.AreEqual("ManicPixieDreamPeep",
                 m.ParseAndExecute("[Rescue manicPixieDreamPeep billionaire [medicalSituation manicPixieDreamPeep rareDisease]]"));
+        }
+
+        [TestMethod]
+        public void ReadModeTest()
+        {
+            var m = Module.FromDefinitions(
+                "TestSucceed: [Parse [SayTest] \"This is a test.\"]",
+                "[fallible] TestFail: [Parse [SayTest] \"This is not a test.\"]",
+                "TestMatch ?y: [Parse [SayTestMatch ?y] \"This is a test\"]",
+                "TestMatchNumber ?y: [Parse [SayTestMatch ?y] \"This is a 5\"]",
+                "[fallible] SayTest: This is a test.",
+                "[fallible] SayTestMatch ?x: This is a ?x/Write");
+            Assert.IsTrue(m.CallPredicate("TestSucceed"));
+            Assert.IsFalse(m.CallPredicate("TestFail"));
+            Assert.AreEqual("test", m.CallFunction<string>("TestMatch"));
+            Assert.AreEqual(5, m.CallFunction<int>("TestMatchNumber"));
+        }
+
+        [TestMethod]
+        public void CFGParseTest()
+        {
+            var m = Module.FromDefinitions(
+                "[generator] S: [NP] [VP]",
+                "[generator] NP: [Det] [N]",
+                "[generator] Det: the",
+                "Det: a",
+                "[generator] N: cat",
+                "N: dog",
+                "[generator] VP: [V] [NP]",
+                "[generator] V: chased",
+                "V: loved",
+                "TestSucceed: [Parse [S] \"the cat loved the dog\"]",
+                "[fallible] TestFail: [Parse [S] \"the cat bit the dog\"]");
+            
+            Assert.IsTrue(m.CallPredicate("TestSucceed"));
+            Assert.IsFalse(m.CallPredicate("TestFail"));
+
+
         }
     }
 }
