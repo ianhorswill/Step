@@ -40,6 +40,7 @@ namespace Step.Interpreter
     {
         private static readonly string[] NewLine = { "\n" };
         private static readonly object[] EmptyArray = new object[0];
+        internal static MetaTask WritePrimitive;
 
         /// <summary>
         /// Add the built-in primitives to the global module.
@@ -65,8 +66,8 @@ namespace Step.Interpreter
             g["Break"] = NamePrimitive("Break", (Predicate0) Break);
             g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);
             g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
-            
-            g["Write"] = DeterministicTextMatcher("Write", (o =>
+
+            WritePrimitive = DeterministicTextMatcher("Write", (o =>
             {
                 switch (o)
                 {
@@ -78,6 +79,7 @@ namespace Step.Interpreter
                         return new[] {Writer.TermToString(o)};
                 }
             }));
+            g["Write"] = WritePrimitive;
             
             g["WriteWithoutUnderscores"] = DeterministicTextMatcher("WriteWithoutUnderscores", (o =>
             {

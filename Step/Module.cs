@@ -176,6 +176,10 @@ namespace Step
                         if (hook(v, out var result))
                             return module.dictionary[v] = result;
 
+            if (v.Name == "Mention")
+                // if the user hasn't defined a Mention implementation, just use Write.
+                return Builtins.WritePrimitive;
+            
             // Give up
             if (throwOnFailure)
                 throw new UndefinedVariableException(v);
