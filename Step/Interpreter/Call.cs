@@ -321,6 +321,11 @@ namespace Step.Interpreter
 
             void WriteAtomicTerm(object o)
             {
+                if (o == null)
+                {
+                    b.Append("null");
+                    return;
+                }
                 var a = PrimitiveTask.PrimitiveName(o);
                 if (a == null)
                     b.Append("null");
