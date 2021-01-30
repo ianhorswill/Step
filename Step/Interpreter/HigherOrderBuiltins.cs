@@ -79,12 +79,12 @@ namespace Step.Interpreter
 
         private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            return StepChainFromBody("Begin", args).Try(o, e, k, predecessor);
+            return Step.ChainFromBody("Begin", args).Try(o, e, k, predecessor);
         }
 
         private static bool IgnoreOutput(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
-            return StepChainFromBody("IgnoreOutput", args).Try(
+            return Step.ChainFromBody("IgnoreOutput", args).Try(
                 o, e,
                 (_, u,s, p) => k(o, u, s, p),
                 predecessor);
@@ -96,7 +96,7 @@ namespace Step.Interpreter
             var success = false;
             
             // This always fails, since its continuation fails too
-            StepChainFromBody("Not", args)
+            Step.ChainFromBody("Not", args)
                 .Try(o, e,
                     (newOut, newE, newK, newP) =>
                     {
@@ -119,9 +119,9 @@ namespace Step.Interpreter
                 throw new ArgumentCountException("ForEach", 2, args);
 
             var producer = args[0];
-            var producerChain = StepChainFromBody("ForEach", producer);
+            var producerChain = Step.ChainFromBody("ForEach", producer);
             var consumer = args.Skip(1).ToArray();
-            var consumerChain = StepChainFromBody("ForEach", consumer);
+            var consumerChain = Step.ChainFromBody("ForEach", consumer);
 
             var dynamicState = env.State;
             var resultOutput = output;
@@ -183,7 +183,7 @@ namespace Step.Interpreter
             MethodCallFrame finalFrame = predecessor;
             bool failure = true;
 
-            var chain = StepChainFromBody("ExactlyOnce", args);
+            var chain = Step.ChainFromBody("ExactlyOnce", args);
             chain.Try(output, env,
                 (o, u, d, p) =>
                 {
@@ -415,25 +415,7 @@ namespace Step.Interpreter
             Step.Continuation k,
             MethodCallFrame predecessor)
         {
-            StepChainFromBody(callingTaskName, body).Try(o, e, k, predecessor);
-        }
-
-        internal static Step StepChainFromBody(string callingTaskName, params object[] body)
-        {
-            Step chain = null;
-            for (var i = body.Length - 1; i >= 0; i--)
-            {
-                if (body[i].Equals("\n"))
-                    continue;
-                var invocation = body[i] as object[];
-                if (invocation == null  || invocation.Length == 0)
-                    throw new ArgumentTypeException(callingTaskName, typeof(Call), body[i], body);
-                var arglist = new object[invocation.Length - 1];
-                Array.Copy(invocation, 1, arglist, 0, arglist.Length);
-                chain = new Call(invocation[0], arglist, chain);
-            }
-
-            return chain;
+            Step.ChainFromBody(callingTaskName, body).Try(o, e, k, predecessor);
         }
 
         /// <summary>

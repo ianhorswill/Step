@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,11 @@ namespace Step.Interpreter
     [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
     public class MethodCallFrame
     {
+        /// <summary>
+        /// Maximum number of method calls in a successful execution path.
+        /// </summary>
+        public static int MaxStackDepth = 500;
+        
         /// <summary>
         /// The MethodCallFrame for the most recently called frame
         /// NOT THREAD SAFE
@@ -75,6 +81,11 @@ namespace Step.Interpreter
             }
         }
 
+        /// <summary>
+        /// Number of calls deep this call appears on the stack.
+        /// </summary>
+        public readonly uint StackDepth;
+
         internal MethodCallFrame(Method method, BindingList<LogicVariable> bindings, LogicVariable[] locals, MethodCallFrame caller, MethodCallFrame predecessor)
         {
             Method = method;
@@ -82,6 +93,9 @@ namespace Step.Interpreter
             Locals = locals;
             Caller = caller;
             Predecessor = predecessor;
+            StackDepth = predecessor?.StackDepth + 1 ?? 0;
+            if (StackDepth > MaxStackDepth)
+                throw new StackOverflowException("Maximum interpreter stack depth in Step program");
         }
 
         /// <summary>

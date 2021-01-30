@@ -353,8 +353,7 @@ namespace Step
             if (result is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
                 throw new ArgumentInstantiationException(taskName, env, extendedArgs);
-            else
-                return (T) result;
+            return (T) result;
         }
 
         /// <summary>

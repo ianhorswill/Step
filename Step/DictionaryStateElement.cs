@@ -16,8 +16,15 @@ namespace Step
         /// create a new global state.
         /// </summary>
         /// <param name="name">Name to give to the dictionary</param>
-        public DictionaryStateElement(string name) : base(name, false, null)
-        { }
+        /// <param name="keyComparer">Equality comparer for to use for keys</param>
+        /// <param name="valueComparer">Equality comparer to use for values</param>
+        public DictionaryStateElement(string name, IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
+            : base(name, false, null)
+        {
+            empty = ImmutableDictionary<TKey, TValue>.Empty.WithComparers(keyComparer, valueComparer);
+        }
+
+        private readonly ImmutableDictionary<TKey, TValue> empty;
 
         /// <summary>
         /// The version of the dictionary stored in the specified state
@@ -70,13 +77,13 @@ namespace Step
         /// <returns>New global state</returns>
         public State Add(State oldState, TKey key, TValue value)
         {
-            var dict = Dictionary(oldState) ?? ImmutableDictionary<TKey, TValue>.Empty;
+            var dict = Dictionary(oldState) ?? empty;
             return oldState.Bind(this, dict.Add(key, value));
         }
 
         /// <summary>
         /// Get all the key/value bindings currently in effect for this dictionary in the specified state.
         /// </summary>
-        public IEnumerable<KeyValuePair<TKey, TValue>> Bindings(State s) => Dictionary(s) ?? ImmutableDictionary<TKey, TValue>.Empty;
+        public IEnumerable<KeyValuePair<TKey, TValue>> Bindings(State s) => Dictionary(s) ?? empty;
     }
 }

@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
@@ -129,6 +130,14 @@ namespace Tests
             m.Call("Test");
             Assert.AreEqual("[Foo 2][Method 1][Test]",
                 Module.StackTrace.Replace("\n", "").Replace("\r", ""));
+        }
+
+        [TestMethod, ExpectedException(typeof(StackOverflowException))]
+        public void StackOverflowTest()
+        {
+            var m = Module.FromDefinitions("Test: [Test]");
+            MethodCallFrame.MaxStackDepth = 100;
+            m.Call("Test");
         }
 
         [TestMethod]

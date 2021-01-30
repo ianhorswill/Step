@@ -61,7 +61,8 @@ namespace Step.Interpreter
             {
                 if (_cache != null)
                     return _cache;
-                return _cache = new DictionaryStateElement<IStructuralEquatable, CachedResult>(Name + " cache");
+                return _cache = new DictionaryStateElement<IStructuralEquatable, CachedResult>(Name + " cache", 
+                    Term.Comparer.Default, EqualityComparer<CachedResult>.Default);
             }
         }
 
@@ -71,6 +72,19 @@ namespace Step.Interpreter
                 throw new InvalidOperationException("Attempt to store result to a task without caching enabled.");
          
             return Cache.Add(oldState, arglist, result);
+        }
+
+        private static readonly string[] EmptyText = new string[0];
+        /// <summary>
+        /// Update the value of a fluent
+        /// </summary>
+        /// <param name="oldState">Current global state</param>
+        /// <param name="arglist">Argument values for this fluent to update</param>
+        /// <param name="truth">New truth value for this fluent on these arguments</param>
+        /// <returns>New global state</returns>
+        public State SetFluent(State oldState, object[] arglist, bool truth)
+        {
+            return StoreResult(oldState, arglist, new CachedResult(truth, EmptyText));
         }
 
         internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
@@ -228,7 +242,7 @@ namespace Step.Interpreter
                         // We have a match on a cached fail result, so force a failure, skipping over the methods.
                         goto failed;
                 }
-                else
+                else if (arglist.Any(x => x is LogicVariable))
                     foreach (var pair in Cache.Bindings(env.State))
                     {
                         if (pair.Value.Success

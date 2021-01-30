@@ -44,6 +44,16 @@ namespace Tests
         }
 
         [TestMethod]
+        public void NowTest()
+        {
+            var m = Module.FromDefinitions(
+                "TestF: [F 1] true",
+                "TestF: false",
+                "Test: [TestF] [now [F 0]] [TestF] [now [F 1]] [TestF]");
+            Assert.AreEqual("False false true", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void CaseTest()
         {
             var m = new Module("test");

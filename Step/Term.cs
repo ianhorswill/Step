@@ -1,4 +1,7 @@
-﻿using Step.Interpreter;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Step.Interpreter;
 
 namespace Step
 {
@@ -37,6 +40,47 @@ namespace Step
             if (o is object[] tuple)
                 return IsGround(tuple);
             return !(o is LogicVariable);
+        }
+
+        /// <summary>
+        /// IEqualityComparer for terms in the step language.
+        /// This does recursive comparison and hashing for object[] values, and the default
+        /// comparison and hash implementations for others.
+        /// </summary>
+        public class Comparer : IEqualityComparer<object>
+        {
+            /// <summary>
+            /// Singleton instance of the comparer 
+            /// </summary>
+            public static readonly Comparer Default = new Comparer();
+            
+            bool IEqualityComparer<object>.Equals(object x, object y)
+            {
+                if (x.Equals(y)) return true;
+                if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
+                    return false;
+                for (var i = 0; i < xArray.Length; i++)
+                    if (!Equals(xArray[i], yArray[i]))
+                        return false;
+                return true;
+            }
+
+            int IEqualityComparer<object>.GetHashCode(object obj)
+            {
+                if (obj is object[] tuple)
+                    return TreeHash(tuple);
+                return obj.GetHashCode();
+            }
+
+            static int TreeHash(object[] tuple)
+            {
+                var h = 0;
+                foreach (var e in tuple)
+                    if (e is object[] subTuple)
+                        h ^= TreeHash(subTuple);
+                    else h ^= e.GetHashCode();
+                return h;
+            }
         }
     }
 }

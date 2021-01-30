@@ -237,6 +237,12 @@
 		  <key>name</key>
 		  <string>keyword.control</string>
 		  <key>match</key>
+		  <string>now</string>
+	  </dict>
+	  <dict>
+		  <key>name</key>
+		  <string>keyword.control</string>
+		  <key>match</key>
 		  <string>initially</string>
 	  </dict>
 	  <dict>

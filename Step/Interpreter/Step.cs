@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -113,5 +114,92 @@ namespace Step.Interpreter
         /// All the Calls in this chain
         /// </summary>
         public IEnumerable<Call> CallsOfChain => ChainSteps.SelectMany(s => s.Calls);
+
+        internal class ChainBuilder
+        {
+            public readonly Func<string, LocalVariableName> GetLocal;
+            public readonly Func<object, object> Canonicalize;
+            public readonly Func<object[], object[]> CanonicalizeArglist;
+            
+            public Step FirstStep;
+            private Step previousStep;
+
+            public ChainBuilder(Func<string, LocalVariableName> getLocal, 
+                Func<object, object> canonicalize, 
+                Func<object[], object[]> canonicalizeArglist)
+            {
+                GetLocal = getLocal;
+                CanonicalizeArglist = canonicalizeArglist;
+                Canonicalize = canonicalize;
+            }
+
+            public void AddStep(Step s)
+            {
+                if (FirstStep == null)
+                    FirstStep = previousStep = s;
+                else
+                {
+                    // ReSharper disable once PossibleNullReferenceException
+                    previousStep.Next = s;
+                    previousStep = s;
+                }
+            }
+
+            public void Clear()
+            {
+                FirstStep = previousStep = null;
+            }
+        }
+
+        /// <summary>
+        /// Given an array of tuples representing a Step expressions, make a step chain
+        /// </summary>
+        /// <param name="taskName">Name of the task to which this is an argument (for use in error messages)</param>
+        /// <param name="body"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentTypeException"></exception>
+        public static Step ChainFromBody(string taskName, params object[] body)
+        {
+            var chain = new ChainBuilder(null, x => x, x => x);
+            foreach (var step in body)
+            {
+                switch (step)
+                {
+                    case "\n":
+                        break;
+
+                    case object[] invocation when invocation.Length > 0:
+                        var operation = invocation[0];
+                        switch (operation)
+                        {
+                            case "add":
+                                AddStep.FromExpression(chain, invocation);
+                                break;
+
+                            case "removeNext":
+                                RemoveNextStep.FromExpression(chain, invocation);
+                                break;
+
+                            case "set":
+                                AssignmentStep.FromExpression(chain, invocation);
+                                break;
+
+                            default:
+                                // It's a call
+                                var arglist = new object[invocation.Length - 1];
+                                Array.Copy(invocation, 1, arglist, 0, arglist.Length);
+                                chain.AddStep(new Call(operation, arglist, null));
+                                break;
+                        }
+                        break;
+
+                    default:
+                        throw new ArgumentTypeException(taskName, typeof(Call), step, body);
+                }
+            }
+
+            return chain.FirstStep;
+        }
+
     }
 }
