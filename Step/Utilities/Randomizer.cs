@@ -7,7 +7,10 @@ namespace Step.Utilities
     internal static class Randomizer
     {
         public static readonly Random Random = new Random();
-        
+
+        public static int IntegerInclusive(int low, int high) => Random.Next(low, high + 1);
+        public static int IntegerExclusive(int low, int high) => Random.Next(low, high);
+
         /// <summary>
         /// Make a randomly permuted copy of sequence
         /// </summary>

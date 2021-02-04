@@ -37,20 +37,24 @@ namespace Step
         /// <summary>
         /// Internal token used to signify the start of a new line
         /// </summary>
-        public static string NewLineToken = "--newline--";
+        public static readonly string NewLineToken = "--newline--";
         /// <summary>
         /// Internal token used to signify the start of a new paragraph
         /// </summary>
-        public static string NewParagraphToken = "--paragraph--";
+        public static readonly string NewParagraphToken = "--paragraph--";
         /// <summary>
         /// Internal token used to signify that any future tokens should start on a fresh line.
         /// </summary>
-        public static string FreshLineToken = "--fresh line--";
+        public static readonly string FreshLineToken = "--fresh line--";
+        /// <summary>
+        /// A token that forces a space between two tokens that wouldn't otherwise have have spaces between them.
+        /// </summary>
+        public static readonly string ForceSpaceToken = " ";
 
         private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
 
         private static bool LineChange(string token) => ReferenceEquals(token, NewLineToken) || ReferenceEquals(token, NewParagraphToken);
-        private static bool NoSpaceAfter(string token) => NoSpaceAfterTokens.Contains(token) || LineChange(token);
+        private static bool NoSpaceAfter(string token) => NoSpaceAfterTokens.Contains(token) || LineChange(token) || ReferenceEquals(token, ForceSpaceToken);
         
         private static bool LineEnding(string token) => token == "." || LineChange(token);
 
@@ -72,6 +76,11 @@ namespace Step
             var forceFreshLine = false;
             foreach (var t in tokens)
             {
+                if (firstOne 
+                    && format.SuppressLeadingVerticalSpace 
+                    && (t == NewLineToken || t == FreshLineToken || t == NewParagraphToken))
+                    continue;
+                
                 if (t == null)
                     continue;
 
@@ -95,7 +104,8 @@ namespace Step
                         token = TextUtilities.Capitalize(token);
                     if (firstOne)
                         firstOne = false;
-                    else if (!NoSpaceAfter(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'") && !LineChange(token))
+                    else if (!NoSpaceAfter(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'") && !LineChange(token)
+                                && !ReferenceEquals(token, ForceSpaceToken))
                         b.Append(' ');
                     if (format.FrenchSpacing && lastToken == "."  && !LineChange(lastToken))
                         // Double the space after period.

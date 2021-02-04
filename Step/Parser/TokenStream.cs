@@ -26,6 +26,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Step.Parser
@@ -167,7 +168,9 @@ namespace Step.Parser
         /// Current character is some punctuation symbol other than '?'
         /// '?' is treated specially because it's allowed to start a variable-name token.
         /// </summary>
-        private bool IsPunctuationNotQuestionMarkOrLT => MyIsPunctuation(Peek) && Peek != '?' && Peek != '<';
+        private bool IsPunctuationNotSpecial => MyIsPunctuation(Peek) && !SpecialPunctuation.Contains(Peek);
+
+        private static readonly char[] SpecialPunctuation = new[] {'?', '<', '+', '-'};
 
         private static bool MyIsPunctuation(char c) => c != '_' && (char.IsPunctuation(c) || char.IsSymbol(c));
 
@@ -197,7 +200,7 @@ namespace Step.Parser
                     // Start of token
                     Debug.Assert(token.Length == 0);
                     // Handle any single-character tokens
-                    while (IsPunctuationNotQuestionMarkOrLT || Peek == '\n')
+                    while (IsPunctuationNotSpecial || Peek == '\n')
                         yield return Get().ToString();
                     if (Peek == '<')
                     {

@@ -346,6 +346,48 @@ namespace Step.Interpreter
             return NamePrimitive<NonDeterministicRelation>("name", (args, e) => BinaryPredicateTrampoline(name, inInMode, inOutMode, outInMode, outOutMode, args, e));
         }
 
+        private static readonly BindingList<LogicVariable>[] EmptyBindingListArray = new BindingList<LogicVariable>[0];
+        
+        /// <summary>
+        /// Makes a primitive predicate that implements a non-invertible function
+        /// </summary>
+        /// <param name="name">Predicate name</param>
+        /// <param name="implementation">Lambda to implement the function</param>
+        /// <typeparam name="TIn">Input type</typeparam>
+        /// <typeparam name="TOut">Output type of the function</typeparam>
+        /// <returns></returns>
+        public static NonDeterministicRelation SimpleFunction<TIn, TOut>(string name, Func<TIn, TOut> implementation) =>
+            (args, env) =>
+            {
+                ArgumentCountException.Check(name, 2, args);
+                var input = ArgumentTypeException.Cast<TIn>(name, args[0], args);
+                var result = implementation(input);
+                if (env.Unify(args[1], result, out var bindings))
+                    return new[] {bindings};
+                return EmptyBindingListArray;
+            };
+
+        /// <summary>
+        /// Makes a primitive predicate that implements a non-invertible function
+        /// </summary>
+        /// <param name="name">Predicate name</param>
+        /// <param name="implementation">Lambda to implement the function</param>
+        /// <typeparam name="TIn1">Type of first argument to function</typeparam>
+        /// <typeparam name="TIn2">Type of second argument</typeparam>
+        /// <typeparam name="TOut">Output type of the function</typeparam>
+        /// <returns></returns>
+        public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TOut>(string name, Func<TIn1, TIn2, TOut> implementation) =>
+            (args, env) =>
+            {
+                ArgumentCountException.Check(name, 3, args);
+                var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
+                var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
+                var result = implementation(input1, input2);
+                if (env.Unify(args[2], result, out var bindings))
+                    return new[] { bindings };
+                return EmptyBindingListArray;
+            };
+
         /// <summary>
         /// Make a binary relation from an implementation of a unary function
         /// </summary>

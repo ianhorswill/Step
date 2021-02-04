@@ -25,6 +25,10 @@
         /// Text marking the end of a paragraph
         /// </summary>
         public string ParagraphMarker = "\n\n";
+        /// <summary>
+        /// Ignore paragraph and newline marks at the beginning of the output
+        /// </summary>
+        public bool SuppressLeadingVerticalSpace = true;
 
         /// <summary>
         /// Make a new FormattingOptions object

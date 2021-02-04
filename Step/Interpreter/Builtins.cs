@@ -38,7 +38,6 @@ namespace Step.Interpreter
     /// </summary>
     internal static class Builtins
     {
-        private static readonly string[] NewLine = { "\n" };
         private static readonly object[] EmptyArray = new object[0];
         internal static MetaTask WritePrimitive;
 
@@ -53,19 +52,24 @@ namespace Step.Interpreter
             {
                 ArgumentCountException.Check("=", 2, args);
                 return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
-                           k(o, newBindings, e.State, predecessor);
+                       k(o, newBindings, e.State, predecessor);
             }));
             g[">"] = Predicate<float, float>(">", (a, b) => a > b);
             g["<"] = Predicate<float, float>("<", (a, b) => a < b);
             g[">="] = Predicate<float, float>(">=", (a, b) => a >= b);
             g["<="] = Predicate<float, float>("<=", (a, b) => a <= b);
-            g["Paragraph"] = NamePrimitive("Paragraph",(DeterministicTextGenerator0) (() => new [] { TextUtilities.NewParagraphToken }));
-            g["NewLine"] = NamePrimitive("NewLine", (DeterministicTextGenerator0)(() => new[] { TextUtilities.NewLineToken }));
-            g["FreshLine"] = NamePrimitive("FreshLine", (DeterministicTextGenerator0)(() => new[] { TextUtilities.FreshLineToken }));
-            g["Fail"] = NamePrimitive("Fail", (Predicate0)(() => false));
+            g["Paragraph"] = NamePrimitive("Paragraph",
+                (DeterministicTextGenerator0) (() => new[] {TextUtilities.NewParagraphToken}));
+            g["NewLine"] = NamePrimitive("NewLine",
+                (DeterministicTextGenerator0) (() => new[] {TextUtilities.NewLineToken}));
+            g["FreshLine"] = NamePrimitive("FreshLine",
+                (DeterministicTextGenerator0) (() => new[] {TextUtilities.FreshLineToken}));
+            g["ForceSpace"] = NamePrimitive("ForceSpace",
+                (DeterministicTextGenerator0)(() => new[] { TextUtilities.ForceSpaceToken }));
+            g["Fail"] = NamePrimitive("Fail", (Predicate0) (() => false));
             g["Break"] = NamePrimitive("Break", (Predicate0) Break);
-            g["Throw"] = NamePrimitive("Throw",(PredicateN) Throw);
-            g["StringForm"] = UnaryFunction<object,string>("StringForm", o => o.ToString());
+            g["Throw"] = NamePrimitive("Throw", (PredicateN) Throw);
+            g["StringForm"] = UnaryFunction<object, string>("StringForm", o => o.ToString());
 
             WritePrimitive = DeterministicTextMatcher("Write", (o =>
             {
@@ -80,24 +84,22 @@ namespace Step.Interpreter
                 }
             }));
             g["Write"] = WritePrimitive;
-            
+
             g["WriteWithoutUnderscores"] = DeterministicTextMatcher("WriteWithoutUnderscores", (o =>
             {
                 switch (o)
                 {
                     case null:
-                        return new[] { "null" };
+                        return new[] {"null"};
                     case string[] tokens:
                         return tokens;
                     default:
-                        return new[] { Writer.TermToString(o).Replace('_', ' ') };
+                        return new[] {Writer.TermToString(o).Replace('_', ' ')};
                 }
             }));
-            g["WriteConcatenated"] = NamePrimitive("Write", (DeterministicTextGenerator2)((s1, s2) =>
-            {
-                return new[] { $"{s1}{s2}" };
-            }));
-            
+            g["WriteConcatenated"] = NamePrimitive("Write",
+                (DeterministicTextGenerator2) ((s1, s2) => { return new[] {$"{s1}{s2}"}; }));
+
             g["Member"] = GeneralRelation<object, IEnumerable<object>>(
                 "Member",
                 (member, collection) => collection != null && collection.Contains(member),
@@ -109,7 +111,7 @@ namespace Step.Interpreter
             g["NonVar"] = Predicate<object>("NonVar", o => !(o is LogicVariable));
             g["String"] = Predicate<object>("String", o => o is string);
             g["Tuple"] = Predicate<object>("Tuple", o => o is object[]);
-            g["BinaryTask"] = Predicate<object>("BinaryTask", 
+            g["BinaryTask"] = Predicate<object>("BinaryTask",
                 o =>
                 {
                     o = GetSurrogate(o);
@@ -132,6 +134,12 @@ namespace Step.Interpreter
                         return true;
                 // ReSharper disable once FunctionNeverReturns
             }));
+            
+            g["RandomIntegerInclusive"] = NamePrimitive("RandomIntegerInclusive",
+                SimpleFunction<int, int, int>("RandomIntegerInclusive", Randomizer.IntegerInclusive));
+
+            g["RandomIntegerExclusive"] = NamePrimitive("RandomIntegerExclusive",
+                SimpleFunction<int, int, int>("RandomIntegerExclusive", Randomizer.IntegerExclusive));
 
 
 

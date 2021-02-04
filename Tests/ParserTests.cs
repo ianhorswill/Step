@@ -295,6 +295,21 @@ GenericIncompatibility snoring.");
         }
 
         [TestMethod]
+        public void ParseNumberTest()
+        {
+            var m = Module.FromDefinitions(
+                "PositiveInteger ?x: [= ?x 10]",
+                "NegativeInteger ?x: [= ?x -10]",
+                "PositiveFloat ?x: [= ?x 10.5]",
+                "NegativeFloat ?x: [= ?x -10.5]");
+            
+            Assert.AreEqual(10, m.CallFunction<int>("PositiveInteger"));
+            Assert.AreEqual(-10, m.CallFunction<int>("NegativeInteger"));
+            Assert.AreEqual(10.5, m.CallFunction<float>("PositiveFloat"));
+            Assert.AreEqual(-10.5, m.CallFunction<float>("NegativeFloat"));
+        }
+
+        [TestMethod]
         public void LoadModuleTest()
         {
             var m = Module.FromDefinitions("Test: this is a test");

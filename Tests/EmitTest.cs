@@ -65,5 +65,25 @@ namespace Tests
                 "this is a test. and this is a test.",
                 tokens.Untokenize(new FormattingOptions() { Capitalize = false, FrenchSpacing = false }));
         }
+
+        [TestMethod]
+        public void ForceSpaceTest()
+        {
+            var m = Module.FromDefinitions(
+                "TestNormal: a [ForceSpace] b",
+                "TestNoBreak: :-",
+                "TestBreak: : [ForceSpace] -");
+            
+            Assert.AreEqual("A b", m.Call("TestNormal"));
+            Assert.AreEqual(":-", m.Call("TestNoBreak"));
+            Assert.AreEqual(": -", m.Call("TestBreak"));
+        }
+
+        [TestMethod]
+        public void SuppressVerticalSpaceTest()
+        {
+            var m = Module.FromDefinitions("Test: [Paragraph] [NewLine] A [Paragraph] B.");
+            Assert.AreEqual("A\n\nB.", m.Call("Test"));
+        }
     }
 }
