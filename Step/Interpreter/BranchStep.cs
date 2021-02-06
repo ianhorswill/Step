@@ -23,36 +23,26 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System.Collections.Generic;
-using System.Linq;
 using Step.Utilities;
 
 namespace Step.Interpreter
 {
-    internal class BranchStep : Step
+    internal class BranchStep : BranchingStep
     {
         public readonly string Name;
-        private readonly Step[] branches;
         private readonly bool shuffle;
 
-        public BranchStep(string name, Step[] branches, Step next, bool shuffle) : base(next)
+        public BranchStep(string name, Step[] branches, Step next, bool shuffle) : base(branches, next)
         {
             Name = name;
-            this.branches = branches;
             this.shuffle = shuffle;
         }
 
-        /// <inheritdoc />
-        public override IEnumerable<object> Callees => branches.SelectMany(s => s.CalleesOfChain);
-
-        /// <inheritdoc />
-        internal override IEnumerable<Call> Calls => branches.SelectMany(s => s.CallsOfChain);
-
-        private Step[] Branches => shuffle ? branches.Shuffle() : branches;
+        private Step[] EffectiveBranches => shuffle ? Branches.Shuffle() : Branches;
 
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
-            foreach (var branch in Branches)
+            foreach (var branch in EffectiveBranches)
             {
                 if (branch == null)  // Empty branch, e.g. [case ?x] Something : Something [else] [end]
                 {

@@ -1,29 +1,17 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace Step.Interpreter
+﻿namespace Step.Interpreter
 {
     /// <summary>
     /// Implements a sequence in which each successive call invokes the next branch
     /// </summary>
-    public class SequenceStep : Step
+    internal class SequenceStep : BranchingStep
     {
-        private readonly Step[] branches;
         private readonly StateElement branchNumber = new StateElement("sequencePosition", true, 0);
-
-        /// <inheritdoc />
-        public override IEnumerable<object> Callees => branches.SelectMany(s => s.CalleesOfChain);
-
-        /// <inheritdoc />
-        internal override IEnumerable<Call> Calls => branches.SelectMany(s => s.CallsOfChain);
 
         /// <summary>
         /// Makes a step that first calls the first branch, then on successive calls, invokes successive branches.
         /// </summary>
-        public SequenceStep(Step[] branches, Step next) : base(next)
-        {
-            this.branches = branches;
-        }
+        public SequenceStep(Step[] branches, Step next) : base(branches, next)
+        { }
 
         /// <summary>
         /// Run the next branch, or fail if we've run out of branches
@@ -31,9 +19,9 @@ namespace Step.Interpreter
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
             var position = (int)e.State.Lookup(branchNumber);
-            if (position == branches.Length)
+            if (position == Branches.Length)
                 return false;
-            return branches[position].Try(output,
+            return Branches[position].Try(output,
                 new BindingEnvironment(e, branchNumber, position+1), 
                 (o, u, d, newP) =>
                     Continue(o, new BindingEnvironment(e, u, d), k, newP),

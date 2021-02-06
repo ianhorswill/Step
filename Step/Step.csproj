@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Cons.cs" />
     <Compile Include="FormattingOptions.cs" />
+    <Compile Include="Interpreter\BranchingStep.cs" />
     <Compile Include="Interpreter\FluentUpdateStep.cs" />
     <Compile Include="Interpreter\FunctionalExpression.cs" />
     <Compile Include="Parser\FunctionalExpressionParser.cs" />

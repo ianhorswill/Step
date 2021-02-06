@@ -11,12 +11,22 @@ namespace Step.Interpreter
     internal class CoolStep : Step
     {
         public readonly int Duration;
-        private int fuse;
 
         private CoolStep(int duration, Step next) : base(next)
         {
             Duration = duration;
         }
+
+        /// <summary>
+        /// Dictionary of how many successful or pending calls to this task are on this execution path.
+        /// </summary>
+        private static readonly DictionaryStateElement<CoolStep, int> Fuses =
+            new DictionaryStateElement<CoolStep, int>("Fuses");
+
+        /// <summary>
+        /// Call number (for enclosing task) at which this step will be runnable again
+        /// </summary>
+        public int ReadyTime(State s) => Fuses.GetValueOrDefault(s, this);
 
         internal static void FromOnceExpression(ChainBuilder chain, object[] expression)
         {
@@ -47,20 +57,17 @@ namespace Step.Interpreter
 
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
-            if (fuse == 0)
-            {
-                fuse = Duration;
-                if (Continue(output, e, k, predecessor))
-                    return true;
+            var s = e.State;
+            var callCount = e.Frame.Task.CallCount(s);
+            var readyTime = ReadyTime(s);
 
-                // The continuation failed, so the user never saw its results.
-                // So un-fire the fuse.
-                fuse = 0;
-                return false;
+            if (callCount > readyTime)
+            {
+                var newState = Fuses.SetItem(s, this, Duration == int.MaxValue ? int.MaxValue : (callCount + Duration));
+                if (Continue(output, new BindingEnvironment(e, e.Unifications, newState), k, predecessor))
+                    return true;
             }
 
-            if (fuse != int.MaxValue)
-                fuse--;
             return false;
         }
     }

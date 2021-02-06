@@ -29,6 +29,11 @@ namespace Step.Interpreter
         /// The method being called
         /// </summary>
         public readonly Method Method;
+
+        /// <summary>
+        /// The task being called in this frame.
+        /// </summary>
+        public CompoundTask Task => Method.Task;
         
         /// <summary>
         /// The logic variable binding list at the time of the call

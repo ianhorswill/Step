@@ -52,6 +52,18 @@ namespace Step.Interpreter
         /// </summary>
         public readonly List<Method> Methods = new List<Method>();
 
+        /// <summary>
+        /// Dictionary of how many successful or pending calls to this task are on this execution path.
+        /// </summary>
+        private static readonly DictionaryStateElement<CompoundTask, int> CallCounts =
+            new DictionaryStateElement<CompoundTask, int>("CallCount");
+
+        /// <summary>
+        /// Return the number of successful or pending calls to this task in the specified state.
+        /// </summary>
+        public int CallCount(State s) => CallCounts.GetValueOrDefault(s, this);
+
+        #region Result cache
         // ReSharper disable once InconsistentNaming
         private DictionaryStateElement<IStructuralEquatable, CachedResult> _cache;
 
@@ -71,7 +83,7 @@ namespace Step.Interpreter
             if ((Flags & TaskFlags.ReadCache) == 0)
                 throw new InvalidOperationException("Attempt to store result to a task without caching enabled.");
          
-            return Cache.Add(oldState, arglist, result);
+            return Cache.SetItem(oldState, arglist, result);
         }
 
         private static readonly string[] EmptyText = new string[0];
@@ -86,9 +98,23 @@ namespace Step.Interpreter
         {
             return StoreResult(oldState, arglist, new CachedResult(truth, EmptyText));
         }
+        
+        private readonly struct CachedResult
+        {
+            public readonly bool Success;
+            public readonly string[] Text;
+
+            public CachedResult(bool success, string[] text)
+            {
+                Success = success;
+                Text = text;
+            }
+        }
+        #endregion
 
         internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
 
+        #region Task flags
         /// <summary>
         /// Declared properties of the task
         /// </summary>
@@ -126,19 +152,11 @@ namespace Step.Interpreter
             /// <summary>
             /// This task is a suffix that modifies the last generated token.
             /// </summary>
-            Suffix = 64
-        }
-
-        private readonly struct CachedResult
-        {
-            public readonly bool Success;
-            public readonly string[] Text;
-
-            public CachedResult(bool success, string[] text)
-            {
-                Success = success;
-                Text = text;
-            }
+            Suffix = 64,
+            /// <summary>
+            /// True if some method has a cool step
+            /// </summary>
+            ContainsCoolStep = 128
         }
 
         internal TaskFlags Flags;
@@ -183,6 +201,12 @@ namespace Step.Interpreter
         /// </summary>
         public bool Suffix => (Flags & TaskFlags.Suffix) != 0;
 
+        /// <summary>
+        /// True if some method contains a cool step
+        /// </summary>
+        public bool ContainsCoolStep => (Flags & TaskFlags.ContainsCoolStep) != 0;
+        #endregion
+
         internal CompoundTask(string name, int argCount)
         {
             Name = name;
@@ -203,6 +227,11 @@ namespace Step.Interpreter
             string path, int lineNumber)
         {
             Flags |= newFlags;
+            if (!ContainsCoolStep 
+                && stepChain != null
+                && stepChain.AnyStep(s => s is CoolStep))
+                Flags |= TaskFlags.ContainsCoolStep;
+            
             Methods.Add(new Method(this, weight, argumentPattern, localVariableNames, stepChain, path, lineNumber));
         }
 
@@ -256,6 +285,13 @@ namespace Step.Interpreter
                     }
             }
 
+            if (ContainsCoolStep)
+            {
+                var s = env.State;
+                s = CallCounts.SetItem(s, this, CallCount(s) + 1);
+                env = new BindingEnvironment(env, env.Unifications, s);
+            }
+
             var methods = this.EffectiveMethods;
             for (var index = 0; index < methods.Count && !(this.Deterministic && successCount > 0); index++)
             {
@@ -307,6 +343,7 @@ namespace Step.Interpreter
         public void EraseMethods()
         {
             Methods.Clear();
+            Flags = TaskFlags.None;
         }
 
         /// <summary>

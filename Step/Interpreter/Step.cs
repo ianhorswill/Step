@@ -201,5 +201,9 @@ namespace Step.Interpreter
             return chain.FirstStep;
         }
 
+        /// <summary>
+        /// True if some step in this step chain satisfies the predicate.
+        /// </summary>
+        public virtual bool AnyStep(Predicate<Step> p) => p(this) || Next != null && Next.AnyStep(p);
     }
 }

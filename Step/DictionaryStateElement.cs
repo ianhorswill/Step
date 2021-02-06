@@ -18,9 +18,14 @@ namespace Step
         /// <param name="name">Name to give to the dictionary</param>
         /// <param name="keyComparer">Equality comparer for to use for keys</param>
         /// <param name="valueComparer">Equality comparer to use for values</param>
-        public DictionaryStateElement(string name, IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
+        public DictionaryStateElement(string name, IEqualityComparer<TKey> keyComparer = null, IEqualityComparer<TValue> valueComparer = null)
             : base(name, false, null)
         {
+            if (keyComparer == null)
+                keyComparer = EqualityComparer<TKey>.Default;
+            if (valueComparer == null)
+                valueComparer = EqualityComparer<TValue>.Default;
+            
             empty = ImmutableDictionary<TKey, TValue>.Empty.WithComparers(keyComparer, valueComparer);
         }
 
@@ -75,10 +80,10 @@ namespace Step
         /// <param name="key">Key to add</param>
         /// <param name="value">Value to associate with key</param>
         /// <returns>New global state</returns>
-        public State Add(State oldState, TKey key, TValue value)
+        public State SetItem(State oldState, TKey key, TValue value)
         {
             var dict = Dictionary(oldState) ?? empty;
-            return oldState.Bind(this, dict.Add(key, value));
+            return oldState.Bind(this, dict.SetItem(key, value));
         }
 
         /// <summary>
