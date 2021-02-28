@@ -178,5 +178,22 @@ namespace Tests
             var m = Module.FromDefinitions("Test: [CountAttempts ?a] [Write ?a] [= ?a 10] done");
             Assert.AreEqual("10 done", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void WriteTests()
+        {
+            var m = Module.FromDefinitions("TestWriteString: [Write s]",
+                "TestWriteNumber: [Write 103]",
+                "TestWriteWithoutUnderscoresA: [WriteWithoutUnderscores a]",
+                "TestWriteWithoutUnderscoresB: [WriteWithoutUnderscores a_b]",
+                "TestWriteCapitalizedA: A [WriteCapitalized cat]",
+                "TestWriteCapitalizedB: A [WriteCapitalized tabby_cat]");
+            Assert.AreEqual("S", m.Call("TestWriteString"));
+            Assert.AreEqual("103", m.Call("TestWriteNumber"));
+            Assert.AreEqual("A", m.Call("TestWriteWithoutUnderscoresA"));
+            Assert.AreEqual("A b", m.Call("TestWriteWithoutUnderscoresB"));
+            Assert.AreEqual("A Cat", m.Call("TestWriteCapitalizedA"));
+            Assert.AreEqual("A Tabby cat", m.Call("TestWriteCapitalizedB"));
+        }
     }
 }

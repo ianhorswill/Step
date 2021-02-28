@@ -135,7 +135,7 @@ namespace Step
         /// <summary>
         /// Force first character of token to be capitalized.
         /// </summary>
-        private static string Capitalize(string token)
+        public static string Capitalize(this string token)
         {
             var a = token.ToCharArray();
             a[0] = char.ToUpper(a[0]);

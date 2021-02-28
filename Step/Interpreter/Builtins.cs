@@ -92,11 +92,25 @@ namespace Step.Interpreter
                     case null:
                         return new[] {"null"};
                     case string[] tokens:
-                        return tokens;
+                        return tokens.Length == 0? tokens : tokens.Skip(1).Prepend(tokens[0].Capitalize()).ToArray();
                     default:
-                        return new[] {Writer.TermToString(o).Replace('_', ' ')};
+                        return new[] {Writer.TermToString(o).Replace('_', ' ').Capitalize()};
                 }
             }));
+
+            g["WriteCapitalized"] = DeterministicTextMatcher("WriteCapitalized", (o =>
+            {
+                switch (o)
+                {
+                    case null:
+                        return new[] { "null" };
+                    case string[] tokens:
+                        return tokens;
+                    default:
+                        return new[] { Writer.TermToString(o).Replace('_', ' ').Capitalize() };
+                }
+            }));
+            
             g["WriteConcatenated"] = NamePrimitive("Write",
                 (DeterministicTextGenerator2) ((s1, s2) => { return new[] {$"{s1}{s2}"}; }));
 
