@@ -13,6 +13,14 @@ namespace Step.Interpreter
             this.Branches = branches;
         }
 
+        internal override IEnumerable<Step> SubSteps()
+        {
+            foreach (var chain in Branches)
+            foreach (var step in chain.ChainSteps)
+                yield return step;
+            yield return this;
+        }
+
         /// <inheritdoc />
         public override IEnumerable<object> Callees => Branches.SelectMany(s => s.CalleesOfChain);
 

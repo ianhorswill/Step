@@ -18,15 +18,15 @@ namespace Step.Interpreter
         }
 
         /// <summary>
-        /// Dictionary of how many successful or pending calls to this task are on this execution path.
+        /// Call number for the task of which this is a part at which this step will become runnable again
         /// </summary>
-        private static readonly DictionaryStateElement<CoolStep, int> Fuses =
-            new DictionaryStateElement<CoolStep, int>("Fuses");
+        private static readonly DictionaryStateElement<CoolStep, int> ReadyTimes =
+            new DictionaryStateElement<CoolStep, int>(nameof(ReadyTimes));
 
         /// <summary>
         /// Call number (for enclosing task) at which this step will be runnable again
         /// </summary>
-        public int ReadyTime(State s) => Fuses.GetValueOrDefault(s, this);
+        public int ReadyTime(State s) => ReadyTimes.GetValueOrDefault(s, this);
 
         internal static void FromOnceExpression(ChainBuilder chain, object[] expression)
         {
@@ -63,7 +63,7 @@ namespace Step.Interpreter
 
             if (callCount > readyTime)
             {
-                var newState = Fuses.SetItem(s, this, Duration == int.MaxValue ? int.MaxValue : (callCount + Duration));
+                var newState = ReadyTimes.SetItem(s, this, Duration == int.MaxValue ? int.MaxValue : (callCount + Duration));
                 if (Continue(output, new BindingEnvironment(e, e.Unifications, newState), k, predecessor))
                     return true;
             }

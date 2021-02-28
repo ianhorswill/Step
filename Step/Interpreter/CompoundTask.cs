@@ -56,7 +56,7 @@ namespace Step.Interpreter
         /// Dictionary of how many successful or pending calls to this task are on this execution path.
         /// </summary>
         private static readonly DictionaryStateElement<CompoundTask, int> CallCounts =
-            new DictionaryStateElement<CompoundTask, int>("CallCount");
+            new DictionaryStateElement<CompoundTask, int>(nameof(CallCounts));
 
         /// <summary>
         /// Return the number of successful or pending calls to this task in the specified state.
@@ -355,5 +355,17 @@ namespace Step.Interpreter
         /// All the Call steps of all the methods of this task
         /// </summary>
         public IEnumerable<Call> Calls => Methods.SelectMany(m => m.Calls).Distinct();
+
+        /// <summary>
+        /// All the fluent updates of the methods of this task.
+        /// </summary>
+        public IEnumerable<(CompoundTask task, object[] args, bool polarity)> FluentUpdates()
+        {
+            foreach (var m in Methods)
+                foreach (var s in m.StepChain.ChainSteps)
+                    if (s is FluentUpdateStep u)
+                        foreach (var f in u.Updates)
+                            yield return f;
+        }
     }
 }

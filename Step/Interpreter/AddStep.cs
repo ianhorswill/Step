@@ -29,7 +29,9 @@ namespace Step.Interpreter
 
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
         {
-            var elt = e.Resolve(element);
+            if (!e.TryCopyGround(e.Resolve(element), out var elt))
+                throw new ArgumentInstantiationException("add", e,
+                new[] {"add", collectionVariable, elt});
             var collectionValue = e.Resolve(collectionVariable);
 
             switch (collectionValue)

@@ -101,8 +101,18 @@ namespace Step.Interpreter
             get
             {
                 for (var step = this; step != null; step = step.Next)
-                    yield return step;
+                    foreach (var sub in step.SubSteps())
+                        yield return sub;
             }
+        }
+        
+        /// <summary>
+        /// The step itself plus any steps from this step's branches, if it's a branching step
+        /// </summary>
+        /// <returns></returns>
+        internal virtual IEnumerable<Step> SubSteps()
+        {
+            yield return this;
         }
 
         /// <summary>

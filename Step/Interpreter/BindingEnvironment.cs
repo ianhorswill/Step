@@ -287,5 +287,33 @@ namespace Step.Interpreter
                     return term;
             }
         }
+
+        /// <summary>
+        /// Dereference all variables in term
+        /// If the resulting term has uninstantiated variables, return false.
+        /// </summary>
+        public bool TryCopyGround(object term, out object copied)
+        {
+            switch (term)
+            {
+                case LogicVariable l:
+                    copied = Deref(l);
+                    if (copied is LogicVariable)
+                        return false;
+                    return TryCopyGround(copied, out copied);
+
+                case object[] tuple:
+                    var newTuple = new object[tuple.Length];
+                    copied = newTuple;
+                    for (var i = 0; i < newTuple.Length; i++)
+                        if (!TryCopyGround(tuple[i], out newTuple[i]))
+                            return false;
+                    return true;
+
+                default:
+                    copied = term;
+                    return true;
+            }
+        }
     }
 }
