@@ -94,7 +94,20 @@ namespace Step.Interpreter
                     case string[] tokens:
                         return tokens.Length == 0? tokens : tokens.Skip(1).Prepend(tokens[0].Capitalize()).ToArray();
                     default:
-                        return new[] {Writer.TermToString(o).Replace('_', ' ').Capitalize()};
+                        return new[] {Writer.TermToString(o).Replace('_', ' ')};
+                }
+            }));
+
+            g["WriteWithoutUnderscoresCapitalized"] = DeterministicTextMatcher("WriteWithoutUnderscoresCapitalized", (o =>
+            {
+                switch (o)
+                {
+                    case null:
+                        return new[] { "null" };
+                    case string[] tokens:
+                        return tokens.Length == 0 ? tokens : tokens.Skip(1).Prepend(tokens[0].Capitalize()).ToArray();
+                    default:
+                        return new[] { Writer.TermToString(o).Replace('_', ' ').Capitalize() };
                 }
             }));
 
@@ -155,10 +168,28 @@ namespace Step.Interpreter
             g["RandomIntegerExclusive"] = NamePrimitive("RandomIntegerExclusive",
                 SimpleFunction<int, int, int>("RandomIntegerExclusive", Randomizer.IntegerExclusive));
 
-
+            g["StartsWithVowel"] = NamePrimitive("StartsWithVowel",
+                (Predicate1)(x =>
+                {
+                    switch (x)
+                    {
+                        case string s:
+                            return StartsWithVowel(s);
+                        case string[] tokens:
+                            return tokens.Length > 0 && StartsWithVowel(tokens[0]);
+                        default:
+                            return false;
+                    }
+                }));
 
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
+        }
+
+        private static bool StartsWithVowel(string x)
+        {
+            // ReSharper disable once StringLiteralTypo
+            return x.Length > 0 && "aeiou".Contains(x[0]);
         }
 
         private static bool Break()

@@ -89,6 +89,11 @@ namespace Step
         /// Extension used for source files
         /// </summary>
         public string SourceExtension = ".step";
+
+        /// <summary>
+        /// Extension for CSV files
+        /// </summary>
+        public string CsvExtension = ".csv";
         #endregion
 
         #region Constructors
@@ -372,7 +377,7 @@ namespace Step
         public void LoadDirectory(string path, bool recursive = false)
         {
             foreach (var file in Directory.GetFiles(path))
-                if (Path.GetExtension(file) == SourceExtension)
+                if (Path.GetExtension(file) == SourceExtension || Path.GetExtension(file) == CsvExtension)
                     LoadDefinitions(file);
             if (recursive)
                 foreach (var sub in Directory.GetDirectories(path))
@@ -385,17 +390,17 @@ namespace Step
         /// <param name="path">Path to the file</param>
         public void LoadDefinitions(string path)
         {
-            using (var f = File.OpenText(path))
-                LoadDefinitions(f, path);
+            using (var defs = new DefinitionStream(this, path))
+                LoadDefinitions(defs);
         }
 
         /// <summary>
         /// Load the method definitions from stream into this module
         /// </summary>
-        public void LoadDefinitions(TextReader stream, string filePath)
+        private void LoadDefinitions(DefinitionStream defs)
         {
-            foreach (var (task, weight, pattern, locals, chain, flags, path, line) in new DefinitionStream(stream, this,
-                filePath).Definitions)
+            foreach (var (task, weight, pattern, locals, chain, flags, path, line) 
+                in defs.Definitions)
             {
                 if (task.Name == "initially")
                     RunLoadTimeInitialization(pattern, locals, chain, path, line);
@@ -440,7 +445,7 @@ namespace Step
         public void AddDefinitions(params string[] definitions)
         {
             foreach (var s in definitions)
-                LoadDefinitions(new StringReader(s), null);
+                LoadDefinitions(new DefinitionStream(new StringReader(s), this, null));
         }
 
         /// <summary>
@@ -611,8 +616,9 @@ namespace Step
             get
             {
                 var b = new StringBuilder();
-                foreach (var frame in MethodCallFrame.CurrentFrame.CallerChain)
-                    b.AppendLine(frame.GetCallSourceText(MethodCallFrame.CurrentFrame.BindingsAtCallTime));
+                if (MethodCallFrame.CurrentFrame != null && MethodCallFrame.CurrentFrame.CallerChain != null)
+                    foreach (var frame in MethodCallFrame.CurrentFrame.CallerChain)
+                        b.AppendLine(frame.GetCallSourceText(MethodCallFrame.CurrentFrame.BindingsAtCallTime));
                 return b.ToString();
             }
         }

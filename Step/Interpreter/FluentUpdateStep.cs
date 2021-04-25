@@ -51,7 +51,7 @@ namespace Step.Interpreter
         {
             var state = e.State;
             foreach (var (task, args, polarity) in Updates) 
-                state = task.SetFluent(state, args, polarity);
+                state = task.SetFluent(state, e.ResolveList(args), polarity);
             return Continue(output, new BindingEnvironment(e, e.Unifications, state), k, predecessor);
         }
     }

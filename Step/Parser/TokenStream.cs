@@ -1,255 +1,66 @@
-﻿#region Copyright
-// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="TokenStream.cs" company="Ian Horswill">
-// Copyright (C) 2020 Ian Horswill
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy of
-// this software and associated documentation files (the "Software"), to deal in the
-// Software without restriction, including without limitation the rights to use, copy,
-// modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-// and to permit persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-// PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-#endregion
-
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Step.Parser
 {
-    /// <summary>
-    /// Transforms a stream of characters into a sequence of tokens (strings not containing whitespace)
-    /// </summary>
-    public class TokenStream
+    internal abstract class TokenStream : IDisposable
     {
-        /// <summary>
-        /// The Unicode left double quote
-        /// </summary>
-        public const char LeftDoubleQuote = '\u201C';
-        /// <summary>
-        /// The Unicode right double quote
-        /// </summary>
-        public const char RightDoubleQuote = '\u201D';
-
-        /// <summary>
-        /// Make a new token stream reading from the specified text stream
-        /// </summary>
-        /// <param name="input">Stream to read from</param>
-        /// <param name="filePath">Path of the stream if it comes from a file (for debug messages)</param>
-        public TokenStream(TextReader input, string filePath)
+        public static TokenStream FromFile(string path)
         {
-            this.input = input;
+            var reader = File.OpenText(path);
+            return Path.GetExtension(path) == ".csv"
+                ? (TokenStream) new CsvFileTokenStream(reader, path)
+                : new TextFileTokenStream(reader, path);
+        }
+        
+        protected TokenStream(TextReader file, string filePath)
+        {
             FilePath = filePath;
             LineNumber = 1;
+            input = file;
         }
 
+        protected TextReader input;
+
+        public void Dispose()
+        {
+            input.Dispose();
+        }
+        
         /// <summary>
         /// Path to file being read from, if any
         /// </summary>
         public readonly string FilePath;
 
         /// <summary>
+        /// The Unicode left double quote
+        /// </summary>
+        public const char LeftDoubleQuote = '\u201C';
+
+        /// <summary>
+        /// The Unicode right double quote
+        /// </summary>
+        public const char RightDoubleQuote = '\u201D';
+
+        /// <summary>
         /// Line number of file being read from
         /// </summary>
-        public int LineNumber { get; private set; }
-
-        #region Token buffer managment
-        /// <summary>
-        /// Buffer for accumulating characters into tokens
-        /// </summary>
-        private readonly StringBuilder token = new StringBuilder();
-
-        /// <summary>
-        /// True it token buffer non-empty
-        /// </summary>
-        private bool HaveToken => token.Length > 0;
-
-        /// <summary>
-        /// Add current stream character to token
-        /// </summary>
-        void AddCharToToken() => token.Append(Get());
-
-        /// <summary>
-        /// Return the accumulated characters as a token and clear the token buffer.
-        /// </summary>
-        string ConsumeToken()
-        {
-            var newToken = token.ToString();
-            token.Length = 0;
-            return newToken;
-        }
-        #endregion
-
-        #region Stream interface
-        /// <summary>
-        /// The raw text stream
-        /// </summary>
-        private readonly TextReader input;
-
-        /// <summary>
-        /// True if we're at the end of the stream
-        /// </summary>
-        bool End => input.Peek() < 0;
-        
-        /// <summary>
-        /// Return the current character, without advancing
-        /// </summary>
-        char Peek => (char) (input.Peek());
-
-        /// <summary>
-        /// Return the current character and advance to the next
-        /// </summary>
-        /// <returns></returns>
-        private char Get()
-        {
-            var c = (char) (input.Read());
-            switch (c)
-            {
-                case '\n':
-                    LineNumber++;
-                    break;
-
-                case '#':
-                    int ch;
-                    // Skip the rest of the line
-                    while ((ch = input.Read()) != '\n' && ch >= 0) { }
-                    LineNumber++;
-                    if (ch < 0)
-                        return '\n';
-                    // Return the next thing
-                    return (char)ch;
-
-                case '"':
-                    var nextCode = input.Peek();
-                    var next = (char) nextCode;
-                    if (nextCode < 0 || char.IsWhiteSpace(next) || char.IsPunctuation(next))
-                        return RightDoubleQuote;
-                    else 
-                        return LeftDoubleQuote;
-            }
-            return c;
-        }
-
-        /// <summary>
-        /// Synonym for Get().  Used to indicate the character is being deliberately thrown away.
-        /// </summary>
-        private void Skip() => Get();
-
-        /// <summary>
-        /// Skip over all whitespace chars, except newlines (they're considered tokens)
-        /// </summary>
-        void SkipWhitespace()
-        {
-            while (IsWhiteSpace) Skip();
-        }
-        #endregion
-
-        #region Character classification
-        /// <summary>
-        /// Current character is non-newline whitespace
-        /// </summary>
-        bool IsWhiteSpace => char.IsWhiteSpace(Peek)  && Peek != '\n';
-
-        /// <summary>
-        /// Current character is some punctuation symbol other than '?'
-        /// '?' is treated specially because it's allowed to start a variable-name token.
-        /// </summary>
-        private bool IsPunctuationNotSpecial => MyIsPunctuation(Peek) && !SpecialPunctuation.Contains(Peek);
-
-        private static readonly char[] SpecialPunctuation = new[] {'?', '<', '+', '-'};
-
-        private static bool MyIsPunctuation(char c) => c != '_' && (char.IsPunctuation(c) || char.IsSymbol(c));
-
-        /// <summary>
-        /// True if the current character can't be a continuation of a word token.
-        /// </summary>
-        private bool IsEndOfWord
-        {
-            get        
-            {
-                var c = Peek;
-                return char.IsWhiteSpace(c) || MyIsPunctuation(c);
-            }
-        }
-        #endregion
+        public int LineNumber { get; protected set; }
 
         /// <summary>
         /// The stream of tokens read from the stream.
         /// </summary>
-        public IEnumerable<string> Tokens
-        {
-            get
-            {
-                while (!End)
-                {
-                    SkipWhitespace();
-                    // Start of token
-                    Debug.Assert(token.Length == 0);
-                    // Handle any single-character tokens
-                    while (IsPunctuationNotSpecial || Peek == '\n')
-                        yield return Get().ToString();
-                    if (Peek == '<')
-                    {
-                        AddCharToToken();
-                        if (Peek == '/' || char.IsLetter(Peek))
-                        {
-                            // It's an HTML markup token
-                            while (!End && Peek != '>')
-                                AddCharToToken();
-                            if (Peek == '>')
-                                AddCharToToken();
-                        }
-                    }
-                    else if (char.IsDigit(Peek) || Peek == '+' || Peek == '-')
-                    {
-                        AddCharToToken();
-                        while (char.IsDigit(Peek)) AddCharToToken();
+        public abstract IEnumerable<string> Tokens { get; }
 
-                        if (Peek == '.')
-                        {
-                            Get();
-                            if (char.IsDigit(Peek))
-                            {
-                                token.Append('.');
-                                while (char.IsDigit(Peek)) AddCharToToken();
-                            }
-                            else
-                            {
-                                // This was an integer followed by a period.  "1." and ".1" are not valid
-                                // floats in this language.
-                                yield return ConsumeToken();
-                                yield return ".";
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // Allow ?'s at the start of word tokens
-                        if (Peek == '?')
-                            AddCharToToken();
-                        // Now we should be at something like a word or number
-                        while (!End && !IsEndOfWord)
-                            AddCharToToken();
-                    }
+        /// <summary>
+        /// True if we're at the end of the stream
+        /// </summary>
+        protected bool End => input.Peek() < 0;
 
-                    if (HaveToken)
-                        yield return ConsumeToken();
-                }
-            }
-        }
+        /// <summary>
+        /// Return the current character, without advancing
+        /// </summary>
+        protected char Peek => (char)(input.Peek());
     }
 }

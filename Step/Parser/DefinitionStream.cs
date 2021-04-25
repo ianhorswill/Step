@@ -36,15 +36,23 @@ namespace Step.Parser
     /// <summary>
     /// Reads a stream of method definitions from a TextReader.
     /// </summary>
-    internal class DefinitionStream
+    internal class DefinitionStream : IDisposable
     {
+        public DefinitionStream(Module module, string filePath) : this(new ExpressionStream(filePath), module)
+        { }
+        
         /// <summary>
         /// Reads definitions from the specified stream
         /// </summary>
         public DefinitionStream(TextReader stream, Module module, string filePath)
             : this(new ExpressionStream(stream, filePath), module)
         {
-            chainBuilder = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
+
+        }
+
+        public void Dispose()
+        {
+            expressionStream.Dispose();
         }
 
         ///
@@ -56,6 +64,7 @@ namespace Step.Parser
             expressionStream = expressions;
             this.expressions = expressions.Expressions.GetEnumerator();
             MoveNext();
+            chainBuilder = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
         }
 
         /// <summary>
@@ -493,6 +502,8 @@ namespace Step.Parser
                             ThrowInvalid(optionKeyword);
                         break;
                 }
+
+                SwallowNewlines();
             }
 
             return (flags, weight);

@@ -63,11 +63,13 @@
     <Compile Include="Interpreter\BranchingStep.cs" />
     <Compile Include="Interpreter\FluentUpdateStep.cs" />
     <Compile Include="Interpreter\FunctionalExpression.cs" />
+    <Compile Include="Parser\CSVFileTokenStreamcs.cs" />
     <Compile Include="Parser\FunctionalExpressionParser.cs" />
     <Compile Include="Interpreter\FunctionalOperator.cs" />
     <Compile Include="Interpreter\ReflectionBuiltins.cs" />
     <Compile Include="Interpreter\SequenceStep.cs" />
     <Compile Include="Interpreter\RemoveNextStep.cs" />
+    <Compile Include="Parser\TokenStream.cs" />
     <Compile Include="Parser\TupleExpression.cs" />
     <Compile Include="State.cs" />
     <Compile Include="Interpreter\StateElement.cs" />
@@ -104,7 +106,7 @@
     <Compile Include="Parser\DefinitionStream.cs" />
     <Compile Include="Parser\ExpressionStream.cs" />
     <Compile Include="Parser\SyntaxError.cs" />
-    <Compile Include="Parser\TokenStream.cs" />
+    <Compile Include="Parser\TextFileTokenStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\TextUtilities.cs" />
     <Compile Include="Utilities\Writer.cs" />

@@ -36,6 +36,22 @@ namespace Tests
     public class ParserTests
     {
         [TestMethod]
+        public void LoadStepFileTest()
+        {
+            var m = new Module(nameof(LoadStepFileTest));
+            m.LoadDefinitions("../../Test.step");
+            Assert.AreEqual("Test", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void LoadCsvFileTest()
+        {
+            var m = new Module(nameof(LoadCsvFileTest));
+            m.LoadDefinitions("../../Test.csv");
+            Assert.IsTrue(m.CallPredicate("Test", "a", "b"));
+        }
+
+        [TestMethod]
         public void LocalsInTuplesTest()
         {
             // ReSharper disable StringLiteralTypo
@@ -67,7 +83,7 @@ namespace Tests
         [TestMethod]
         public void ParseWeightTest()
         {
-            var m = Module.FromDefinitions("[10.5] Test ?x.", "[2] Test a.", "Test ?: foo");
+            var m = Module.FromDefinitions("[10.5] Test ?x.", "[2] Test a.", "Test ?: foo", "[randomly] [1] Foo.", "[randomly]\n[1]\nFoo.");
             var test = (CompoundTask) m["Test"];
             Assert.AreEqual(10.5f, test.Methods[0].Weight);
             Assert.AreEqual(2, test.Methods[1].Weight);
@@ -81,7 +97,7 @@ namespace Tests
             {
                 if (output == null)
                     output = input;
-                var tokens = new TokenStream(new StringReader(input), null).Tokens.ToArray();
+                var tokens = new TextFileTokenStream(new StringReader(input), null).Tokens.ToArray();
                 Assert.AreEqual(expectedLength, tokens.Length);
                 Assert.AreEqual(output, tokens.Untokenize(new FormattingOptions() { Capitalize = false }));
             }

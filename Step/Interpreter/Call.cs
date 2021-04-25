@@ -288,6 +288,11 @@ namespace Step.Interpreter
                 case null:
                     throw new ArgumentException($"Null is not a valid task in call {CallSourceText(originalTarget, arglist)}");
 
+                case bool b:
+                    if (arglist.Length != 0)
+                        throw new ArgumentCountException(b, 0, arglist);
+                    return b && Continue(output, env, k, predecessor);
+
                 default:
                     if (arglist.Length == 0)
                     {

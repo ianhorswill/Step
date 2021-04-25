@@ -124,6 +124,21 @@ namespace Step.Interpreter
         /// <summary>
         /// Wraps a C# predicate in type checking code.
         /// </summary>
+        /// <param name="name">Task name to give to the predicate</param>
+        /// <param name="realFunction">Implementation as a C# delegate</param>
+        /// <returns></returns>
+        public static Predicate0 Predicate(string name, Func<bool> realFunction)
+        {
+            return NamePrimitive<Predicate0>(name, () =>
+            {
+                ArgumentCountException.Check(name, 0, new Object [0]);
+                return realFunction();
+            });
+        }
+        
+        /// <summary>
+        /// Wraps a C# predicate in type checking code.
+        /// </summary>
         /// <typeparam name="T">Expected type of the predicate's argument</typeparam>
         /// <param name="name">Task name to give to the predicate</param>
         /// <param name="realFunction">Implementation as a C# delegate</param>
@@ -136,6 +151,7 @@ namespace Step.Interpreter
                 return realFunction((T) o);
             });
         }
+        
         /// <summary>
         /// Wraps a C# predicate in type checking code.
         /// </summary>
