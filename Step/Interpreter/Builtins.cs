@@ -182,6 +182,13 @@ namespace Step.Interpreter
                     }
                 }));
 
+            g["NounSingularPlural"] = NamePrimitive("NounSingularPlural",
+                GeneralRelation<string, string>("NounSingularPlural",
+                    (s, p) => Inflection.PluralOfNoun(s) == p,
+                    s => new[] {Inflection.PluralOfNoun(s)},
+                    p => new[] {Inflection.SingularOfNoun(p)},
+                    null));
+
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
         }

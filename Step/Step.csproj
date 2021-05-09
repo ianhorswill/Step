@@ -75,6 +75,7 @@
     <Compile Include="Interpreter\StateElement.cs" />
     <Compile Include="DictionaryStateElement.cs" />
     <Compile Include="Term.cs" />
+    <Compile Include="Utilities\Inflection.cs" />
     <Compile Include="Utilities\Randomizer.cs" />
     <Compile Include="Interpreter\AddStep.cs" />
     <Compile Include="Interpreter\ArgumentCountException.cs" />
