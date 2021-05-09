@@ -842,7 +842,7 @@ namespace Step.Parser
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]))
                     Module.AddWarning(
-                        $"{SourceFile}:{lineNumber} Singleton variable {locals[i].Name}");
+                        $"{SourceFile}:{lineNumber} Variable {locals[i].Name} used only once: is it a type-o?");
         }
     }
 }
