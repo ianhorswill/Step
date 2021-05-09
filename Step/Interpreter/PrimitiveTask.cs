@@ -405,6 +405,110 @@ namespace Step.Interpreter
             };
 
         /// <summary>
+        /// Makes a primitive predicate that implements a non-invertible function
+        /// </summary>
+        /// <param name="name">Predicate name</param>
+        /// <param name="implementation">Lambda to implement the function</param>
+        /// <typeparam name="TIn1">Type of first argument to function</typeparam>
+        /// <typeparam name="TIn2">Type of second argument</typeparam>
+        /// <typeparam name="TOut">Output type of the function</typeparam>
+        /// <typeparam name="TIn3">Type of the third argument to the function</typeparam>
+        /// <returns></returns>
+        public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TOut>(string name, Func<TIn1, TIn2, TIn3, TOut> implementation) =>
+            (args, env) =>
+            {
+                ArgumentCountException.Check(name, 3, args);
+                var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
+                var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
+                var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
+                var result = implementation(input1, input2, input3);
+                if (env.Unify(args[3], result, out var bindings))
+                    return new[] { bindings };
+                return EmptyBindingListArray;
+            };
+
+        /// <summary>
+        /// Makes a primitive predicate that implements a non-invertible function
+        /// </summary>
+        /// <param name="name">Predicate name</param>
+        /// <param name="implementation">Lambda to implement the function</param>
+        /// <typeparam name="TIn1">Type of first argument to function</typeparam>
+        /// <typeparam name="TIn2">Type of second argument</typeparam>
+        /// <typeparam name="TOut">Output type of the function</typeparam>
+        /// <typeparam name="TIn3">Type of the third argument to the function</typeparam>
+        /// <typeparam name="TIn4">Type of the fourth argument to the function</typeparam>
+        /// <returns></returns>
+        public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TIn4, TOut>(string name, Func<TIn1, TIn2, TIn3, TIn4, TOut> implementation) =>
+            (args, env) =>
+            {
+                ArgumentCountException.Check(name, 3, args);
+                var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
+                var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
+                var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
+                var input4 = ArgumentTypeException.Cast<TIn4>(name, args[3], args);
+                var result = implementation(input1, input2, input3, input4);
+                if (env.Unify(args[4], result, out var bindings))
+                    return new[] { bindings };
+                return EmptyBindingListArray;
+            };
+        
+        /// <summary>
+        /// Makes a primitive predicate that implements a non-invertible function
+        /// </summary>
+        /// <param name="name">Predicate name</param>
+        /// <param name="implementation">Lambda to implement the function</param>
+        /// <typeparam name="TIn1">Type of first argument to function</typeparam>
+        /// <typeparam name="TIn2">Type of second argument</typeparam>
+        /// <typeparam name="TOut">Output type of the function</typeparam>
+        /// <typeparam name="TIn3">Type of the third argument to the function</typeparam>
+        /// <typeparam name="TIn4">Type of the fourth argument to the function</typeparam>
+        /// <typeparam name="TIn5">Type of the fifth argument to the function</typeparam>
+        /// <returns></returns>
+        public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TIn4, TIn5, TOut>(string name, Func<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> implementation) =>
+            (args, env) =>
+            {
+                ArgumentCountException.Check(name, 3, args);
+                var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
+                var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
+                var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
+                var input4 = ArgumentTypeException.Cast<TIn4>(name, args[3], args);
+                var input5 = ArgumentTypeException.Cast<TIn5>(name, args[4], args);
+                var result = implementation(input1, input2, input3, input4, input5);
+                if (env.Unify(args[5], result, out var bindings))
+                    return new[] { bindings };
+                return EmptyBindingListArray;
+            };
+        
+        /// <summary>
+              /// Makes a primitive predicate that implements a non-invertible function
+              /// </summary>
+              /// <param name="name">Predicate name</param>
+              /// <param name="implementation">Lambda to implement the function</param>
+              /// <typeparam name="TIn1">Type of first argument to function</typeparam>
+              /// <typeparam name="TIn2">Type of second argument</typeparam>
+              /// <typeparam name="TOut">Output type of the function</typeparam>
+              /// <typeparam name="TIn3">Type of the third argument to the function</typeparam>
+              /// <typeparam name="TIn4">Type of the fourth argument to the function</typeparam>
+              /// <typeparam name="TIn5">Type of the fifth argument to the function</typeparam>
+              /// <typeparam name="TIn6">Type of the sixth argument to the function</typeparam>
+              /// <returns></returns>
+        public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut>(string name, Func<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut> implementation) =>
+            (args, env) =>
+            {
+                ArgumentCountException.Check(name, 3, args);
+                var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
+                var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
+                var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
+                var input4 = ArgumentTypeException.Cast<TIn4>(name, args[3], args);
+                var input5 = ArgumentTypeException.Cast<TIn5>(name, args[4], args);
+                var input6 = ArgumentTypeException.Cast<TIn6>(name, args[5], args);
+                var result = implementation(input1, input2, input3, input4, input5, input6);
+                if (env.Unify(args[6], result, out var bindings))
+                    return new[] { bindings };
+                return EmptyBindingListArray;
+            };
+
+        /// <summary>
         /// Make a binary relation from an implementation of a unary function
         /// </summary>
         /// <param name="name">Name of the function (for error messages</param>
