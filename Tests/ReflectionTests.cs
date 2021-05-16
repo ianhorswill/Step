@@ -64,7 +64,7 @@ namespace Tests
                 "B: [C]",
                 "C.",
                 "D.");
-            Assert.AreEqual("Unused is defined but never called.",
+            Assert.AreEqual("Unused is defined but never called.    If this is deliberate, you can add the annotation [main] to Unused to suppress this message.",
                 string.Join("\n", m.Warnings()));
         }
 

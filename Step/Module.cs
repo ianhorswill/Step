@@ -525,7 +525,7 @@ namespace Step
                         }
 
                     if (!called)
-                        yield return RichTextStackTraces?$"<b>{t}</b> is defined but never called." : $"{t} is defined but never called.";
+                        yield return RichTextStackTraces?$"<b>{t}</b> is defined but never called.  If this is deliberate, you can add the annotation [main] to {t} to suppress this message.\n" : $"{t} is defined but never called.    If this is deliberate, you can add the annotation [main] to {t} to suppress this message.";
                 }
         }
 

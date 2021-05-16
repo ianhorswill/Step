@@ -842,7 +842,7 @@ namespace Step.Parser
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]))
                     Module.AddWarning(
-                        $"{SourceFile}:{lineNumber} Variable {locals[i].Name} used only once: is it a type-o?");
+                        $"{SourceFile}:{lineNumber} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.\n");
         }
     }
 }
