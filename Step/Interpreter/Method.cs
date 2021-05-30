@@ -100,7 +100,7 @@ namespace Step.Interpreter
             var newEnv = new BindingEnvironment(env, newFrame);
             if (newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv))
             {
-                env.Module.TraceMethod(Module.MethodTraceEvent.Enter, this, args, output, env);
+                env.Module.TraceMethod(Module.MethodTraceEvent.Enter, this, args, output, finalEnv);
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
                 var traceK = env.Module.Trace == null
                     ? k
@@ -108,7 +108,7 @@ namespace Step.Interpreter
                     {
                         MethodCallFrame.CurrentFrame = newFrame;
                         env.Module.TraceMethod(Module.MethodTraceEvent.Succeed, this, args, newO,
-                            new BindingEnvironment(env, newU, newState));
+                            new BindingEnvironment(finalEnv, newU, newState));
                         MethodCallFrame.CurrentFrame = newFrame.Caller;
                         return k(newO, newU, newState, predecessor);
                     };
@@ -117,7 +117,7 @@ namespace Step.Interpreter
             }
 
             MethodCallFrame.CurrentFrame = newFrame;
-            env.Module.TraceMethod(Module.MethodTraceEvent.MethodFail, this, args, output, env);
+            env.Module.TraceMethod(Module.MethodTraceEvent.MethodFail, this, args, output, finalEnv);
             return false;
         }
 
@@ -128,6 +128,13 @@ namespace Step.Interpreter
         /// The argument pattern for this method expressed as the course code for a call
         /// </summary>
         public string HeadString => Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
+
+        /// <summary>
+        /// Generate the head string, but substitute in the values of any variables
+        /// </summary>
+        /// <param name="env">Binding environment with values of variables</param>
+        public string HeadStringWithBindings(BindingEnvironment env) =>
+            Writer.TermToString(ArgumentPattern.Select(env.Resolve).Prepend(Task.Name).ToArray());
 
         /// <summary>
         /// All the tasks called by this method

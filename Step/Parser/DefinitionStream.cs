@@ -438,6 +438,8 @@ namespace Step.Parser
                     $"{declType} declarations must end with a period after the name of this task, but this declaration ends with a colon.",
                     SourceFile, lineNumber);
             
+            SwallowNewlines();
+            
             return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, SourceFile, lineNumber);
         }
 

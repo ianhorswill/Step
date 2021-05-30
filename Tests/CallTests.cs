@@ -129,7 +129,7 @@ namespace Tests
                 "Test: [Method 1]");
             m.Call("Test");
             Assert.AreEqual("[Foo 2][Method 1][Test]",
-                Module.StackTrace.Replace("\n", "").Replace("\r", ""));
+                Module.StackTrace().Replace("\n", "").Replace("\r", ""));
         }
 
         [TestMethod, ExpectedException(typeof(StackOverflowException))]
@@ -206,7 +206,7 @@ namespace Tests
             var m = Module.FromDefinitions("Test ?x {foo ?x}.",
                 "[fallible] TestB: [Test 1 ?x] [Test 2 ?y] [= ?x ?y]");
             var result1 = m.CallFunction<object[]>(State.Empty, "Test", 1);
-            Assert.AreEqual("[Test 1 [foo 1]]", Module.StackTrace.Trim());
+            Assert.AreEqual("[Test 1 [foo 1]]", Module.StackTrace().Trim());
         }
 
         [TestMethod]

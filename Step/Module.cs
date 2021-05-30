@@ -612,16 +612,17 @@ namespace Step
         /// <summary>
         /// Return a trace of the method calls from the current frame.
         /// </summary>
-        public static string StackTrace
+        public static string StackTrace(BindingList<LogicVariable> currentBindings = null)
         {
-            get
-            {
                 var b = new StringBuilder();
                 if (MethodCallFrame.CurrentFrame != null && MethodCallFrame.CurrentFrame.CallerChain != null)
+                {
+                    if (currentBindings == null)
+                        currentBindings = MethodCallFrame.CurrentFrame.BindingsAtCallTime;
                     foreach (var frame in MethodCallFrame.CurrentFrame.CallerChain)
-                        b.AppendLine(frame.GetCallSourceText(MethodCallFrame.CurrentFrame.BindingsAtCallTime));
+                        b.AppendLine(frame.GetCallSourceText(currentBindings));
+                }
                 return b.ToString();
-            }
         }
         #endregion
 
@@ -642,6 +643,10 @@ namespace Step
         /// </summary>
         public enum MethodTraceEvent
         {
+            /// <summary>
+            /// No recent trace event.
+            /// </summary>
+            None,
             /// <summary>
             /// The arguments have been matched to the head of this method and we will now try running its body
             /// </summary>

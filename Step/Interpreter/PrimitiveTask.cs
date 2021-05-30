@@ -417,7 +417,7 @@ namespace Step.Interpreter
         public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TOut>(string name, Func<TIn1, TIn2, TIn3, TOut> implementation) =>
             (args, env) =>
             {
-                ArgumentCountException.Check(name, 3, args);
+                ArgumentCountException.Check(name, 4, args);
                 var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
                 var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
                 var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
@@ -441,7 +441,7 @@ namespace Step.Interpreter
         public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TIn4, TOut>(string name, Func<TIn1, TIn2, TIn3, TIn4, TOut> implementation) =>
             (args, env) =>
             {
-                ArgumentCountException.Check(name, 3, args);
+                ArgumentCountException.Check(name, 5, args);
                 var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
                 var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
                 var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
@@ -467,7 +467,7 @@ namespace Step.Interpreter
         public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TIn4, TIn5, TOut>(string name, Func<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> implementation) =>
             (args, env) =>
             {
-                ArgumentCountException.Check(name, 3, args);
+                ArgumentCountException.Check(name, 6, args);
                 var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
                 var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
                 var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
@@ -495,7 +495,7 @@ namespace Step.Interpreter
         public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut>(string name, Func<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut> implementation) =>
             (args, env) =>
             {
-                ArgumentCountException.Check(name, 3, args);
+                ArgumentCountException.Check(name, 7, args);
                 var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
                 var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
                 var input3 = ArgumentTypeException.Cast<TIn3>(name, args[2], args);
