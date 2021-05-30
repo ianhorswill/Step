@@ -32,7 +32,7 @@ namespace Step.Interpreter
                 if (fluentExp[0].Equals("Not"))
                 {
                     polarity = false;
-                    if (fluentExp.Length != 1) ThrowInvalidFluentSyntax();
+                    if (fluentExp.Length != 2) ThrowInvalidFluentSyntax();
                     fluentExp = fluentExp[1] as object[];
                     if (fluentExp == null) ThrowInvalidFluentSyntax();
                 }
