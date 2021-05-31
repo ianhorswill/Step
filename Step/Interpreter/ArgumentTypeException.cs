@@ -34,8 +34,10 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentTypeException(object task, Type expected, object actual, object[] arglist) 
-            : base(task, arglist, $"Wrong argument type in call to {task}, expected {expected.Name}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
+            : base(task, arglist, $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
         { }
+
+        private static string TypeName(Type t) => t == typeof(object[]) ? "tuple" : t.Name;
 
         /// <summary>
         /// Check the specified argument value is of the right type.  If not, throw exception
