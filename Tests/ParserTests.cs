@@ -399,7 +399,10 @@ Test: [Multi]
    # An indented comment
    Test: foo bar [Baz] # a comment at end of line
 Baz: baz
-# Comment ends with eof");
+# Comment ends with eof",
+                @"task Foo ?x.
+#comment at end
+");
             Assert.AreEqual("Foo bar baz", m.Call("Test"));
         }
     }
