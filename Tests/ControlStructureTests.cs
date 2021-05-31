@@ -49,7 +49,7 @@ namespace Tests
             var m = Module.FromDefinitions(
                 "TestF: [F 1] true",
                 "TestF: false",
-                "Test: [TestF] [now [F 0]] [TestF] [now [Not [F 0]]] [now [F 1]] [TestF]",
+                "Test: [TestF] [now [F 0]] [TestF] [now [Not [F 0]] [F 1]] [TestF]",
                 "Mention ?x: [now [Mentioned ?x]]",
                 "MentionTest: [Mention x] [Mentioned x]");
             Assert.AreEqual("False false true", m.Call("Test"));

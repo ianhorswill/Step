@@ -54,15 +54,20 @@ namespace Step
             /// </summary>
             public static readonly Comparer Default = new Comparer();
             
-            bool IEqualityComparer<object>.Equals(object x, object y)
+            bool IEqualityComparer<object>.Equals(object a, object b)
             {
-                if (x.Equals(y)) return true;
-                if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
-                    return false;
-                for (var i = 0; i < xArray.Length; i++)
-                    if (!Equals(xArray[i], yArray[i]))
+                bool Recur(object y, object x)
+                {
+                    if (x.Equals(y)) return true;
+                    if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
                         return false;
-                return true;
+                    for (var i = 0; i < xArray.Length; i++)
+                        if (!Recur(xArray[i], yArray[i]))
+                            return false;
+                    return true;
+                }
+
+                return Recur(a, b);
             }
 
             int IEqualityComparer<object>.GetHashCode(object obj)
