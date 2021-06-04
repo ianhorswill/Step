@@ -377,7 +377,8 @@ namespace Step
         public void LoadDirectory(string path, bool recursive = false)
         {
             foreach (var file in Directory.GetFiles(path))
-                if (Path.GetExtension(file) == SourceExtension || Path.GetExtension(file) == CsvExtension)
+                // Load file if the filename ends with .step or .csv and doesn't start with .
+                if (!Path.GetFileName(file).StartsWith(".") && (Path.GetExtension(file) == SourceExtension || Path.GetExtension(file) == CsvExtension))
                     LoadDefinitions(file);
             if (recursive)
                 foreach (var sub in Directory.GetDirectories(path))

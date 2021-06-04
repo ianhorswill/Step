@@ -86,7 +86,10 @@ namespace Step.Interpreter
             : this(e.Module, e.Frame, e.Unifications, e.State.Bind(v, newValue))
         { }
 
-        internal BindingEnvironment(Module module, MethodCallFrame frame,
+        /// <summary>
+        /// Make a new binding environment with the specified components
+        /// </summary>
+        public BindingEnvironment(Module module, MethodCallFrame frame,
             BindingList<LogicVariable> unifications, State state)
         {
             Module = module;
