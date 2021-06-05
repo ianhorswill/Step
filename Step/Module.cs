@@ -419,10 +419,12 @@ namespace Step
             if (pattern.Length != 0)
                 throw new SyntaxError("Initially command cannot take arguments", path, line);
             State bindings = State.Empty;
+            var fakeInitiallyMethod = new Method(new CompoundTask("initially", 0), 1, new object[0],
+                new LocalVariableName[0], null, path, line);
             if (!chain.Try(new TextBuffer(0),
                 new BindingEnvironment(this,
-                    new MethodCallFrame(null, null, locals.Select(name => new LogicVariable(name)).ToArray(), 
-                        null, null)),
+                    new MethodCallFrame(fakeInitiallyMethod, null, locals.Select(name => new LogicVariable(name)).ToArray(), 
+                        MethodCallFrame.CurrentFrame, MethodCallFrame.CurrentFrame)),
                 (o, u, d, p ) =>
                 {
                     bindings = d;
