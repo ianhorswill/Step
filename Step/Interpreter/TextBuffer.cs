@@ -62,7 +62,7 @@ namespace Step.Interpreter
             WriteMode = writeMode;
         }
 
-        private const int DefaultCapacity = 500;
+        private const int DefaultCapacity = 5000;
 
         private static readonly string[] EmptyStringBuffer = new string[0];
 
