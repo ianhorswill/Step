@@ -395,7 +395,7 @@ namespace Step.Interpreter
         public static NonDeterministicRelation SimpleFunction<TIn1, TIn2, TOut>(string name, Func<TIn1, TIn2, TOut> implementation) =>
             (args, env) =>
             {
-                ArgumentCountException.Check(name, 2, args);
+                ArgumentCountException.Check(name, 3, args);
                 var input1 = ArgumentTypeException.Cast<TIn1>(name, args[0], args);
                 var input2 = ArgumentTypeException.Cast<TIn2>(name, args[1], args);
                 var result = implementation(input1, input2);
