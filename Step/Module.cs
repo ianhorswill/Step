@@ -672,5 +672,8 @@ namespace Step
         {
             Trace?.Invoke(e, method, args, output, env);
         }
+
+        /// <inheritdoc />
+        public override string ToString() => $"<Module {Name}>";
     }
 }

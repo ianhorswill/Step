@@ -77,7 +77,7 @@ namespace Step.Parser
         /// <returns></returns>
         private char Get()
         {
-            var c = (char) (input.Read());
+            var c = (char) input.Read();
             switch (c)
             {
                 case '\n':
@@ -132,7 +132,7 @@ namespace Step.Parser
 
         private static readonly char[] SpecialPunctuation = new[] {'?', '<', '+', '-'};
 
-        private static bool MyIsPunctuation(char c) => c != '_' && (char.IsPunctuation(c) || char.IsSymbol(c));
+        private static bool MyIsPunctuation(char c) => c != '_' && c != '\\' && (char.IsPunctuation(c) || char.IsSymbol(c));
 
         /// <summary>
         /// True if the current character can't be a continuation of a word token.
@@ -159,9 +159,11 @@ namespace Step.Parser
                     SkipWhitespace();
                     // Start of token
                     Debug.Assert(token.Length == 0);
-                    // Handle any single-character tokens
+
+                    // SINGLE CHARACTER TOKENS
                     while (IsPunctuationNotSpecial || Peek == '\n')
                         yield return Get().ToString();
+                    // HTML TAGS
                     if (Peek == '<')
                     {
                         AddCharToToken();
@@ -174,6 +176,7 @@ namespace Step.Parser
                                 AddCharToToken();
                         }
                     }
+                    // NUMBERS
                     else if (char.IsDigit(Peek) || Peek == '+' || Peek == '-')
                     {
                         AddCharToToken();
@@ -196,6 +199,7 @@ namespace Step.Parser
                             }
                         }
                     }
+                    // NORMAL TOKENS (word-like tokens and variables
                     else
                     {
                         // Allow ?'s at the start of word tokens
@@ -203,9 +207,18 @@ namespace Step.Parser
                             AddCharToToken();
                         // Now we should be at something like a word or number
                         while (!End && !IsEndOfWord)
+                        {
+                            if (Peek == '\\')
+                            {
+                                Get();
+                                if (End)
+                                    throw new SyntaxError("File ends with backslash escape", FilePath, LineNumber);
+                            }
                             AddCharToToken();
+                        }
                     }
 
+                    // Yield the token
                     if (HaveToken)
                         yield return ConsumeToken();
                 }

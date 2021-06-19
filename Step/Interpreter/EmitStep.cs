@@ -51,5 +51,7 @@ namespace Step.Interpreter
         /// <returns></returns>
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor) => 
             output.Unify(Text, out var result) && Continue(result, e, k, predecessor);
+
+        public override string Source => string.Join(" ", Text);
     }
 }

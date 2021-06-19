@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Step.Parser
+﻿namespace Step.Parser
 {
     class TupleExpression
     {
         public readonly object[] Elements;
+        public string BracketStyle;
 
-        public TupleExpression(object[] elements)
+        public TupleExpression(string bracketStyle, object[] elements)
         {
+            BracketStyle = bracketStyle;
             Elements = elements;
         }
     }

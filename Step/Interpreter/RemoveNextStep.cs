@@ -73,5 +73,7 @@ namespace Step.Interpreter
                         new[] { "removeNext", collectionValue });
             }
         }
+
+        public override string Source => "[removeNext ...]";
     }
 }

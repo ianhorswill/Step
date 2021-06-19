@@ -38,5 +38,7 @@ namespace Step.Interpreter
             output.Buffer[lastIndex] = lastWord;
             return false;
         }
+
+        public override string Source => "[s]";
     }
 }

@@ -166,7 +166,7 @@ namespace Tests
         [TestMethod]
         public void CallPredicateTest()
         {
-            var m = Module.FromDefinitions("[fallible] Test [Number ?x]:");
+            var m = Module.FromDefinitions("[fallible] Test (Number ?x):");
             Assert.IsTrue(m.CallPredicate(State.Empty, "Test", 1));
             Assert.IsFalse(m.CallPredicate(State.Empty, "Test", "test"));
         }

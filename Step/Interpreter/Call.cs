@@ -382,5 +382,8 @@ namespace Step.Interpreter
 
             return b.ToString();
         }
+
+        /// <inheritdoc />
+        public override string Source => SourceText;
     }
 }

@@ -69,5 +69,7 @@ namespace Step.Interpreter
                         new[] { "add", elt, collectionValue });
             }
         }
+
+        public override string Source => "[add ...]";
     }
 }

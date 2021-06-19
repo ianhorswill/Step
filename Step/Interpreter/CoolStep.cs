@@ -70,5 +70,7 @@ namespace Step.Interpreter
 
             return false;
         }
+
+        public override string Source => "[cool]";
     }
 }

@@ -215,5 +215,10 @@ namespace Step.Interpreter
         /// True if some step in this step chain satisfies the predicate.
         /// </summary>
         public virtual bool AnyStep(Predicate<Step> p) => p(this) || Next != null && Next.AnyStep(p);
+
+        /// <summary>
+        /// Make an approximation to the source code for this step;
+        /// </summary>
+        public abstract string Source { get; }
     }
 }

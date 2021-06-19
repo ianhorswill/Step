@@ -27,5 +27,7 @@
                     Continue(o, new BindingEnvironment(e, u, d), k, newP),
                 predecessor);
         }
+
+        public override string Source => "[sequence ...]";
     }
 }

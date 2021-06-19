@@ -81,5 +81,7 @@ namespace Step.Interpreter
                     $"A set command can only update a variable; it can't update {expression[1]}",
                     sourceFile, lineNumber);
         }
+
+        public override string Source => "[set ...]";
     }
 }

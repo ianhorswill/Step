@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Channels;
 using Step.Interpreter;
 using Step.Utilities;
@@ -548,11 +549,39 @@ namespace Step.Parser
                         pattern.Add(strings.ToArray());
                         break;
                     
-                    case object[] call when call.Length == 2 && IsGlobalVariableName(call[0]):
+                    case TupleExpression call when call.BracketStyle == "()":
+                        LocalVariableName argument = null;
+                        var callCopy = (object[])(call.Elements.Clone());
+                        for (int i = 0; i < callCopy.Length; i++)
+                        {
+                            var element = callCopy[i];
+                            if (IsLocalVariableName(element) && !pattern.Any(arg => arg is LocalVariableName n && n.Name.Equals(element)))
+                            {
+                                var local = GetLocal((string) element);
+                                
+                                // Found a new local variable name
+                                if (argument != null)
+                                {
+                                    throw new SyntaxError(
+                                        $"Ambiguous guard expression: can't tell if {argument} or {local} is the argument in {call}",
+                                        SourceFile, lineNumber);
+                                }
+
+                                argument = local;
+                                // We do this in case the local variable name is "?"
+                                callCopy[i] = local;
+                                IncrementReferenceCount(local);   // Ugly...
+                            }
+                        }
+
+                        if (argument == null)
+                            throw new SyntaxError($"Invalid guard expression {call} contains no new variables",
+                                SourceFile, lineNumber);
                         // It has an embedded predicate
-                        pattern.Add(call[1]);
-                        chainBuilder.AddStep(Call.MakeCall(Canonicalize(call[0]), Canonicalize(call[1]), null));
+                        pattern.Add(argument);
+                        chainBuilder.AddStep(new Call(Canonicalize(callCopy[0]), callCopy.Skip(1).Select(Canonicalize).ToArray(), null));
                         break;
+                    
                     default:
                         pattern.Add(argPattern);
                         break;

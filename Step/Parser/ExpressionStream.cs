@@ -119,7 +119,7 @@ namespace Step.Parser
                 while (!end)
                 {
                     // Read tokens up to bracketed expressions
-                    while (!end && Peek != "[" && Peek != "{")
+                    while (!end && Peek != "[" && Peek != "{" && Peek != "(")
                     {
                         var token = Get();
                         if (token == "]" || token == "}")
@@ -131,10 +131,10 @@ namespace Step.Parser
                         // We're at the start of a bracketed expression
                         var openBracket = Get();
                         buffer.Clear();
-                        while (!end && Peek != "]" && Peek != "}")
+                        while (!end && Peek != "]" && Peek != "}" && Peek != ")")
                         {
                             var token = Get();
-                            if (token == "[" || token == "{")
+                            if (token == "[" || token == "{" || token == "(")
                                 buffer.Add(ReadSubExpression(token));
                             else
                                 buffer.Add(token);
@@ -148,7 +148,21 @@ namespace Step.Parser
                             throw new SyntaxError(
                                 $"Nested expression begun with '{openBracket}' is matched with an incompatible closing '{closeBracket}'",
                                 FilePath, LineNumber);
-                        yield return openBracket == "{" ? (object)new TupleExpression(buffer.ToArray()) : buffer.ToArray();
+
+                        switch (openBracket)
+                        {
+                            case "{":
+                                yield return new TupleExpression("{}", buffer.ToArray());
+                                break;
+
+                            case "(":
+                                yield return new TupleExpression("()", buffer.ToArray());
+                                break;
+
+                            default:
+                                yield return buffer.ToArray();
+                                break;
+                        }
                     }
                 }
             }
@@ -160,6 +174,7 @@ namespace Step.Parser
             {
                 case "[": return "]";
                 case "{": return "}";
+                case "(": return ")";
                 default:
                     throw new InvalidOperationException($"'{openBracket}' is not an appropriate token for marking a nested expression.");
             }
@@ -186,7 +201,18 @@ namespace Step.Parser
                 throw new SyntaxError(
                     $"Nested expression begun with '{openBracket}' is matched with an incompatible closing '{closeBracket}'",
                     FilePath, LineNumber);
-            return openBracket == "{" ? (object) new TupleExpression(buffer.ToArray()) : buffer.ToArray();
+            
+            switch (openBracket)
+            {
+                case "{":
+                    return new TupleExpression("{}", buffer.ToArray());
+
+                case "(":
+                    return new TupleExpression("()", buffer.ToArray());
+
+                default:
+                    return buffer.ToArray();
+            }
         }
     }
 }

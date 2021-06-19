@@ -54,5 +54,7 @@ namespace Step.Interpreter
                 state = task.SetFluent(state, e.ResolveList(args), polarity);
             return Continue(output, new BindingEnvironment(e, e.Unifications, state), k, predecessor);
         }
+
+        public override string Source => "[now ...]";
     }
 }

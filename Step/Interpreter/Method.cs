@@ -25,6 +25,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Step.Utilities;
 
 namespace Step.Interpreter
@@ -128,6 +129,31 @@ namespace Step.Interpreter
         /// The argument pattern for this method expressed as the course code for a call
         /// </summary>
         public string HeadString => Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
+        
+        /// <summary>
+        /// An approximate reconstruction of the original course text for this method.
+        /// </summary>
+        public string MethodCode
+        {
+            get
+            {
+                var b = new StringBuilder();
+                b.Append(HeadString);
+                if (StepChain == null)
+                    b.Append(".");
+                else
+                {
+                    b.Append(':');
+                    for (var step = StepChain; step != null; step = step.Next)
+                    {
+                        b.Append(' ');
+                        b.Append(step.Source);
+                    }
+                }
+
+                return b.ToString();
+            }
+        }
 
         /// <summary>
         /// Generate the head string, but substitute in the values of any variables
