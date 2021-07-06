@@ -53,37 +53,52 @@ namespace Step
             /// Singleton instance of the comparer 
             /// </summary>
             public static readonly Comparer Default = new Comparer();
+
+            /// <summary>
+            /// Comparer to use for cache results on function fluents; ignores the last argument.
+            /// </summary>
+            public static readonly Comparer ForFunctions = new Comparer() {FunctionComparer = true};
+
+            /// <summary>
+            /// True if this is the comparer used for result caches on functions
+            /// If so, we need to ignore the last element of a top-level tuple.
+            /// </summary>
+            public bool FunctionComparer = false;
             
             bool IEqualityComparer<object>.Equals(object a, object b)
             {
-                bool Recur(object y, object x)
+                bool Recur(object y, object x, int ignoredElements = 0)
                 {
                     if (x.Equals(y)) return true;
                     if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
                         return false;
-                    for (var i = 0; i < xArray.Length; i++)
+                    for (var i = 0; i < xArray.Length-ignoredElements; i++)
                         if (!Recur(xArray[i], yArray[i]))
                             return false;
                     return true;
                 }
 
-                return Recur(a, b);
+                return Recur(a, b, FunctionComparer?1:0);
             }
 
             int IEqualityComparer<object>.GetHashCode(object obj)
             {
                 if (obj is object[] tuple)
-                    return TreeHash(tuple);
+                    return TreeHash(tuple, FunctionComparer ? 1 : 0);
                 return obj.GetHashCode();
             }
 
-            static int TreeHash(object[] tuple)
+            static int TreeHash(object[] tuple, int ignoredElements = 0)
             {
                 var h = 0;
-                foreach (var e in tuple)
+                for (var index = 0; index < tuple.Length-ignoredElements; index++)
+                {
+                    var e = tuple[index];
                     if (e is object[] subTuple)
                         h ^= TreeHash(subTuple);
                     else h ^= e.GetHashCode();
+                }
+
                 return h;
             }
         }

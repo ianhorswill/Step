@@ -478,6 +478,10 @@ namespace Step.Parser
                         flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions | CompoundTask.TaskFlags.ReadCache;
                         break;
 
+                    case "function":
+                        flags |= CompoundTask.TaskFlags.Function;
+                        break;
+
                     case "generator":
                     case "predicate":
                         flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;

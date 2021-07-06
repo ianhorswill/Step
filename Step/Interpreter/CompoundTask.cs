@@ -74,7 +74,7 @@ namespace Step.Interpreter
                 if (_cache != null)
                     return _cache;
                 return _cache = new DictionaryStateElement<IStructuralEquatable, CachedResult>(Name + " cache", 
-                    Term.Comparer.Default, EqualityComparer<CachedResult>.Default);
+                    Function?Term.Comparer.ForFunctions:Term.Comparer.Default, EqualityComparer<CachedResult>.Default);
             }
         }
 
@@ -96,17 +96,19 @@ namespace Step.Interpreter
         /// <returns>New global state</returns>
         public State SetFluent(State oldState, object[] arglist, bool truth)
         {
-            return StoreResult(oldState, arglist, new CachedResult(truth, EmptyText));
+            return StoreResult(oldState, arglist, new CachedResult(truth, Function?arglist[arglist.Length-1]:null, EmptyText));
         }
         
         private readonly struct CachedResult
         {
             public readonly bool Success;
+            public readonly object FunctionValue;
             public readonly string[] Text;
 
-            public CachedResult(bool success, string[] text)
+            public CachedResult(bool success, object functionValue, string[] text)
             {
                 Success = success;
+                FunctionValue = functionValue;
                 Text = text;
             }
         }
@@ -156,7 +158,11 @@ namespace Step.Interpreter
             /// <summary>
             /// True if some method has a cool step
             /// </summary>
-            ContainsCoolStep = 128
+            ContainsCoolStep = 128,
+            /// <summary>
+            /// This fluent is also a function, so for ground instances, its last parameter is unique given its other parameters.
+            /// </summary>
+            Function = 256,
         }
 
         internal TaskFlags Flags;
@@ -205,6 +211,12 @@ namespace Step.Interpreter
         /// True if some method contains a cool step
         /// </summary>
         public bool ContainsCoolStep => (Flags & TaskFlags.ContainsCoolStep) != 0;
+
+        /// <summary>
+        /// This predicate represents a function.  So the final argument of ground
+        /// instances is unique given the values of the other arguments.
+        /// </summary>
+        public bool Function => (Flags & TaskFlags.Function) != 0;
         #endregion
 
         internal CompoundTask(string name, int argCount)
@@ -259,13 +271,25 @@ namespace Step.Interpreter
 
             if (ReadCache)
             {
+                // Check for a hit in the cache.  If we find one, we're done.
                 if (Cache.TryGetValue(env.State, arglist, out var result))
                 {
                     if (result.Success)
                     {
-                        successCount++;
-                        if (k(output.Append(result.Text), env.Unifications, env.State, predecessor))
-                            return true;
+                        if (Function)
+                        {
+                            // We got a hit, and since this is a function, it's the only allowable hit.
+                            // So we succeed deterministically.
+                            return env.Unify(arglist[arglist.Length - 1], result.FunctionValue,
+                                       out BindingList<LogicVariable> u) &&
+                                   k(output.Append(result.Text), u, env.State, predecessor);
+                        }
+                        else
+                        {
+                            successCount++;
+                            if (k(output.Append(result.Text), env.Unifications, env.State, predecessor))
+                                return true;
+                        }
                     }
                     else 
                         // We have a match on a cached fail result, so force a failure, skipping over the methods.
@@ -304,7 +328,9 @@ namespace Step.Interpreter
                         {
                             var final = env.ResolveList(arglist, u);
                             if (Term.IsGround(final))
-                                s = StoreResult(s, final, new CachedResult(true, TextBuffer.Difference(output, o)));
+                                s = StoreResult(s, final, new CachedResult(true,
+                                    Function?final[final.Length-1]:null,
+                                    TextBuffer.Difference(output, o)));
                         }
                         return k(o, u, s, newPredecessor);
                     }))
