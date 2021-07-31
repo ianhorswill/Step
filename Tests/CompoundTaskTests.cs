@@ -33,7 +33,7 @@ namespace Tests
     public class CompoundTaskTests
     {
         // ReSharper disable once InconsistentNaming
-        private static PrimitiveTask.DeterministicTextGenerator1 toString => (x) => new []{ x.ToString() };
+        private static DeterministicTextGenerator<object> toString = new DeterministicTextGenerator<object>("ToString", (x) => new[] { x.ToString() });
 
         [TestMethod]
         public void MatchingNoVariablesTest()

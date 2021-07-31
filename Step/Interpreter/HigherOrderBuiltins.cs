@@ -39,32 +39,31 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
-            g[nameof(Call)] = (MetaTask)Call;
-            g[nameof(Begin)] = (MetaTask)Begin;
-            g[nameof(IgnoreOutput)] = (MetaTask)IgnoreOutput;
-            g[nameof(Not)] = (MetaTask) Not;
-            g[nameof(DoAll)] = (DeterministicTextGeneratorMetaTask) DoAll;
-            g[nameof(ForEach)] = (MetaTask) ForEach;
-            g[nameof(Once)] = (MetaTask) Once;
-            g[nameof(ExactlyOnce)] = (MetaTask) ExactlyOnce;
-            g[nameof(Max)] = (MetaTask) Max;
-            g[nameof(Min)] = (MetaTask) Min;
-            g[nameof(SaveText)] = (MetaTask) SaveText;
-            g[nameof(PreviousCall)] = (MetaTask) PreviousCall;
-            g[nameof(UniqueCall)] = (MetaTask)UniqueCall;
-            g[nameof(Parse)] = (MetaTask)Parse;
+            g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call);
+            g[nameof(Begin)] = new GeneralPrimitive(nameof(Begin), Begin);
+            g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput);
+            g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not);
+            g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll);
+            g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach);
+            g[nameof(Once)] = new GeneralPrimitive(nameof(Once), Once);
+            g[nameof(ExactlyOnce)] = new GeneralPrimitive(nameof(ExactlyOnce), ExactlyOnce);
+            g[nameof(Max)] = new GeneralPrimitive(nameof(Max), Max);
+            g[nameof(Min)] = new GeneralPrimitive(nameof(Min), Min);
+            g[nameof(SaveText)] = new GeneralPrimitive(nameof(SaveText), SaveText);
+            g[nameof(PreviousCall)] = new GeneralPrimitive(nameof(PreviousCall), PreviousCall);
+            g[nameof(UniqueCall)] = new GeneralPrimitive(nameof(UniqueCall), UniqueCall);
+            g[nameof(Parse)] = new GeneralPrimitive(nameof(Parse), Parse);
         }
 
         private static bool Call(object[] args, TextBuffer output, BindingEnvironment env,
-            Step.Continuation k, MethodCallFrame predecessor)
+            MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.CheckAtLeast(nameof(Call), 1, args);
             var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args);
 
-            var task = call[0] as CompoundTask;
-            if (task == null)
+            if (!(call[0] is Task task))
                 throw new InvalidOperationException(
-                    "Task argument to Call must be a compound task, i.e. a user-defined task with methods.");
+                    "Task argument to Call must be a task");
 
             var taskArgs = new object[call.Length - 1 + args.Length - 1];
 
@@ -77,12 +76,12 @@ namespace Step.Interpreter
             return task.Call(taskArgs, output, env, predecessor, k);
         }
 
-        private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             return Step.ChainFromBody("Begin", args).Try(o, e, k, predecessor);
         }
 
-        private static bool IgnoreOutput(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool IgnoreOutput(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             return Step.ChainFromBody("IgnoreOutput", args).Try(
                 o, e,
@@ -90,7 +89,7 @@ namespace Step.Interpreter
                 predecessor);
         }
 
-        private static bool Not(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Not(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             // Whether the call to args below succeeded
             var success = false;
@@ -113,7 +112,7 @@ namespace Step.Interpreter
         private static IEnumerable<string> DoAll(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor) 
             => AllSolutionTextFromBody("DoAll", args, o, e, predecessor).SelectMany(strings => strings);
 
-        private static bool ForEach(object[] args, TextBuffer output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool ForEach(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
             if (args.Length < 2)
                 throw new ArgumentCountException("ForEach", 2, args);
@@ -151,7 +150,7 @@ namespace Step.Interpreter
             return k(resultOutput, env.Unifications, dynamicState, predecessor);
         }
 
-        private static bool Once(object[] args, TextBuffer output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Once(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
             TextBuffer finalOutput = output;
             BindingList<LogicVariable> finalBindings = null;
@@ -174,7 +173,7 @@ namespace Step.Interpreter
             return success && k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool ExactlyOnce(object[] args, TextBuffer output, BindingEnvironment env, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool ExactlyOnce(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("ExactlyOnce", 1, args);
             TextBuffer finalOutput = output;
@@ -204,12 +203,12 @@ namespace Step.Interpreter
             return k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool Max(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Max(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             return MaxMinDriver("Max", args, 1, o, e, k, predecessor);
         }
 
-        private static bool Min(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool Min(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             return MaxMinDriver("Min", args, -1, o, e, k, predecessor);
         }
@@ -279,7 +278,7 @@ namespace Step.Interpreter
                    && k(o.Append(bestResult.Output), bestResult.Bindings, bestResult.State, bestFrame);
         }
 
-        private static bool SaveText(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool SaveText(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("SaveText", 2, args);
 
@@ -313,14 +312,13 @@ namespace Step.Interpreter
         }
 
         private static bool Parse(object[] args, TextBuffer output, BindingEnvironment env,
-            Step.Continuation k, MethodCallFrame predecessor)
+            MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.CheckAtLeast(nameof(Parse), 2, args);
             var call = ArgumentTypeException.Cast<object[]>(nameof(Parse),env.Resolve(args[0]), args);
             var text = ArgumentTypeException.Cast<string[]>(nameof(Parse), env.Resolve(args[1]), args);
 
-            var task = call[0] as CompoundTask;
-            if (task == null)
+            if (!(call[0] is Task task))
                 throw new InvalidOperationException(
                     "Task argument to Parse must be a compound task, i.e. a user-defined task with methods.");
 
@@ -440,7 +438,7 @@ namespace Step.Interpreter
         }
 
         private static bool PreviousCall(object[] args, TextBuffer output, BindingEnvironment env,
-            Step.Continuation k, MethodCallFrame predecessor)
+            MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(nameof(PreviousCall), 1, args);
             var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall),args[0], args);
@@ -460,14 +458,13 @@ namespace Step.Interpreter
         }
 
         private static bool UniqueCall(object[] args, TextBuffer output, BindingEnvironment env,
-            Step.Continuation k, MethodCallFrame predecessor)
+            MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.CheckAtLeast(nameof(UniqueCall), 1, args);
             var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall), args[0], args);
-            var task = call[0] as CompoundTask;
-            if (task == null)
+            if (!(call[0] is Task task))
                 throw new InvalidOperationException(
-                    "Task argument to UniqueCall must be a compound task, i.e. a user-defined task with methods.");
+                    "Task argument to UniqueCall must be a task.");
             
             var taskArgs = new object[call.Length - 1 + args.Length - 1];
 

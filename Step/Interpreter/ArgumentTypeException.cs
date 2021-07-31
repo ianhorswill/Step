@@ -67,6 +67,8 @@ namespace Step.Interpreter
         public static TExpected Cast<TExpected>(object task, object actual, object[] arglist)
         {
             Check(task, typeof(TExpected), actual, arglist);
+            if (typeof(TExpected) == typeof(float))
+                return (TExpected)(object)Convert.ToSingle(actual);
             return (TExpected) actual;
         }
     }

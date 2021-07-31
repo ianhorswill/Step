@@ -26,7 +26,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Step.Utilities;
 
@@ -36,13 +35,9 @@ namespace Step.Interpreter
     /// Task implemented as a set of methods, each composed of a series of Steps (sub-tasks)
     /// Tasks defined by user code are CompoundTasks
     /// </summary>
-    [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class CompoundTask
+    public class CompoundTask : Task
     {
-        /// <summary>
-        /// Name, for debugging purposes
-        /// </summary>
-        public readonly string Name;
+
         /// <summary>
         /// Number of arguments expected by the task
         /// </summary>
@@ -219,9 +214,8 @@ namespace Step.Interpreter
         public bool Function => (Flags & TaskFlags.Function) != 0;
         #endregion
 
-        internal CompoundTask(string name, int argCount)
+        internal CompoundTask(string name, int argCount) : base(name, argCount)
         {
-            Name = name;
             ArgCount = argCount;
         }
 
@@ -257,7 +251,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation</param>
         /// <returns>True if task succeeded and continuation succeeded</returns>
         /// <exception cref="CallFailedException">If the task fails</exception>
-        public bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
             string lastToken = null;
             if (Suffix)
@@ -359,9 +353,6 @@ namespace Step.Interpreter
             // Failure
             return false;
         }
-
-        /// <inheritdoc />
-        public override string ToString() => Name;
 
         /// <summary>
         /// Remove all defined methods for this task

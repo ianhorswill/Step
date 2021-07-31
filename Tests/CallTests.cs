@@ -34,8 +34,8 @@ namespace Tests
     [TestClass]
     public class CallTests
     {
-        private readonly PrimitiveTask.Predicate1 positive = (n) => (int) n > 0;
-        private static PrimitiveTask.DeterministicTextGenerator1 ToStringPrimitive => (x) => new []{ x.ToString() };
+        private readonly SimplePredicate<int> positive = new SimplePredicate<int>("Positive", n => n > 0);
+        private static DeterministicTextGenerator<object> ToStringPrimitive = new DeterministicTextGenerator<object>("ToString", (x) => new []{ x.ToString() });
 
         bool Succeeds(Step.Interpreter.Step s)
         {

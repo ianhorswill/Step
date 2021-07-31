@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using static Step.Interpreter.PrimitiveTask;
 
@@ -11,58 +12,45 @@ namespace Step.Interpreter
             var g = Module.Global;
 
             // Argument is a compound task
-            g["CompoundTask"] = NamePrimitive("CompoundTask", (MetaTask) CompoundTask);
+            g["CompoundTask"] = new GeneralPrimitive(nameof(CompoundTask), CompoundTask);
 
             // Second arg is a method of the first arg
+            Func<CompoundTask, Method, bool> inInMode = (t, m) => m.Task == t;
+            Func<CompoundTask, IEnumerable<Method>> inOutMode = t => t.Methods;
+            Func<Method, IEnumerable<CompoundTask>> outInMode = m => new[] {m.Task};
             g["TaskMethod"] =
-                NamePrimitive("TaskMethod", 
-                    GeneralRelation<CompoundTask, Method>(
-                    "TaskMethod",
-                    (t, m) => m.Task == t,
-                    t => t.Methods,
-                    m => new[] {m.Task},
-                    null));
+                new GeneralPredicate<CompoundTask, Method>("TaskMethod", inInMode, inOutMode, outInMode, null);
 
             // Gets the MethodCallFrame of the most recent call
-            g["LastMethodCallFrame"] = NamePrimitive("LastMethodCallFrame", (MetaTask)LastMethodCallFrame);
+            g["LastMethodCallFrame"] = new GeneralPrimitive("LastMethodCallFrame", LastMethodCallFrame);
 
             // Second argument is in the caller chain leading to the first argument
-            g["CallerChainAncestor"] = NamePrimitive("CallerChainAncestor",
-                GeneralRelation<MethodCallFrame, Method>(
-                "CallerChainAncestor",
-                // Is this method in this chain?
-                (f, m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null,
-                // What methods are in this chain?
-                f => f.CallerChain.Select(a => a.Method),
-                null,
-                null));
+            Func<MethodCallFrame, Method, bool> inInMode1 = (f, m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null;
+            Func<MethodCallFrame, IEnumerable<Method>> inOutMode1 = f => f.CallerChain.Select(a => a.Method);
+            g["CallerChainAncestor"] = 
+                new GeneralPredicate<MethodCallFrame, Method>("CallerChainAncestor", inInMode1, inOutMode1, null, null);
 
             // Second argument is in the goal chain leading to the first argument
-            g["GoalChainAncestor"] = NamePrimitive("GoalChainAncestor",
-                GeneralRelation<MethodCallFrame, Method>(
-                "GoalChainAncestor",
-                // Is this method in this chain?
-                (f, m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null,
-                // What methods are in this chain?
-                f => f.GoalChain.Select(a => a.Method),
-                null,
-                null));
+            Func<MethodCallFrame, Method, bool> inInMode2 = (f, m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null;
+            Func<MethodCallFrame, IEnumerable<Method>> inOutMode2 = f => f.GoalChain.Select(a => a.Method);
+            g["GoalChainAncestor"] = 
+                new GeneralPredicate<MethodCallFrame, Method>("GoalChainAncestor", inInMode2, inOutMode2, null, null);
 
             // First argument calls the second argument
-            g["TaskCalls"] = NamePrimitive("TaskCalls", (MetaTask) TaskCalls);
+            g["TaskCalls"] = new GeneralPrimitive(nameof(TaskCalls), TaskCalls);
 
             // Second argument is a call expression for a call in some method of first argument.
-            g["TaskSubtask"] = NamePrimitive("TaskSubtask", (MetaTask) TaskSubtask);
+            g["TaskSubtask"] = new GeneralPrimitive(nameof(TaskSubtask), TaskSubtask);
         }
 
-        private static bool LastMethodCallFrame(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool LastMethodCallFrame(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("LastMethodCallFrame", 1, args);
             return e.Unify(args[0], predecessor, out var u)
                    && k(o, u, e.State, predecessor);
         }
 
-        private static bool CompoundTask(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool CompoundTask(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("CompoundTask", 1, args);
             var arg = e.Resolve(args[0]);
@@ -77,8 +65,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        private static bool TaskCalls(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k,
-            MethodCallFrame predecessor)
+        private static bool TaskCalls(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             var m = e.Module;
             ArgumentCountException.Check(nameof(TaskCalls), 2, args);
@@ -131,7 +118,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        private static bool TaskSubtask(object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
+        private static bool TaskSubtask(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("TaskSubtask", 2, args);
             var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args);

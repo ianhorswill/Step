@@ -140,11 +140,10 @@ namespace Step.Interpreter
         public override bool Try(TextBuffer output, BindingEnvironment env, Continuation k, MethodCallFrame predecessor)
         {
             MethodCallFrame.CurrentFrame = env.Frame;
-            var originalTarget = env.Resolve(Task);
-            var target = PrimitiveTask.GetSurrogate(originalTarget);
+            var target = env.Resolve(Task);
             var arglist = env.ResolveList(Arglist);
 
-            return CallTask(output, env, k, target, arglist, originalTarget, predecessor);
+            return CallTask(output, env, k, target, arglist, target, predecessor);
         }
 
         private bool CallTask(TextBuffer output, BindingEnvironment env, Continuation k, object target, object[] arglist,
@@ -152,70 +151,9 @@ namespace Step.Interpreter
         {
             switch (target)
             {
-                case CompoundTask p:
-                    return CallCompoundTask(output, env, k, arglist, predecessor, p);
-
-                case PrimitiveTask.MetaTask m:
-                    return m(arglist, output, env, (o, u, s, newP) =>
-                        Continue(o, new BindingEnvironment(env, u, s), k, newP),
-                        predecessor);
-
-                case PrimitiveTask.Predicate0 p:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
-                    return p() && Continue(output, env, k, predecessor);
-
-                case PrimitiveTask.Predicate1 p:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
-                    return p(arglist[0]) && Continue(output, env, k, predecessor);
-
-                case PrimitiveTask.Predicate2 p:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
-                    return p(arglist[0], arglist[1]) && Continue(output, env, k, predecessor);
-
-                case PrimitiveTask.PredicateN p:
-                    return p(arglist, env) && Continue(output, env, k, predecessor);
-
-                case PrimitiveTask.DeterministicTextGenerator0 g:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
-                    return Continue(output.Append(g()), env, k, predecessor);
-
-                case PrimitiveTask.DeterministicTextGenerator1 g:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
-                    return Continue(output.Append(g(arglist[0])), env, k, predecessor);
-
-                case PrimitiveTask.DeterministicTextGenerator2 g:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
-                    return Continue(output.Append(g(arglist[0], arglist[1])), env, k, predecessor);
-
-                case PrimitiveTask.DeterministicTextGeneratorMetaTask g:
-                    return Continue(output.Append(g(arglist, output, env, predecessor)), env, k, predecessor);
-
-                case PrimitiveTask.NondeterministicTextGenerator0 g:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 0, arglist);
-                    foreach (var tokens in g())
-                        if (Continue(output.Append(tokens), env, k, predecessor))
-                            return true;
-                    return false;
-
-                case PrimitiveTask.NondeterministicTextGenerator1 g:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 1, arglist);
-                    foreach (var tokens in g(arglist[0]))
-                        if (Continue(output.Append(tokens), env, k, predecessor))
-                            return true;
-                    return false;
-
-                case PrimitiveTask.NondeterministicTextGenerator2 g:
-                    ArgumentCountException.Check(PrimitiveTask.PrimitiveName(originalTarget), 2, arglist);
-                    foreach (var tokens in g(arglist[0], arglist[1]))
-                        if (Continue(output.Append(tokens), env, k, predecessor))
-                            return true;
-                    return false;
-
-                case PrimitiveTask.NonDeterministicRelation r:
-                    foreach (var bindings in r(arglist, env))
-                        if (Continue(output, new BindingEnvironment(env, bindings, env.State), k, predecessor))
-                            return true;
-                    return false;
+                case Task p:
+                    return p.Call(arglist, output, env, predecessor,
+                        (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));
 
                 case string[] text:
                     return Continue(output.Append(text), env, k, predecessor);
@@ -307,13 +245,6 @@ namespace Step.Interpreter
             }
         }
 
-        private bool CallCompoundTask(TextBuffer output, BindingEnvironment env, Continuation k, object[] arglist,
-            MethodCallFrame predecessor, CompoundTask p)
-        {
-            return p.Call(arglist, output, env, predecessor,
-                (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));
-        }
-
         internal static string CallSourceText(object task, object[] arglist, BindingList<LogicVariable> unifications = null)
         {
             var b = new StringBuilder();
@@ -331,10 +262,8 @@ namespace Step.Interpreter
                     b.Append("null");
                     return;
                 }
-                var a = PrimitiveTask.PrimitiveName(o);
-                if (a == null)
-                    b.Append("null");
-                else if (a is string s && s.Contains(" "))
+
+                if (o is string s && s.Contains(" "))
                 {
                     b.Append("\"");
                     b.Append(s);
@@ -342,9 +271,9 @@ namespace Step.Interpreter
                 }
                 else
                 {
-                    var asString = a.ToString();
+                    var asString = o.ToString();
                     if (asString.IndexOf(' ') < 0)
-                        b.Append(a);
+                        b.Append(o);
                     else
                         b.Append($"<{asString}>");
                 }

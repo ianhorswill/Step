@@ -465,14 +465,22 @@ namespace Step
         /// Parse and run the specified code
         /// </summary>
         /// <param name="code">Code to run.  This will be used as the RHS of a method for the task TopLevelCall</param>
-        /// <returns></returns>
-        public string ParseAndExecute(string code)
+        /// <param name="state">State in which to execute the task.</param>
+        /// <returns>Text output of the task and the resulting state</returns>
+        public (string output, State state) ParseAndExecute(string code, State state)
         {
             if (Defines("TopLevelCall"))
                 ((CompoundTask) (this["TopLevelCall"])).EraseMethods();
             AddDefinitions($"TopLevelCall: {code}");
-            return Call("TopLevelCall");
+            return Call(state, "TopLevelCall");
         }
+
+        /// <summary>
+        /// Parse and run the specified code
+        /// </summary>
+        /// <param name="code">Code to run.  This will be used as the RHS of a method for the task TopLevelCall</param>
+        /// <returns>Text output of the task</returns>
+        public string ParseAndExecute(string code) => ParseAndExecute(code, State.Empty).output;
 
         /// <summary>
         /// Add a procedure to call when a variable isn't found.
@@ -541,14 +549,9 @@ namespace Step
             if (value == null)
                 return false;
 
-            value = PrimitiveTask.GetSurrogate(value);
-
             switch (value)
             {
-                case null:
-                    return false;
-                case CompoundTask _:
-                case Delegate _:
+                case Task _:
                 case Cons _:
                 case bool _:
                     return true;

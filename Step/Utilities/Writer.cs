@@ -57,10 +57,6 @@ namespace Step.Utilities
                             Walk(d);
                         break;
 
-                    case Delegate prim:
-                        b.Append(PrimitiveTask.PrimitiveName(prim));
-                        break;
-
                     default:
                         b.Append(o);
                         break;
