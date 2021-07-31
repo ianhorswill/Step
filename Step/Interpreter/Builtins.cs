@@ -174,6 +174,14 @@ namespace Step.Interpreter
 
             g["NounSingularPlural"] = 
                 new GeneralPredicate<string, string>("NounSingularPlural", (s, p) => Inflection.PluralOfNoun(s) == p, s => new[] {Inflection.PluralOfNoun(s)}, p => new[] {Inflection.SingularOfNoun(p)}, null);
+            g["EnvironmentOption"] = new SimpleNAryPredicate("EnvironmentOption",
+                arglist =>
+                {
+                    ArgumentCountException.CheckAtLeast("EnvironmentOption", 1, arglist);
+                    var optionName = ArgumentTypeException.Cast<string>("EnvironmentOption", arglist[0], arglist);
+                    EnvironmentOption.Handle(optionName, arglist.Skip(1).ToArray());
+                    return true;
+                });
 
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
