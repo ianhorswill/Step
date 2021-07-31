@@ -185,4 +185,37 @@ namespace Step.Interpreter
             }
         }
     }
+
+    /// <summary>
+    /// Most general interface for writing predicates.
+    /// Does no argument checking, and implementation is a mapping from arglists to an enumerations
+    /// of arrays to unify the arglist with.
+    /// </summary>
+    public class GeneralNAryPredicate : GeneralPredicateBase
+    {
+        /// <summary>
+        /// Create a general primitive predicate.
+        /// </summary>
+        /// <param name="name">Name of the predicate</param>
+        /// <param name="implementation">Mapping from arguments for the predicate to arrays with which to unify it.
+        /// Returning the empty sequence means failure,
+        /// but returning multiple arglists means the predicate can succeed multiple times.
+        /// </param>
+        public GeneralNAryPredicate(string name, Func<object[], IEnumerable<object[]>> implementation) : base(name, null)
+        {
+            this.implementation = implementation;
+        }
+
+        private readonly Func<object[], IEnumerable<object[]>> implementation;
+
+        /// <inheritdoc />
+        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment e)
+        {
+            foreach (var result in implementation(e.ResolveList(args))) {
+                if (!e.UnifyArrays(args, result, out BindingList<LogicVariable> bindings))
+                    throw new Exception($"Internal error in {Name}: could not unify result with arguments");
+                yield return bindings;
+            }
+        }
+    }
 }
