@@ -28,18 +28,18 @@ namespace Step.Interpreter
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k,
             MethodCallFrame predecessor)
         {
-            var value = Value.Eval(e);
+            if (!e.TryCopyGround(Value.Eval(e), out var expValue))
+                // You can't set a variable to a non-ground value
+                throw new ArgumentInstantiationException("set", e,
+                    new[] { (object)GlobalVariable, Value});
+
             if (LocalVariable == null)
                 return Continue(output,
                     new BindingEnvironment(e,
                         e.Unifications,
-                        e.State.Bind(GlobalVariable, value)),
-                    k, predecessor);
+                        e.State.Bind(GlobalVariable, expValue)),
+                    k, predecessor); 
 
-            if (!e.TryCopyGround(value, out var expValue))
-                // You can't set a local variable to a non-ground value
-                throw new ArgumentInstantiationException("set", e,
-                    new[] { (object)GlobalVariable, Value});
             if (e.Unify(LocalVariable, expValue, out var result))
                 return Continue(output,
                     new BindingEnvironment(e, result, e.State),

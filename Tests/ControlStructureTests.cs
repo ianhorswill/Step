@@ -8,6 +8,18 @@ namespace Tests
     public class ControlStructureTests
     {
         [TestMethod]
+        public void TupleAssignmentTest()
+        {
+            var m = Module.FromDefinitions(
+                "Threat ?attacker ?target: [set State = [threat ?attacker ?target]]",
+                "Test: [Threat capitalist liv]");
+            var (_, state) = m.Call(State.Empty, "Test");
+            var tuple = state.Lookup(StateVariableName.Named("State"));
+            Assert.IsTrue(tuple is object[] a && a.Length == 3 
+                                              && a[0].Equals("threat") && a[1].Equals("capitalist") && a[2].Equals("liv") );
+        }
+
+        [TestMethod]
         public void CoolTest()
         {
             var m = new Module("test");

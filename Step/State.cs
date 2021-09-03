@@ -29,7 +29,12 @@ namespace Step
         public State Bind(StateElement e, object value) => new State(Bindings.SetItem(e, value));
 
         /// <summary>
-        /// Returns the value of the specified dynamic state element
+        /// The value of the specified dynamic state element
+        /// </summary>
+        public object this[StateElement e] => Lookup(e);
+
+        /// <summary>
+        /// The value of the specified dynamic state element
         /// </summary>
         public object Lookup(StateElement e)
         {
@@ -41,7 +46,7 @@ namespace Step
         }
 
         /// <summary>
-        /// Returns the value of the specified dynamic state element or the specified default value, if the state element
+        /// The value of the specified dynamic state element or the specified default value, if the state element
         /// has no value.
         /// </summary>
         public object LookupOrDefault(StateElement e, object defaultValue)
