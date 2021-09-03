@@ -184,8 +184,8 @@ namespace Tests
         {
             var m = Module.FromDefinitions("TestWriteString: [Write s]",
                 "TestWriteNumber: [Write 103]",
-                "TestWriteWithoutUnderscoresA: [WriteWithoutUnderscores a]",
-                "TestWriteWithoutUnderscoresB: [WriteWithoutUnderscores a_b]",
+                "TestWriteWithoutUnderscoresA: [Write a]",
+                "TestWriteWithoutUnderscoresB: [Write a_b]",
                 "TestWriteCapitalizedA: A [WriteCapitalized cat]",
                 "TestWriteCapitalizedB: A [WriteCapitalized tabby_cat]");
             Assert.AreEqual("S", m.Call("TestWriteString"));

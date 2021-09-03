@@ -74,7 +74,7 @@ namespace Step.Interpreter
                     o => new [] { o.ToString() },
                     null, null);
 
-            WritePrimitive = new DeterministicTextMatcher("Write", (o =>
+            g["WriteVerbatim"] = new DeterministicTextMatcher("WriteVerbatim", (o =>
             {
                 switch (o)
                 {
@@ -86,9 +86,8 @@ namespace Step.Interpreter
                         return new[] {Writer.TermToString(o)};
                 }
             }));
-            g["Write"] = WritePrimitive;
-
-            g["WriteWithoutUnderscores"] = new DeterministicTextMatcher("WriteWithoutUnderscores", (o =>
+            
+            WritePrimitive = new DeterministicTextMatcher("Write", (o =>
             {
                 switch (o)
                 {
@@ -101,7 +100,9 @@ namespace Step.Interpreter
                 }
             }));
 
-            g["WriteWithoutUnderscoresCapitalized"] = new DeterministicTextMatcher("WriteWithoutUnderscoresCapitalized", (o =>
+            g["Write"] = WritePrimitive;
+
+            g["WriteCapitalized"] = new DeterministicTextMatcher("WriteCapitalized", (o =>
             {
                 switch (o)
                 {
@@ -114,21 +115,8 @@ namespace Step.Interpreter
                 }
             }));
 
-            g["WriteCapitalized"] = new DeterministicTextMatcher("WriteCapitalized", (o =>
-            {
-                switch (o)
-                {
-                    case null:
-                        return new[] { "null" };
-                    case string[] tokens:
-                        return tokens;
-                    default:
-                        return new[] { Writer.TermToString(o).Replace('_', ' ').Capitalize() };
-                }
-            }));
-            
             g["WriteConcatenated"] = new DeterministicTextGenerator<object, object>("WriteConcatenated",
-                (s1, s2) => { return new[] {$"{s1}{s2}"}; });
+                (s1, s2) => { return new[] {$"{Writer.TermToString(s1).Replace('_', ' ')}{Writer.TermToString(s2).Replace('_', ' ')}"}; });
 
             g["Member"] = new GeneralPredicate<object, IEnumerable<object>>("Member", (member, collection) => collection != null && collection.Contains(member), null, collection => collection ?? EmptyArray, null);
             g["Var"] = new SimplePredicate<object>("Var", o => o is LogicVariable);
