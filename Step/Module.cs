@@ -31,6 +31,7 @@ using System.Linq;
 using System.Text;
 using Step.Interpreter;
 using Step.Parser;
+using Step.Utilities;
 
 namespace Step
 {
@@ -247,12 +248,30 @@ namespace Step
         #endregion
 
         /// <summary>
+        /// Run the call in the specified tuple.
+        /// </summary>
+        /// <param name="state">State in which to run the code</param>
+        /// <param name="call">Tuple representing the task to call and its arguments</param>
+        /// <exception cref="ArgumentException">If first element of call is not a task</exception>
+        public (string output, State newDynamicState) Eval(State state, object[] call)
+        {
+            if (call.Length == 0)
+                throw new ArgumentException("Attempt to evaluate a zero-length tuple");
+            var task = call[0] as Task;
+            if (task == null)
+                throw new ArgumentException(
+                    $"Attempt to evaluate something that isn't a task: {Writer.TermToString(call[0])}");
+            return Call(state, task, call.Skip(1).ToArray());
+        }
+
+        /// <summary>
         /// Calls the named task with the specified arguments and returns the text it generates
         /// </summary>
         /// <param name="state">Global variable bindings to use in the call, if any.</param>
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
+
         public (string output, State newDynamicState) Call(
             State state, string taskName, params object[] args)
         {
@@ -260,13 +279,26 @@ namespace Step
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
-            var output = TextBuffer.NewEmpty();
+            return Call(state, t, args);
+        }
+
+        /// <summary>
+        /// Calls the named task with the specified arguments and returns the text it generates
+        /// </summary>
+        /// <param name="state">Global variable bindings to use in the call, if any.</param>
+        /// <param name="task">Task to call</param>
+        /// <param name="args">Arguments to task, if any</param>
+        /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
+        public (string output, State newDynamicState) Call(
+            State state, Task task, params object[] args)
+        {
+var output = TextBuffer.NewEmpty();
             var env = new BindingEnvironment(this, null, null, state);
 
             string result = null;
             State newState = State.Empty;
 
-            if (t.Call(args, output, env, null,
+            if (task.Call(args, output, env, null,
                 (o, u, s, predecessor) =>
                 {
                     result = o.Output.Untokenize(FormattingOptions);
