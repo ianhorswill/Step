@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
 {
@@ -43,6 +42,7 @@ namespace Step.Interpreter
             g[nameof(Begin)] = new GeneralPrimitive(nameof(Begin), Begin);
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput);
             g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not);
+            g[nameof(FindAll)] = new GeneralPrimitive(nameof(FindAll), FindAll);
             g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll);
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach);
             g[nameof(Once)] = new GeneralPrimitive(nameof(Once), Once);
@@ -111,6 +111,28 @@ namespace Step.Interpreter
         
         private static IEnumerable<string> DoAll(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor) 
             => AllSolutionTextFromBody("DoAll", args, o, e, predecessor).SelectMany(strings => strings);
+
+        private static bool FindAll(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check("FindAll", 3, args);
+            var solution = args[0];
+            var call = args[1] as object[];
+            if (call == null || call.Length == 0)
+                throw new ArgumentException("Invalid goal expression");
+            var task = ArgumentTypeException.Cast<Task>("FindAll", call[0], args);
+            var taskArgs = call.Skip(1).ToArray();
+
+            var result = args[2];
+            var resultList = new List<object>();
+
+            task.Call(taskArgs, o, e, predecessor, (newO, u, s, p) =>
+            {
+                resultList.Add(e.Resolve(solution, u));
+                return false;
+            });
+            return e.Unify(result, resultList.ToArray(), out var final)
+                   && k(o, final, e.State, predecessor);
+        }
 
         private static bool ForEach(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
         {
@@ -368,21 +390,6 @@ namespace Step.Interpreter
         internal static void GenerateSolutions(string taskName, object[] args, TextBuffer o, BindingEnvironment e, Step.Continuation k, MethodCallFrame predecessor)
         {
             new Call(StateVariableName.Named(taskName), args, null).Try(o, e, k, predecessor);
-        }
-
-        /// <summary>
-        /// Find all solutions to the specified task and arguments.  Return a list of the arglists for each solution.
-        /// </summary>
-        internal static List<object[]> AllSolutions(string taskName, object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor)
-        {
-            var results = new List<object[]>();
-            GenerateSolutions(taskName, args, o, e, (output, b, d, p) =>
-            {
-                results.Add(new BindingEnvironment(e, b, d).ResolveList(args));
-                return false;
-            },
-                predecessor);
-            return results;
         }
 
         /// <summary>

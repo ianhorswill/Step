@@ -38,6 +38,21 @@ namespace Tests
             var m = Module.FromDefinitions("Test: [A [B 1]]", "A ?t: ?t/Call", "B ?a: foo ?a/Write");
             Assert.AreEqual("Foo 1", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void FindAllTest()
+        {
+            var m = Module.FromDefinitions("Test ?result: [FindAll ?x [Foo ?x] ?result]",
+                "[predicate] Foo a.",
+                "Foo b.",
+                "Foo c.");
+
+            var result = m.CallFunction<object[]>("Test");
+            Assert.AreEqual(3, result.Length);
+            Assert.AreEqual("a", result[0]);
+            Assert.AreEqual("b", result[1]);
+            Assert.AreEqual("c", result[2]);
+        }
         
         [TestMethod]
         public void DoAllTest()
