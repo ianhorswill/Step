@@ -27,8 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Remoting.Channels;
 using Step.Interpreter;
 using Step.Utilities;
 
@@ -193,7 +191,7 @@ namespace Step.Parser
         /// <summary>
         /// True if the string is a valid global variable name
         /// </summary>
-        public static bool IsGlobalVariableName(object token) => token is string s && char.IsUpper(s[0]);
+        public static bool IsGlobalVariableName(object token) => token is string s && s.Length>0 && char.IsUpper(s[0]);
 
         /// <summary>
         /// Local variables of the definition currently being parsed.
