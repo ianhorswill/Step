@@ -35,7 +35,7 @@ namespace Step
     /// tables in the Modules.  So it's like a symbol in lisp.
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class StateVariableName : StateElement
+    public class StateVariableName : StateElement, IVariableName
     {
 
 
@@ -54,6 +54,8 @@ namespace Step
         /// <param name="name">Name for the variable</param>
         public static StateVariableName Named(string name)
         {
+            if (name[0] == '^')
+                name = name.Substring(1);
             if (SymbolTable.TryGetValue(name, out var global))
                 return global;
             return SymbolTable[name] = new StateVariableName(name);

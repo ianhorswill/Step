@@ -405,5 +405,23 @@ Baz: baz
 ");
             Assert.AreEqual("Foo bar baz", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void InlineLocalVariableTest()
+        {
+            var m = Module.FromDefinitions("Test ?x: ?x ?x/Foo ?x/Bar/Foo",
+                "Foo ?x: [Write ?x]",
+                "Bar a b.");
+            Assert.AreEqual("A a b", m.Call("Test", "a"));
+        }
+
+        [TestMethod]
+        public void InlineGlobalVariableTest()
+        {
+            var m = Module.FromDefinitions("Test: [set X = a] ^X ^X/Foo ^X/Bar/Foo",
+                "Foo ?x: [Write ?x]",
+                "Bar a b.");
+            Assert.AreEqual("A a b", m.Call("Test"));
+        }
     }
 }

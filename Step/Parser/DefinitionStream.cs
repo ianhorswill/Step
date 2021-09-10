@@ -191,7 +191,15 @@ namespace Step.Parser
         /// <summary>
         /// True if the string is a valid global variable name
         /// </summary>
-        public static bool IsGlobalVariableName(object token) => token is string s && s.Length>0 && char.IsUpper(s[0]);
+        public static bool IsGlobalVariableName(object token) 
+            => token is string s 
+               && s.Length>0 
+               && (char.IsUpper(s[0]) || IsUpArrowGlobalVariableReference(s));
+
+        private static bool IsUpArrowGlobalVariableReference(string s)
+        {
+            return s.Length > 1 && s[0] == '^' && char.IsUpper(s[1]);
+        }
 
         /// <summary>
         /// Local variables of the definition currently being parsed.
@@ -762,20 +770,36 @@ namespace Step.Parser
         /// </summary>
         private void TryProcessMentionExpression(Interpreter.Step.ChainBuilder chain)
         {
-            if (EndOfDefinition || !IsLocalVariableName(Peek))
+            if (EndOfDefinition)
                 return;
 
-            var local = GetLocal((string) Get());
-            IncrementReferenceCount(local);
+            var peek = Peek as string;
+
+            if (string.IsNullOrEmpty(peek))
+                return;
+
+            IVariableName variable;
+
+            if (IsLocalVariableName(peek))
+            {
+                var local = GetLocal(peek);
+                IncrementReferenceCount(local);
+                variable = local;
+            } else if (IsUpArrowGlobalVariableReference(peek))
+                variable = StateVariableName.Named(peek);
+            else 
+                return;
+
+            Get();
 
             if (!Peek.Equals("/"))
             {
                 // This is a simple variable mention
-                chain.AddStep(Call.MakeCall(Call.MentionHook, local, null));
+                chain.AddStep(Call.MakeCall(Call.MentionHook, variable, null));
                 return;
             }
 
-            ReadComplexMentionExpression(chain, local);
+            ReadComplexMentionExpression(chain, variable);
         }
 
         /// <summary>
@@ -783,8 +807,8 @@ namespace Step.Parser
         /// Called after ?local has already been read.
         /// </summary>
         /// <param name="chain">Chain to add to</param>
-        /// <param name="local">The variable before the /</param>
-        private void ReadComplexMentionExpression(Interpreter.Step.ChainBuilder chain, LocalVariableName local)
+        /// <param name="variable">The variable before the /</param>
+        private void ReadComplexMentionExpression(Interpreter.Step.ChainBuilder chain, IVariableName variable)
         {
 // This is a complex "/" expression
             while (Peek.Equals("/"))
@@ -792,7 +816,7 @@ namespace Step.Parser
                 Get(); // Swallow slash
                 var t = Get();
                 if (!(t is string targetName))
-                    throw new SyntaxError($"Invalid method name after the /: {local}/{t}", SourceFile, lineNumber);
+                    throw new SyntaxError($"Invalid method name after the /: {variable}/{t}", SourceFile, lineNumber);
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : StateVariableName.Named(targetName);
@@ -800,12 +824,12 @@ namespace Step.Parser
                 {
                     var tempVar = GetFreshLocal("temp");
                     // There's another / coming so this is a function call
-                    chain.AddStep(Call.MakeCall(target, local, tempVar, null));
-                    local = tempVar;
+                    chain.AddStep(Call.MakeCall(target, variable, tempVar, null));
+                    variable = tempVar;
                 }
                 else
                 {
-                    ReadMentionExpressionTail(chain, local, target);
+                    ReadMentionExpressionTail(chain, variable, target);
                 }
             }
         }
@@ -814,26 +838,26 @@ namespace Step.Parser
         /// Called after the last "/" of a complex mention expression.
         /// </summary>
         /// <param name="chain">Chain to add to</param>
-        /// <param name="local">Result of the expression from before the last "/"</param>
+        /// <param name="variable">Result of the expression from before the last "/"</param>
         /// <param name="targetVar">Task to call on local</param>
-        private void ReadMentionExpressionTail(Interpreter.Step.ChainBuilder chain, LocalVariableName local, object targetVar)
+        private void ReadMentionExpressionTail(Interpreter.Step.ChainBuilder chain, IVariableName variable, object targetVar)
         {
-            AddMentionExpressionTail(chain, targetVar, local);
+            AddMentionExpressionTail(chain, targetVar, variable);
             while (Peek.Equals("+"))
             {
                 Get(); // Swallow plus
                 var targetToken = Get();
                 if (!(targetToken is string targetName))
-                    throw new SyntaxError($"Invalid method name after the /: {local}/{targetToken}", SourceFile, lineNumber);
+                    throw new SyntaxError($"Invalid method name after the /: {variable}/{targetToken}", SourceFile, lineNumber);
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : StateVariableName.Named(targetName);
-                AddMentionExpressionTail(chain, target, local);
+                AddMentionExpressionTail(chain, target, variable);
             }
         }
 
         static readonly StateVariableName BinaryTask = StateVariableName.Named("BinaryTask");
-        private void AddMentionExpressionTail(Interpreter.Step.ChainBuilder chain, object target, LocalVariableName local)
+        private void AddMentionExpressionTail(Interpreter.Step.ChainBuilder chain, object target, IVariableName local)
         {
             var temp = GetFreshLocal("temp");
             chain.AddStep(new BranchStep(target.ToString(),
@@ -852,7 +876,9 @@ namespace Step.Parser
         private void TryProcessTextBlock(Interpreter.Step.ChainBuilder chain)
         {
             tokensToEmit.Clear();
-            while (!EndOfDefinition && Peek is string && !IsNonAnonymousLocalVariableName(Peek))
+            while (!EndOfDefinition
+                   && Peek is string s
+                   && !(IsNonAnonymousLocalVariableName(s) || IsUpArrowGlobalVariableReference(s)))
                 if (EndOfLineToken)
                 {
                     // Skip unless double newline

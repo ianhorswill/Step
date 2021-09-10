@@ -36,7 +36,7 @@ namespace Step.Interpreter
     /// get the actual value of the variable.
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class LocalVariableName
+    public class LocalVariableName : IVariableName
     {
         /// <summary>
         /// Name of the variable.
@@ -49,8 +49,7 @@ namespace Step.Interpreter
         /// </summary>
         public readonly int Index;
 
-        /// <inheritdoc />
-        public LocalVariableName(string name, int index)
+        internal LocalVariableName(string name, int index)
         {
             Name = name;
             Index = index;

@@ -72,6 +72,7 @@
     <Compile Include="Interpreter\SimpleFunction.cs" />
     <Compile Include="Interpreter\SimplePredicate.cs" />
     <Compile Include="Interpreter\Task.cs" />
+    <Compile Include="Interpreter\IVariableName.cs" />
     <Compile Include="Parser\CSVFileTokenStreamcs.cs" />
     <Compile Include="Parser\FunctionalExpressionParser.cs" />
     <Compile Include="Interpreter\FunctionalOperator.cs" />

@@ -130,7 +130,7 @@ namespace Step.Parser
         /// </summary>
         private bool IsPunctuationNotSpecial => MyIsPunctuation(Peek) && !SpecialPunctuation.Contains(Peek);
 
-        private static readonly char[] SpecialPunctuation = new[] {'?', '<', '+', '-'};
+        private static readonly char[] SpecialPunctuation = new[] {'?', '^', '<', '+', '-'};
 
         private static bool MyIsPunctuation(char c) => c != '_' && c != '\\' && (char.IsPunctuation(c) || char.IsSymbol(c));
 
@@ -202,8 +202,8 @@ namespace Step.Parser
                     // NORMAL TOKENS (word-like tokens and variables
                     else
                     {
-                        // Allow ?'s at the start of word tokens
-                        if (Peek == '?')
+                        // Allow ?'s and ^'s at the start of word tokens
+                        if (Peek == '?' || Peek == '^')
                             AddCharToToken();
                         // Now we should be at something like a word or number
                         while (!End && !IsEndOfWord)
