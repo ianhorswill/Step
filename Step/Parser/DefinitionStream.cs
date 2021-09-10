@@ -669,7 +669,10 @@ namespace Step.Parser
                     break;
 
                 case "now":
-                    FluentUpdateStep.FromExpression(chain, expression, Module, SourceFile, lineNumber);
+                    if (expression.Length >= 3 && expression[2].Equals("="))
+                        AssignmentStep.FromExpression(chain, expression, SourceFile, lineNumber);
+                    else
+                        FluentUpdateStep.FromExpression(chain, expression, Module, SourceFile, lineNumber);
                     break;
 
                 case "once":

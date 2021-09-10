@@ -48,7 +48,6 @@ namespace Step.Interpreter
             return false;
         }
 
-
         internal static void FromExpression(ChainBuilder chain, object[] expression, 
             string sourceFile = null, int lineNumber = 0)
         {
