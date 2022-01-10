@@ -194,7 +194,7 @@ namespace Step.Interpreter
             outUnifications = inUnifications;
             return false;
         }
-
+        
         /// <summary>
         /// Attempt to unify two terms
         /// </summary>

@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
@@ -254,6 +255,14 @@ namespace Tests
             Assert.IsFalse(m.CallPredicate("TestFail"));
 
 
+        }
+
+        [TestMethod]
+        public void HashTableMatchTest()
+        {
+            var m = Module.FromDefinitions("Test: [Foo s 1] [Not [Foo s 2]]");
+            m["Foo"] = new Hashtable() {{"s", 1}};
+            Assert.IsTrue(m.CallPredicate("Test"));
         }
     }
 }
