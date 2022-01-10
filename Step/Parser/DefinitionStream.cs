@@ -693,9 +693,14 @@ namespace Step.Parser
 
                 default:
                     // This is a call
-                    var target = IsLocalVariableName(targetName)
-                        ? (object) GetLocal(targetName)
-                        : StateVariableName.Named(targetName);
+                    LocalVariableName local = null;
+                    var isLocal = IsLocalVariableName(targetName);
+                    if (isLocal)
+                    {
+                        local = GetLocal(targetName);
+                        IncrementReferenceCount(local);
+                    }
+                    var target = isLocal ? (object) local : StateVariableName.Named(targetName);
                     var args = CanonicalizeArglist(expression.Skip(1).Where(token => !token.Equals("\n")));
                     chain.AddStep(new Call(target, args, null));
                     break;
