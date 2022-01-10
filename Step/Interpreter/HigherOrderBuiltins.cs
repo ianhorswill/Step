@@ -43,6 +43,7 @@ namespace Step.Interpreter
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput);
             g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not);
             g[nameof(FindAll)] = new GeneralPrimitive(nameof(FindAll), FindAll);
+            g[nameof(FindUnique)] = new GeneralPrimitive(nameof(FindUnique), FindUnique);
             g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll);
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach);
             g[nameof(Once)] = new GeneralPrimitive(nameof(Once), Once);
@@ -131,6 +132,28 @@ namespace Step.Interpreter
                 return false;
             });
             return e.Unify(result, resultList.ToArray(), out var final)
+                   && k(o, final, e.State, predecessor);
+        }
+
+        private static bool FindUnique(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check("FindUnique", 3, args);
+            var solution = args[0];
+            var call = args[1] as object[];
+            if (call == null || call.Length == 0)
+                throw new ArgumentException("Invalid goal expression");
+            var task = ArgumentTypeException.Cast<Task>("FindUnique", call[0], args);
+            var taskArgs = call.Skip(1).ToArray();
+
+            var result = args[2];
+            var resultSet = new HashSet<object>();
+
+            task.Call(taskArgs, o, e, predecessor, (newO, u, s, p) =>
+            {
+                resultSet.Add(e.Resolve(solution, u));
+                return false;
+            });
+            return e.Unify(result, resultSet.ToArray(), out var final)
                    && k(o, final, e.State, predecessor);
         }
 
