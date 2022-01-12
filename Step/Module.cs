@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -586,6 +587,8 @@ var output = TextBuffer.NewEmpty();
                 case Task _:
                 case Cons _:
                 case bool _:
+                case IList _:
+                case IDictionary _:
                     return true;
                 default:
                     return false;
