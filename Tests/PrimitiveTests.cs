@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Runtime.Remoting.Channels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
 
@@ -187,13 +188,17 @@ namespace Tests
                 "TestWriteWithoutUnderscoresA: [Write a]",
                 "TestWriteWithoutUnderscoresB: [Write a_b]",
                 "TestWriteCapitalizedA: A [WriteCapitalized cat]",
-                "TestWriteCapitalizedB: A [WriteCapitalized tabby_cat]");
+                "TestWriteCapitalizedB: A [WriteCapitalized tabby_cat]",
+                "TestWriteQuoted: [Write \"The taco run\"]",
+                "TestWriteQuotedIndirect: [set X = \"The taco run\"] [Write X]");
             Assert.AreEqual("S", m.Call("TestWriteString"));
             Assert.AreEqual("103", m.Call("TestWriteNumber"));
             Assert.AreEqual("A", m.Call("TestWriteWithoutUnderscoresA"));
             Assert.AreEqual("A b", m.Call("TestWriteWithoutUnderscoresB"));
             Assert.AreEqual("A Cat", m.Call("TestWriteCapitalizedA"));
             Assert.AreEqual("A Tabby cat", m.Call("TestWriteCapitalizedB"));
+            Assert.AreEqual("The taco run", m.Call("TestWriteQuoted"));
+            Assert.AreEqual("The taco run", m.Call("TestWriteQuotedIndirect"));
         }
     }
 }

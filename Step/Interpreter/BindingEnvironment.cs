@@ -308,6 +308,10 @@ namespace Step.Interpreter
                 case LocalVariableName l:
                     return TryCopyGround(Local[l.Index], out copied);
 
+                case string[] tokens:
+                    copied = tokens;
+                    return true;
+                
                 case object[] tuple:
                     var newTuple = new object[tuple.Length];
                     copied = newTuple;
