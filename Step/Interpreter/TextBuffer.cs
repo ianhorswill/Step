@@ -101,6 +101,7 @@ namespace Step.Interpreter
         {
             if (!WriteMode)
                 throw new InvalidOperationException("Attempt to write to a read mode Text buffer");
+            CheckSpace(tokens.Length);
             Array.Copy(tokens, 0, Buffer, Length, tokens.Length);
             return new TextBuffer(Buffer, Length + tokens.Length, true);
         }
@@ -118,8 +119,26 @@ namespace Step.Interpreter
                 throw new InvalidOperationException("Attempt to write to a read mode Text buffer");
             
             var count = 0;
-            foreach (var token in tokens) Buffer[Length + count++] = token;
+            foreach (var token in tokens)
+            {
+                CheckSpace(1);
+                Buffer[Length + count++] = token;
+            }
             return new TextBuffer(Buffer, Length + count, true);
+        }
+
+        private void CheckSpace(int i)
+        {
+            if (Length + i >= Buffer.Length)
+            {
+                if (Buffer.Length == 0)
+                {
+                    if (i == 0)
+                        return;
+                    throw new InvalidOperationException("Attempt to print when printing disabled");
+                }
+                throw new InvalidOperationException("TextBuffer overflow");
+            }
         }
 
         /// <summary>
