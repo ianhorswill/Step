@@ -383,12 +383,12 @@ This is a test of
 a very nice feature
 of multi-line definitions
 
-With a line break in it!
+With a paragraph break in it!
 [end]
 
 Test: [Multi]
 ");
-            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\nWith a line break in it!",
+            Assert.AreEqual("This is a test of a very nice feature of multi-line definitions\n\nWith a paragraph break in it!",
                 m.Call("Test"));
         }
 
@@ -404,6 +404,44 @@ Baz: baz
 #comment at end
 ");
             Assert.AreEqual("Foo bar baz", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void CommentTest2()
+        {
+            var m = Module.FromDefinitions(@"Test:
+a
+#foo
+#bar
+b
+[end]");
+            Assert.AreEqual("A b", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void TokenizeCommentTest()
+        {
+            var actual = TextFileTokenStream.Tokenize(@"Foo:
+a
+#foo
+#bar
+b
+[end]");
+            var expected = new[] {"Foo", ":", "\n", "a", "\n", "\n", "\n", "b", "\n", "[", "end", "]"};
+            Assert.AreEqual(actual.Length, expected.Length);
+            for (var i = 0; i < actual.Length; i++)
+                Assert.AreEqual(expected[i], actual[i]);
+        }
+
+        [TestMethod]
+        public void TokenizeCommentTest2()
+        {
+            var actual = TextFileTokenStream.Tokenize(@"Test: foo  # comment
+Baz: baz");
+            var expected = new[] { "Test", ":", "foo", "\n", "Baz", ":", "baz" };
+            Assert.AreEqual(actual.Length, expected.Length);
+            for (var i = 0; i < actual.Length; i++)
+                Assert.AreEqual(expected[i], actual[i]);
         }
 
         [TestMethod]

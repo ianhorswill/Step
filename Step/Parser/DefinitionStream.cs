@@ -121,7 +121,7 @@ namespace Step.Parser
         /// </summary>
         private void SwallowNewlines()
         {
-            while (!end && EndOfLineToken)
+            while (!end && AtEndOfLine)
                 Get();
         }
         #endregion
@@ -140,12 +140,16 @@ namespace Step.Parser
         /// <summary>
         /// True if we're at the end of the current definition
         /// </summary>
-        private bool EndOfDefinition => end || ExplicitEndToken || (!multiLine && EndOfLineToken);
+        private bool EndOfDefinition => end || ExplicitEndToken || (!multiLine && AtEndOfLine);
 
+        private bool AtEndOfLine => EndOfLineToken || EndOfParagraphToken;
+        
         /// <summary>
         /// True if we're at an end of line token
         /// </summary>
         private bool EndOfLineToken => Peek.Equals(EndOfLine);
+
+        private bool EndOfParagraphToken => ReferenceEquals(Peek, TextUtilities.NewParagraphToken);
 
         /// <summary>
         /// True if we're at an "[end]" expression
@@ -609,8 +613,8 @@ namespace Step.Parser
             // SKIP COLON
             Get();
 
-            multiLine = EndOfLineToken && !headTerminator.Equals(".");
-            if (multiLine)
+            multiLine = AtEndOfLine && !headTerminator.Equals(".");
+            if (multiLine && !EndOfParagraphToken)
                 Get();  // Swallow the end of line
 
             return (taskName, pattern);
@@ -889,10 +893,7 @@ namespace Step.Parser
                    && !(IsNonAnonymousLocalVariableName(s) || IsUpArrowGlobalVariableReference(s)))
                 if (EndOfLineToken)
                 {
-                    // Skip unless double newline
                     Get();
-                    if (EndOfLineToken)
-                        tokensToEmit.Add((string) Get());
                 }
                 else
                     tokensToEmit.Add((string) Get());

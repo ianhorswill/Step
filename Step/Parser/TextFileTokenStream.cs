@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 
 namespace Step.Parser
@@ -36,6 +37,12 @@ namespace Step.Parser
     /// </summary>
     internal class TextFileTokenStream : TokenStream
     {
+        public static string[] Tokenize(string code)
+        {
+            var stream = new TextFileTokenStream(new StringReader(code), null);
+            return stream.Tokens.ToArray();
+        }
+        
         /// <summary>
         /// Make a new token stream reading from the specified text stream
         /// </summary>
@@ -85,23 +92,20 @@ namespace Step.Parser
                     break;
 
                 case '#':
-                    int ch;
-                    // Skip the rest of the line
-                    while ((ch = input.Read()) != '\n' && ch >= 0) { }
-                    LineNumber++;
-                    if (ch < 0)
-                        return '\n';
-                    // Return the next thing
-                    return (char)ch;
+                    // Swallow line
+                    while (!End && Peek != '\n') input.Read();
+                    input.Read();
+                    return '\n';
 
                 case '"':
                     var nextCode = input.Peek();
                     var next = (char) nextCode;
                     if (nextCode < 0 || char.IsWhiteSpace(next) || char.IsPunctuation(next))
                         return RightDoubleQuote;
-                    else 
+                    else
                         return LeftDoubleQuote;
             }
+
             return c;
         }
 
@@ -115,14 +119,15 @@ namespace Step.Parser
         /// </summary>
         void SkipWhitespace()
         {
-            while (IsWhiteSpace) Skip();
+            while (IsWhiteSpace)
+                Skip();
         }
 
         #region Character classification
         /// <summary>
         /// Current character is non-newline whitespace
         /// </summary>
-        bool IsWhiteSpace => char.IsWhiteSpace(Peek)  && Peek != '\n';
+        bool IsWhiteSpace => (char.IsWhiteSpace(Peek) && Peek != '\n');
 
         /// <summary>
         /// Current character is some punctuation symbol other than '?'
@@ -162,7 +167,13 @@ namespace Step.Parser
 
                     // SINGLE CHARACTER TOKENS
                     while (IsPunctuationNotSpecial || Peek == '\n')
-                        yield return Get().ToString();
+                    {
+                        var ch = Get();
+                        if (ch == '\n' && (Peek == '\r' || Peek == '\n'))
+                            yield return TextUtilities.NewParagraphToken;
+                        else
+                            yield return ch.ToString();
+                    }
                     // HTML TAGS
                     if (Peek == '<')
                     {
