@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Runtime.Remoting.Channels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
@@ -199,6 +200,16 @@ namespace Tests
             Assert.AreEqual("A Tabby cat", m.Call("TestWriteCapitalizedB"));
             Assert.AreEqual("The taco run", m.Call("TestWriteQuoted"));
             Assert.AreEqual("The taco run", m.Call("TestWriteQuotedIndirect"));
+        }
+
+        [TestMethod]
+        public void MakeHashtableTest()
+        {
+            var m = Module.FromDefinitions("Test ?out: [Hashtable a 1 b 2 c 3 ?out]");
+            var h = m.CallFunction<Hashtable>("Test");
+            Assert.AreEqual(1, h["a"]);
+            Assert.AreEqual(2, h["b"]);
+            Assert.AreEqual(3, h["c"]);
         }
     }
 }

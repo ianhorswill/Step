@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -169,6 +170,19 @@ namespace Step.Interpreter
                     var optionName = ArgumentTypeException.Cast<string>("EnvironmentOption", arglist[0], arglist);
                     EnvironmentOption.Handle(optionName, arglist.Skip(1).ToArray());
                     return true;
+                });
+
+            g["Hashtable"] = new SimpleNAryFunction(
+                "Hashtable",
+                data =>
+                {
+                    if ((data.Length % 2) != 0)
+                        throw new ArgumentException(
+                            "Hashtable requires an odd number of arguments, one for the output and an equal number of keys and values");
+                    var h = new Hashtable();
+                    for (var i = 0; i < data.Length; i += 2)
+                        h[data[i]] = data[i + 1];
+                    return h;
                 });
 
             HigherOrderBuiltins.DefineGlobals();

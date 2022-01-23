@@ -218,4 +218,30 @@ namespace Step.Interpreter
             return EmptyBindingListArray;
         }
     }
+
+    /// <summary>
+    /// A simple function supporting a variable number of arguments
+    /// All type checking is left to the implementation function
+    /// </summary>
+    public class SimpleNAryFunction : GeneralPredicateBase
+    {
+        /// <inheritdoc />
+        public SimpleNAryFunction(string name, Func<object[], object> implementation) : base(name, null)
+        {
+            this.implementation = implementation;
+        }
+        private readonly Func<object[], object> implementation;
+
+        /// <inheritdoc />
+        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        {
+            ArgumentCountException.CheckAtLeast(Name, 1, args);
+            var fArgs = new object[args.Length - 1];
+            Array.Copy(args, fArgs, args.Length-1);
+            var result = implementation(fArgs);
+            if (env.Unify(args[args.Length-1], result, out var bindings))
+                return new[] { bindings };
+            return EmptyBindingListArray;
+        }
+    }
 }
