@@ -185,6 +185,9 @@ namespace Step.Interpreter
                     return h;
                 });
 
+            g["Contains"] =
+                new SimplePredicate<string, string>("Contains", (super, sub) => super.Contains(sub));
+
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
         }
