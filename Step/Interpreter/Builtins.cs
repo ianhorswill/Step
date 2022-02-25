@@ -54,6 +54,8 @@ namespace Step.Interpreter
                 return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
                        k(o, newBindings, e.State, predecessor);
             });
+            g["Different"] = new SimplePredicate<object,object>("Different",
+                (a, b) => !a.Equals(b) && !(a is LogicVariable) && !(b is LogicVariable));
             g[">"] = new SimplePredicate<float, float>(">", (a, b) => a > b);
             g["<"] = new SimplePredicate<float, float>("<", (a, b) => a < b);
             g[">="] = new SimplePredicate<float, float>(">=", (a, b) => a >= b);
@@ -143,9 +145,16 @@ namespace Step.Interpreter
                 // ReSharper disable once FunctionNeverReturns
             });
             
-            g["RandomIntegerInclusive"] = new SimpleFunction<int, int, int>("RandomIntegerInclusive", Randomizer.IntegerInclusive);
+            g["RandomIntegerInclusive"] = new SimpleFunction<int, int, int>("RandomIntegerInclusive", Randomization.IntegerInclusive);
 
-            g["RandomIntegerExclusive"] = new SimpleFunction<int, int, int>("RandomIntegerExclusive", Randomizer.IntegerExclusive);
+            g["RandomIntegerExclusive"] = new SimpleFunction<int, int, int>("RandomIntegerExclusive", Randomization.IntegerExclusive);
+
+            g["RandomElement"] = new GeneralPredicate<IList, object>(
+                "RandomElement",
+                (list, elt) => list.Contains(elt),
+                list => list.BadShuffle().Cast<object>(),
+                null,
+                null);
 
             g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
                 x =>

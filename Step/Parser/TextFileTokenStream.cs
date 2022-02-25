@@ -178,7 +178,10 @@ namespace Step.Parser
                     if (Peek == '<')
                     {
                         AddCharToToken();
-                        if (Peek == '/' || char.IsLetter(Peek))
+                        if (Peek == '-' || Peek == '=')
+                            //  It's a <- or <= operator
+                            AddCharToToken();
+                        else if (Peek == '/' || char.IsLetter(Peek))
                         {
                             // It's an HTML markup token
                             while (!End && Peek != '>')

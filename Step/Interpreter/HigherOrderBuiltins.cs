@@ -46,6 +46,7 @@ namespace Step.Interpreter
             g[nameof(FindUnique)] = new GeneralPrimitive(nameof(FindUnique), FindUnique);
             g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll);
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach);
+            g[nameof(Implies)] = new GeneralPrimitive(nameof(Implies), Implies);
             g[nameof(Once)] = new GeneralPrimitive(nameof(Once), Once);
             g[nameof(ExactlyOnce)] = new GeneralPrimitive(nameof(ExactlyOnce), ExactlyOnce);
             g[nameof(Max)] = new GeneralPrimitive(nameof(Max), Max);
@@ -193,6 +194,44 @@ namespace Step.Interpreter
 
             // Use original unifications but accumulated output and state.
             return k(resultOutput, env.Unifications, dynamicState, predecessor);
+        }
+
+        private static bool Implies(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            if (args.Length < 2)
+                throw new ArgumentCountException(nameof(Implies), 2, args);
+
+            var producer = args[0];
+            var producerChain = Step.ChainFromBody(nameof(Implies), producer);
+            var consumer = args.Skip(1).ToArray();
+            var consumerChain = Step.ChainFromBody(nameof(Implies), consumer);
+
+            var dynamicState = env.State;
+            var resultOutput = output;
+            var allTrue = true;
+            producerChain.Try(resultOutput, env,
+                (o, u, d, p) =>
+                {
+                    // We've got a solution to the producer in u.
+                    // So run the consumer once with u but not d or o.
+                    allTrue &= consumerChain.Try(resultOutput,
+                        new BindingEnvironment(env, u, dynamicState),
+                        (o2, u2, d2, newP) =>
+                        {
+                            // Save modifications to dynamic state, output; throw away binding state
+                            dynamicState = d2;
+                            resultOutput = o2;
+                            // Accept this one solution to consumer; don't backtrack it.
+                            return true;
+                        },
+                        p);
+                    // Backtrack to generate the next solution for producer
+                    return false;
+                },
+                predecessor);
+
+            // Use original unifications but accumulated output and state.
+            return allTrue && k(resultOutput, env.Unifications, dynamicState, predecessor);
         }
 
         private static bool Once(object[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
