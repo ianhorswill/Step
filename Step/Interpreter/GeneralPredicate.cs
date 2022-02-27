@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Step.Utilities;
 
 namespace Step.Interpreter
 {
@@ -61,6 +62,38 @@ namespace Step.Interpreter
         {
             this.inMode = inMode;
             this.outMode = outMode;
+        }
+
+        /// <summary>
+        /// Make a unary predicate from an IList.
+        /// List should not be modified after this call.
+        /// </summary>
+        /// <param name="name">Name for the predicate</param>
+        /// <param name="list">List containing all elements</param>
+        /// <returns>Predicate</returns>
+        public static GeneralPredicate<T1> FromList(string name, IList<T1> list)
+        {
+            var hashSet = new HashSet<T1>(list);
+            return new GeneralPredicate<T1>(
+                name,
+                elt => hashSet.Contains(elt),
+                () => list);
+        }
+
+        /// <summary>
+        /// Make a unary predicate from an IList.  Enumerates elements using BadShuffle.
+        /// List should not be modified after this call.
+        /// </summary>
+        /// <param name="name">Name for the predicate</param>
+        /// <param name="list">List containing all elements</param>
+        /// <returns>Predicate</returns>
+        public static GeneralPredicate<T1> FromListRandomized(string name, IList<T1> list)
+        {
+            var hashSet = new HashSet<T1>(list);
+            return new GeneralPredicate<T1>(
+                name,
+                elt => hashSet.Contains(elt),
+                () => list.BadShuffle());
         }
 
         private readonly Func<T1, bool> inMode;
