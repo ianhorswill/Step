@@ -41,7 +41,8 @@ namespace Step.Interpreter
         /// <summary>
         /// Number of arguments expected by the task
         /// </summary>
-        public readonly int ArgCount;
+        public int ArgCount => ArgumentCount.Value;
+
         /// <summary>
         /// Methods for accomplishing the task
         /// </summary>
@@ -215,9 +216,7 @@ namespace Step.Interpreter
         #endregion
 
         internal CompoundTask(string name, int argCount) : base(name, argCount)
-        {
-            ArgCount = argCount;
-        }
+        { }
 
         /// <summary>
         /// Add a new method for achieving this task

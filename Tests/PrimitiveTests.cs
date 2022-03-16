@@ -25,9 +25,9 @@
 
 using System;
 using System.Collections;
-using System.Runtime.Remoting.Channels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
+using Step.Utilities;
 
 namespace Tests
 {
@@ -211,5 +211,35 @@ namespace Tests
             Assert.AreEqual(2, h["b"]);
             Assert.AreEqual(3, h["c"]);
         }
+
+        [TestMethod]
+        public void HelpTest()
+        {
+            var m = Module.FromDefinitions("Test: [Help =]");
+            Assert.AreEqual("[= a b]\nMatches (unifies) a and b, and succeeds when they're the same.", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void MakeManualTest()
+        {
+            Documentation.WriteHtmlReference(Module.Global, "manual.htm");
+            Assert.IsTrue(true);
+        }
+
+    //    [TestMethod]
+    //    public void AproposTest()
+    //    {
+    //        var m = Module.FromDefinitions("Test: [Apropos unif]");
+    //        Assert.AreEqual(@"[= a b]
+    //Matches (unifies) a and b, and succeeds when they're the same.
+    
+    //[PreviousCall ?call_pattern]
+    //Unifies ?call_pattern with the most recent successful call that matches it.  Backtracking will match against previous calls.
+    
+    //[UniqueCall reflection ?call_pattern]
+    //Calls ?call_pattern, finding successive solutions until one is found that can't be unified with a previous successful call.
+    
+    //", m.Call("Test"));
+    //    }
     }
 }

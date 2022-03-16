@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Step.Interpreter.PrimitiveTask;
 
 namespace Step.Interpreter
 {
@@ -12,35 +11,49 @@ namespace Step.Interpreter
             var g = Module.Global;
 
             // Argument is a compound task
-            g["CompoundTask"] = new GeneralPrimitive(nameof(CompoundTask), CompoundTask);
+            g["CompoundTask"] = new GeneralPrimitive(nameof(CompoundTask), CompoundTask)
+                .Arguments("x")
+                .Documentation("reflection", "True if x is a compound task, i.e. a task defined by rules.");
 
             // Second arg is a method of the first arg
             Func<CompoundTask, Method, bool> inInMode = (t, m) => m.Task == t;
             Func<CompoundTask, IEnumerable<Method>> inOutMode = t => t.Methods;
             Func<Method, IEnumerable<CompoundTask>> outInMode = m => new[] {m.Task};
             g["TaskMethod"] =
-                new GeneralPredicate<CompoundTask, Method>("TaskMethod", inInMode, inOutMode, outInMode, null);
+                new GeneralPredicate<CompoundTask, Method>("TaskMethod", inInMode, inOutMode, outInMode, null)
+                    .Arguments("?task", "?method")
+                    .Documentation("reflection", "True when ?method is a method of ?task");
 
             // Gets the MethodCallFrame of the most recent call
-            g["LastMethodCallFrame"] = new GeneralPrimitive("LastMethodCallFrame", LastMethodCallFrame);
+            g["LastMethodCallFrame"] = new GeneralPrimitive("LastMethodCallFrame", LastMethodCallFrame)
+                .Arguments("?frame")
+                .Documentation("reflection", "Sets ?frame to the reflection information for the current method call.");
 
             // Second argument is in the caller chain leading to the first argument
             Func<MethodCallFrame, Method, bool> inInMode1 = (f, m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null;
             Func<MethodCallFrame, IEnumerable<Method>> inOutMode1 = f => f.CallerChain.Select(a => a.Method);
             g["CallerChainAncestor"] = 
-                new GeneralPredicate<MethodCallFrame, Method>("CallerChainAncestor", inInMode1, inOutMode1, null, null);
+                new GeneralPredicate<MethodCallFrame, Method>("CallerChainAncestor", inInMode1, inOutMode1, null, null)
+                    .Arguments("frame", "?method")
+                    .Documentation("True if ?method called frame's method or some other method that eventually called this frame's method.");
 
             // Second argument is in the goal chain leading to the first argument
             Func<MethodCallFrame, Method, bool> inInMode2 = (f, m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null;
             Func<MethodCallFrame, IEnumerable<Method>> inOutMode2 = f => f.GoalChain.Select(a => a.Method);
             g["GoalChainAncestor"] = 
-                new GeneralPredicate<MethodCallFrame, Method>("GoalChainAncestor", inInMode2, inOutMode2, null, null);
+                new GeneralPredicate<MethodCallFrame, Method>("GoalChainAncestor", inInMode2, inOutMode2, null, null)
+                    .Arguments("frame", "?method")
+                    .Documentation("True if a successful call to ?method preceded this frame.");
 
             // First argument calls the second argument
-            g["TaskCalls"] = new GeneralPrimitive(nameof(TaskCalls), TaskCalls);
+            g["TaskCalls"] = new GeneralPrimitive(nameof(TaskCalls), TaskCalls)
+                .Arguments("?caller", "?callee")
+                .Documentation("True if task ?caller has a method that calls ?callee");
 
             // Second argument is a call expression for a call in some method of first argument.
-            g["TaskSubtask"] = new GeneralPrimitive(nameof(TaskSubtask), TaskSubtask);
+            g["TaskSubtask"] = new GeneralPrimitive(nameof(TaskSubtask), TaskSubtask)
+                .Arguments("?task", "?call")
+                .Documentation("True if task ?caller has a method that contains the call ?call.");
         }
 
         private static bool LastMethodCallFrame(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)

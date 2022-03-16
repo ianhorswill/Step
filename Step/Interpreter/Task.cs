@@ -19,6 +19,64 @@ namespace Step.Interpreter
         public readonly int? ArgumentCount;
 
         /// <summary>
+        /// Optional documentation of the names of the arguments to the task
+        /// These are here purely for documentation purposes.  They aren't used during the calling sequence.
+        /// </summary>
+        public string[] Arglist;
+
+        /// <summary>
+        /// This task has documentation metadata
+        /// </summary>
+        public bool HasDocumentation => Arglist != null && Description != null;
+
+        /// <summary>
+        /// Adds documentation of the arguments to the task
+        /// </summary>
+        /// <param name="arglist">The names of the arguments</param>
+        /// <typeparam name="T">Type of task</typeparam>
+        /// <returns>The original task</returns>
+        public Task Arguments(params string[] arglist)
+        {
+            Arglist = arglist;
+            return this;
+        }
+
+        /// <summary>
+        /// Optional documentation of what the task does
+        /// </summary>
+        public string Description;
+
+        /// <summary>
+        /// Adds documentation of the description of the task
+        /// </summary>
+        /// <param name="documentation">Description of what the task does</param>
+        /// <typeparam name="T">Type of task</typeparam>
+        /// <returns>The original task</returns>
+        public Task Documentation(string documentation)
+        {
+            Description = documentation;
+            return this;
+        }
+
+        /// <summary>
+        /// Optional documentation of what section of the manual this should appear in
+        /// </summary>
+        public string ManualSection;
+
+        /// <summary>
+        /// Adds documentation of the description of the task
+        /// </summary>
+        /// <param name="documentation">Description of what the task does</param>
+        /// <typeparam name="T">Type of task</typeparam>
+        /// <returns>The original task</returns>
+        public Task Documentation(string manualSection, string documentation)
+        {
+            ManualSection = manualSection;
+            Description = documentation;
+            return this;
+        }
+
+        /// <summary>
         /// Initialize name of task
         /// </summary>
         protected Task(string name, int? argumentCount)

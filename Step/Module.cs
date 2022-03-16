@@ -199,6 +199,13 @@ namespace Step
         public IEnumerable<KeyValuePair<StateVariableName, object>> Bindings => dictionary;
 
         /// <summary>
+        /// All the variable bindings in this module and its parent.
+        /// </summary>
+        public IEnumerable<KeyValuePair<StateVariableName, object>> AllBindings =>
+            Parent == null ? Bindings : Bindings.Concat(Parent.AllBindings);
+
+
+        /// <summary>
         /// All CompoundTasks defined in this Module
         /// </summary>
         public IEnumerable<CompoundTask> DefinedTasks =>
@@ -438,11 +445,17 @@ var output = TextBuffer.NewEmpty();
             {
                 if (task.Name == "initially")
                     RunLoadTimeInitialization(pattern, locals, chain, path, line);
-                else if (locals == null)
-                    // Declaration
-                    FindTask(task, pattern.Length, true, path, line).Flags |= flags;
                 else
-                    FindTask(task, pattern.Length, true, path, line).AddMethod(weight, pattern, locals, chain, flags, path, line);
+                {
+                    var compoundTask = FindTask(task, pattern.Length, true, path, line);
+                    if (locals == null)
+                        // Declaration
+                        compoundTask.Flags |= flags;
+                    else
+                        compoundTask.AddMethod(weight, pattern, locals, chain, flags, path, line);
+                    if (compoundTask.Arglist == null)
+                        compoundTask.Arglist = pattern.Select(x =>x.ToString()).ToArray();
+                }
             }
         }
 
@@ -633,7 +646,7 @@ var output = TextBuffer.NewEmpty();
         /// <summary>
         /// True if caller has a method that calls callee
         /// </summary>
-        /// <param name="caller">Caller (but be a CompoundTask)</param>
+        /// <param name="caller">Caller (must be a CompoundTask)</param>
         /// <param name="callee">Target of call (can be a CompoundTask or a primitive task, i.e. a delegate)</param>
         public bool TaskCalls(CompoundTask caller, object callee) => Callees(caller).Contains(callee);
 
