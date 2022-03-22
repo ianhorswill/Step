@@ -26,6 +26,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using Step.Utilities;
@@ -47,6 +48,9 @@ namespace Step.Interpreter
         internal static void DefineGlobals()
         {
             var g = Module.Global;
+
+            Documentation.SectionIntroduction("comparison",
+                "Predicates that test whether two values are the same or different.  Many of these use unification, in which case they are testing whether the values can be made identical through binding variables.");
 
             g["="] = new GeneralPrimitive("=", (args, o, e, predecessor, k) =>
             {
@@ -74,6 +78,9 @@ namespace Step.Interpreter
                 .Arguments("a", "b")
                 .Documentation("comparison", "True when a and b are both numbers and a is no larger than b");
 
+            Documentation.SectionIntroduction("output",
+                "Tasks that print things.");
+
             g["Paragraph"] = new DeterministicTextGenerator("Paragraph",
                 () => new[] {TextUtilities.NewParagraphToken})
                 .Arguments()
@@ -91,17 +98,23 @@ namespace Step.Interpreter
                 .Arguments()
                 .Documentation("output", "Forces a space to be inserted between two tokens that wouldn't normally be separated.  For example, \"a .\" prints as \"a.\" but \"a [ForceSpace] .\" prints as \"a .\"");
 
+            Documentation.SectionIntroduction("control flow//controlling backtracking",
+                "Tasks that control how or whether execution backtracks.");
+
             g["Fail"] = new SimplePredicate("Fail", () => false)
                 .Arguments()
-                .Documentation("control", "Never succeeds; forces the system to backtrack immediately.");
+                .Documentation("control flow//controlling backtracking", "Never succeeds; forces the system to backtrack immediately.");
+
+            Documentation.SectionIntroduction("debugging",
+                "Tasks used to help debug code.");
 
             g["Break"] = new SimplePredicate("Break", Break)
                 .Arguments()
-                .Documentation("control", "Breakpoint; pauses execution and displays the current stack in the debugger.");
+                .Documentation("debugging", "Breakpoint; pauses execution and displays the current stack in the debugger.");
 
             g["Throw"] = new SimpleNAryPredicate("Throw", Throw)
                 .Arguments("message", "...")
-                .Documentation("control", "Throws an exception (error) containing the specified message.");
+                .Documentation("control flow", "Throws an exception (error) containing the specified message.");
 
             g["StringForm"] = 
                 new GeneralPredicate<object, string>("StringForm",
@@ -163,15 +176,59 @@ namespace Step.Interpreter
                 .Arguments("object1", "object2")
                 .Documentation("output", "Prints both objects, without a space between them, and changes and _'s to spaces.");
 
+            Documentation.SectionIntroduction("data structures",
+                "Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictinoary and and [list ?element] is true when ?element is an element of the list.");
+
+            Documentation.SectionIntroduction("data structures//lists",
+                "Predicates access lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).");
+
             g["Member"] = new GeneralPredicate<object, IEnumerable<object>>("Member", (member, collection) => collection != null && collection.Contains(member), null, collection => collection ?? EmptyArray, null)
                 .Arguments("element", "collection")
-                .Documentation("data structures", "True when element is an element of collection.");
+                .Documentation("data structures//lists", "True when element is an element of collection.");
+
+            g["Length"] = new SimpleFunction<IList, int>("Length", l => l.Count)
+                .Arguments("list", "?length")
+                .Documentation("True when list has exactly ?length elements");
+
+            g["Nth"] = new GeneralNAryPredicate("Nth",
+                args =>
+                {
+                    ArgumentCountException.Check("Nth", 3, args);
+                    var list = ArgumentTypeException.Cast<IList>("Nth", args[0], args);
+                    var indexVar = args[1] as LogicVariable;
+                    var elementVar = args[2] as LogicVariable;
+
+                    if (indexVar == null)
+                    {
+                        var index = ArgumentTypeException.Cast<int>("Nth", args[1], args);
+                        return new[] {new[] {list, index, list[index]}};
+                    }
+                    else if (elementVar == null)
+                    {
+                        var elt = args[2];
+                        var index = list.IndexOf(elt);
+                        if (index >= 0)
+                            return new[] {new[] {list, index, args[2]}};
+                        else
+                            return new object[0][];
+                    }
+
+                    throw new ArgumentInstantiationException("Nth", new BindingEnvironment(), args);
+                });
+
+            Documentation.SectionIntroduction("metalogical",
+                "Predicates that test the binding state of a variable.");
+
             g["Var"] = new SimplePredicate<object>("Var", o => o is LogicVariable)
                 .Arguments("x")
                 .Documentation("metalogical", "Succeeds when its argument is an uninstantiated variable (a variable without a value)");
             g["NonVar"] = new SimplePredicate<object>("NonVar", o => !(o is LogicVariable))
                 .Arguments("x")
                 .Documentation("metalogical", "Succeeds when its argument is a *not* an uninstantiated variable.");
+
+            Documentation.SectionIntroduction("type testing",
+                "Predicates that test what type of data object their argument is.  These fail when the argument is an unbound variable.");
+
             g["String"] = new SimplePredicate<object>("String", o => o is string)
                 .Arguments("x")
                 .Documentation("type testing", "Succeeds when its argument is a string");
@@ -200,8 +257,11 @@ namespace Step.Interpreter
                         return true;
                 // ReSharper disable once FunctionNeverReturns
             }).Arguments("?count")
-                .Documentation("control", "Binds ?count to 0, then to increasing numbers each time the system backtracks to the call.  Used in a loop to run something repeatedly: [CountAttempts ?count] [DoSomething] [= ?count 100] will run DoSomething until ?count is 100.");
-            
+                .Documentation("control flow", "Binds ?count to 0, then to increasing numbers each time the system backtracks to the call.  Used in a loop to run something repeatedly: [CountAttempts ?count] [DoSomething] [= ?count 100] will run DoSomething until ?count is 100.");
+
+            Documentation.SectionIntroduction("randomization",
+                "Tasks that choose random numbers or list elements.");
+
             g["RandomIntegerInclusive"] = new SimpleFunction<int, int, int>("RandomIntegerInclusive", Randomization.IntegerInclusive)
                 .Arguments("min", "max", "?random")
                 .Documentation("randomization", "Sets ?random to a random integer such that min <= ?random <= max");
@@ -218,6 +278,9 @@ namespace Step.Interpreter
                 null)
                 .Arguments("list", "?element")
                 .Documentation("randomization","Sets ?element to a random element of list.  If this is backtracked, it generates a random shuffle of the elements of this list.  However, not all shuffles are possible; it starts with a random element and moves to subsequent elements with a random step size.");
+
+            Documentation.SectionIntroduction("string processing",
+                "Predicates that test the spelling of strings.");
 
             g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
                 x =>
@@ -240,6 +303,9 @@ namespace Step.Interpreter
                     .Arguments("?singular", "?plural")
                     .Documentation("string processing", "True if ?plural is the English plural form of ?singular");
 
+            Documentation.SectionIntroduction("StepRepl",
+                "Tasks that control the behavior of StepRepl or whatever other game engine the Step code is running inside of.");
+
             g["EnvironmentOption"] = new SimpleNAryPredicate("EnvironmentOption",
                 arglist =>
                 {
@@ -249,7 +315,7 @@ namespace Step.Interpreter
                     return true;
                 })
                 .Arguments("argument", "...")
-                .Documentation("Asks StepRepl or whatever other program this Step code is running in to change its handling of step code.");
+                .Documentation("StepRepl", "Asks StepRepl or whatever other program this Step code is running in to change its handling of step code.");
 
             g["Hashtable"] = new SimpleNAryFunction(
                 "Hashtable",
@@ -264,7 +330,7 @@ namespace Step.Interpreter
                     return h;
                 })
                 .Arguments("?h")
-                .Documentation("Creates a new empty hash table and stores it in ?h");
+                .Documentation("data structures", "Creates a new empty hash table and stores it in ?h");
 
             g["Contains"] =
                 new SimplePredicate<string, string>("Contains", (super, sub) => super.Contains(sub))
