@@ -273,7 +273,7 @@ namespace Step.Parser
                             switch (tok)
                             {
                                 case null:
-                                    throw new SyntaxError("Quoted strings may not contain subexpressions", SourceFile, lineNumber);
+                                    throw new SyntaxError("Quoted text may not contain subexpressions", SourceFile, lineNumber);
 
                                 case "\"":
                                 case "\u201D":  // Right double quote
@@ -289,7 +289,7 @@ namespace Step.Parser
                             }
                         }
                         if (notDone)
-                            throw new SyntaxError("Quoted strings missing close quote", SourceFile, lineNumber);
+                            throw new SyntaxError("Quoted text missing close quote", SourceFile, lineNumber);
                     }
                     else 
                         result.Add(Canonicalize(Get()));
