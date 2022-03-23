@@ -88,6 +88,14 @@ namespace Tests
         }
 
         [TestMethod]
+        public void UnifyNullTest()
+        {
+            var b = new BindingEnvironment();
+            Assert.IsFalse(b.Unify(null, "foo", null, out _));
+            Assert.IsTrue(b.Unify(null, null, null, out _));
+        }
+
+        [TestMethod]
         public void RandomlyTest()
         {
             var m = new Module("test");
