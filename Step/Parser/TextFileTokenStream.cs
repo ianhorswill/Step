@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Permissions;
 using System.Text;
 
 namespace Step.Parser
@@ -70,11 +69,11 @@ namespace Step.Parser
         /// <summary>
         /// Return the accumulated characters as a token and clear the token buffer.
         /// </summary>
-        string ConsumeToken()
+        string ConsumeToken(bool quoted = false)
         {
             var newToken = token.ToString();
             token.Length = 0;
-            return newToken;
+            return quoted?EscapeStringToken(newToken):newToken;
         }
         #endregion
 
@@ -135,7 +134,7 @@ namespace Step.Parser
         /// </summary>
         private bool IsPunctuationNotSpecial => MyIsPunctuation(Peek) && !SpecialPunctuation.Contains(Peek);
 
-        private static readonly char[] SpecialPunctuation = new[] {'?', '^', '<', '+', '-'};
+        private static readonly char[] SpecialPunctuation = new[] {'?', '^', '<', '+', '-', '|'};
 
         private static bool MyIsPunctuation(char c) => c != '_' && c != '\\' && (char.IsPunctuation(c) || char.IsSymbol(c));
 
@@ -213,6 +212,29 @@ namespace Step.Parser
                             }
                         }
                     }
+                    else if (Peek == '|')
+                    {
+                        Get();   // Skip | symbol
+                        if (HaveToken)
+                            ConsumeToken();
+                        // It's a quoted symbol/string, as opposed to text
+                        while (!End && Peek != '|')
+                        {
+                            if (Peek == '\\')
+                            {
+                                Get();
+                                if (End)
+                                    throw new SyntaxError("File ends with a backslash escape", FilePath, LineNumber);
+                            }
+                            AddCharToToken();
+                        }
+
+                        if (End)
+                            throw new SyntaxError("File ends with a backslash escape", FilePath, LineNumber);
+                        Get(); // Skip |
+
+                        yield return ConsumeToken(true);
+                    }
                     // NORMAL TOKENS (word-like tokens and variables
                     else
                     {
@@ -238,5 +260,9 @@ namespace Step.Parser
                 }
             }
         }
+
+        public static bool IsEscapedStringToken(string s) => s.StartsWith(" ");
+        public static string EscapeStringToken(string s) => " " + s;
+        public static string UnescapeStringToken(string s) => s.Substring(1);
     }
 }

@@ -306,6 +306,9 @@ namespace Step.Parser
         {
             switch (o)
             {
+                case string s when TextFileTokenStream.IsEscapedStringToken(s):
+                    return TextFileTokenStream.UnescapeStringToken(s);
+
                 case string s when IsLocalVariableName(s):
                 {
                     var v = GetLocal(s);
