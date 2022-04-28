@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Step.Utilities;
 
 namespace Step.Interpreter
 {
@@ -38,57 +39,72 @@ namespace Step.Interpreter
         {
             var g = Module.Global;
 
+            Documentation.SectionIntroduction("control flow",
+                "Tasks that run or otherwise control the execution of other tasks.");
+
+            Documentation.SectionIntroduction("control flow//calling tasks",
+                "Tasks that call another task once.");
+
+            Documentation.SectionIntroduction("control flow//looping",
+                "Tasks that repeatedly call other tasks.");
+
+            Documentation.SectionIntroduction("control flow//looping//all solutions predicates",
+                "Tasks that collect together all the solutions to a given call.");
+
+            Documentation.SectionIntroduction("higher-order predicates",
+                "Predicates that run other predicates.");
+
             g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call)
                 .Arguments("call", "extra_arguments", "...")
-                .Documentation("higher-order tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
+                .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
             g[nameof(Begin)] = new GeneralPrimitive(nameof(Begin), Begin)
                 .Arguments("calls", "...")
-                .Documentation("higher-order tasks", "Runs each of the calls, in order.");
+                .Documentation("control flow", "Runs each of the calls, in order.");
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput)
                 .Arguments("calls", "...")
-                .Documentation("higher-order tasks", "Runs each of the calls, in order, but throws away their output text.");
+                .Documentation("control flow//calling tasks", "Runs each of the calls, in order, but throws away their output text.");
             g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not)
                 .Arguments("call")
-                .Documentation("higher-order tasks", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.");
+                .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.");
             g[nameof(FindAll)] = new GeneralPrimitive(nameof(FindAll), FindAll)
                 .Arguments("?result", "call", "?all_results")
-                .Documentation("higher-order tasks", "Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results.  If backtracking produces duplicate ?results, there will be multiple copies of them in ?all_results; to eliminate duplicate solutions, use FindUnique.  If call never fails, this will run forever.");
+                .Documentation("control flow//looping//all solutions predicates", "Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results.  If backtracking produces duplicate ?results, there will be multiple copies of them in ?all_results; to eliminate duplicate solutions, use FindUnique.  If call never fails, this will run forever.");
             g[nameof(FindUnique)] = new GeneralPrimitive(nameof(FindUnique), FindUnique)
                 .Arguments("?result", "call", "?all_results")
-                .Documentation("higher-order tasks", "Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results, eliminating duplicate solutions.  If call never fails, this will run forever.");
+                .Documentation("control flow//looping//all solutions predicates", "Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results, eliminating duplicate solutions.  If call never fails, this will run forever.");
             g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll)
                 .Arguments("generator_call", "other_calls", "...")
-                .Documentation("higher-order tasks", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings or set commands are undone."); ;
+                .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings or set commands are undone."); ;
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach)
                 .Arguments("generator_call", "other_calls", "...")
-                .Documentation("higher-order tasks", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings are undone.  However, all text generated and set commands performed are preserved.");
+                .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings are undone.  However, all text generated and set commands performed are preserved.");
             g[nameof(Implies)] = new GeneralPrimitive(nameof(Implies), Implies)
-                .Arguments("generator_call", "other_calls", "...")
-                .Documentation("higher-order tasks", "True if for every solution to generator_call, other_calls succeeds.  So this is essentially like ForEach, but whereas ForEach always succeeds, Implies fails if other_calls ever fails.  Text output and sets of global variables are preserved, as with ForEach.");
+                .Arguments("higher-order predicates", "other_calls", "...")
+                .Documentation("higher-order predicates", "True if for every solution to generator_call, other_calls succeeds.  So this is essentially like ForEach, but whereas ForEach always succeeds, Implies fails if other_calls ever fails.  Text output and sets of global variables are preserved, as with ForEach.");
             g[nameof(Once)] = new GeneralPrimitive(nameof(Once), Once)
                 .Arguments("code", "...")
-                .Documentation("higher-order tasks", "Runs code normally, however, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.");
+                .Documentation("control flow//controlling backtracking", "Runs code normally, however, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.");
             g[nameof(ExactlyOnce)] = new GeneralPrimitive(nameof(ExactlyOnce), ExactlyOnce)
                 .Arguments("code", "...")
-                .Documentation("higher-order tasks", "Runs code normally.  If the code fails, ExactlyOnce throws an exception.  If it succeeds, ExactlyOnce succeeds.  However, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.");
+                .Documentation("control flow//controlling backtracking", "Runs code normally.  If the code fails, ExactlyOnce throws an exception.  If it succeeds, ExactlyOnce succeeds.  However, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.");
             g[nameof(Max)] = new GeneralPrimitive(nameof(Max), Max)
                 .Arguments("?scoreVariable", "code", "...")
-                .Documentation("higher-order tasks", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the largest value of ?scoreVariable");
+                .Documentation("control flow//looping//all solutions predicates", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the largest value of ?scoreVariable");
             g[nameof(Min)] = new GeneralPrimitive(nameof(Min), Min)
                 .Arguments("?scoreVariable", "code", "...")
-                .Documentation("higher-order tasks", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable");
+                .Documentation("control flow//looping//all solutions predicates", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable");
             g[nameof(SaveText)] = new GeneralPrimitive(nameof(SaveText), SaveText)
                 .Arguments("call", "?variable")
-                .Documentation("higher-order tasks", "Runs call, but places its output in ?variable rather than the output buffer.");
+                .Documentation("control flow//calling tasks", "Runs call, but places its output in ?variable rather than the output buffer.");
             g[nameof(PreviousCall)] = new GeneralPrimitive(nameof(PreviousCall), PreviousCall)
                 .Arguments("?call_pattern")
-                .Documentation("reflection", "Unifies ?call_pattern with the most recent successful call that matches it.  Backtracking will match against previous calls.");
+                .Documentation("reflection//dynamic analysis", "Unifies ?call_pattern with the most recent successful call that matches it.  Backtracking will match against previous calls.");
             g[nameof(UniqueCall)] = new GeneralPrimitive(nameof(UniqueCall), UniqueCall)
-                .Arguments("reflection", "?call_pattern")
-                .Documentation("Calls ?call_pattern, finding successive solutions until one is found that can't be unified with a previous successful call.");
+                .Arguments("?call_pattern")
+                .Documentation("reflection//dynamic analysis", "Calls ?call_pattern, finding successive solutions until one is found that can't be unified with a previous successful call.");
             g[nameof(Parse)] = new GeneralPrimitive(nameof(Parse), Parse)
                 .Arguments("call", "text")
-                .Documentation("higher-order tasks", "True if call can generate text as its output.  This is done by running call and backtracking whenever its output diverges from text.  Used to determine if a grammar can generate a given string.");
+                .Documentation("control flow//calling tasks", "True if call can generate text as its output.  This is done by running call and backtracking whenever its output diverges from text.  Used to determine if a grammar can generate a given string.");
         }
 
         private static bool Call(object[] args, TextBuffer output, BindingEnvironment env,

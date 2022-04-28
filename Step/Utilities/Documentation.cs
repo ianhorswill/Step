@@ -29,11 +29,11 @@ namespace Step.Utilities
                 ManualEntryMaybeRichText(t)
             })
                 .Arguments("task")
-                .Documentation("Print documentation for task");
+                .Documentation("documentation", "Print documentation for task");
 
             m[nameof(Apropos)] = new GeneralPrimitive(nameof(Apropos), Apropos)
                 .Arguments("topic")
-                .Documentation("Print documentation for all tasks that mention topic.");
+                .Documentation("documentation", "Print documentation for all tasks that mention topic.");
         }
 
         /// <summary>
@@ -66,47 +66,82 @@ namespace Step.Utilities
         /// <param name="path">Path to write the file to</param>
         public static void WriteHtmlReference(Module m, string path)
         {
-            var allSections = new Dictionary<string, List<Task>>();
-
-            List<Task> SectionList(string section)
-            {
-                if (!allSections.TryGetValue(section, out var list))
-                    allSections[section] = list = new List<Task>();
-                return list;
-            }
-
-            void AddToSection(Task t)
-            {
-                SectionList(t.ManualSection??"Miscellaneous").Add(t);
-            }
+            var root = new ManualSection();
 
             foreach (var b in m.AllBindings)
                 if (b.Value is Task t && t.HasDocumentation)
-                    AddToSection(t);
+                    root.Add(t, t.ManualSection??"Miscellaneous");
+
+            foreach (var (section, intro) in SectionIntroductions)
+                root.SectionPath(section).Introduction = intro;
 
             using (var file = File.CreateText(path))
             {
-                file.WriteLine("<h1>Reference</h1>");
-                file.WriteLine("This section lists all the tasks built into the system.");
-
-                foreach (var section in
-                    from section in allSections
-                    orderby section.Key
-                    select section)
+                void RenderSection(string name, ManualSection s, int level)
                 {
-                    file.WriteLine($"<h2>{section.Key.Capitalize()}</h2>");
-                    //file.WriteLine("<dl>");
-                    foreach (var task in from t in section.Value orderby t.Name select t)
+                    file.WriteLine($"<h{level}>{name.Capitalize()}</h{level}>");
+                    if (s.Introduction != null)
                     {
-                        //file.Write("<dt>");
+                        file.WriteLine(s.Introduction);
+                        file.WriteLine("<p>");
+                    }
+                    foreach (var task in s.Tasks.OrderBy(t => t.Name))
+                    {
                         file.WriteLine(HtmlFormatter.FormatDocumentation(task));
                         file.WriteLine("<p>");
                     }
-                    //file.WriteLine("</dl>");
+
+                    foreach (var sub in s.Subsections.OrderBy(pair => pair.Key))
+                        RenderSection(sub.Key, sub.Value, level+1);
                 }
+
+                RenderSection("Task reference", root, 1);
             }
 
         }
+
+        private class ManualSection
+        {
+            public readonly Dictionary<string, ManualSection> Subsections = new Dictionary<string, ManualSection>();
+            public readonly List<Task> Tasks = new List<Task>();
+            public string Introduction;
+
+            private ManualSection Subsection(string name)
+            {
+                if (!Subsections.TryGetValue(name, out var sub))
+                    Subsections[name] = sub = new ManualSection();
+                return sub;
+            }
+
+            private void Add(Task t, string[] sectionPath)
+            {
+                Subsection(sectionPath).Tasks.Add(t);
+            }
+
+            private ManualSection Subsection(string[] sectionPath)
+            {
+                var sec = this;
+                foreach (var sub in sectionPath)
+                    sec = sec.Subsection(sub);
+                return sec;
+            }
+
+            public ManualSection SectionPath(string sectionPath) =>
+                Subsection(sectionPath.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries));
+
+            private static readonly string[] PathSeparator = {"//"}; 
+
+            public void Add(Task t, string sectionPath) =>
+                Add(t, sectionPath.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        private readonly static List<(string, string)> SectionIntroductions = new List<(string, string)>();
+
+        /// <summary>
+        /// Specify text to print in the manual between the heading for a section and the first task description.
+        /// </summary>
+        public static void SectionIntroduction(string sectionPath, string intro) =>
+            SectionIntroductions.Add((sectionPath, intro));
 
         /// <summary>
         /// Formats documentation for a given output language (txt, unity rich text, or html)

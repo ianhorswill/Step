@@ -42,6 +42,21 @@ namespace Tests
             m.Call("Test");
         }
 
+        //[TestMethod]
+        //public void NthTest()
+        //{
+        //    var m = Module.FromDefinitions("Test1 ?l ?x: [Nth ?l ?x foo]",
+        //        "Test2 ?l ?x: [Nth ?l 2 ?x]");
+
+        //    var list = new object[] { 0, 1, "foo", 3, 4 };
+        //    var badList = new object[] { 0, 1, 2, 3, 4 };
+        //    Assert.AreEqual(2, m.CallFunction<int>("Test1", new [] {list} ));
+        //    Assert.IsFalse(m.CallPredicate("Test1", badList, 2));
+
+        //    Assert.AreEqual("foo", m.CallFunction<string>("Test2", new [] { list }));
+        //    Assert.IsFalse(m.CallPredicate("Test2", list, "bar"));
+        //}
+
         [TestMethod]
         public void StringFormTest()
         {

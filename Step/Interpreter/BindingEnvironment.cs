@@ -114,6 +114,9 @@ namespace Step.Interpreter
         {
             switch (term)
             {
+                case null:
+                    return null;
+
                 case LocalVariableName l:
                     return Deref(Local[l.Index], unifications);
 
@@ -167,6 +170,11 @@ namespace Step.Interpreter
         {
             a = Resolve(a, inUnifications);
             b = Resolve(b, inUnifications);
+            if (a == null || b == null)
+            {
+                outUnifications = inUnifications;
+                return ReferenceEquals(a, b);
+            }
             if (a.Equals(b))
             {
                 outUnifications = inUnifications;

@@ -163,29 +163,12 @@ namespace Step.Interpreter
                     var arg0 = arglist[0];
                     var v0 = arg0 as LogicVariable;
                     var arg1 = arglist[1];
-                    var v1 = arg1 as LogicVariable;
                     if (v0 == null)
                     {
-                        // Arg 0 is in
-                        if (v1 == null)
-                        {
-                            // InIn
-                            if (d.Contains(arg0) && d[arg0].Equals(arg1) &&
-                                Continue(output, env, k, predecessor))
-                                return true;
-                        }
-                        else
-                        {
-                            // In Out
-                            if (d.Contains(arg0)
-                                && Continue(output,
-                                    new BindingEnvironment(env,
-                                        BindingList<LogicVariable>.Bind(env.Unifications, v1, d[arg0]),
-                                        env.State),
-                                    k,
-                                    predecessor))
-                                return true;
-                        }
+                        return d.Contains(arg0)
+                               && env.Unify(arg1, d[arg0], out var u)
+                               && Continue(output,
+                                   new BindingEnvironment(env, u, env.State), k, predecessor);
                     }
                     else
                     {
