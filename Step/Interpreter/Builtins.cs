@@ -279,12 +279,9 @@ namespace Step.Interpreter
                 .Arguments("list", "?element")
                 .Documentation("randomization","Sets ?element to a random element of list.  If this is backtracked, it generates a random shuffle of the elements of this list.  However, not all shuffles are possible; it starts with a random element and moves to subsequent elements with a random step size.");
 
-<<<<<<< HEAD
             Documentation.SectionIntroduction("string processing",
                 "Predicates that test the spelling of strings.");
 
-=======
->>>>>>> parent of c6d16e1 (Added Length and Nth)
             g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
                 x =>
                 {
