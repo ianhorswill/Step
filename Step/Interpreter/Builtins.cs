@@ -219,6 +219,14 @@ namespace Step.Interpreter
                 .Arguments("list", "?element")
                 .Documentation("randomization","Sets ?element to a random element of list.  If this is backtracked, it generates a random shuffle of the elements of this list.  However, not all shuffles are possible; it starts with a random element and moves to subsequent elements with a random step size.");
 
+            g["Length"] = new SimpleFunction<IList, int>("Length", l => l.Count)
+                .Arguments("list", "?length")
+                .Documentation("True when ?length is the length of list");
+
+            g["Nth"] = new SimpleFunction<IList, int, object>("Nth", (l, i) => l[i])
+                .Arguments("list", "index", "?element")
+                .Documentation("True when ?element is the element of list at position index");
+
             g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
                 x =>
                 {
