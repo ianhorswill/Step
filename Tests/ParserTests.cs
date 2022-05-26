@@ -111,6 +111,7 @@ namespace Tests
             Test("[]", 2, "[]");
             Test(" [ ] ", 2, "[]");
             Test("[a]", 3, "[a]");
+            Test(">=", 1, ">=");
         }
 
         [TestMethod]

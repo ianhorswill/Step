@@ -134,7 +134,7 @@ namespace Step.Parser
         /// </summary>
         private bool IsPunctuationNotSpecial => MyIsPunctuation(Peek) && !SpecialPunctuation.Contains(Peek);
 
-        private static readonly char[] SpecialPunctuation = new[] {'?', '^', '<', '+', '-', '|'};
+        private static readonly char[] SpecialPunctuation = new[] {'?', '^', '<', '>','+', '-', '|'};
 
         private static bool MyIsPunctuation(char c) => c != '_' && c != '\\' && (char.IsPunctuation(c) || char.IsSymbol(c));
 
@@ -173,8 +173,15 @@ namespace Step.Parser
                         else
                             yield return ch.ToString();
                     }
+
+                    if (Peek == '>')
+                    {
+                        AddCharToToken();
+                        if (Peek == '=')
+                            AddCharToToken();
+                    }
                     // HTML TAGS
-                    if (Peek == '<')
+                    else if (Peek == '<')
                     {
                         AddCharToToken();
                         if (Peek == '-' || Peek == '=')
