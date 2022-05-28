@@ -43,5 +43,13 @@ namespace Tests
             m = Module.FromDefinitions("[main] Test ?x: ?x");
             Assert.AreEqual(0, m.Warnings().Count(s => s.Contains("used only once")));
         }
+
+        [TestMethod]
+        public void BrokenProjectTest()
+        {
+            var m = new Module("Broken project");
+            // Uncomment to test loading a project that causes a problem
+            //m.LoadDirectory("C:/users/ian/documents/step/broken");
+        }
     }
 }

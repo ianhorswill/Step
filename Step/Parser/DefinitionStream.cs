@@ -643,6 +643,9 @@ namespace Step.Parser
             if (AtKeywordMarker || !(Peek is object[] expression))
                 return;
 
+            if (expression.Length == 0)
+                throw new SyntaxError("The expression '[]' appears to be intended as a method call, but there is no task given inside of it.", SourceFile, lineNumber);
+            
             // It's a call
             var targetName = expression[0] as string;
             switch (targetName)
