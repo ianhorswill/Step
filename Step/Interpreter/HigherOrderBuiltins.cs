@@ -560,7 +560,22 @@ namespace Step.Interpreter
             MethodCallFrame predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(nameof(PreviousCall), 1, args);
-            var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall),args[0], args);
+            if (args[0] is LogicVariable)
+            {
+                // [PreviousCall ?var]
+                foreach (var priorGoal in predecessor.GoalChain)
+                {
+                    var e = priorGoal.CallExpression;
+                    if (env.Unify(args[0], e, out BindingList<LogicVariable> unifications)
+                        && k(output, unifications, env.State, predecessor))
+                        return true;
+                }
+
+                return false;
+            }
+
+            // [PreviousCall [Task ?args]]
+            var call = ArgumentTypeException.Cast<object[]>(nameof(PreviousCall), args[0], args);
             foreach (var priorGoal in predecessor.GoalChain)
             {
                 if (priorGoal.Method.Task != call[0])
@@ -568,11 +583,12 @@ namespace Step.Interpreter
                     continue;
 
                 var e = priorGoal.CallExpression;
-                if (call.Length == e.Length 
+                if (call.Length == e.Length
                     && env.UnifyArrays(call, e, out BindingList<LogicVariable> unifications)
                     && k(output, unifications, env.State, predecessor))
                     return true;
             }
+
             return false;
         }
 
