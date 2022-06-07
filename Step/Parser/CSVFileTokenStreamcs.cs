@@ -89,6 +89,17 @@ namespace Step.Parser
                     var rowItem = FormatCell(row[0]);
                     var col = 0;
 
+                    if (header[0] == "[#]")
+                    {
+                        var weight = row[col++].Trim();
+                        if (weight != "")
+                        {
+                            yield return "[";
+                            yield return weight;
+                            yield return "]";
+                        }
+                    }
+
                     // Generate the method for the main predicate
                     yield return predicateName;
                     for (; col < normalArgs; col++)
