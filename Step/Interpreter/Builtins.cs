@@ -26,7 +26,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -226,6 +225,16 @@ namespace Step.Interpreter
             g["NonVar"] = new SimplePredicate<object>("NonVar", o => !(o is LogicVariable))
                 .Arguments("x")
                 .Documentation("metalogical", "Succeeds when its argument is a *not* an uninstantiated variable.");
+
+            g["CopyTerm"] = new GeneralPrimitive("CopyTerm",
+                (args, t, b, f, k) =>
+                {
+                    ArgumentCountException.Check("CopyTerm", 2, args);
+                    return b.Unify(args[1], b.CopyTerm(args[0]), out var u) && k(t, u, b.State, f);
+                })
+                .Arguments("in", "out")
+                .Documentation("metalogical",
+                    "Sets out to a copy of in with fresh variables, so that unifications to one don't affect the other");
 
             Documentation.SectionIntroduction("type testing",
                 "Predicates that test what type of data object their argument is.  These fail when the argument is an unbound variable.");
