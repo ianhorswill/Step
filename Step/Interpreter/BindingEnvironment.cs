@@ -172,6 +172,17 @@ namespace Step.Interpreter
             b = Resolve(b, inUnifications);
             if (a == null || b == null)
             {
+                if (a is LogicVariable av)
+                {
+                    outUnifications = new BindingList<LogicVariable>(av, b, inUnifications);
+                    return true;
+                }
+                else if (b is LogicVariable bv)
+                {
+                    outUnifications = new BindingList<LogicVariable>(bv, a, inUnifications);
+                    return true;
+                }
+
                 outUnifications = inUnifications;
                 return ReferenceEquals(a, b);
             }
