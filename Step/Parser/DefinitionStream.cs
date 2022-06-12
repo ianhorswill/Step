@@ -84,6 +84,8 @@ namespace Step.Parser
             }
         }
 
+        public string SourcePath => expressionStream.FilePath;
+
         /// <summary>
         /// Expressions being read from the stream
         /// </summary>
@@ -169,6 +171,8 @@ namespace Step.Parser
         private bool EndCaseBranch() => OneOfKeywordMarkers(caseBranchKeywords);
 
         private bool ElseToken => KeywordMarker("else");
+
+        private static string[] declarationKeywords = { "predicate", "task", "fluent", "folder_structure" };
         #endregion
 
         #region Source-language variables     
@@ -372,6 +376,7 @@ namespace Step.Parser
                 LocalVariableName[] locals, 
                 Interpreter.Step chain, 
                 CompoundTask.TaskFlags flags,
+                string declaration,
                 string path, int lineNumber)>
             Definitions
         {
@@ -401,6 +406,7 @@ namespace Step.Parser
             LocalVariableName[] locals, 
             Interpreter.Step chain, 
             CompoundTask.TaskFlags flags,
+            string declaration,
                 string path, int lineNumber) ReadDefinition()
         {
             InitParserState();
@@ -414,7 +420,7 @@ namespace Step.Parser
 
             lineNumber = expressionStream.LineNumber;
 
-            if (Peek.Equals("predicate") || Peek.Equals("task") || Peek.Equals("fluent"))
+            if (declarationKeywords.Contains(Peek))
                 return ReadDeclaration(flags);
             
             var (taskName, pattern) = ReadHead();
@@ -428,19 +434,20 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (StateVariableName.Named(taskName), weight, pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, expressionStream.FilePath, lineNumber);
+            return (StateVariableName.Named(taskName), weight, pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, null, expressionStream.FilePath, lineNumber);
         }
 
         private (StateVariableName task, float weight, object[] pattern, 
             LocalVariableName[] locals,
             Interpreter.Step chain,
-            CompoundTask.TaskFlags flags, 
+            CompoundTask.TaskFlags flags,
+            string declaration,
             string path, int lineNumber)
             ReadDeclaration(CompoundTask.TaskFlags flags)
         {
-            var declType = Get(); // swallow "task" or "predicate
+            var declType = (string)Get(); // swallow "task" or "predicate
 
-            if (declType.Equals("predicate")  || declType.Equals("fluent"))
+            if (declType == "predicate"  || declType == "fluent" || declType == "folder_structure")
                 flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
             if (declType.Equals("fluent"))
                 flags |= CompoundTask.TaskFlags.ReadCache;
@@ -454,7 +461,7 @@ namespace Step.Parser
             
             SwallowNewlines();
             
-            return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, SourceFile, lineNumber);
+            return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, declType, SourceFile, lineNumber);
         }
 
         private (CompoundTask.TaskFlags, float weight) ReadOptions()

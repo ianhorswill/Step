@@ -414,7 +414,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         /// <param name="path">Path for the directory</param>
         /// <param name="recursive">If true, load files from all directories in the subtree under path</param>
-        public void LoadDirectory(string path, bool recursive = false)
+        public void LoadDirectory(string path, bool recursive = true)
         {
             foreach (var file in Directory.GetFiles(path))
                 // Load file if the filename ends with .step or .csv and doesn't start with .
@@ -440,7 +440,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         private void LoadDefinitions(DefinitionStream defs)
         {
-            foreach (var (task, weight, pattern, locals, chain, flags, path, line) 
+            foreach (var (task, weight, pattern, locals, chain, flags, declaration, path, line) 
                 in defs.Definitions)
             {
                 if (task.Name == "initially")
@@ -454,9 +454,46 @@ var output = TextBuffer.NewEmpty();
                     else
                         compoundTask.AddMethod(weight, pattern, locals, chain, flags, path, line);
                     if (compoundTask.Arglist == null)
-                        compoundTask.Arglist = pattern.Select(x =>x.ToString()).ToArray();
+                        compoundTask.Arglist = pattern.Select(x =>x==null?"?":x.ToString()).ToArray();
+
+                    if (declaration == "folder_structure")
+                    {
+                        var dir = Path.GetDirectoryName(defs.SourcePath);
+                        DefineMethodsFromFolderStructure(compoundTask, dir);
+                    }
                 }
             }
+        }
+
+        private static readonly LocalVariableName[] noLocals = new LocalVariableName[0];
+        private void DefineMethodsFromFolderStructure(CompoundTask task, string parentDirectory)
+        {
+            void Walk(string path, string name)
+            {
+                foreach (var sub in Directory.GetDirectories(path))
+                {
+                    var subName = Path.GetFileName(sub);
+
+                    if (subName.StartsWith("."))
+                        continue;
+
+                    var weight = 1f;
+                    var weightPath = Path.Combine(sub, "weight.txt");
+                    if (File.Exists(weightPath))
+                    {
+                        var contents = File.ReadAllLines(weightPath);
+                        var weightString = contents.FirstOrDefault(s => !s.StartsWith("#"));
+                        if (weightString == null || !float.TryParse(weightString, out weight))
+                            throw new SyntaxError("Invalid format in weight.txt file", weightPath, 1);
+                    }
+
+                    task.Methods.Add(new Method(task, weight, new object[] {name, subName}, noLocals, null, null, 0));
+
+                    Walk(sub, subName);
+                }
+            }
+
+            Walk(parentDirectory, null);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
