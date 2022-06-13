@@ -27,6 +27,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Step.Utilities;
 
@@ -349,6 +350,67 @@ namespace Step.Interpreter
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
             Documentation.DefineGlobals(Module.Global);
+        }
+
+        public static void DefineFileSystemBuiltins(Module m)
+        {
+            void ImportFunction(string name, Func<string, string> implementation)
+            {
+                m[name] = new SimpleFunction<string, string>(name, implementation);
+            }
+            
+            ImportFunction("PathExtension", Path.GetExtension);
+            m["PathStructure"] = new GeneralNAryPredicate("PathStructure",
+                args =>
+                {
+                    ArgumentCountException.Check("PathStructure", 3, args);
+                    if (args[2] is LogicVariable v)
+                    {
+                        // Path argument uninstantiated
+                        args[2] = Path.Combine(ArgumentTypeException.Cast<string>("PathStructure", args[0], args),
+                            ArgumentTypeException.Cast<string>("PathStructure", args[1], args));
+                        return new object[][] {args};
+                    }
+                    else
+                    {
+                        var path = ArgumentTypeException.Cast<string>("PathStructure", args[2], args);
+                        // Path argument is instantiated
+                        return new object[][]
+                            {new object[] {Path.GetDirectoryName(path), Path.GetFileName(path), path}};
+                    }
+                });
+
+            m["DirectoryFile"] = new GeneralPredicate<string, string>("DirectoryFile",
+                (d, f) => (File.Exists(f) && Path.GetDirectoryName(f) == d),
+                d =>
+                {
+                    if (Directory.Exists(d))
+                        return Directory.GetFiles(d);
+                    return new string[0];
+                },
+                f =>
+                {
+                    if (Directory.Exists(f))
+                        return new[] {Path.GetDirectoryName(f)};
+                    return new string[0];
+                },
+                null);
+
+            m["DirectorySubdirectory"] = new GeneralPredicate<string, string>("DirectorySubdirectory",
+                (d, f) => (File.Exists(f) && Path.GetDirectoryName(f) == d),
+                d =>
+                {
+                    if (Directory.Exists(d))
+                        return Directory.GetDirectories(d);
+                    return new string[0];
+                },
+                f =>
+                {
+                    if (Directory.Exists(f))
+                        return new[] { Path.GetDirectoryName(f) };
+                    return new string[0];
+                },
+                null);
         }
 
         private static bool StartsWithVowel(string x)
