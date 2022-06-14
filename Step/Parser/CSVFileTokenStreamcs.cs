@@ -58,7 +58,23 @@ namespace Step.Parser
             {
                 bool UnaryPredicateColumn(string name) => name.EndsWith("?");
                 bool BinaryPredicateColumn(string name) => name.StartsWith("@");
-                string FormatCell(string cell) => cell.Trim().Replace(" ", "_");
+
+                string FormatCellToken(string str) => str.Trim().Replace(" ", "_");
+
+                IEnumerable<string> FormatCell(string cell)
+                {
+                    if (cell.Contains(':'))
+                    {
+                        yield return "[";
+                        foreach (var element in cell.Split(':'))
+                        foreach (var token in FormatCell(element))
+                            yield return token;
+                        yield return "]";
+                    }
+                    else 
+                        yield return FormatCellToken(cell);
+
+                }
 
                 //
                 // Process header
@@ -82,11 +98,12 @@ namespace Step.Parser
                     //
                     // Read a row
                     //
-                    var row = GetRow().Select(cell => cell.Replace(" ", "_")).ToArray();
+                    //var row = GetRow().Select(cell => cell.Replace(" ", "_")).ToArray();
+                    var row = GetRow();
                     if (row.Length != header.Length)
                         throw new SyntaxError($"Row has {row.Length} columns, but header has {header.Length}", FilePath,
                             LineNumber);
-                    var rowItem = FormatCell(row[0]);
+                    var rowItem = FormatCell(row[0]).ToArray();
                     var col = 0;
 
                     if (header[0] == "[#]")
@@ -104,7 +121,21 @@ namespace Step.Parser
                     yield return predicateName;
                     for (; col < normalArgs; col++)
                     {
-                        yield return FormatCell(row[col]);
+                        var heading = header[col];
+                        var cell = row[col];
+                        if (heading.EndsWith("[]") || heading.EndsWith("[/]"))
+                        {
+                            var eltSeparator = heading.EndsWith("[/]") ? '/' : ' ';
+                            yield return "[";
+                            foreach (var e in cell.Trim().Split(eltSeparator))
+                                if (!string.IsNullOrEmpty(e))
+                                    foreach (var token in FormatCell(e))
+                                        yield return token;
+                            yield return "]";
+                        }
+                        else 
+                            foreach (var token in FormatCell(cell))
+                                yield return token;
                     }
 
                     yield return ".";
@@ -114,13 +145,14 @@ namespace Step.Parser
                     for (; col < row.Length; col++)
                     {
                         var columnHeading = header[col];
-                        var cell = FormatCell(row[col]);
+                        var rawCell = row[col].Trim();
                         if (UnaryPredicateColumn(columnHeading))
                         {
-                            if (TrueValues.Any(v => v.Equals(cell, StringComparison.InvariantCultureIgnoreCase)))
+                            if (TrueValues.Any(v => v.Equals(rawCell, StringComparison.InvariantCultureIgnoreCase)))
                             {
                                 yield return columnHeading.Replace("?", "");
-                                yield return rowItem;
+                                foreach (var token in rowItem)
+                                    yield return token;
                                 yield return ".";
                                 yield return "\n";
                             }
@@ -128,8 +160,10 @@ namespace Step.Parser
                         else if (BinaryPredicateColumn(columnHeading))
                         {
                             yield return columnHeading.Replace("@", "");
-                            yield return rowItem;
-                            yield return cell;
+                            foreach (var token in rowItem)
+                                yield return token;
+                            foreach (var token in FormatCell(row[col]))
+                                yield return token;
                             yield return ".";
                             yield return "\n";
                         }
