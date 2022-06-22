@@ -1,4 +1,5 @@
-﻿using Step.Parser;
+﻿using System.Linq;
+using Step.Parser;
 using Step.Utilities;
 
 namespace Step.Interpreter
@@ -51,20 +52,25 @@ namespace Step.Interpreter
         internal static void FromExpression(ChainBuilder chain, object[] expression, 
             string sourceFile = null, int lineNumber = 0)
         {
-            if (expression.Length < 4)
+            switch ((string) expression[0])
+            {
+                case "set":
+                    FromSetExpression(chain, expression, sourceFile, lineNumber);
+                    break;
+
+                case "inc": 
+                case "dec":
+                    FromIncDecExpression(chain, expression, sourceFile, lineNumber);
+                    break;
+            }
+        }
+
+        private static void FromSetExpression(ChainBuilder chain, object[] expression, string sourceFile, int lineNumber)
+        {
+            if (expression.Length < 4 || !expression[2].Equals("=") || !(expression[1] is string name))
                 throw new SyntaxError(
                     $"A set command has the format [set name = value], which doesn't match the expression {Writer.TermToString(expression)}.",
                     sourceFile, lineNumber);
-            if (!expression[2].Equals("="))
-                throw new SyntaxError(
-                    $"A set command has the format [set name = value], but this expression has {Writer.TermToString(expression[2])} instead of =.",
-                    sourceFile, lineNumber);
-
-            if (!(expression[1] is string name))
-                throw new SyntaxError(
-                    $"A set command has the format [set name = value], which doesn't match the expression {Writer.TermToString(expression)}.",
-                    sourceFile, lineNumber);
-
             if (DefinitionStream.IsGlobalVariableName(name))
                 chain.AddStep(new AssignmentStep(StateVariableName.Named(name),
                     FunctionalExpressionParser.FromTuple(chain.CanonicalizeArglist(expression), 3, sourceFile,
@@ -78,6 +84,36 @@ namespace Step.Interpreter
             else
                 throw new SyntaxError(
                     $"A set command can only update a variable; it can't update {expression[1]}",
+                    sourceFile, lineNumber);
+        }
+
+        private static void FromIncDecExpression(ChainBuilder chain, object[] expression, string sourceFile, int lineNumber)
+        {
+            if (expression.Length < 2 || !(expression[1] is string name))
+                throw new SyntaxError(
+                    $"An inc or dec command has the format [inc name] or [inc name amount], which doesn't match the expression {Writer.TermToString(expression)}.",
+                    sourceFile, lineNumber);
+
+            var operation = expression[0].Equals("inc") ? "+" : "-";
+            var increment = (expression.Length == 2) ? new object[] {1} : expression.Skip(2).Prepend("(").Append(")");
+            var newValueExpression = new object[]
+            {
+                name,
+                operation
+            }.Concat(increment).ToArray();
+            
+            if (DefinitionStream.IsGlobalVariableName(name))
+                chain.AddStep(new AssignmentStep(StateVariableName.Named(name),
+                    FunctionalExpressionParser.FromTuple(chain.CanonicalizeArglist(newValueExpression), 0, sourceFile,
+                        lineNumber),
+                    null));
+            else if (DefinitionStream.IsLocalVariableName(name))
+                throw new SyntaxError(
+                    $"An inc or dec command cannot be used with the local variable {name} because local variables can only be set once.",
+                    sourceFile, lineNumber);
+            else
+                throw new SyntaxError(
+                    $"An inc or dec command can only update a variable; it can't update {expression[1]}",
                     sourceFile, lineNumber);
         }
 

@@ -189,5 +189,29 @@ namespace Tests
             var m = TestUtils.Module("Test ?x: [case ?x] Number: A [else] [end]");
             Assert.AreEqual("", m.Call("Test", "string"));
         }
+
+        [TestMethod]
+        public void SetTest()
+        {
+            var m = Module.FromDefinitions("Test ?x: [set X = 0] [set Y = X + 1] [= ?x Y]");
+            Assert.AreEqual(1, m.CallFunction<int>("Test"));
+        }
+
+        [TestMethod]
+        public void IncTest()
+        {
+            var m = Module.FromDefinitions("Test ?x: [set X = 0] [inc X] [= ?x X]");
+            Assert.AreEqual(1, m.CallFunction<int>("Test"));
+            m = Module.FromDefinitions("Test ?x: [set X = 2] [dec X] [= ?x X]");
+            Assert.AreEqual(1, m.CallFunction<int>("Test"));
+
+            m = Module.FromDefinitions("Test ?x: [set X = 5] [inc X X + 1] [= ?x X]");
+            Assert.AreEqual(11, m.CallFunction<int>("Test"));
+            m = Module.FromDefinitions("Test ?x: [set X = 0] [inc X 2] [= ?x X]");
+            Assert.AreEqual(2, m.CallFunction<int>("Test"));
+
+            m = Module.FromDefinitions("Test ?x: [set X = 2] [dec X X - 1] [= ?x X]");
+            Assert.AreEqual(1, m.CallFunction<int>("Test"));
+        }
     }
 }

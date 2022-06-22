@@ -704,7 +704,9 @@ namespace Step.Parser
                     chain.AddStep(ReadAlternativeBranches(targetName));
                     break;
 
-                case "set":
+                case "set": 
+                case "inc":
+                case "dec":
                     AssignmentStep.FromExpression(chain, expression, SourceFile, lineNumber);
                     break;
 

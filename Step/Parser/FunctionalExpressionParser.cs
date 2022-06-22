@@ -143,7 +143,7 @@ namespace Step.Interpreter
                                             var integerQuotient = i1 / i2;
                                             if (integerQuotient * i2 == i1)
                                                 return integerQuotient;
-                                            return ((float)i1) / (float) i2;
+                                            return i1 / (float) i2;
 
                                         case float f2: return i1 / f2;
                                         default: throw new ArgumentTypeException("/", typeof(float), a2, new[] { a1, a2 });
