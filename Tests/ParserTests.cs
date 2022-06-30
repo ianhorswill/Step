@@ -412,8 +412,10 @@ Baz: baz
 # Comment ends with eof",
                 @"task Foo ?x.
 #comment at end
-");
+",
+                "Test2: [Write |#|]");
             Assert.AreEqual("Foo bar baz", m.Call("Test"));
+            Assert.AreEqual("#", m.Call("Test2"));
         }
 
         [TestMethod]

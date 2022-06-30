@@ -64,7 +64,7 @@ namespace Step.Parser
         /// <summary>
         /// Add current stream character to token
         /// </summary>
-        void AddCharToToken() => token.Append(Get());
+        void AddCharToToken(bool ignoreComments = true) => token.Append(Get(ignoreComments));
 
         /// <summary>
         /// Return the accumulated characters as a token and clear the token buffer.
@@ -81,7 +81,7 @@ namespace Step.Parser
         /// Return the current character and advance to the next
         /// </summary>
         /// <returns></returns>
-        private char Get()
+        private char Get(bool ignoreComments = true)
         {
             var c = (char) input.Read();
             switch (c)
@@ -91,10 +91,15 @@ namespace Step.Parser
                     break;
 
                 case '#':
-                    // Swallow line
-                    while (!End && Peek != '\n') input.Read();
-                    input.Read();
-                    return '\n';
+                    if (ignoreComments)
+                    {
+                        // Swallow line
+                        while (!End && Peek != '\n') input.Read();
+                        input.Read();
+                        return '\n';
+                    }
+                    else 
+                        return '#';
 
                 case '"':
                     var nextCode = input.Peek();
@@ -233,7 +238,7 @@ namespace Step.Parser
                                 if (End)
                                     throw new SyntaxError("File ends with a backslash escape", FilePath, LineNumber);
                             }
-                            AddCharToToken();
+                            AddCharToToken(false);
                         }
 
                         if (End)
@@ -256,8 +261,10 @@ namespace Step.Parser
                                 Get();
                                 if (End)
                                     throw new SyntaxError("File ends with backslash escape", FilePath, LineNumber);
+                                AddCharToToken(false);
                             }
-                            AddCharToToken();
+                            else 
+                                AddCharToToken();
                         }
                     }
 
