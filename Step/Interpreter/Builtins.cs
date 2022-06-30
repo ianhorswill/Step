@@ -188,7 +188,7 @@ namespace Step.Interpreter
 
             g["Length"] = new SimpleFunction<IList, int>("Length", l => l.Count)
                 .Arguments("list", "?length")
-                .Documentation("True when list has exactly ?length elements");
+                .Documentation("data structures//list", "True when list has exactly ?length elements");
 
             g["Nth"] = new GeneralNAryPredicate("Nth",
                 args =>
@@ -214,7 +214,9 @@ namespace Step.Interpreter
                     }
 
                     throw new ArgumentInstantiationException("Nth", new BindingEnvironment(), args);
-                });
+                })
+                .Arguments("list", "index", "?element")
+                .Documentation("data structures//list", "True when element of list at index is ?element");
 
             Documentation.SectionIntroduction("metalogical",
                 "Predicates that test the binding state of a variable.");
@@ -291,6 +293,11 @@ namespace Step.Interpreter
 
             Documentation.SectionIntroduction("string processing",
                 "Predicates that test the spelling of strings.");
+
+            g["Format"] = new SimpleFunction<string, object[], string>("Format", string.Format)
+                .Arguments("format_string, argument_list, ?formatted_string")
+                .Documentation("string processing",
+                    "True when formatted_string is the result of formatting format_string with the arguments.  This is just a wrapper for .NET's string.Format routine.");
 
             g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
                 x =>
