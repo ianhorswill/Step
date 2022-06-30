@@ -46,6 +46,11 @@ namespace Step.Parser
             predicateName = Path.GetFileNameWithoutExtension(filePath).Capitalize();
         }
 
+        /// <summary>
+        /// If true, treat capitalized tokens in cells as strings rather than global variables
+        /// </summary>
+        public bool EscapeStrings = true;
+
         private static readonly string[] TrueValues = {"yes", "y", "true", "t", "X"};
 
         private readonly string predicateName;
@@ -59,7 +64,7 @@ namespace Step.Parser
                 bool UnaryPredicateColumn(string name) => name.EndsWith("?");
                 bool BinaryPredicateColumn(string name) => name.StartsWith("@");
 
-                string FormatCellToken(string str) => str.Trim().Replace(" ", "_");
+                string FormatCellToken(string str) => EscapeToken(str.Trim().Replace(" ", "_"));
 
                 IEnumerable<string> FormatCell(string cell)
                 {
@@ -185,5 +190,11 @@ namespace Step.Parser
                 separator = '\t';
             return line.Split(separator).Select(s => s.Trim(' ', '"')).ToArray();
         }
+
+        private string EscapeToken(string s) 
+            => (EscapeStrings && !string.IsNullOrEmpty(s) && char.IsUpper(s[0]))
+                ? TextFileTokenStream.EscapeStringToken(s)
+                : s;
+
     }
 }
