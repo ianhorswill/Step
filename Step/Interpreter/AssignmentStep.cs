@@ -55,6 +55,7 @@ namespace Step.Interpreter
             switch ((string) expression[0])
             {
                 case "set":
+                case "now":
                     FromSetExpression(chain, expression, sourceFile, lineNumber);
                     break;
 
