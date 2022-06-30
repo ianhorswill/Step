@@ -244,6 +244,8 @@ namespace Step.Parser
 
         #endregion
 
+        private static readonly string[] QuoteTokens = { "\"", "\u201C", "\u201D" };
+
         /// <summary>
         /// Identify tokens that identify non-strings (variables, numbers) and replace them
         /// with their internal representations
@@ -266,7 +268,7 @@ namespace Step.Parser
 
                 while (!endOfArglist)
                 {
-                    if (Peek().Equals("\"") || Peek().Equals("\u201C"))  // Check for open quote
+                    if (QuoteTokens.Contains(Peek()))  // Check for open quote
                     {
                         Get();  // Swallow quote
                         var tokens = new List<string>();
