@@ -65,6 +65,9 @@ namespace Step.Interpreter
                 .Documentation("control flow//calling tasks", "Runs each of the calls, in order, but throws away their output text.");
             g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not)
                 .Arguments("call")
+                .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.  This requires the call to be ground (not contain any uninstantiated variables), since [Not [P ?x]] means \"not [P ?x] for any ?x\".  Use NotAny if you mean to have unbound variables in the goal.");
+            g[nameof(NotAny)] = new GeneralPrimitive(nameof(NotAny), NotAny)
+                .Arguments("call")
                 .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.");
             g[nameof(FindAll)] = new GeneralPrimitive(nameof(FindAll), FindAll)
                 .Arguments("?result", "call", "?all_results")
@@ -143,6 +146,9 @@ namespace Step.Interpreter
 
         private static bool Not(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
+            foreach (var arg in args)
+                if (!Term.IsGround(arg))
+                    throw new ArgumentInstantiationException("Not", e, args, "Use NotAny if you intend goals that aren't ground.");
             // Whether the call to args below succeeded
             var success = false;
             
@@ -160,7 +166,27 @@ namespace Step.Interpreter
             // If the call to args succeeded, fail; otherwise call continuation
             return !success && k(o, e.Unifications, e.State, predecessor);
         }
-        
+
+        private static bool NotAny(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            // Whether the call to args below succeeded
+            var success = false;
+
+            // This always fails, since its continuation fails too
+            Step.ChainFromBody("NotAny", args)
+                .Try(o, e,
+                    (newOut, newE, newK, newP) =>
+                    {
+                        // Remember that we succeeded, then fail
+                        success = true;
+                        return false;
+                    },
+                    predecessor);
+
+            // If the call to args succeeded, fail; otherwise call continuation
+            return !success && k(o, e.Unifications, e.State, predecessor);
+        }
+
         private static IEnumerable<string> DoAll(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor) 
             => AllSolutionTextFromBody("DoAll", args, o, e, predecessor).SelectMany(strings => strings);
 

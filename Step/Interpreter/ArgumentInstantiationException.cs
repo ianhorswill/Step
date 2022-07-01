@@ -35,6 +35,11 @@ namespace Step.Interpreter
             : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}")
         { }
 
+        /// <inheritdoc />
+        public ArgumentInstantiationException(object task, BindingEnvironment e, object[] args, string additionalMessage)
+            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}.  {additionalMessage}")
+        { }
+
         /// <summary>
         /// Check argument and throw instantiation exception if necessary.
         /// </summary>

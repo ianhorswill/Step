@@ -77,7 +77,7 @@ namespace Tests
                 "TestInOut: [ForEach [TaskCalls A ?callee] [Write ?callee]]",
                 "TestOutIn: [ForEach [TaskCalls ?caller C] [Write ?caller]]",
                 "TestOutOut: [ForEach [Begin [TaskCalls ?caller ?callee] [CompoundTask ?callee]] [Write ?caller] [Write ?callee] [Write ,]]",
-                "UncalledTask ?t: [CompoundTask ?t] [Not [TaskCalls ? ?t]]",
+                "UncalledTask ?t: [CompoundTask ?t] [NotAny [TaskCalls ? ?t]]",
                 "TestUncalled: [ForEach [UncalledTask ?t] [Write ?t]]",
                 "[main] Test: [A] [B] [C] [LastMethodCallFrame ?f] [ForEach [GoalChainAncestor ?f ?method] [Write ?method]]",
                 "Unused: [Fail]",
