@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Step.Utilities;
 
@@ -218,6 +219,18 @@ namespace Step.Interpreter
                 })
                 .Arguments("list", "index", "?element")
                 .Documentation("data structures//list", "True when element of list at index is ?element");
+
+            g["Cons"] = new GeneralNAryPredicate("Cons", args =>
+            {
+                ArgumentCountException.Check("Cons", 3, args);
+                if (args[2] is object[] tuple)
+                    return new[] {new[] { tuple[0], tuple.Skip(1).ToArray(), tuple }};
+                if (args[1] is object[] restTuple)
+                    return new[] {new[] {args[0], restTuple, restTuple.Prepend(args[0]).ToArray() } };
+                throw new ArgumentException("Either the second or argument of Cons must be a tuple.");
+            })
+                .Arguments("firstElement", "restElements", "tuple")
+                .Documentation("True when tuple starts with firstElement and continues with restElements.");
 
             Documentation.SectionIntroduction("metalogical",
                 "Predicates that test the binding state of a variable.");
