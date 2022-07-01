@@ -846,9 +846,13 @@ namespace Step.Parser
                 var t = Get();
                 if (!(t is string targetName))
                     throw new SyntaxError($"Invalid method name after the /: {variable}/{t}", SourceFile, lineNumber);
+
                 var target = IsLocalVariableName(targetName)
                     ? (object) GetLocal(targetName)
                     : StateVariableName.Named(targetName);
+                if (target is LocalVariableName local)
+                    IncrementReferenceCount(local);
+
                 if (Peek.Equals("/"))
                 {
                     var tempVar = GetFreshLocal("temp");
