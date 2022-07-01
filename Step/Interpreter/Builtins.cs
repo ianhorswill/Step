@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Step.Utilities;
 
 namespace Step.Interpreter
@@ -299,7 +300,57 @@ namespace Step.Interpreter
                 .Documentation("string processing",
                     "True when formatted_string is the result of formatting format_string with the arguments.  This is just a wrapper for .NET's string.Format routine.");
 
-            g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
+            g["Downcase"] = new SimpleFunction<string,string>("DownCase", from =>
+                {
+                    var b = new StringBuilder();
+                    foreach (var c in from)
+                        b.Append(char.ToLower(c));
+                    return b.ToString();
+                })
+                .Arguments("string, ?downcased")
+                .Documentation("string processing",
+                    "True when downcased is the string with all alphabetic characters converted to lowercase.");
+
+            g["Downcased"] = new SimpleFunction<string, string>("Downcased", from =>
+                {
+                    var b = new StringBuilder();
+                    foreach (var c in from)
+                        b.Append(char.ToLower(c));
+                    return b.ToString();
+                })
+                .Arguments("string, ?downcased")
+                .Documentation("string processing",
+                    "True when downcased is the string with all alphabetic characters converted to lowercase.");
+            
+            g["Upcased"] = new SimpleFunction<string, string>("Upcased", from =>
+                {
+                    var b = new StringBuilder();
+                    foreach (var c in from)
+                        b.Append(char.ToUpper(c));
+                    return b.ToString();
+                })
+                .Arguments("string, ?upcased")
+                .Documentation("string processing",
+                    "True when upcased is the string with all alphabetic characters converted to uppercase.");
+
+            g["Capitalized"] = new SimpleFunction<string, string>("Downcase", from =>
+                {
+                    var b = new StringBuilder();
+                    var startOfWord = true;
+                    foreach (var c in from)
+                    {
+                        b.Append(startOfWord ? char.ToUpper(c) : c);
+                        startOfWord = c == ' ' || c == '_';
+
+                    }
+                    return b.ToString();
+                })
+                .Arguments("string, ?capitalized")
+                .Documentation("string processing",
+                    "True when capitalized is the a copy of string, which the start of each word capitalized.");
+
+
+           g["StartsWithVowel"] = new SimplePredicate<object>("StartsWithVowel",
                 x =>
                 {
                     switch (x)
