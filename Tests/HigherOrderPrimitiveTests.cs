@@ -75,6 +75,17 @@ namespace Tests
         }
 
         [TestMethod]
+        public void OrTest()
+        {
+            var m = TestUtils.Module("TrueTest1: [Or [= 1 0] [= 1 1]]",
+                "TrueTest2: [Or [= 1 1] [= 1 0]]",
+                "[predicate] FalseTest: [Or [= 1 0] [= 1 2]]");
+            Assert.IsTrue(m.CallPredicate("TrueTest1"));
+            Assert.IsTrue(m.CallPredicate("TrueTest2"));
+            Assert.IsFalse(m.CallPredicate("FalseTest"));
+        }
+
+        [TestMethod]
         public void NotTest()
         {
             var m = Module.FromDefinitions("Succeed.", "[fallible] FailTest: [Not [Succeed]]", "SucceedTest: [Not [Fail]]");

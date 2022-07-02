@@ -57,12 +57,18 @@ namespace Step.Interpreter
             g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call)
                 .Arguments("call", "extra_arguments", "...")
                 .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
-            g[nameof(Begin)] = new GeneralPrimitive(nameof(Begin), Begin)
-                .Arguments("calls", "...")
-                .Documentation("control flow", "Runs each of the calls, in order.");
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput)
                 .Arguments("calls", "...")
                 .Documentation("control flow//calling tasks", "Runs each of the calls, in order, but throws away their output text.");
+            g[nameof(Begin)] = new GeneralPrimitive(nameof(And), Begin)
+                .Arguments("task", "...")
+                .Documentation("control flow", "Runs each of the tasks, in order.");
+            g[nameof(And)] = new GeneralPrimitive(nameof(And), And)
+                .Arguments("calls", "...")
+                .Documentation("control flow", "Runs each of the calls, in order.");
+            g[nameof(Or)] = new GeneralPrimitive(nameof(And), Or)
+                .Arguments("calls", "...")
+                .Documentation("control flow", "Runs each of the calls, in order until one works.");
             g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not)
                 .Arguments("call")
                 .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.  This requires the call to be ground (not contain any uninstantiated variables), since [Not [P ?x]] means \"not [P ?x] for any ?x\".  Use NotAny if you mean to have unbound variables in the goal.");
@@ -131,10 +137,28 @@ namespace Step.Interpreter
             return task.Call(taskArgs, output, env, predecessor, k);
         }
 
-        private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool Eval(object[] call, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor,
+            Step.Continuation k, string taskName)
         {
-            return Step.ChainFromBody("Begin", args).Try(o, e, k, predecessor);
+            if (!(call[0] is Task task))
+                throw new InvalidOperationException(
+                    $"Task argument to {taskName} must be a task: {Writer.TermToString(call[0])}");
+
+            return task.Call(call.Skip(1).ToArray(), output, env, predecessor, k);
         }
+
+        private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+            => Step.ChainFromBody("Begin", args).Try(o, e, k, predecessor);
+
+        private static bool And(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+            => Step.ChainFromBody("And", args).Try(o, e, k, predecessor);
+
+        private static bool Or(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+            => args.Any(call =>
+            {
+                var tuple = ArgumentTypeException.Cast<object[]>("Or", call, args);
+                return Eval(tuple, o, e, predecessor, k, "Or");
+            });
 
         private static bool IgnoreOutput(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
