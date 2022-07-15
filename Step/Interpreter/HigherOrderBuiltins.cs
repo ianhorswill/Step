@@ -33,8 +33,29 @@ namespace Step.Interpreter
     /// <summary>
     /// Implementations of higher-order builtin primitives.
     /// </summary>
-    internal static class HigherOrderBuiltins
+    public static class HigherOrderBuiltins
     {
+        /// <summary>
+        /// The built-in And task, for any C# code that needs to recognize references to it.
+        /// </summary>
+        public static readonly Task And = new GeneralPrimitive(nameof(And), AndImplementation)
+            .Arguments("calls", "...")
+            .Documentation("control flow", "Runs each of the calls, in order.");
+
+        /// <summary>
+        /// The built-in Or task, for any C# code that needs to recognize references to it.
+        /// </summary>
+        public static readonly Task Or = new GeneralPrimitive(nameof(Or), OrImplementation)
+            .Arguments("calls", "...")
+            .Documentation("control flow", "Runs each of the calls, in order until one works.");
+
+        /// <summary>
+        /// The built-in Not task, for any C# code that needs to recognize references to it.
+        /// </summary>
+        public static readonly Task Not = new GeneralPrimitive(nameof(Not), NotImplementation)
+        .Arguments("call")
+            .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.  This requires the call to be ground (not contain any uninstantiated variables), since [Not [P ?x]] means \"not [P ?x] for any ?x\".  Use NotAny if you mean to have unbound variables in the goal.");
+
         internal static void DefineGlobals()
         {
             var g = Module.Global;
@@ -60,18 +81,12 @@ namespace Step.Interpreter
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput)
                 .Arguments("calls", "...")
                 .Documentation("control flow//calling tasks", "Runs each of the calls, in order, but throws away their output text.");
-            g[nameof(Begin)] = new GeneralPrimitive(nameof(And), Begin)
+            g[nameof(Begin)] = new GeneralPrimitive(nameof(AndImplementation), Begin)
                 .Arguments("task", "...")
                 .Documentation("control flow", "Runs each of the tasks, in order.");
-            g[nameof(And)] = new GeneralPrimitive(nameof(And), And)
-                .Arguments("calls", "...")
-                .Documentation("control flow", "Runs each of the calls, in order.");
-            g[nameof(Or)] = new GeneralPrimitive(nameof(And), Or)
-                .Arguments("calls", "...")
-                .Documentation("control flow", "Runs each of the calls, in order until one works.");
-            g[nameof(Not)] = new GeneralPrimitive(nameof(Not), Not)
-                .Arguments("call")
-                .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.  This requires the call to be ground (not contain any uninstantiated variables), since [Not [P ?x]] means \"not [P ?x] for any ?x\".  Use NotAny if you mean to have unbound variables in the goal.");
+            g[nameof(And)] = And;
+            g[nameof(Or)] = Or;
+                g[nameof(Not)] = Not;
             g[nameof(NotAny)] = new GeneralPrimitive(nameof(NotAny), NotAny)
                 .Arguments("call")
                 .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.");
@@ -150,14 +165,14 @@ namespace Step.Interpreter
         private static bool Begin(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
             => Step.ChainFromBody("Begin", args).Try(o, e, k, predecessor);
 
-        private static bool And(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
-            => Step.ChainFromBody("And", args).Try(o, e, k, predecessor);
+        private static bool AndImplementation(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+            => Step.ChainFromBody("AndImplementation", args).Try(o, e, k, predecessor);
 
-        private static bool Or(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool OrImplementation(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
             => args.Any(call =>
             {
-                var tuple = ArgumentTypeException.Cast<object[]>("Or", call, args);
-                return Eval(tuple, o, e, predecessor, k, "Or");
+                var tuple = ArgumentTypeException.Cast<object[]>("OrImplementation", call, args);
+                return Eval(tuple, o, e, predecessor, k, "OrImplementation");
             });
 
         private static bool IgnoreOutput(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
@@ -168,7 +183,7 @@ namespace Step.Interpreter
                 predecessor);
         }
 
-        private static bool Not(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool NotImplementation(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
         {
             foreach (var arg in args)
                 if (!Term.IsGround(arg))
