@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Step.Interpreter
 {
@@ -12,6 +13,13 @@ namespace Step.Interpreter
         /// Name, for debugging purposes
         /// </summary>
         public readonly string Name;
+
+        private Dictionary<string, object> propertyDictionary;
+
+        /// <summary>
+        /// Dictionary of additional user-defined metadata
+        /// </summary>
+        public IDictionary<string, object> Properties => propertyDictionary ?? (propertyDictionary = new Dictionary<string, object>());
 
         /// <summary>
         /// Number of arguments required by this task, if fixed.
