@@ -108,6 +108,15 @@ namespace Step.Interpreter
                 Text = text;
             }
         }
+
+        /// <summary>
+        /// All the assertions about this predicate stored in this state using [now ...] 
+        /// </summary>
+        /// <param name="s">State to test</param>
+        /// <returns>argument/truth pairs</returns>
+        public IEnumerable<(object[], bool)> FluentAssertions(State s) 
+            => Cache.Bindings(s).Select(b => ((object[])b.Key, b.Value.Success));
+
         #endregion
 
         internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
