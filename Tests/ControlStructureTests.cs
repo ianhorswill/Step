@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
+using Step.Interpreter;
 
 namespace Tests
 {
@@ -66,6 +67,15 @@ namespace Tests
                 "MentionTest: [Mention x] [Mentioned x]");
             Assert.AreEqual("False false true", m.Call("Test"));
             Assert.IsTrue(m.CallPredicate("MentionTest"));
+        }
+
+        [TestMethod, ExpectedException(typeof(ArgumentInstantiationException))]
+        public void NowInstantiationExceptionTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [now [F ?]]",
+                "fluent F ?foo.");
+            m.Call("Test");
         }
 
         [TestMethod]

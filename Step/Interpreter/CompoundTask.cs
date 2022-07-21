@@ -92,6 +92,9 @@ namespace Step.Interpreter
         /// <returns>New global state</returns>
         public State SetFluent(State oldState, object[] arglist, bool truth)
         {
+            if (!Term.IsGround(arglist))
+                throw new ArgumentInstantiationException(this, new BindingEnvironment(), arglist,
+                    "The now command can only be used to update ground instances of a fluent.");
             return StoreResult(oldState, arglist, new CachedResult(truth, Function?arglist[arglist.Length-1]:null, EmptyText));
         }
         
