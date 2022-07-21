@@ -53,6 +53,16 @@ namespace Tests
             Assert.AreEqual("b", result[1]);
             Assert.AreEqual("c", result[2]);
         }
+
+        [TestMethod]
+        public void FindUniqueTest()
+        {
+            var m = Module.FromDefinitions("Test: [FindUnique [Foo ?a] [Foo ?a] ?foos] ?foos/WriteVerbatim",
+                "[predicate] Foo a.",
+                "Foo b.",
+                "Foo a.");
+            Assert.AreEqual("[[Foo a] [Foo b]]", m.Call("Test"));
+        }
         
         [TestMethod]
         public void DoAllTest()

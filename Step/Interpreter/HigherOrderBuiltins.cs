@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Step.Utilities;
@@ -262,11 +263,13 @@ namespace Step.Interpreter
             var taskArgs = call.Skip(1).ToArray();
 
             var result = args[2];
-            var resultSet = new HashSet<object>();
+            var resultSet = new List<object>();
 
             task.Call(taskArgs, o, e, predecessor, (newO, u, s, p) =>
             {
-                resultSet.Add(e.Resolve(solution, u));
+                object r = e.Resolve(solution, u);
+                if (resultSet.All(elt => StructuralComparisons.StructuralComparer.Compare(r, elt) != 0))
+                    resultSet.Add((r));
                 return false;
             });
             return e.Unify(result, resultSet.ToArray(), out var final)
