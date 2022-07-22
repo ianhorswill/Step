@@ -69,6 +69,15 @@ namespace Tests
             Assert.IsTrue(m.CallPredicate("MentionTest"));
         }
 
+        [TestMethod]
+        public void NorInstantiationTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [= ?b [x ?c]] [= ?c a][now [F ?b]]",
+                "fluent F ?foo.");
+            Assert.IsTrue(m.CallPredicate("Test"));
+        }
+
         [TestMethod, ExpectedException(typeof(ArgumentInstantiationException))]
         public void NowInstantiationExceptionTest()
         {

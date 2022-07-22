@@ -241,6 +241,13 @@ namespace Step.Interpreter
             g["NonVar"] = new SimplePredicate<object>("NonVar", o => !(o is LogicVariable))
                 .Arguments("x")
                 .Documentation("metalogical", "Succeeds when its argument is a *not* an uninstantiated variable.");
+            g["Ground"] = new SimplePredicate<object>("Ground", Term.IsGround)
+                .Arguments("x")
+                .Documentation("metalogical", "Succeeds when its argument is contains no uninstantiated variables (variables without values)");
+            g["Nonground"] = new SimplePredicate<object>("Nonground", o => !Term.IsGround(o))
+                .Arguments("x")
+                .Documentation("metalogical", "Succeeds when its argument is contains uninstantiated variables (variables without values)");
+
 
             g["CopyTerm"] = new GeneralPrimitive("CopyTerm",
                 (args, t, b, f, k) =>
