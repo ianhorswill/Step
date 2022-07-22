@@ -114,23 +114,29 @@ namespace Step.Interpreter
         {
             switch (term)
             {
-                case null:
-                    return null;
-
                 case LocalVariableName l:
-                    return Deref(Local[l.Index], unifications);
+                    term = Deref(Local[l.Index], unifications);
+                    break;
 
                 case StateVariableName g:
-                    return State.TryGetValue(g, out var result) ? result : Module[g];
+                    term = State.TryGetValue(g, out var result) ? result : Module[g];
+                    break;
+
+                case LogicVariable v:
+                    term = Deref(v, unifications);
+                    break;
+            }
+
+            switch (term)
+            {
+                case null:
+                    return null;
 
                 case string[] tokens:
                     return tokens;
 
                 case object[] sublist:
                     return ResolveList(sublist, unifications);
-
-                case LogicVariable v:
-                    return Deref(v, unifications);
 
                 default:
                     return term;

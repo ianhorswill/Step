@@ -47,9 +47,10 @@ namespace Tests
         [TestMethod]
         public void BrokenProjectTest()
         {
-            var m = new Module("Broken project");
-            // Uncomment to test loading a project that causes a problem
-            m.LoadDirectory("C:/users/ianho/documents/github/ihunt");
+            //var m = new Module("Broken project");
+            //// Uncomment to test loading a project that causes a problem
+            //m.LoadDirectory("C:/users/ianho/documents/github/nana");
+            //m.Call("Run");
         }
     }
 }
