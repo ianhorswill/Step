@@ -96,10 +96,16 @@ namespace Step.Interpreter
                 .Documentation("control flow//looping//all solutions predicates", "Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results.  If backtracking produces duplicate ?results, there will be multiple copies of them in ?all_results; to eliminate duplicate solutions, use FindUnique.  If call never fails, this will run forever.");
             g[nameof(FindUnique)] = new GeneralPrimitive(nameof(FindUnique), FindUnique)
                 .Arguments("?result", "call", "?all_results")
-                .Documentation("control flow//looping//all solutions predicates", "Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results, eliminating duplicate solutions.  If call never fails, this will run forever.");
+                .Documentation("control flow//looping//all solutions predicates", "Runs call, backtracking to find every possible solution to it.  For each solution, FindUnique records the value of ?result, and returns a list of all ?results in order, in ?all_results, eliminating duplicate solutions.  If call never fails, this will run forever.");
+            g[nameof(FindFirstNUnique)] = new GeneralPrimitive(nameof(FindFirstNUnique), FindFirstNUnique)
+                .Arguments("n", "?result", "call", "?all_results")
+                .Documentation("control flow//looping//all solutions predicates", "Like FindUnique, but takes only the first n unique solutions that are generated.  Fails if there are fewer than n unique solutions.");
+            g[nameof(FindAtMostNUnique)] = new GeneralPrimitive(nameof(FindAtMostNUnique), FindAtMostNUnique)
+                .Arguments("n", "?result", "call", "?all_results")
+                .Documentation("control flow//looping//all solutions predicates", "Like FindUnique, but takes only the first n unique solutions that are generated.");
             g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll)
                 .Arguments("generator_call", "other_calls", "...")
-                .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings or set commands are undone."); ;
+                .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings or set commands are undone.");
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach)
                 .Arguments("generator_call", "other_calls", "...")
                 .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings are undone.  However, all text generated and set commands performed are preserved.");
@@ -263,6 +269,42 @@ namespace Step.Interpreter
             var taskArgs = call.Skip(1).ToArray();
 
             var result = args[2];
+            return FindUniqueDriver(null, false, o, e, predecessor, k, task, taskArgs, solution, result);
+        }
+
+        private static bool FindFirstNUnique(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(FindFirstNUnique), 4, args);
+            var count = ArgumentTypeException.Cast<int>(nameof(FindFirstNUnique), args[0], args);
+            var solution = args[1];
+            var call = args[2] as object[];
+            if (call == null || call.Length == 0)
+                throw new ArgumentException("Invalid goal expression");
+            var task = ArgumentTypeException.Cast<Task>(nameof(FindFirstNUnique), call[0], args);
+            var taskArgs = call.Skip(1).ToArray();
+
+            var result = args[3];
+            return FindUniqueDriver(count, true, o, e, predecessor, k, task, taskArgs, solution, result);
+        }
+
+        private static bool FindAtMostNUnique(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(FindAtMostNUnique), 4, args);
+            var count = ArgumentTypeException.Cast<int>(nameof(FindAtMostNUnique), args[0], args);
+            var solution = args[1];
+            var call = args[2] as object[];
+            if (call == null || call.Length == 0)
+                throw new ArgumentException("Invalid goal expression");
+            var task = ArgumentTypeException.Cast<Task>(nameof(FindAtMostNUnique), call[0], args);
+            var taskArgs = call.Skip(1).ToArray();
+
+            var result = args[3];
+            return FindUniqueDriver(count, false, o, e, predecessor, k, task, taskArgs, solution, result);
+        }
+
+        private static bool FindUniqueDriver(int? solutionCount, bool failIfInsufficient, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k,
+            Task task, object[] taskArgs, object solution, object result)
+        {
             var resultSet = new List<object>();
 
             task.Call(taskArgs, o, e, predecessor, (newO, u, s, p) =>
@@ -270,9 +312,10 @@ namespace Step.Interpreter
                 object r = e.Resolve(solution, u);
                 if (resultSet.All(elt => StructuralComparisons.StructuralComparer.Compare(r, elt) != 0))
                     resultSet.Add((r));
-                return false;
+                return solutionCount.HasValue && resultSet.Count == solutionCount.Value;
             });
-            return e.Unify(result, resultSet.ToArray(), out var final)
+            return (!failIfInsufficient || !solutionCount.HasValue || solutionCount.Value == resultSet.Count)
+                   && e.Unify(result, resultSet.ToArray(), out var final)
                    && k(o, final, e.State, predecessor);
         }
 

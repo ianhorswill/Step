@@ -63,7 +63,33 @@ namespace Tests
                 "Foo a.");
             Assert.AreEqual("[[Foo a] [Foo b]]", m.Call("Test"));
         }
-        
+
+        [TestMethod]
+        public void FindFirstNUniqueTest()
+        {
+            var m = Module.FromDefinitions("Test: [FindFirstNUnique 2 [Foo ?a] [Foo ?a] ?foos] ?foos/WriteVerbatim",
+                "[predicate] Test2: [FindFirstNUnique 5 [Foo ?a] [Foo ?a] ?foos] ?foos/WriteVerbatim",
+                "[predicate] Foo a.",
+                "Foo b.",
+                "Foo a.",
+                "Foo c.");
+            Assert.AreEqual("[[Foo a] [Foo b]]", m.Call("Test"));
+            Assert.IsFalse(m.CallPredicate("Test2"));
+        }
+
+        [TestMethod]
+        public void FindAtMostNUniqueTest()
+        {
+            var m = Module.FromDefinitions("Test: [FindAtMostNUnique 2 [Foo ?a] [Foo ?a] ?foos] ?foos/WriteVerbatim",
+                "[predicate] Test2: [FindAtMostNUnique 5 [Foo ?a] [Foo ?a] ?foos] ?foos/WriteVerbatim",
+                "[predicate] Foo a.",
+                "Foo b.",
+                "Foo a.",
+                "Foo c.");
+            Assert.AreEqual("[[Foo a] [Foo b]]", m.Call("Test"));
+            Assert.AreEqual("[[Foo a] [Foo b] [Foo c]]", m.Call("Test2"));
+        }
+
         [TestMethod]
         public void DoAllTest()
         {
