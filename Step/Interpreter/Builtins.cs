@@ -31,6 +31,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Step.Output;
 using Step.Utilities;
 
 namespace Step.Interpreter

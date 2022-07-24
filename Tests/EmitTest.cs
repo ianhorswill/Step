@@ -26,6 +26,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
 using Step.Interpreter;
+using Step.Output;
 
 namespace Tests
 {

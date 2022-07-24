@@ -86,7 +86,7 @@
     <Compile Include="Interpreter\StateElement.cs" />
     <Compile Include="DictionaryStateElement.cs" />
     <Compile Include="Term.cs" />
-    <Compile Include="Utilities\Inflection.cs" />
+    <Compile Include="Output\Inflection.cs" />
     <Compile Include="Utilities\Documentation.cs" />
     <Compile Include="Utilities\Randomization.cs" />
     <Compile Include="Interpreter\AddStep.cs" />
@@ -121,8 +121,8 @@
     <Compile Include="Parser\SyntaxError.cs" />
     <Compile Include="Parser\TextFileTokenStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\TextUtilities.cs" />
-    <Compile Include="Utilities\Writer.cs" />
+    <Compile Include="Output\TextUtilities.cs" />
+    <Compile Include="Output\Writer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Step.Interpreter;
+using Step.Output;
 
 namespace Step.Utilities
 {

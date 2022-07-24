@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
-namespace Step.Utilities
+namespace Step.Output
 {
     /// <summary>
     /// Implements a best effort to convert between English plural and singular noun inflections

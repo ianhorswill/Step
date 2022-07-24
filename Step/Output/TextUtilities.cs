@@ -27,7 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Step
+namespace Step.Output
 {
     /// <summary>
     /// Random utilities for working with text
@@ -37,19 +37,24 @@ namespace Step
         /// <summary>
         /// Internal token used to signify the start of a new line
         /// </summary>
-        public static readonly string NewLineToken = "--newline--";
+        public const string NewLineToken = "--newline--";
         /// <summary>
         /// Internal token used to signify the start of a new paragraph
         /// </summary>
-        public static readonly string NewParagraphToken = "--paragraph--";
+        public const string NewParagraphToken = "--paragraph--";
         /// <summary>
         /// Internal token used to signify that any future tokens should start on a fresh line.
         /// </summary>
-        public static readonly string FreshLineToken = "--fresh line--";
+        public const string FreshLineToken = "--fresh line--";
         /// <summary>
         /// A token that forces a space between two tokens that wouldn't otherwise have have spaces between them.
         /// </summary>
-        public static readonly string ForceSpaceToken = " ";
+        public const string ForceSpaceToken = " ";
+
+        /// <summary>
+        /// A token that causes the system to write either "a" or "an" depending on the following token.
+        /// </summary>
+        public const string AnOrAToken = "[an]";
 
         private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
 
@@ -101,7 +106,7 @@ namespace Step
                 if (t != "" && (!PunctuationToken(t) || t == "\u201c") && !t.StartsWith("<") && t != "\n")
                 {
                     if (format.Capitalize && (firstOne || LineEnding(lastToken)) && char.IsLower(t[0]))
-                        token = TextUtilities.Capitalize(token);
+                        token = token.Capitalize();
                     if (firstOne)
                         firstOne = false;
                     else if (!NoSpaceAfter(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'") && !LineChange(token)

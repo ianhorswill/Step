@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Step.Interpreter;
+using Step.Output;
 using Step.Utilities;
 
 namespace Step.Parser

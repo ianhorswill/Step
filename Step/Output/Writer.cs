@@ -3,7 +3,7 @@ using System.Collections;
 using System.Text;
 using Step.Interpreter;
 
-namespace Step.Utilities
+namespace Step.Output
 {
     /// <summary>
     /// Formatted writting of Step terms (i.e. tuples, variables, and atomic values)
