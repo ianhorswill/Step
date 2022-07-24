@@ -41,6 +41,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Number of arguments expected by the task
         /// </summary>
+        // ReSharper disable once PossibleInvalidOperationException
         public int ArgCount => ArgumentCount.Value;
 
         /// <summary>
@@ -117,6 +118,7 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="s">State to test</param>
         /// <returns>argument/truth pairs</returns>
+        // ReSharper disable once UnusedMember.Global
         public IEnumerable<(object[], bool)> FluentAssertions(State s) 
             => Cache.Bindings(s).Select(b => ((object[])b.Key, b.Value.Success));
 
@@ -387,6 +389,7 @@ namespace Step.Interpreter
         /// <summary>
         /// All the fluent updates of the methods of this task.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public IEnumerable<(CompoundTask task, object[] args, bool polarity)> FluentUpdates()
         {
             foreach (var m in Methods)

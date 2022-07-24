@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Step.Output;
-using Step.Utilities;
 
 namespace Step.Interpreter
 {
@@ -134,6 +133,7 @@ namespace Step.Interpreter
         /// <summary>
         /// An approximate reconstruction of the original course text for this method.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public string MethodCode
         {
             get
@@ -160,6 +160,7 @@ namespace Step.Interpreter
         /// Generate the head string, but substitute in the values of any variables
         /// </summary>
         /// <param name="env">Binding environment with values of variables</param>
+        // ReSharper disable once UnusedMember.Global
         public string HeadStringWithBindings(BindingEnvironment env) =>
             Writer.TermToString(ArgumentPattern.Select(env.Resolve).Prepend(Task.Name).ToArray());
 

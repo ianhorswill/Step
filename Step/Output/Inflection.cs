@@ -157,6 +157,7 @@ namespace Step.Output
         /// <summary>
         /// Heuristically guess is this noun is in plural form
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static bool NounAppearsPlural(string[] plural)
         {
             return NounAppearsPlural(plural[plural.Length-1]);
@@ -165,6 +166,7 @@ namespace Step.Output
         /// <summary>
         /// The singular form of a plural form verb
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static string[] SingularOfVerb(string[] plural)
         {
             if (ContainsCopula(plural))
@@ -174,6 +176,7 @@ namespace Step.Output
         /// <summary>
         /// The plural form of a singular form verb
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static string[] PluralOfVerb(string[] singular)
         {
             if (ContainsCopula(singular))
@@ -184,6 +187,7 @@ namespace Step.Output
         /// <summary>
         /// Heuristically guess if this verb is in gerund form
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static bool IsGerund(string[] verbal) =>
             ContainsCopula(verbal) || verbal[0].EndsWith("ing");
 
@@ -192,6 +196,7 @@ namespace Step.Output
         /// It's hard to know algorithmically which is correct, so we just allow
         /// all of them.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static IEnumerable<string[]> GerundsOfVerb(string[] plural)
         {
             if (ContainsCopula(plural))
@@ -233,6 +238,7 @@ namespace Step.Output
         /// <summary>
         /// Convert the gerund form of a verb to its base form
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static string[] BaseFormOfGerund(string[] gerund)
         {
             if (gerund.Contains("being"))
@@ -285,7 +291,7 @@ namespace Step.Output
         private static bool ContainsCopula(string[] tokens) => tokens.Any(word => CopularForms.Contains(word));
 
         /// <summary>
-        /// Replace any occurence of the copula (e.g. is/are/be/being) with the specified replacement
+        /// Replace any occurrence of the copula (e.g. is/are/be/being) with the specified replacement
         /// </summary>
         public static string[] ReplaceCopula(string[] tokens, string replacement) => tokens.Select(word => CopularForms.Contains(word) ? replacement : word).ToArray();
 

@@ -6,6 +6,7 @@ namespace Step.Interpreter
     /// <summary>
     /// A primitive task that generates text and succeeds a variable number of times (possibly not at all)
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public class NondeterministicTextGenerator : PrimitiveTask
     {
         /// <summary>
@@ -34,6 +35,7 @@ namespace Step.Interpreter
     /// <summary>
     /// A primitive task that generates text and succeeds a variable number of times (possibly not at all)
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public class NondeterministicTextGenerator<T1> : PrimitiveTask
     {
         /// <summary>
@@ -62,6 +64,7 @@ namespace Step.Interpreter
     /// <summary>
     /// A primitive task that generates text and succeeds a variable number of times (possibly not at all)
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public class NondeterministicTextGenerator<T1, T2> : PrimitiveTask
     {
         /// <summary>

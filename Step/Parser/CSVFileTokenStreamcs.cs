@@ -185,7 +185,7 @@ namespace Step.Parser
         private string[] GetRow()
         {
             // ReSharper disable once PossibleNullReferenceException
-            var line = input.ReadLine();
+            var line = Input.ReadLine();
             Debug.Assert(line != null, nameof(line) + " != null");
             if (LineNumber == 1 && line.Contains('\t'))
                 separator = '\t';

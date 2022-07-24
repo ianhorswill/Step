@@ -92,6 +92,7 @@ namespace Step.Interpreter
     /// A primitive task that implements a deterministic function from arguments to a boolean
     /// Requires all arguments to be instantiated
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public class SimplePredicate<T1, T2, T3> : PrimitiveTask
     {
         /// <summary>
@@ -123,6 +124,7 @@ namespace Step.Interpreter
     /// A primitive task that implements a deterministic function from arguments to a boolean
     /// Requires all arguments to be instantiated
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public class SimplePredicate<T1, T2, T3, T4> : PrimitiveTask
     {
         /// <summary>
@@ -155,6 +157,7 @@ namespace Step.Interpreter
     /// A primitive task that implements a deterministic function from arguments to a boolean
     /// Requires all arguments to be instantiated
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public class SimplePredicate<T1, T2, T3, T4, T5> : PrimitiveTask
     {
         /// <summary>

@@ -29,7 +29,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Step.Output;
 using Step.Utilities;
@@ -180,7 +179,7 @@ namespace Step.Interpreter
                 .Documentation("output", "Prints both objects, without a space between them, and changes and _'s to spaces.");
 
             Documentation.SectionIntroduction("data structures",
-                "Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictinoary and and [list ?element] is true when ?element is an element of the list.");
+                "Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictionary and and [list ?element] is true when ?element is an element of the list.");
 
             Documentation.SectionIntroduction("data structures//lists",
                 "Predicates access lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).");
@@ -431,6 +430,7 @@ namespace Step.Interpreter
             Documentation.DefineGlobals(Module.Global);
         }
 
+        // ReSharper disable once UnusedMember.Global
         public static void DefineFileSystemBuiltins(Module m)
         {
             void ImportFunction(string name, Func<string, string> implementation)
@@ -443,19 +443,18 @@ namespace Step.Interpreter
                 args =>
                 {
                     ArgumentCountException.Check("PathStructure", 3, args);
-                    if (args[2] is LogicVariable v)
+                    if (args[2] is LogicVariable)
                     {
                         // Path argument uninstantiated
                         args[2] = Path.Combine(ArgumentTypeException.Cast<string>("PathStructure", args[0], args),
                             ArgumentTypeException.Cast<string>("PathStructure", args[1], args));
-                        return new object[][] {args};
+                        return new[] {args};
                     }
                     else
                     {
                         var path = ArgumentTypeException.Cast<string>("PathStructure", args[2], args);
                         // Path argument is instantiated
-                        return new object[][]
-                            {new object[] {Path.GetDirectoryName(path), Path.GetFileName(path), path}};
+                        return new[] {new object[] {Path.GetDirectoryName(path), Path.GetFileName(path), path}};
                     }
                 });
 

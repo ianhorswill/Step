@@ -29,11 +29,5 @@
         /// Ignore paragraph and newline marks at the beginning of the output
         /// </summary>
         public bool SuppressLeadingVerticalSpace = true;
-
-        /// <summary>
-        /// Make a new FormattingOptions object
-        /// </summary>
-        public FormattingOptions()
-        { }
     }
 }

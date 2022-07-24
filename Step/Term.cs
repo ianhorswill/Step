@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+﻿using System.Collections.Generic;
 using Step.Interpreter;
 
 namespace Step
@@ -63,7 +61,7 @@ namespace Step
             /// True if this is the comparer used for result caches on functions
             /// If so, we need to ignore the last element of a top-level tuple.
             /// </summary>
-            public bool FunctionComparer = false;
+            public bool FunctionComparer;
             
             bool IEqualityComparer<object>.Equals(object a, object b)
             {

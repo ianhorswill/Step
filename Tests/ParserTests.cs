@@ -60,7 +60,7 @@ namespace Tests
                 // ReSharper restore StringLiteralTypo
                 // ReSharper disable once StringLiteralTypo
                 .Warnings().Where(w => w.Contains("ingleton")).ToArray();
-            Assert.AreEqual(0, warnings.Count());
+            Assert.AreEqual(0, warnings.Length);
         }
         
         [TestMethod]

@@ -136,7 +136,7 @@ namespace Step.Utilities
                 Add(t, sectionPath.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries));
         }
 
-        private readonly static List<(string, string)> SectionIntroductions = new List<(string, string)>();
+        private static readonly List<(string, string)> SectionIntroductions = new List<(string, string)>();
 
         /// <summary>
         /// Specify text to print in the manual between the heading for a section and the first task description.

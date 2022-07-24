@@ -67,6 +67,7 @@ namespace Step
         /// Returns contents as a flat array, sorted.
         /// Not performant - just use for examining the contents in the debugger.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public KeyValuePair<string, object>[] Contents
         {
             get

@@ -180,12 +180,12 @@ namespace Step.Interpreter
             {
                 if (a is LogicVariable av)
                 {
-                    outUnifications = new BindingList<LogicVariable>(av, b, inUnifications);
+                    outUnifications = new BindingList<LogicVariable>(av, null, inUnifications);
                     return true;
                 }
                 else if (b is LogicVariable bv)
                 {
-                    outUnifications = new BindingList<LogicVariable>(bv, a, inUnifications);
+                    outUnifications = new BindingList<LogicVariable>(bv, null, inUnifications);
                     return true;
                 }
 

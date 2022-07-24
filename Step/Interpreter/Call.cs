@@ -52,6 +52,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Make a new call step to the specified task, with no arguments.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static Call MakeCall(object task, Step next) => new Call(task, new object[0], next);
 
         /// <summary>
@@ -67,6 +68,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Make a new call step to the specified task, with the specified arguments.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public static Call MakeCall(object task, object arg1, object arg2, object arg3, Step next) => new Call(task, new[] { arg1, arg2, arg3 }, next);
 
         /// <summary>

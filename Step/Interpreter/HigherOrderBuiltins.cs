@@ -619,6 +619,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Find all solutions to the specified task and arguments.  Return a list of the text outputs of each solution.
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         internal static List<string[]> AllSolutionText(string taskName, object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor)
         {
             var results = new List<string[]>();

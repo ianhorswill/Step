@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Step.Interpreter
+﻿namespace Step.Interpreter
 {
     /// <summary>
     /// The most general version of a primitive task.

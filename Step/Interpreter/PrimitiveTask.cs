@@ -23,9 +23,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
-using System.Collections.Generic;
-
 namespace Step.Interpreter
 {
     /// <summary>

@@ -19,6 +19,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Dictionary of additional user-defined metadata
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public IDictionary<string, object> Properties => propertyDictionary ?? (propertyDictionary = new Dictionary<string, object>());
 
         /// <summary>
@@ -41,7 +42,6 @@ namespace Step.Interpreter
         /// Adds documentation of the arguments to the task
         /// </summary>
         /// <param name="arglist">The names of the arguments</param>
-        /// <typeparam name="T">Type of task</typeparam>
         /// <returns>The original task</returns>
         public Task Arguments(params string[] arglist)
         {
@@ -58,7 +58,6 @@ namespace Step.Interpreter
         /// Adds documentation of the description of the task
         /// </summary>
         /// <param name="documentation">Description of what the task does</param>
-        /// <typeparam name="T">Type of task</typeparam>
         /// <returns>The original task</returns>
         public Task Documentation(string documentation)
         {
@@ -74,8 +73,8 @@ namespace Step.Interpreter
         /// <summary>
         /// Adds documentation of the description of the task
         /// </summary>
+        /// <param name="manualSection">Section of the manual to place this task in</param>
         /// <param name="documentation">Description of what the task does</param>
-        /// <typeparam name="T">Type of task</typeparam>
         /// <returns>The original task</returns>
         public Task Documentation(string manualSection, string documentation)
         {

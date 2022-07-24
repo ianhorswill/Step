@@ -71,6 +71,7 @@ namespace Step.Interpreter
         /// <param name="name">Name for the predicate</param>
         /// <param name="list">List containing all elements</param>
         /// <returns>Predicate</returns>
+        // ReSharper disable once UnusedMember.Global
         public static GeneralPredicate<T1> FromList(string name, IList<T1> list)
         {
             var hashSet = new HashSet<T1>(list);
@@ -87,13 +88,14 @@ namespace Step.Interpreter
         /// <param name="name">Name for the predicate</param>
         /// <param name="list">List containing all elements</param>
         /// <returns>Predicate</returns>
+        // ReSharper disable once UnusedMember.Global
         public static GeneralPredicate<T1> FromListRandomized(string name, IList<T1> list)
         {
             var hashSet = new HashSet<T1>(list);
             return new GeneralPredicate<T1>(
                 name,
                 elt => hashSet.Contains(elt),
-                () => list.BadShuffle());
+                list.BadShuffle);
         }
 
         private readonly Func<T1, bool> inMode;

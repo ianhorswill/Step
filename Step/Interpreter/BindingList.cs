@@ -61,6 +61,7 @@ namespace Step.Interpreter
         /// <param name="variable">Variable to look for</param>
         /// <param name="value">Value, if found, or null</param>
         /// <returns>True if a value was found, otherwise false.</returns>
+        // ReSharper disable once UnusedMember.Global
         public static bool TryLookup(BindingList<T> bindingList, T variable, out object value)
         {
             for (var cell = bindingList; cell != null; cell = cell.Next)

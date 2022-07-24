@@ -18,14 +18,14 @@ namespace Step.Parser
         {
             FilePath = filePath;
             LineNumber = 1;
-            input = file;
+            Input = file;
         }
 
-        protected TextReader input;
+        protected TextReader Input;
 
         public void Dispose()
         {
-            input.Dispose();
+            Input.Dispose();
         }
         
         /// <summary>
@@ -56,11 +56,11 @@ namespace Step.Parser
         /// <summary>
         /// True if we're at the end of the stream
         /// </summary>
-        protected bool End => input.Peek() < 0;
+        protected bool End => Input.Peek() < 0;
 
         /// <summary>
         /// Return the current character, without advancing
         /// </summary>
-        protected char Peek => (char)(input.Peek());
+        protected char Peek => (char)(Input.Peek());
     }
 }

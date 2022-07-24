@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Step.Parser;
 
@@ -36,9 +35,11 @@ namespace Step.Interpreter
                     fluentExp = fluentExp[1] as object[];
                     if (fluentExp == null) ThrowInvalidFluentSyntax();
                 }
+                // ReSharper disable once PossibleNullReferenceException
                 if (!(fluentExp[0] is string fluentName) || !DefinitionStream.IsGlobalVariableName(fluentName))
                     ThrowInvalidFluentSyntax();
 
+                // ReSharper disable once RedundantArgumentDefaultValue
                 var task = module.FindTask(StateVariableName.Named(fluentName), fluentExp.Length - 1, true);
                 task.Flags |= CompoundTask.TaskFlags.ReadCache | CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
                 updates.Add((task, chain.CanonicalizeArglist(fluentExp.Skip(1).ToArray()), polarity));

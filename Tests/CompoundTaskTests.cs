@@ -33,7 +33,7 @@ namespace Tests
     public class CompoundTaskTests
     {
         // ReSharper disable once InconsistentNaming
-        private static DeterministicTextGenerator<object> toString = new DeterministicTextGenerator<object>("ToString", (x) => new[] { x.ToString() });
+        private static readonly DeterministicTextGenerator<object> toString = new DeterministicTextGenerator<object>("ToString", (x) => new[] { x.ToString() });
 
         [TestMethod]
         public void MatchingNoVariablesTest()
@@ -138,7 +138,9 @@ namespace Tests
             var m = new Module("test");
             m.AddDefinitions("[randomly] [9999999999] Test: a", "Test: b", "Test: c ");
             var gotA = 0;
+            // ReSharper disable once NotAccessedVariable
             var gotB = 0;
+            // ReSharper disable once NotAccessedVariable
             var gotC = 0;
 
             for (var i = 0; i < 100; i++)

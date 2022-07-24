@@ -5,11 +5,31 @@ using System.Linq;
 
 namespace Step.Utilities
 {
+    /// <summary>
+    /// Utilities for generating random numbers and permutations.
+    /// </summary>
     public static class Randomization
     {
+        /// <summary>
+        /// Random number generator used by the Step interpreter.
+        /// Setting its seed will fix the behavior of the system.
+        /// </summary>
         public static readonly Random Random = new Random();
 
+        /// <summary>
+        /// Generate a random integer in the range [low, high]
+        /// </summary>
+        /// <param name="low">Smallest number to allow</param>
+        /// <param name="high">Largest number to allow</param>
+        /// <returns></returns>
         public static int IntegerInclusive(int low, int high) => Random.Next(low, high + 1);
+
+        /// <summary>
+        /// Generate a random integer in the range [low, high), that is, low can be generated but not high.
+        /// </summary>
+        /// <param name="low">Smallest allowed number</param>
+        /// <param name="high">Largest allowed number plus one</param>
+        /// <returns>Generated number</returns>
         public static int IntegerExclusive(int low, int high) => Random.Next(low, high);
 
         /// <summary>
@@ -83,6 +103,15 @@ namespace Step.Utilities
 
         private static readonly Random Rng = new Random();
 
+        /// <summary>
+        /// Enumerates the elements of list in a random order.
+        /// This is good enough to seem random to a human, but actually only generates O(n^2/log n)
+        /// possible permutations, which is much less than the n! actual permutations.
+        /// The reason for this limitation is that it lets us enumerate using constant space.
+        /// </summary>
+        /// <param name="list">List to enumerate</param>
+        /// <typeparam name="T">Type of the list element</typeparam>
+        /// <returns>Random permutation of list</returns>
         public static IEnumerable<T> BadShuffle<T>(this IList<T> list)
         {
             var length = (uint) list.Count;
@@ -109,6 +138,14 @@ namespace Step.Utilities
             }
         }
 
+        /// <summary>
+        /// Enumerates the elements of list in a random order.
+        /// This is good enough to seem random to a human, but actually only generates O(n^2/log n)
+        /// possible permutations, which is much less than the n! actual permutations.
+        /// The reason for this limitation is that it lets us enumerate using constant space.
+        /// </summary>
+        /// <param name="list">List to enumerate</param>
+        /// <returns>Random permutation of list</returns>
         public static IEnumerable BadShuffle(this IList list)
         {
             var length = (uint)list.Count;
@@ -135,6 +172,15 @@ namespace Step.Utilities
             }
         }
 
+        /// <summary>
+        /// Returns either the original list, if shouldShuffle=false,
+        /// or a random permutation generated with BadShuffle(), if shouldShuffle=true.
+        /// </summary>
+        /// <param name="list">List to enumerate</param>
+        /// <param name="shouldShuffle">Whether to randomize the order</param>
+        /// <typeparam name="T">Element type</typeparam>
+        /// <returns>Enumeration of the elements</returns>
+        // ReSharper disable once UnusedMember.Global
         public static IEnumerable<T> MaybeShuffle<T>(this IList<T> list, bool shouldShuffle) =>
             shouldShuffle ? list.BadShuffle() : list;
     }

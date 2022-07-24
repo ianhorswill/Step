@@ -36,7 +36,7 @@ namespace Tests
     public class CallTests
     {
         private readonly SimplePredicate<int> positive = new SimplePredicate<int>("Positive", n => n > 0);
-        private static DeterministicTextGenerator<object> ToStringPrimitive = new DeterministicTextGenerator<object>("ToString", (x) => new []{ x.ToString() });
+        private static readonly DeterministicTextGenerator<object> ToStringPrimitive = new DeterministicTextGenerator<object>("ToString", (x) => new []{ x.ToString() });
 
         bool Succeeds(Step.Interpreter.Step s)
         {
@@ -206,7 +206,7 @@ namespace Tests
         {
             var m = Module.FromDefinitions("Test ?x {foo ?x}.",
                 "[fallible] TestB: [Test 1 ?x] [Test 2 ?y] [= ?x ?y]");
-            var result1 = m.CallFunction<object[]>(State.Empty, "Test", 1);
+            m.CallFunction<object[]>(State.Empty, "Test", 1);
             Assert.AreEqual("[Test 1 [foo 1]]", Module.StackTrace().Trim());
         }
 
@@ -236,6 +236,7 @@ namespace Tests
         }
 
         [TestMethod]
+        // ReSharper disable once InconsistentNaming
         public void CFGParseTest()
         {
             var m = Module.FromDefinitions(

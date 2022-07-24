@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Step.Utilities;
 
@@ -26,11 +25,11 @@ namespace Step.Interpreter
                 .Documentation("type testing", "True if x is a compound task, i.e. a task defined by rules.");
 
             // Second arg is a method of the first arg
-            Func<CompoundTask, Method, bool> inInMode = (t, m) => m.Task == t;
-            Func<CompoundTask, IEnumerable<Method>> inOutMode = t => t.Methods;
-            Func<Method, IEnumerable<CompoundTask>> outInMode = m => new[] {m.Task};
+            bool InInMode(CompoundTask t, Method m) => m.Task == t;
+            IEnumerable<Method> InOutMode(CompoundTask t) => t.Methods;
+            IEnumerable<CompoundTask> OutInMode(Method m) => new[] {m.Task};
             g["TaskMethod"] =
-                new GeneralPredicate<CompoundTask, Method>("TaskMethod", inInMode, inOutMode, outInMode, null)
+                new GeneralPredicate<CompoundTask, Method>("TaskMethod", InInMode, InOutMode, OutInMode, null)
                     .Arguments("?task", "?method")
                     .Documentation("reflection//static analysis", "True when ?method is a method of ?task");
 
@@ -40,18 +39,18 @@ namespace Step.Interpreter
                 .Documentation("reflection//dynamic analysis", "Sets ?frame to the reflection information for the current method call.");
 
             // Second argument is in the caller chain leading to the first argument
-            Func<MethodCallFrame, Method, bool> inInMode1 = (f, m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null;
-            Func<MethodCallFrame, IEnumerable<Method>> inOutMode1 = f => f.CallerChain.Select(a => a.Method);
+            bool InInMode1(MethodCallFrame f, Method m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null;
+            IEnumerable<Method> InOutMode1(MethodCallFrame f) => f.CallerChain.Select(a => a.Method);
             g["CallerChainAncestor"] = 
-                new GeneralPredicate<MethodCallFrame, Method>("CallerChainAncestor", inInMode1, inOutMode1, null, null)
+                new GeneralPredicate<MethodCallFrame, Method>("CallerChainAncestor", InInMode1, InOutMode1, null, null)
                     .Arguments("frame", "?method")
                     .Documentation("reflection//dynamic analysis", "True if ?method called frame's method or some other method that eventually called this frame's method.");
 
             // Second argument is in the goal chain leading to the first argument
-            Func<MethodCallFrame, Method, bool> inInMode2 = (f, m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null;
-            Func<MethodCallFrame, IEnumerable<Method>> inOutMode2 = f => f.GoalChain.Select(a => a.Method);
+            bool InInMode2(MethodCallFrame f, Method m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null;
+            IEnumerable<Method> InOutMode2(MethodCallFrame f) => f.GoalChain.Select(a => a.Method);
             g["GoalChainAncestor"] = 
-                new GeneralPredicate<MethodCallFrame, Method>("GoalChainAncestor", inInMode2, inOutMode2, null, null)
+                new GeneralPredicate<MethodCallFrame, Method>("GoalChainAncestor", InInMode2, InOutMode2, null, null)
                     .Arguments("frame", "?method")
                     .Documentation("reflection//dynamic analysis", "True if a successful call to ?method preceded this frame.");
 

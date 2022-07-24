@@ -44,6 +44,7 @@ namespace Step
         /// <summary>
         /// Test if the specified Global state contains a binding within this dictionary for the specified key
         /// </summary>
+        // ReSharper disable once UnusedMember.Global
         public bool ContainsKey(State s, TKey key)
         {
             var dict = Dictionary(s);

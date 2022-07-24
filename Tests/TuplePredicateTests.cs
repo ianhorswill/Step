@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using Step;
 using Step.Interpreter;
 
@@ -8,7 +7,7 @@ namespace Tests
     [TestClass]
     public class TuplePredicateTests
     {
-        private static TuplePredicate predicate = new TuplePredicate(
+        private static readonly TuplePredicate Predicate = new TuplePredicate(
             "TP",
             new[] {typeof(string), typeof(string)},
             new [] {true, true},
@@ -23,7 +22,7 @@ namespace Tests
         [TestMethod, ExpectedException(typeof(ArgumentCountException))]
         public void ArgumentCountExceptionTest()
         {
-            Module.Global["TP"] = predicate;
+            Module.Global["TP"] = Predicate;
             var m = Module.FromDefinitions("Test: [TP a]");
 
             m.CallPredicate("Test");
@@ -32,7 +31,7 @@ namespace Tests
         [TestMethod, ExpectedException(typeof(ArgumentTypeException))]
         public void ArgumentTypeExceptionTest()
         {
-            Module.Global["TP"] = predicate;
+            Module.Global["TP"] = Predicate;
             var m = Module.FromDefinitions("Test: [TP a 1]");
 
             m.CallPredicate("Test");
@@ -41,7 +40,7 @@ namespace Tests
         [TestMethod]
         public void MatchTest()
         {
-            Module.Global["TP"] = predicate;
+            Module.Global["TP"] = Predicate;
             var m = Module.FromDefinitions("[predicate] Test ?x ?y: [TP ?x ?y]");
             
             Assert.IsTrue(m.CallPredicate("Test", "a", "a"));

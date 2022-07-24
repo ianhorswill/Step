@@ -33,7 +33,6 @@ using System.Text;
 using Step.Interpreter;
 using Step.Output;
 using Step.Parser;
-using Step.Utilities;
 
 namespace Step
 {
@@ -118,6 +117,7 @@ namespace Step
         /// <param name="name">Name of the Module, for debugging purposes</param>
         /// <param name="parent">Parent module for this module.  This will usually be Module.Global</param>
         /// <param name="sourceFiles">Definition files to load</param>
+        // ReSharper disable once UnusedMember.Global
         public Module(string name, Module parent, params string[] sourceFiles)
             : this(name, parent)
         {
@@ -262,6 +262,7 @@ namespace Step
         /// <param name="state">State in which to run the code</param>
         /// <param name="call">Tuple representing the task to call and its arguments</param>
         /// <exception cref="ArgumentException">If first element of call is not a task</exception>
+        // ReSharper disable once UnusedMember.Global
         public (string output, State newDynamicState) Eval(State state, object[] call)
         {
             if (call.Length == 0)
@@ -423,6 +424,7 @@ var output = TextBuffer.NewEmpty();
                     LoadDefinitions(file);
             if (recursive)
                 foreach (var sub in Directory.GetDirectories(path))
+                    // ReSharper disable once RedundantArgumentDefaultValue
                     LoadDirectory(sub, true);
         }
 
@@ -466,7 +468,7 @@ var output = TextBuffer.NewEmpty();
             }
         }
 
-        private static readonly LocalVariableName[] noLocals = new LocalVariableName[0];
+        private static readonly LocalVariableName[] NoLocals = new LocalVariableName[0];
         private void DefineMethodsFromFolderStructure(CompoundTask task, string parentDirectory)
         {
             void Walk(string path, string name)
@@ -488,7 +490,7 @@ var output = TextBuffer.NewEmpty();
                             throw new SyntaxError("Invalid format in weight.txt file", weightPath, 1);
                     }
 
-                    task.Methods.Add(new Method(task, weight, new object[] {name, subName}, noLocals, null, null, 0));
+                    task.Methods.Add(new Method(task, weight, new object[] {name, subName}, NoLocals, null, null, 0));
 
                     Walk(sub, subName);
                 }
@@ -571,6 +573,7 @@ var output = TextBuffer.NewEmpty();
         /// If the procedure returns a value for it, that value is added to the module.
         /// </summary>
         /// <param name="hook">Procedure to use to import variables</param>
+        // ReSharper disable once UnusedMember.Global
         public void AddBindHook(BindHook hook)
         {
             if (bindHooks == null)

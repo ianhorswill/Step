@@ -49,7 +49,7 @@ namespace Tests
         {
             //var m = new Module("Broken project");
             //// Uncomment to test loading a project that causes a problem
-            //m.LoadDirectory("C:/users/ianho/documents/github/nana");
+            //m.LoadDirectory("C:/users/ianho/documents/github/iHunt");
             //m.Call("Run");
         }
     }

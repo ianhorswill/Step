@@ -84,7 +84,7 @@ namespace Step.Parser
         /// <returns></returns>
         private char Get(bool ignoreComments = true)
         {
-            var c = (char) input.Read();
+            var c = (char) Input.Read();
             switch (c)
             {
                 case '\n':
@@ -95,15 +95,15 @@ namespace Step.Parser
                     if (ignoreComments)
                     {
                         // Swallow line
-                        while (!End && Peek != '\n') input.Read();
-                        input.Read();
+                        while (!End && Peek != '\n') Input.Read();
+                        Input.Read();
                         return '\n';
                     }
                     else 
                         return '#';
 
                 case '"':
-                    var nextCode = input.Peek();
+                    var nextCode = Input.Peek();
                     var next = (char) nextCode;
                     if (nextCode < 0 || char.IsWhiteSpace(next) || char.IsPunctuation(next))
                         return RightDoubleQuote;

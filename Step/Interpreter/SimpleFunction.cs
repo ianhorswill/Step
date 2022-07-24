@@ -74,6 +74,7 @@ namespace Step.Interpreter
     /// <typeparam name="TIn2">Type of second argument</typeparam>
     /// <typeparam name="TIn3">Type of third argument</typeparam>
     /// <typeparam name="TOut">Type of function value</typeparam>
+    // ReSharper disable once UnusedMember.Global
     public class SimpleFunction<TIn1, TIn2, TIn3, TOut> : GeneralPredicateBase
     {
         /// <summary>
@@ -110,6 +111,7 @@ namespace Step.Interpreter
     /// <typeparam name="TIn3">Type of third argument</typeparam>
     /// <typeparam name="TIn4">Type of fourth argument</typeparam>
     /// <typeparam name="TOut">Type of function value</typeparam>
+    // ReSharper disable once UnusedMember.Global
     public class SimpleFunction<TIn1, TIn2, TIn3, TIn4, TOut> : GeneralPredicateBase
     {
         /// <summary>
@@ -148,6 +150,7 @@ namespace Step.Interpreter
     /// <typeparam name="TIn4">Type of fourth argument</typeparam>
     /// <typeparam name="TIn5">Type of fifth argument</typeparam>
     /// <typeparam name="TOut">Type of function value</typeparam>
+    // ReSharper disable once UnusedMember.Global
     public class SimpleFunction<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> : GeneralPredicateBase
     {
         /// <summary>
@@ -188,6 +191,7 @@ namespace Step.Interpreter
     /// <typeparam name="TIn5">Type of fifth argument</typeparam>
     /// <typeparam name="TIn6">Type of sixth argument</typeparam>
     /// <typeparam name="TOut">Type of function value</typeparam>
+    // ReSharper disable once UnusedMember.Global
     public class SimpleFunction<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut> : GeneralPredicateBase
     {
         /// <summary>

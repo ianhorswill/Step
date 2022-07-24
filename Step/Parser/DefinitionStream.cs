@@ -29,7 +29,6 @@ using System.IO;
 using System.Linq;
 using Step.Interpreter;
 using Step.Output;
-using Step.Utilities;
 
 namespace Step.Parser
 {
@@ -173,7 +172,7 @@ namespace Step.Parser
 
         private bool ElseToken => KeywordMarker("else");
 
-        private static string[] declarationKeywords = { "predicate", "task", "fluent", "folder_structure" };
+        private static readonly string[] DeclarationKeywords = { "predicate", "task", "fluent", "folder_structure" };
         #endregion
 
         #region Source-language variables     
@@ -423,7 +422,7 @@ namespace Step.Parser
 
             lineNumber = expressionStream.LineNumber;
 
-            if (declarationKeywords.Contains(Peek))
+            if (DeclarationKeywords.Contains(Peek))
                 return ReadDeclaration(flags);
             
             var (taskName, pattern) = ReadHead();
