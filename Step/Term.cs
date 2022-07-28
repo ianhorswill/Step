@@ -41,6 +41,25 @@ namespace Step
         }
 
         /// <summary>
+        /// Test if two terms are literally equal.  So [?x] and [?x] are literally equal, but [?x] and [?y] are not, even if they are unifiable.
+        /// </summary>
+        public static bool LiterallyEqual(object a, object b)
+        {
+            bool Recur(object y, object x)
+            {
+                if (x.Equals(y)) return true;
+                if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
+                    return false;
+                for (var i = 0; i < xArray.Length; i++)
+                    if (!Recur(xArray[i], yArray[i]))
+                        return false;
+                return true;
+            }
+
+            return Recur(a, b);
+        }
+
+        /// <summary>
         /// IEqualityComparer for terms in the step language.
         /// This does recursive comparison and hashing for object[] values, and the default
         /// comparison and hash implementations for others.

@@ -311,7 +311,7 @@ namespace Step.Interpreter
             task.Call(taskArgs, o, e, predecessor, (newO, u, s, p) =>
             {
                 object r = e.Resolve(solution, u);
-                if (resultSet.All(elt => StructuralComparisons.StructuralComparer.Compare(r, elt) != 0))
+                if (resultSet.All(elt => !Term.LiterallyEqual(elt, r)))
                     resultSet.Add((r));
                 return solutionCount.HasValue && resultSet.Count == solutionCount.Value;
             });
