@@ -57,11 +57,11 @@ namespace Step.Parser
         ///
         /// Make a new definition stream
         /// 
-        public DefinitionStream(ExpressionStream expressions, Module module)
+        public DefinitionStream(ExpressionStream expressionStream, Module module)
         {
             Module = module;
-            expressionStream = expressions;
-            this.expressions = expressions.Expressions.GetEnumerator();
+            this.expressionStream = expressionStream;
+            this.expressions = expressionStream.Expressions.GetEnumerator();
             MoveNext();
             chainBuilder = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
         }
@@ -909,6 +909,10 @@ namespace Step.Parser
         private void TryProcessTextBlock(Interpreter.Step.ChainBuilder chain)
         {
             tokensToEmit.Clear();
+            if (Peek is TupleExpression)
+                throw new SyntaxError(
+                    "Parenthesized expression is invalid in a method body.  Use \\( if you mean to include a parenthesis in the text",
+                    SourcePath, lineNumber);
             while (!EndOfDefinition
                    && Peek is string s
                    && !(IsNonAnonymousLocalVariableName(s) || IsUpArrowGlobalVariableReference(s)))

@@ -376,9 +376,9 @@ namespace Step.Interpreter
                     switch (x)
                     {
                         case string s:
-                            return StartsWithVowel(s);
+                            return TextUtilities.StartsWithVowel(s);
                         case string[] tokens:
-                            return tokens.Length > 0 && StartsWithVowel(tokens[0]);
+                            return tokens.Length > 0 && TextUtilities.StartsWithVowel(tokens[0]);
                         default:
                             return false;
                     }
@@ -489,12 +489,6 @@ namespace Step.Interpreter
                     return new string[0];
                 },
                 null);
-        }
-
-        private static bool StartsWithVowel(string x)
-        {
-            // ReSharper disable once StringLiteralTypo
-            return x.Length > 0 && "aeiou".Contains(x[0]);
         }
 
         private static bool Break()

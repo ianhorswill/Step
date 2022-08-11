@@ -51,11 +51,6 @@ namespace Step.Output
         /// </summary>
         public const string ForceSpaceToken = " ";
 
-        /// <summary>
-        /// A token that causes the system to write either "a" or "an" depending on the following token.
-        /// </summary>
-        public const string AnOrAToken = "[an]";
-
         private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
 
         private static bool LineChange(string token) => ReferenceEquals(token, NewLineToken) || ReferenceEquals(token, NewParagraphToken);
@@ -79,7 +74,7 @@ namespace Step.Output
             var firstOne = true;
             var lastToken = "";
             var forceFreshLine = false;
-            foreach (var t in tokens)
+            foreach (var t in TokenFilter.AOrAnFilter(tokens))
             {
                 if (firstOne 
                     && format.SuppressLeadingVerticalSpace 
@@ -151,5 +146,11 @@ namespace Step.Output
         /// True when string consists of just a single punctuation mark.
         /// </summary>
         private static bool PunctuationToken(string s) => s.Length == 1 && char.IsPunctuation(s[0]);
+        
+        public static bool StartsWithVowel(string x)
+        {
+            // ReSharper disable once StringLiteralTypo
+            return x.Length > 0 && "aeiou".Contains(x[0]);
+        }
     }
 }

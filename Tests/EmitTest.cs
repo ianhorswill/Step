@@ -68,6 +68,13 @@ namespace Tests
         }
 
         [TestMethod]
+        public void AAnTest()
+        {
+            var m = Module.FromDefinitions("Test: [an] cat [a] cat [an] ox [a] ox");
+            Assert.AreEqual("A cat a cat an ox an ox", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void ForceSpaceTest()
         {
             var m = Module.FromDefinitions(
