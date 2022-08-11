@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Step.Output;
 
 namespace Step.Parser
@@ -182,14 +183,97 @@ namespace Step.Parser
             }
         }
 
+        private readonly StringBuilder stringBuffer = new StringBuilder();
+        private readonly List<string> rowBuffer = new List<string>();
+
+        bool EndOfLineChar
+        {
+            get
+            {
+                var next = Input.Peek();
+                return next == '\n' || next == '\r';
+            }
+        }
+
+        /// <summary>
+        /// Read a row from the spreadsheet.
+        /// </summary>
+        /// <returns>Array of column strings</returns>
         private string[] GetRow()
         {
+            void FinishColumn()
+            {
+                rowBuffer.Add(stringBuffer.ToString());
+                stringBuffer.Clear();
+            }
+
+            stringBuffer.Clear();
+            rowBuffer.Clear();
+
+            while (!EndOfLineChar && !End)
+            {
+                char ch;
+                switch (ch = (char) Input.Read())
+                {
+                    case '\n':
+                        case '\r':
+                        break;
+
+                    case ',': 
+                    case '\t':
+                        FinishColumn();
+                        break;
+
+                    case '"':
+                        ReadQuoted();
+                        break;
+
+                    default:
+                        stringBuffer.Append(ch);
+                        break;
+                }
+            }
+
+            // Now at EOL.
+            while (EndOfLineChar) Input.Read();
+
+            rowBuffer.Add(stringBuffer.ToString());
+            stringBuffer.Clear();
+
+            return rowBuffer.ToArray();
+
             // ReSharper disable once PossibleNullReferenceException
-            var line = Input.ReadLine();
-            Debug.Assert(line != null, nameof(line) + " != null");
-            if (LineNumber == 1 && line.Contains('\t'))
-                separator = '\t';
-            return line.Split(separator).Select(s => s.Trim(' ', '"')).ToArray();
+            //var line = Input.ReadLine();
+            //Debug.Assert(line != null, nameof(line) + " != null");
+            //if (LineNumber == 1 && line.Contains('\t'))
+            //    separator = '\t';
+            //return line.Split(separator).Select(s => s.Trim(' ', '"')).ToArray();
+        }
+
+        /// <summary>
+        /// Read a quoted column
+        /// This just reads into the string buffer.  We depend on the caller to move the string buffer into the row buffer.
+        /// </summary>
+        private void ReadQuoted()
+        {
+            while (!EndOfLineChar && !End)
+            {
+                char ch;
+                if ((ch = (char)Input.Read()) == '"')
+                {
+                    if (Input.Peek() == '"')
+                    {
+                        // It's an escaped quote mark
+                        stringBuffer.Append('"');
+                        Input.Read(); // Skip second quote mark
+                    }
+                    else 
+                        // Quote marks the end of the column
+                        break;
+                }
+                else
+                    stringBuffer.Append(ch);
+            }
         }
 
         private string EscapeToken(string s) 
