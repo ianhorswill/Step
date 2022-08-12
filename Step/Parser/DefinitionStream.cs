@@ -37,6 +37,21 @@ namespace Step.Parser
     /// </summary>
     internal class DefinitionStream : IDisposable
     {
+        static DefinitionStream()
+        {
+            TokenFilter.DefineTokenMacros();
+        }
+
+        private static readonly Dictionary<string, object> Substitutions = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Defines that any occurrence of the single-element bracketed expression [macro] in the input text should be replaced by substitution.
+        /// </summary>
+        /// <param name="macro"></param>
+        /// <param name="substitution"></param>
+        public static void DefineSubstitution(string macro, object substitution) =>
+            Substitutions[macro] = substitution;
+
         public DefinitionStream(Module module, string filePath) : this(new ExpressionStream(filePath), module)
         { }
         
@@ -106,6 +121,21 @@ namespace Step.Parser
         /// Current expression
         /// </summary>
         private object Peek => expressions.Current;
+
+        /// <summary>
+        /// Peek, but apply substitution
+        /// </summary>
+        private object PeekAndSubstitute
+        {
+            get
+            {
+                var next = Peek;
+                if (next is object[] a && a.Length == 1 && a[0] is string keyword &&
+                    Substitutions.TryGetValue(keyword, out var subst))
+                    return subst;
+                return next;
+            }
+        }
         
         /// <summary>
         /// Return the current expression and move to the next
@@ -914,14 +944,13 @@ namespace Step.Parser
                     "Parenthesized expression is invalid in a method body.  Use \\( if you mean to include a parenthesis in the text",
                     SourcePath, lineNumber);
             while (!EndOfDefinition
-                   && Peek is string s
+                   && PeekAndSubstitute is string s
                    && !(IsNonAnonymousLocalVariableName(s) || IsUpArrowGlobalVariableReference(s)))
-                if (EndOfLineToken)
-                {
-                    Get();
-                }
-                else
-                    tokensToEmit.Add((string) Get());
+            {
+                if (!EndOfLineToken)
+                    tokensToEmit.Add(s);
+                Get();
+            }
 
             if (tokensToEmit.Count > 0)
                 chain.AddStep(new EmitStep(tokensToEmit.ToArray(), null));

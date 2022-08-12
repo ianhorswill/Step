@@ -11,8 +11,8 @@ namespace Step.Output
     {
         internal static void DefineTokenMacros()
         {
-            ExpressionStream.DefineSubstitution("a", AnOrAToken);
-            ExpressionStream.DefineSubstitution("an", AnOrAToken);
+            DefinitionStream.DefineSubstitution("a", AnOrAToken);
+            DefinitionStream.DefineSubstitution("an", AnOrAToken);
         }
 
         /// <summary>

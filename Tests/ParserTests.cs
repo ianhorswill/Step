@@ -159,8 +159,8 @@ namespace Tests
             }
 
             Test("this is a test", "this", "is", "a", "test");
-            Test(" [ax] b [c] d", new object[] {"ax"}, "b", new object[] {"c"}, "d");
-            Test("b [c] d [ax]", "b", new object[] {"c"}, "d", new object[] {"ax"});
+            Test(" [a] b [c] d", new object[] {"a"}, "b", new object[] {"c"}, "d");
+            Test("b [c] d [a]", "b", new object[] {"c"}, "d", new object[] {"a"});
             Test("");
         }
 

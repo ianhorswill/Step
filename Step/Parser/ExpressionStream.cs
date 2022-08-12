@@ -36,21 +36,6 @@ namespace Step.Parser
     /// </summary>
     internal class ExpressionStream : IDisposable
     {
-        static ExpressionStream()
-        {
-            TokenFilter.DefineTokenMacros();
-        }
-
-        private static readonly Dictionary<string, object> Substitutions = new Dictionary<string, object>();
-
-        /// <summary>
-        /// Defines that any occurrence of the single-element bracketed expression [macro] in the input text should be replaced by substitution.
-        /// </summary>
-        /// <param name="macro"></param>
-        /// <param name="substitution"></param>
-        public static void DefineSubstitution(string macro, object substitution) =>
-            Substitutions[macro] = substitution;
-
         /// <summary>
         /// Make an object that reads a stream of nested expressions from a file
         /// </summary>
@@ -176,11 +161,7 @@ namespace Step.Parser
                                 break;
 
                             default:
-                                if (buffer.Count == 1 && buffer[0] is string macro &&
-                                    Substitutions.TryGetValue(macro, out var subst))
-                                    yield return subst;
-                                else
-                                    yield return buffer.ToArray();
+                                yield return buffer.ToArray();
                                 break;
                         }
                     }
