@@ -74,8 +74,11 @@ namespace Step.Output
             var firstOne = true;
             var lastToken = "";
             var forceFreshLine = false;
-            foreach (var t in TokenFilter.AOrAnFilter(tokens))
+            foreach (var t in TokenFilter.ApplyFilters(format.TokenFilters, tokens))
             {
+                if (TokenFilter.IsControlToken(t))
+                    continue;
+
                 if (firstOne 
                     && format.SuppressLeadingVerticalSpace 
                     && (t == NewLineToken || t == FreshLineToken || t == NewParagraphToken))

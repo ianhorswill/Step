@@ -120,11 +120,12 @@ namespace Step.Parser
                 while (!end)
                 {
                     // Read tokens up to bracketed expressions
-                    while (!end && Peek != "[" && Peek != "{" && Peek != "(")
+                    while (!end && Peek != "[")
                     {
                         var token = Get();
-                        if (token == "]" || token == "}")
-                            throw new SyntaxError("Stray close bracket found without matching open bracket", FilePath, LineNumber);
+                        if (token == "]")
+                            throw new SyntaxError("Found stray ] outside of a [ ... ] expression.", FilePath,
+                                LineNumber);
                         yield return token;
                     }
                     if (!end)
@@ -132,7 +133,7 @@ namespace Step.Parser
                         // We're at the start of a bracketed expression
                         var openBracket = Get();
                         buffer.Clear();
-                        while (!end && Peek != "]" && Peek != "}" && Peek != ")")
+                        while (!end && Peek != "]")
                         {
                             var token = Get();
                             if (token == "[" || token == "{" || token == "(")

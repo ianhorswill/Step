@@ -37,11 +37,6 @@ namespace Step.Parser
     /// </summary>
     internal class DefinitionStream : IDisposable
     {
-        static DefinitionStream()
-        {
-            TokenFilter.DefineTokenMacros();
-        }
-
         private static readonly Dictionary<string, object> Substitutions = new Dictionary<string, object>();
 
         /// <summary>
@@ -605,9 +600,17 @@ namespace Step.Parser
                         pattern.Add(strings.ToArray());
                         break;
                     
-                    case TupleExpression call when call.BracketStyle == "()":
+                    case string paren when paren == "(":
+                        var guardElements = new List<object>();
+                        while (!Peek.Equals(")") && !end) guardElements.Add(Get());
+                        if (end)
+                            throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
+                                SourcePath, lineNumber);
+                        else 
+                            Get();  // swallow )
+
                         LocalVariableName argument = null;
-                        var callCopy = (object[])(call.Elements.Clone());
+                        var callCopy = guardElements.ToArray();
                         for (int i = 0; i < callCopy.Length; i++)
                         {
                             var element = callCopy[i];
@@ -619,7 +622,7 @@ namespace Step.Parser
                                 if (argument != null)
                                 {
                                     throw new SyntaxError(
-                                        $"Ambiguous guard expression: can't tell if {argument} or {local} is the argument in {call}",
+                                        $"Ambiguous guard expression: can't tell if {argument} or {local} is the argument in () expression",
                                         SourceFile, lineNumber);
                                 }
 
@@ -631,7 +634,7 @@ namespace Step.Parser
                         }
 
                         if (argument == null)
-                            throw new SyntaxError($"Invalid guard expression {call} contains no new variables",
+                            throw new SyntaxError($"Invalid guard expression {new TupleExpression("()", guardElements.ToArray())} contains no new variables",
                                 SourceFile, lineNumber);
                         // It has an embedded predicate
                         pattern.Add(argument);
