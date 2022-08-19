@@ -57,8 +57,6 @@ namespace Step.Parser
 
         private readonly string predicateName;
 
-        private char separator = ',';
-
         public override IEnumerable<string> Tokens
         {
             get

@@ -11,12 +11,12 @@ namespace Step.Output
         /// <summary>
         /// Replaces [a] or [an] with "a" or "an" depending on whether the following token begins with a vowel.
         /// </summary>
-        public static readonly AOrAnFilter Singleton = new AOrAnFilter();
+        public static readonly AOrAnFilter Instance = new AOrAnFilter();
 
         /// <summary>
         /// A token that causes the system to write either "a" or "an" depending on the following token.
         /// </summary>
-        public static readonly string AnOrAToken = MakeControlToken("an");
+        private static readonly string AnOrAToken = MakeControlToken("an");
 
         static AOrAnFilter()
         {
@@ -33,7 +33,7 @@ namespace Step.Output
         {
             foreach (var (token, next) in LookAhead(input))
             {
-                if (token == Output.AOrAnFilter.AnOrAToken)
+                if (ReferenceEquals(token, Output.AOrAnFilter.AnOrAToken))
                 {
                     if (next == null || !TextUtilities.StartsWithVowel(next))
                         yield return "a";

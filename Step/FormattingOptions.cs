@@ -10,7 +10,7 @@ namespace Step
         /// <summary>
         /// Default token filters to use.
         /// </summary>
-        public static readonly TokenFilter[] DefaultTokenFilters = {AOrAnFilter.Singleton};
+        public static readonly TokenFilter[] DefaultTokenFilters = { AOrAnFilter.Instance, VerbConjugationFilter.Instance };
 
         /// <summary>
         /// Default formatting options

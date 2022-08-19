@@ -150,6 +150,9 @@ namespace Step.Output
         /// </summary>
         private static bool PunctuationToken(string s) => s.Length == 1 && char.IsPunctuation(s[0]);
         
+        /// <summary>
+        /// True if the first character of the string is a vowel.
+        /// </summary>
         public static bool StartsWithVowel(string x)
         {
             // ReSharper disable once StringLiteralTypo

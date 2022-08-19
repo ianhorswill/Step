@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Step.Output
@@ -35,6 +36,40 @@ namespace Step.Output
     /// </summary>
     public static class Inflection
     {
+        /// <summary>
+        /// The linguistic feature indicating plurality
+        /// </summary>
+        public enum Number
+        {
+            /// <summary>
+            /// One thing
+            /// </summary>
+            Singular = 0,
+            /// <summary>
+            /// More than one things
+            /// </summary>
+            Plural = 1
+        };
+
+        /// <summary>
+        /// The linguistic feature indicating the relationship between a noun and the speaker or addressee
+        /// </summary>
+        public enum Person
+        {
+            /// <summary>
+            /// The noun is the speaker
+            /// </summary>
+            First = 0,
+            /// <summary>
+            /// The noun is the addressee
+            /// </summary>
+            Second = 1,
+            /// <summary>
+            /// The noun is not the speaker or addressee
+            /// </summary>
+            Third = 2
+        };
+
         static Inflection()
         {
             Inflections = new[]
@@ -65,6 +100,19 @@ namespace Step.Output
             //IrregularVerbs = new Spreadsheet(DataFiles.PathTo(
             //        "Inflections", "Irregular verbs", ".csv"),
             //    "Base form");
+        }
+
+        /// <summary>
+        /// Given the non-TPS present tense form of an English verb, return the TPS version
+        /// </summary>
+        /// <param name="verb">base present tense of verb</param>
+        /// <param name="suffix">expected suffix ("s" or "es")</param>
+        /// <returns>Third-person singular form</returns>
+        public static string ThirdPersonSingularFormOfEnglishVerb(string verb, string suffix)
+        {
+            if (suffix == "es" && verb.EndsWith("y"))
+                return verb.Substring(0, verb.Length - 1) + "ies";
+            return verb + suffix;
         }
 
         /// <summary>
@@ -204,7 +252,7 @@ namespace Step.Output
             else if (plural.Length == 1)
             {
                 foreach (var gerund in RegularGerundsOfWord(plural[0]))
-                    yield return new [] { gerund };
+                    yield return new [] {gerund};
             }
             else if (plural.Length == 2 && IsPreposition(plural[1]))
             {
@@ -274,7 +322,7 @@ namespace Step.Output
 
         private static bool EndingConsonant(string s, out char c)
         {
-            System.Diagnostics.Debug.Assert(s.Length > 0);
+            Debug.Assert(s.Length > 0);
             c = FinalCharacter(s);
             return IsVowel(c);
         }
@@ -296,7 +344,7 @@ namespace Step.Output
         public static string[] ReplaceCopula(string[] tokens, string replacement) => tokens.Select(word => CopularForms.Contains(word) ? replacement : word).ToArray();
 
         private static IEnumerable<T> Replace<T>(this IEnumerable<T> seq, T from, T to) =>
-            seq.Select(e => e.Equals(from) ? to : e);
+            seq.Select(e => e.Equals(@from) ? to : e);
 
         private static readonly Dictionary<string, string> IrregularPlurals = new Dictionary<string, string>();
 

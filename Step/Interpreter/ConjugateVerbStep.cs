@@ -2,6 +2,8 @@
 
 namespace Step.Interpreter
 {
+#if ConjugateVerbStep
+    // This is deprecated by VerbConjugationFilter
     internal class ConjugateVerbStep : Step
     {
         public ConjugateVerbStep(string suffix, Step next) : base(next)
@@ -41,4 +43,5 @@ namespace Step.Interpreter
 
         public override string Source => "[s]";
     }
+#endif
 }

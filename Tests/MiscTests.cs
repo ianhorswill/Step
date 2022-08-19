@@ -10,12 +10,16 @@ namespace Tests
         [TestMethod]
         public void VerbConjugationTest()
         {
-            var m = TestUtils.Module("Test 1: He eat[s], [set ThirdPersonSingular = false] they eat[s].",
-                "Test 2: He cry[es], [set ThirdPersonSingular = false] they cry[es].",
-            "Test 3: He buzz[es], [set ThirdPersonSingular = false] they buzz[es].");
+            var m = TestUtils.Module("Test 1: [singular] [thirdPerson] He eat[s], [plural] [thirdPerson] they eat[s].",
+                "Test 2: [singular] [thirdPerson] He cry[es], [plural][thirdPerson] they cry[es].",
+            "Test 3: [singular] [thirdPerson] He buzz[es], [plural][thirdPerson] they buzz[es].",
+                "Test 4: [singular] [thirdPerson] He [is] a cat, [plural][thirdPerson] they [is] cats.",
+            "Test 5: [singular] [thirdPerson] He [has] a cat, [plural][thirdPerson] they [has] a cat.");
             Assert.AreEqual("He eats, they eat.", m.Call("Test", 1));
             Assert.AreEqual("He cries, they cry.", m.Call("Test" ,2));
             Assert.AreEqual("He buzzes, they buzz.", m.Call("Test", 3));
+            Assert.AreEqual("He is a cat, they are cats.", m.Call("Test", 4));
+            Assert.AreEqual("He has a cat, they have a cat.", m.Call("Test", 5));
         }
 
         [TestMethod]
