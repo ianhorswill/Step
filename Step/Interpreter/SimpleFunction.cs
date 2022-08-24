@@ -23,7 +23,7 @@ namespace Step.Interpreter
         private readonly Func<TIn, TOut> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.Check(Name, 2, args);
             var input = ArgumentTypeException.Cast<TIn>(Name, env.Resolve(args[0]), args);
@@ -55,7 +55,7 @@ namespace Step.Interpreter
         private readonly Func<TIn1, TIn2, TOut> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.Check(Name, 3, args);
             var input1 = ArgumentTypeException.Cast<TIn1>(Name, env.Resolve(args[0]), args);
@@ -90,7 +90,7 @@ namespace Step.Interpreter
         private readonly Func<TIn1, TIn2, TIn3, TOut> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.Check(Name, 4, args);
             var input1 = ArgumentTypeException.Cast<TIn1>(Name, args[0], args);
@@ -127,7 +127,7 @@ namespace Step.Interpreter
         private readonly Func<TIn1, TIn2, TIn3, TIn4, TOut> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.Check(Name, 5, args);
             var input1 = ArgumentTypeException.Cast<TIn1>(Name, args[0], args);
@@ -166,7 +166,7 @@ namespace Step.Interpreter
         private readonly Func<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.Check(Name, 6, args);
             var input1 = ArgumentTypeException.Cast<TIn1>(Name, args[0], args);
@@ -207,7 +207,7 @@ namespace Step.Interpreter
         private readonly Func<TIn1, TIn2, TIn3, TIn4, TIn5, TIn6, TOut> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.Check(Name, 7, args);
             var input1 = ArgumentTypeException.Cast<TIn1>(Name, args[0], args);
@@ -237,7 +237,7 @@ namespace Step.Interpreter
         private readonly Func<object[], object> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment env)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env)
         {
             ArgumentCountException.CheckAtLeast(Name, 1, args);
             var fArgs = new object[args.Length - 1];

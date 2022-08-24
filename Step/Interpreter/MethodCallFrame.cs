@@ -23,22 +23,22 @@ namespace Step.Interpreter
         /// The MethodCallFrame for the most recently called frame
         /// NOT THREAD SAFE
         /// </summary>
-        public static MethodCallFrame CurrentFrame { get; internal set; }
+        public static MethodCallFrame? CurrentFrame { get; internal set; }
 
         /// <summary>
         /// The method being called
         /// </summary>
-        public readonly Method Method;
+        public readonly Method? Method;
 
         /// <summary>
         /// The task being called in this frame.
         /// </summary>
-        public CompoundTask Task => Method.Task;
+        public CompoundTask Task => Method!.Task;
         
         /// <summary>
         /// The logic variable binding list at the time of the call
         /// </summary>
-        public BindingList<LogicVariable> BindingsAtCallTime { get; internal set; }
+        public BindingList? BindingsAtCallTime { get; internal set; }
         
         /// <summary>
         /// The local variables of the environment of the call
@@ -55,12 +55,12 @@ namespace Step.Interpreter
         ///    C -> D -> B -> A
         /// Because if C fails, we have to backtrack to D, not to A.  
         /// </summary>
-        public readonly MethodCallFrame Caller;
+        public readonly MethodCallFrame? Caller;
 
         /// <summary>
         /// The method that succeeded immediately before this call
         /// </summary>
-        public readonly MethodCallFrame Predecessor;
+        public readonly MethodCallFrame? Predecessor;
 
         /// <summary>
         /// The chain of this frame and its callers
@@ -77,13 +77,11 @@ namespace Step.Interpreter
         /// <summary>
         /// The chain of this frame and its predecessors
         /// </summary>
-        public IEnumerable<MethodCallFrame> GoalChain
+        /// <param name="methodCallFrame"></param>
+        public static IEnumerable<MethodCallFrame> GoalChain(MethodCallFrame? methodCallFrame)
         {
-            get
-            {
-                for (var frame = this; frame != null; frame = frame.Predecessor)
-                    yield return frame;
-            }
+            for (var frame = methodCallFrame; frame != null; frame = frame.Predecessor)
+                yield return frame;
         }
 
         /// <summary>
@@ -91,7 +89,7 @@ namespace Step.Interpreter
         /// </summary>
         public readonly uint StackDepth;
 
-        internal MethodCallFrame(Method method, BindingList<LogicVariable> bindings, LogicVariable[] locals, MethodCallFrame caller, MethodCallFrame predecessor)
+        internal MethodCallFrame(Method? method, BindingList? bindings, LogicVariable[] locals, MethodCallFrame? caller, MethodCallFrame? predecessor)
         {
             Method = method;
             BindingsAtCallTime = bindings;
@@ -111,11 +109,11 @@ namespace Step.Interpreter
         /// from call to call), and the Locals array, which contains the specific
         /// logicVariables used in this particular call.
         /// </summary>
-        public object[] Arglist
+        public object?[] Arglist
         {
             get
             {
-                object Resolve(object o)
+                object? Resolve(object? o)
                 {
                     switch (o)
                     {
@@ -125,7 +123,7 @@ namespace Step.Interpreter
                         case LogicVariable l:
                             return BindingEnvironment.Deref(l, BindingsAtCallTime);
 
-                        case object[] tuple:
+                        case object?[] tuple:
                             return tuple.Select(Resolve).ToArray();
 
                         default:
@@ -134,7 +132,7 @@ namespace Step.Interpreter
                 }
 
                 if (Method == null)
-                    return new object[0];
+                    return Array.Empty<object?>();
                 
                 return Method.ArgumentPattern.Select(Resolve).ToArray();
             }
@@ -144,9 +142,9 @@ namespace Step.Interpreter
         /// Regenerates the textual version of the call in this frame
         /// </summary>
         /// <param name="unifications">Binding list currently in effect.  This will generally be whatever the most recent binding list of the interpreter is.</param>
-        public string GetCallSourceText(BindingList<LogicVariable> unifications)
+        public string GetCallSourceText(BindingList? unifications)
         {
-            var source = Call.CallSourceText(Method.Task, Arglist, unifications);
+            var source = Call.CallSourceText(Method!.Task, Arglist, unifications);
             if (Method.FilePath == null)
                 return source;
             var start = Module.RichTextStackTraces ? "\n     <i>" : "(";
@@ -154,20 +152,20 @@ namespace Step.Interpreter
             return $"{source} {start}at {Path.GetFileName(Method.FilePath)}:{Method.LineNumber}{end}";
         }
 
-        private object[] cachedCallExpression;
+        private object?[]? cachedCallExpression;
         
         /// <summary>
         /// Regenerate a tuple representing this call.
         /// </summary>
-        public object[] CallExpression
+        public object?[] CallExpression
         {
             get
             {
                 if (cachedCallExpression != null)
                     return cachedCallExpression;
                 
-                var result = new object[Arglist.Length + 1];
-                result[0] = Method.Task;
+                var result = new object?[Arglist.Length + 1];
+                result[0] = Method!.Task;
                 for (var i = 0; i < Arglist.Length; i++)
                     result[i + 1] = Arglist[i];
 

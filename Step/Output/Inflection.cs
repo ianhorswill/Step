@@ -344,7 +344,7 @@ namespace Step.Output
         public static string[] ReplaceCopula(string[] tokens, string replacement) => tokens.Select(word => CopularForms.Contains(word) ? replacement : word).ToArray();
 
         private static IEnumerable<T> Replace<T>(this IEnumerable<T> seq, T from, T to) =>
-            seq.Select(e => e.Equals(@from) ? to : e);
+            seq.Select(e => Equals(e,@from) ? to : e);
 
         private static readonly Dictionary<string, string> IrregularPlurals = new Dictionary<string, string>();
 

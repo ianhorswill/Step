@@ -13,26 +13,26 @@ namespace Step.Interpreter
     /// </summary>
     internal static class FunctionalExpressionParser
     {
-        private static FunctionalOperator<Func<object, object>> LookupUnary(object token)
+        private static FunctionalOperator<Func<object?, object?>>? LookupUnary(object? token)
         {
             if (token is string s && UnaryOperatorTable.TryGetValue(s, out var op))
                 return op;
             return null;
         }
 
-        private static FunctionalOperator<Func<object, object, object>> LookupBinary(object token)
+        private static FunctionalOperator<Func<object?, object?, object?>>? LookupBinary(object? token)
         {
             if (token is string s && BinaryOperatorTable.TryGetValue(s, out var op))
                 return op;
             return null;
         }
 
-        private static readonly Dictionary<string, FunctionalOperator<Func<object, object>>> UnaryOperatorTable =
-            new Dictionary<string, FunctionalOperator<Func<object, object>>>()
+        private static readonly Dictionary<string, FunctionalOperator<Func<object?, object?>>> UnaryOperatorTable =
+            new Dictionary<string, FunctionalOperator<Func<object?, object?>>>()
             {
                 {
                     "-",
-                    new FunctionalOperator<Func<object, object>>("-", 10,
+                    new FunctionalOperator<Func<object?, object?>>("-", 10,
                         o =>
                         {
                             switch (o)
@@ -45,12 +45,12 @@ namespace Step.Interpreter
                 }
             };
 
-        private static readonly Dictionary<string, FunctionalOperator<Func<object, object, object>>> BinaryOperatorTable =
-            new Dictionary<string, FunctionalOperator<Func<object, object, object>>>()
+        private static readonly Dictionary<string, FunctionalOperator<Func<object?, object?, object?>>> BinaryOperatorTable =
+            new Dictionary<string, FunctionalOperator<Func<object?, object?, object?>>>()
             {
                 {
                     "+",
-                    new FunctionalOperator<Func<object, object, object>>("+", 1,
+                    new FunctionalOperator<Func<object?, object?, object?>>("+", 1,
                         (a1, a2) =>
                         {
                             switch (a1)
@@ -77,7 +77,7 @@ namespace Step.Interpreter
                 },
                 {
                     "-",
-                    new FunctionalOperator<Func<object, object, object>>("-", 1,
+                    new FunctionalOperator<Func<object?, object?, object?>>("-", 1,
                         (a1, a2) =>
                         {
                             switch (a1)
@@ -104,7 +104,7 @@ namespace Step.Interpreter
                 },
                 {
                     "*",
-                    new FunctionalOperator<Func<object, object, object>>("*", 2,
+                    new FunctionalOperator<Func<object?, object?, object?>>("*", 2,
                         (a1, a2) =>
                         {
                             switch (a1)
@@ -131,7 +131,7 @@ namespace Step.Interpreter
                 },
                 {
                     "/",
-                    new FunctionalOperator<Func<object, object, object>>("/", 2,
+                    new FunctionalOperator<Func<object?, object?, object?>>("/", 2,
                         (a1, a2) =>
                         {
                             switch (a1)
@@ -163,7 +163,7 @@ namespace Step.Interpreter
                 }
             };
 
-        public static FunctionalExpression FunctionalExpressionFromValueOrVariable(object v)
+        public static FunctionalExpression FunctionalExpressionFromValueOrVariable(object? v)
         {
             switch (v)
             {
@@ -176,7 +176,7 @@ namespace Step.Interpreter
             }
         }
 
-        public static FunctionalExpression FromTuple(object[] tuple, int start = 0, string path = null, int lineNumber = 0) =>
+        public static FunctionalExpression FromTuple(object?[] tuple, int start = 0, string? path = null, int lineNumber = 0) =>
             FunctionalExpressionParser.Parse(tuple, start, path, lineNumber);
 
         public static FunctionalExpression Parse(params object[] expression) => FromTuple(expression);
@@ -189,23 +189,18 @@ namespace Step.Interpreter
         /// <param name="path">Source file this comes from</param>
         /// <param name="lineNumber">line within the source file</param>
         /// <returns>The FunctionalExpression denoted by the tokens</returns>
-        public static FunctionalExpression Parse(object[] tokens, int start, string path = null, int lineNumber = 0)
+        public static FunctionalExpression Parse(object?[] tokens, int start, string? path = null, int lineNumber = 0)
         {
             var position = start;
             
             // True if we've reached the end of the array of tokens
             bool End() => tokens.Length == position;
 
-            // The next token, or null if at the end.
-            object Peek()
-            {
-                if (End())
-                    return null;
-                return tokens[position];
-            }
-            
+            // The next token
+            object? Peek() => tokens[position];
+
             // Return the next token and advance to the following one/
-            object Get()
+            object? Get()
             {
                 if (End())
                     throw new SyntaxError("Unexpected end of expression", path, lineNumber);
@@ -219,10 +214,10 @@ namespace Step.Interpreter
                 if (uOp != null)
                     return new UnaryOperator(uOp, ParseUnaryOperatorChain());
 
-                if (token.Equals("("))
+                if (Equals(token, "("))
                 {
                     var exp = ParseTopLevel();
-                    if (!Get().Equals(")"))
+                    if (!Equals(Get(), ")"))
                         throw new SyntaxError("No matching open paren has no matching close paren", path, lineNumber);
                     return exp;
                 }
@@ -251,11 +246,11 @@ namespace Step.Interpreter
                     while (op2 != null && op2.Precedence > op.Precedence)
                     {
                         rhs = ParseBinaryOperatorChain(rhs, op2.Precedence);
-                        op2 = LookupBinary(Peek());
+                        op2 = End() ? null : LookupBinary(Peek());
                     }
 
                     e = new BinaryOperator(op,e, rhs);
-                    op = LookupBinary(Peek());
+                    op = End() ? null : LookupBinary(Peek());
                 }
 
                 return e;

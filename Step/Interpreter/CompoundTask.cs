@@ -42,7 +42,7 @@ namespace Step.Interpreter
         /// Number of arguments expected by the task
         /// </summary>
         // ReSharper disable once PossibleInvalidOperationException
-        public int ArgCount => ArgumentCount.Value;
+        public int ArgCount => ArgumentCount!.Value;
 
         /// <summary>
         /// Methods for accomplishing the task
@@ -62,7 +62,7 @@ namespace Step.Interpreter
 
         #region Result cache
         // ReSharper disable once InconsistentNaming
-        private DictionaryStateElement<IStructuralEquatable, CachedResult> _cache;
+        private DictionaryStateElement<IStructuralEquatable, CachedResult>? _cache;
 
         private DictionaryStateElement<IStructuralEquatable, CachedResult> Cache
         {
@@ -75,7 +75,7 @@ namespace Step.Interpreter
             }
         }
 
-        private State StoreResult(State oldState, object[] arglist, CachedResult result)
+        private State StoreResult(State oldState, object?[] arglist, CachedResult result)
         {
             if ((Flags & TaskFlags.ReadCache) == 0)
                 throw new InvalidOperationException("Attempt to store result to a task without caching enabled.");
@@ -91,7 +91,7 @@ namespace Step.Interpreter
         /// <param name="arglist">Argument values for this fluent to update</param>
         /// <param name="truth">New truth value for this fluent on these arguments</param>
         /// <returns>New global state</returns>
-        public State SetFluent(State oldState, object[] arglist, bool truth)
+        public State SetFluent(State oldState, object?[] arglist, bool truth)
         {
             if (!Term.IsGround(arglist))
                 throw new ArgumentInstantiationException(this, new BindingEnvironment(), arglist,
@@ -102,10 +102,10 @@ namespace Step.Interpreter
         private readonly struct CachedResult
         {
             public readonly bool Success;
-            public readonly object FunctionValue;
+            public readonly object? FunctionValue;
             public readonly string[] Text;
 
-            public CachedResult(bool success, object functionValue, string[] text)
+            public CachedResult(bool success, object? functionValue, string[] text)
             {
                 Success = success;
                 FunctionValue = functionValue;
@@ -242,8 +242,8 @@ namespace Step.Interpreter
         /// <param name="path">File from which the method was read</param>
         /// <param name="lineNumber">Line number where the method starts in the file</param>
         /// <param name="newFlags">Additional flags to set for the task</param>
-        internal void AddMethod(float weight, object[] argumentPattern, LocalVariableName[] localVariableNames, Step stepChain, TaskFlags newFlags,
-            string path, int lineNumber)
+        internal void AddMethod(float weight, object?[] argumentPattern, LocalVariableName[] localVariableNames, Step? stepChain, TaskFlags newFlags,
+            string? path, int lineNumber)
         {
             Flags |= newFlags;
             if (!ContainsCoolStep 
@@ -264,9 +264,10 @@ namespace Step.Interpreter
         /// <param name="k">Continuation</param>
         /// <returns>True if task succeeded and continuation succeeded</returns>
         /// <exception cref="CallFailedException">If the task fails</exception>
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
-            string lastToken = null;
+            string? lastToken = null;
             if (Suffix)
             {
                 (lastToken, output) = output.Unappend();
@@ -288,7 +289,7 @@ namespace Step.Interpreter
                             // We got a hit, and since this is a function, it's the only allowable hit.
                             // So we succeed deterministically.
                             return env.Unify(arglist[arglist.Length - 1], result.FunctionValue,
-                                       out BindingList<LogicVariable> u) &&
+                                       out BindingList? u) &&
                                    k(output.Append(result.Text), u, env.State, predecessor);
                         }
                         else
@@ -307,7 +308,7 @@ namespace Step.Interpreter
                     {
                         if (pair.Value.Success
                             && env.UnifyArrays((object[]) pair.Key, arglist,
-                                out BindingList<LogicVariable> unifications))
+                                out BindingList? unifications))
                         {
                             successCount++;
                             if (k(output.Append(pair.Value.Text), unifications, env.State, predecessor))
@@ -344,7 +345,7 @@ namespace Step.Interpreter
                     return true;
                 if (Suffix)
                     // Undo any overwriting that the method might have done
-                    output.Buffer[output.Length - 1] = lastToken;
+                    output.Buffer[output.Length - 1] = lastToken!;
             }
 
             failed:
@@ -358,7 +359,7 @@ namespace Step.Interpreter
 
             if (currentFrame != null)
             {
-                env.Module.TraceMethod(Module.MethodTraceEvent.CallFail, currentFrame.Method, currentFrame.Arglist, output,
+                env.Module.TraceMethod(Module.MethodTraceEvent.CallFail, currentFrame.Method!, currentFrame.Arglist, output,
                     env);
                 MethodCallFrame.CurrentFrame = currentFrame.Predecessor;
             }
@@ -390,10 +391,10 @@ namespace Step.Interpreter
         /// All the fluent updates of the methods of this task.
         /// </summary>
         // ReSharper disable once UnusedMember.Global
-        public IEnumerable<(CompoundTask task, object[] args, bool polarity)> FluentUpdates()
+        public IEnumerable<(CompoundTask task, object?[] args, bool polarity)> FluentUpdates()
         {
             foreach (var m in Methods)
-                foreach (var s in m.StepChain.ChainSteps)
+                foreach (var s in Step.ChainSteps(m.StepChain))
                     if (s is FluentUpdateStep u)
                         foreach (var f in u.Updates)
                             yield return f;

@@ -21,7 +21,8 @@ namespace Step.Interpreter
         private readonly Func<IEnumerable<string>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 0, arglist);
             return k(output.Append(implementation()), env.Unifications, env.State, predecessor);
@@ -46,7 +47,8 @@ namespace Step.Interpreter
         private readonly Func<T1, IEnumerable<string>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 1, arglist);
             return k(output.Append(implementation(ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist))), env.Unifications, env.State, predecessor);
@@ -71,7 +73,8 @@ namespace Step.Interpreter
         private readonly Func<T1, T2, IEnumerable<string>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 2, arglist);
             return k(output.Append(implementation(
@@ -92,15 +95,16 @@ namespace Step.Interpreter
         /// <param name="name">Name of primitive</param>
         /// <param name="implementation">Delegate to implement the mapping</param>
         public DeterministicTextGeneratorMetaTask(string name,
-            Func<object[], TextBuffer, BindingEnvironment, MethodCallFrame, IEnumerable<string>> implementation) : base(name, null)
+            Func<object?[], TextBuffer, BindingEnvironment, MethodCallFrame?, IEnumerable<string>> implementation) : base(name, null)
         {
             this.implementation = implementation;
         }
 
-        private readonly Func<object[], TextBuffer, BindingEnvironment, MethodCallFrame, IEnumerable<string>> implementation;
+        private readonly Func<object?[], TextBuffer, BindingEnvironment, MethodCallFrame?, IEnumerable<string>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
         return k(output.Append(implementation(arglist, output, env, predecessor)),
                 env.Unifications, env.State, predecessor);

@@ -26,7 +26,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Step.Output;
 
 namespace Step.Parser
 {
@@ -39,7 +38,7 @@ namespace Step.Parser
         /// <summary>
         /// Make an object that reads a stream of nested expressions from a file
         /// </summary>
-        public ExpressionStream(TextReader stream, string filePath) : this(new TextFileTokenStream(stream, filePath))
+        public ExpressionStream(TextReader stream, string? filePath) : this(new TextFileTokenStream(stream, filePath!))
         { }
 
         /// <summary>
@@ -68,7 +67,7 @@ namespace Step.Parser
         /// <summary>
         /// File from which this data is being read, if any
         /// </summary>
-        public string FilePath => tokenStream.FilePath;
+        public string? FilePath => tokenStream.FilePath;
 
         /// <summary>
         /// Line number in file from which we are currently reading.
@@ -100,13 +99,13 @@ namespace Step.Parser
         {
             var tok = tokens.Current;
             MoveNext();
-            return tok;
+            return tok!;
         }
 
         /// <summary>
         /// Returns the current token without advancing to the next token.
         /// </summary>
-        private string Peek => tokens.Current;
+        private string Peek => tokens.Current!;
         #endregion
 
         /// <summary>

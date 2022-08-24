@@ -16,7 +16,7 @@ namespace Step.Interpreter
         /// A statically allocated empty binding list for implementations that don't need to bind anything.
         /// Saves a little bit of memory allocation.
         /// </summary>
-        protected static readonly BindingList<LogicVariable>[] EmptyBindingListArray = new BindingList<LogicVariable>[0];
+        protected static readonly BindingList?[] EmptyBindingListArray = new BindingList?[0];
 
         /// <summary>
         /// Enumerates the non-deterministic solutions for this particular call to the predicate
@@ -24,10 +24,11 @@ namespace Step.Interpreter
         /// <param name="args">Arguments in the call</param>
         /// <param name="e">Binding environment</param>
         /// <returns></returns>
-        protected abstract IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment e);
+        protected abstract IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e);
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             foreach (var bindings in Iterator(arglist, env))
                 if (k(output, bindings, env.State, predecessor))
@@ -102,7 +103,7 @@ namespace Step.Interpreter
         private readonly Func<IEnumerable<T1>> outMode;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment e)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e)
         {
             ArgumentCountException.Check(Name, 1, args);
             var arg = e.Resolve(args[0]);
@@ -111,7 +112,7 @@ namespace Step.Interpreter
                 case LogicVariable v:
                 {
                     foreach (var result in outMode())
-                        yield return BindingList<LogicVariable>.Bind(e.Unifications, v, result);
+                        yield return BindingList.Bind(e.Unifications, v, result);
                     break;
                 }
                 case T1 value:
@@ -143,7 +144,7 @@ namespace Step.Interpreter
         /// <param name="inOutMode">Implementation for when the first argument is instantiated and the second isn't</param>
         /// <param name="outInMode">Implementation for when only the second argument is instantiated</param>
         /// <param name="outOutMode">Implementation for when neither argument is instantiated</param>
-        public GeneralPredicate(string name, Func<T1, T2, bool> inInMode, Func<T1, IEnumerable<T2>> inOutMode, Func<T2, IEnumerable<T1>> outInMode, Func<IEnumerable<(T1, T2)>> outOutMode)
+        public GeneralPredicate(string name, Func<T1, T2, bool> inInMode, Func<T1, IEnumerable<T2>>? inOutMode, Func<T2, IEnumerable<T1>>? outInMode, Func<IEnumerable<(T1, T2)>>? outOutMode)
          : base(name, 2)
         {
             this.inInMode = inInMode;
@@ -153,12 +154,12 @@ namespace Step.Interpreter
         }
 
         private readonly Func<T1, T2, bool> inInMode;
-        private readonly Func<T1, IEnumerable<T2>> inOutMode;
-        private readonly Func<T2, IEnumerable<T1>> outInMode;
-        private readonly Func<IEnumerable<(T1, T2)>> outOutMode;
+        private readonly Func<T1, IEnumerable<T2>>? inOutMode;
+        private readonly Func<T2, IEnumerable<T1>>? outInMode;
+        private readonly Func<IEnumerable<(T1, T2)>>? outOutMode;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment e)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e)
         {
             ArgumentCountException.Check(Name, 2, args);
             var arg1 = e.Resolve(args[0]);
@@ -173,7 +174,7 @@ namespace Step.Interpreter
                                 throw new ArgumentInstantiationException(Name, e, args);
 
                             foreach (var (out1, out2) in outOutMode())
-                                yield return BindingList<LogicVariable>.Bind(e.Unifications, v1, out1).Bind(v2, out2);
+                                yield return BindingList.Bind(e.Unifications, v1, out1).Bind(v2, out2);
                             break;
 
                         case T2 in2:
@@ -181,7 +182,7 @@ namespace Step.Interpreter
                                 throw new ArgumentInstantiationException(Name, e, args);
 
                             foreach (var out1 in outInMode(in2))
-                                yield return BindingList<LogicVariable>.Bind(e.Unifications, v1, out1);
+                                yield return BindingList.Bind(e.Unifications, v1, out1);
                             break;
 
                         default:
@@ -198,7 +199,7 @@ namespace Step.Interpreter
                                 throw new ArgumentInstantiationException(Name, e, args);
 
                             foreach (var out2 in inOutMode(in1))
-                                yield return BindingList<LogicVariable>.Bind(e.Unifications, v2, out2);
+                                yield return BindingList.Bind(e.Unifications, v2, out2);
                             break;
 
                         case T2 in2:
@@ -236,18 +237,18 @@ namespace Step.Interpreter
         /// Returning the empty sequence means failure,
         /// but returning multiple arglists means the predicate can succeed multiple times.
         /// </param>
-        public GeneralNAryPredicate(string name, Func<object[], IEnumerable<object[]>> implementation) : base(name, null)
+        public GeneralNAryPredicate(string name, Func<object?[], IEnumerable<object?[]>> implementation) : base(name, null)
         {
             this.implementation = implementation;
         }
 
-        private readonly Func<object[], IEnumerable<object[]>> implementation;
+        private readonly Func<object?[], IEnumerable<object?[]>> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList<LogicVariable>> Iterator(object[] args, BindingEnvironment e)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e)
         {
             foreach (var result in implementation(e.ResolveList(args))) {
-                if (!e.UnifyArrays(args, result, out BindingList<LogicVariable> bindings))
+                if (!e.UnifyArrays(args, result, out BindingList? bindings))
                     throw new Exception($"Internal error in {Name}: could not unify result with arguments");
                 yield return bindings;
             }

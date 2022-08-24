@@ -12,15 +12,16 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="name">Name of the primitive</param>
         /// <param name="renderer">Procedure to map argument to desired text.</param>
-        public DeterministicTextMatcher(string name, Func<object, string[]> renderer) : base(name, 1)
+        public DeterministicTextMatcher(string name, Func<object?, string[]> renderer) : base(name, 1)
         {
             this.renderer = renderer;
         }
 
-        private readonly Func<object, string[]> renderer;
+        private readonly Func<object?, string[]> renderer;
 
         /// <inheritdoc />
-        public override bool Call(object[] args, TextBuffer buffer, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] args, TextBuffer buffer, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 1, args);
             var arg = env.Resolve(args[0]);
@@ -39,7 +40,7 @@ namespace Step.Interpreter
                 var token = buffer.NextToken(out var newBuffer);
                 if (token == null)
                     return false;
-                object value = token;
+                object? value = token;
                 switch (token)
                 {
                     case "null":
@@ -59,7 +60,7 @@ namespace Step.Interpreter
                         break;
                 }
                 return k(newBuffer,
-                    BindingList<LogicVariable>.Bind(env.Unifications, l, value),
+                    BindingList.Bind(env.Unifications, l, value),
                     env.State, predecessor);
             }
 

@@ -22,7 +22,8 @@ namespace Step.Interpreter
         private readonly Func<bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 0, arglist);
             return implementation()
@@ -50,7 +51,8 @@ namespace Step.Interpreter
         private readonly Func<T1, bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 1, arglist);
             return implementation(ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist))
@@ -78,7 +80,8 @@ namespace Step.Interpreter
         private readonly Func<T1, T2, bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 2, arglist);
             return implementation(
@@ -109,7 +112,8 @@ namespace Step.Interpreter
         private readonly Func<T1, T2, T3, bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 3, arglist);
             return implementation(
@@ -141,7 +145,8 @@ namespace Step.Interpreter
         private readonly Func<T1, T2, T3, T4, bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 4, arglist);
             return implementation(
@@ -174,7 +179,8 @@ namespace Step.Interpreter
         private readonly Func<T1, T2, T3, T4, T5, bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 5, arglist);
             return implementation(
@@ -199,15 +205,16 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="name">Name of the predicate</param>
         /// <param name="implementation">Low-level implementation of the predicate</param>
-        public SimpleNAryPredicate(string name, Func<object[], bool> implementation) : base(name, null)
+        public SimpleNAryPredicate(string name, Func<object?[], bool> implementation) : base(name, null)
         {
             this.implementation = implementation;
         }
 
-        private readonly Func<object[], bool> implementation;
+        private readonly Func<object?[], bool> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
             => implementation(env.ResolveList(arglist)) && k(output, env.Unifications, env.State, predecessor);
     }
 }

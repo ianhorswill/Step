@@ -84,9 +84,9 @@ namespace Step.Output
         /// <summary>
         /// Transforms a string (a, b, c) into a stream of pairs: ( (a,b), (b,c) , (c, null))
         /// </summary>
-        protected static IEnumerable<(string, string)> LookAhead(IEnumerable<string> input)
+        protected static IEnumerable<(string, string?)> LookAhead(IEnumerable<string> input)
         {
-            string previous = null;
+            string? previous = null;
             foreach (var token in input)
             {
                 if (previous != null)
@@ -101,10 +101,10 @@ namespace Step.Output
         /// <summary>
         /// Transforms a string (a, b, c, d) into a stream of triples: ( (a,b,c), (b,c,d) , (c, d, null), (d, null, null))
         /// </summary>
-        public static IEnumerable<(string, string, string)> LookAhead2(IEnumerable<string> input)
+        public static IEnumerable<(string, string?, string?)> LookAhead2(IEnumerable<string> input)
         {
-            string first = null;
-            string second = null;
+            string? first = null;
+            string? second = null;
             foreach (var third in input)
             {
                 if (first != null)

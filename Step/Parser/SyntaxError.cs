@@ -34,7 +34,7 @@ namespace Step.Parser
     public class SyntaxError : Exception
     {
         /// <inheritdoc />
-        public SyntaxError(string message, string path, int lineNo) : base($"{(path != null?Path.GetFileName(path):"Unknown")}:{lineNo} {message}\nFile: {path??"Unknown"}")
+        public SyntaxError(string message, string? path, int lineNo) : base($"{(path != null?Path.GetFileName(path):"Unknown")}:{lineNo} {message}\nFile: {path??"Unknown"}")
         { }
     }
 }

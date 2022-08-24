@@ -40,7 +40,7 @@ namespace Tests
         public void LoadStepFileTest()
         {
             var m = new Module(nameof(LoadStepFileTest));
-            m.LoadDefinitions("../../Test.step");
+            m.LoadDefinitions("../../../Test.step");
             Assert.AreEqual("Test", m.Call("Test"));
         }
 
@@ -48,7 +48,7 @@ namespace Tests
         public void LoadCsvFileTest()
         {
             var m = new Module(nameof(LoadCsvFileTest));
-            m.LoadDefinitions("../../Test.csv");
+            m.LoadDefinitions("../../../Test.csv");
             Assert.IsTrue(m.CallPredicate("Test", "a", "b"));
         }
 

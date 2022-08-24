@@ -40,14 +40,14 @@ namespace Step.Utilities
         /// <summary>
         /// Find all tasks that contain the specified string in their name, arglists, or documentation, and print their documentation.
         /// </summary>
-        private static bool Apropos(object[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame predecessor, Interpreter.Step.Continuation k)
+        private static bool Apropos(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Interpreter.Step.Continuation k)
         {
             ArgumentCountException.Check(nameof(Apropos), 1, args);
             var topic = ArgumentTypeException.Cast<string>(nameof(Apropos), args[0], args);
             var output = new StringBuilder();
 
-            bool Relevant(string x) => x != null && x.IndexOf(topic, StringComparison.InvariantCultureIgnoreCase) >= 0;
+            bool Relevant(string? x) => x != null && x.IndexOf(topic, StringComparison.InvariantCultureIgnoreCase) >= 0;
 
             var module = e.Module;
             foreach (var binding in module.AllBindings)
@@ -65,47 +65,46 @@ namespace Step.Utilities
         /// </summary>
         /// <param name="m">Module to get definitions from</param>
         /// <param name="path">Path to write the file to</param>
+        // ReSharper disable once UnusedMember.Global
         public static void WriteHtmlReference(Module m, string path)
         {
             var root = new ManualSection();
 
             foreach (var b in m.AllBindings)
-                if (b.Value is Task t && t.HasDocumentation)
+                if (b.Value is Task { HasDocumentation: true } t)
                     root.Add(t, t.ManualSection??"Miscellaneous");
 
             foreach (var (section, intro) in SectionIntroductions)
                 root.SectionPath(section).Introduction = intro;
 
-            using (var file = File.CreateText(path))
-            {
-                void RenderSection(string name, ManualSection s, int level)
-                {
-                    file.WriteLine($"<h{level}>{name.Capitalize()}</h{level}>");
-                    if (s.Introduction != null)
-                    {
-                        file.WriteLine(s.Introduction);
-                        file.WriteLine("<p>");
-                    }
-                    foreach (var task in s.Tasks.OrderBy(t => t.Name))
-                    {
-                        file.WriteLine(HtmlFormatter.FormatDocumentation(task));
-                        file.WriteLine("<p>");
-                    }
+            using var file = File.CreateText(path);
 
-                    foreach (var sub in s.Subsections.OrderBy(pair => pair.Key))
-                        RenderSection(sub.Key, sub.Value, level+1);
+            void RenderSection(string name, ManualSection s, int level)
+            {
+                file.WriteLine($"<h{level}>{name.Capitalize()}</h{level}>");
+                if (s.Introduction != null)
+                {
+                    file.WriteLine(s.Introduction);
+                    file.WriteLine("<p>");
+                }
+                foreach (var task in s.Tasks.OrderBy(t => t.Name))
+                {
+                    file.WriteLine(HtmlFormatter.FormatDocumentation(task));
+                    file.WriteLine("<p>");
                 }
 
-                RenderSection("Task reference", root, 1);
+                foreach (var sub in s.Subsections.OrderBy(pair => pair.Key))
+                    RenderSection(sub.Key, sub.Value, level+1);
             }
 
+            RenderSection("Task reference", root, 1);
         }
 
         private class ManualSection
         {
             public readonly Dictionary<string, ManualSection> Subsections = new Dictionary<string, ManualSection>();
             public readonly List<Task> Tasks = new List<Task>();
-            public string Introduction;
+            public string? Introduction;
 
             private ManualSection Subsection(string name)
             {
@@ -170,7 +169,7 @@ namespace Step.Utilities
             /// <param name="startTaskName">Prefix to print before a task name</param>
             /// <param name="endTaskName">Suffix to print after a task name</param>
             /// <param name="lineBreak">Code to use to force a line break</param>
-            public DocumentationFormatter(Func<string, string> escapeText = null,
+            public DocumentationFormatter(Func<string, string>? escapeText = null,
                 string startArgument="",
                 string endArgument="",
                 string startCode="", 
@@ -220,7 +219,7 @@ namespace Step.Utilities
             /// <param name="t">Task to document</param>
             /// <returns>Documentation</returns>
             public string FormatDocumentation(Task t) =>
-                $"{FormatCall(t.Name, t.Arglist)}{lineBreak}{FormatString(t.Description)}";
+                $"{FormatCall(t.Name, t.Arglist!)}{lineBreak}{FormatString(t.Description!)}";
         }
 
         /// <summary>

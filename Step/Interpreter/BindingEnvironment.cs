@@ -52,7 +52,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Bindings mapping local variables to their values, or to other local variables
         /// </summary>
-        public readonly BindingList<LogicVariable> Unifications;
+        public readonly BindingList? Unifications;
         /// <summary>
         /// Bindings mapping global variables to their values, when overriding the Module's values
         /// </summary>
@@ -75,7 +75,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Make a new binding environment based on the specified environment, with the specified change(s)
         /// </summary>
-        public BindingEnvironment(BindingEnvironment e, BindingList<LogicVariable> unifications, State state)
+        public BindingEnvironment(BindingEnvironment e, BindingList? unifications, State state)
             : this(e.Module, e.Frame, unifications, state)
         { }
 
@@ -90,7 +90,7 @@ namespace Step.Interpreter
         /// Make a new binding environment with the specified components
         /// </summary>
         public BindingEnvironment(Module module, MethodCallFrame frame,
-            BindingList<LogicVariable> unifications, State state)
+            BindingList? unifications, State state)
         {
             Module = module;
             Frame = frame;
@@ -104,13 +104,13 @@ namespace Step.Interpreter
         /// </summary>
         internal static BindingEnvironment NewEmpty() =>
             new BindingEnvironment(new Module("empty"), 
-                new MethodCallFrame(null, null, new LogicVariable[0], null, null));
+                new MethodCallFrame(null, null, Array.Empty<LogicVariable>(), null, null));
 
         /// <summary>
         /// Canonicalize a term, i.e. get its value, or reduce it to a logic variable
         /// if it doesn't have a value yet
         /// </summary>
-        public object Resolve(object term, BindingList<LogicVariable> unifications)
+        public object? Resolve(object? term, BindingList? unifications)
         {
             switch (term)
             {
@@ -146,14 +146,14 @@ namespace Step.Interpreter
         /// <summary>
         /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
         /// </summary>
-        public object Resolve(object term) => Resolve(term, Unifications);
+        public object? Resolve(object? term) => Resolve(term, Unifications);
 
         /// <summary>
         /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
         /// </summary>
-        public object[] ResolveList(object[] arglist, BindingList<LogicVariable> unifications)
+        public object?[] ResolveList(object?[] arglist, BindingList? unifications)
         {
-            var result = new object[arglist.Length];
+            var result = new object?[arglist.Length];
             for (var i = 0; i < arglist.Length; i++)
                 result[i] = Resolve(arglist[i], unifications);
             return result;
@@ -162,7 +162,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
         /// </summary>
-        public object[] ResolveList(object[] arglist) => ResolveList(arglist, Unifications);
+        public object?[] ResolveList(object?[] arglist) => ResolveList(arglist, Unifications);
 
         /// <summary>
         /// Attempt to unify two terms
@@ -172,7 +172,7 @@ namespace Step.Interpreter
         /// <param name="inUnifications">Substitutions currently in place</param>
         /// <param name="outUnifications">Substitutions in place after unification, if unification successful</param>
         /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
-        public bool Unify(object a, object b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
+        public bool Unify(object? a, object? b, BindingList? inUnifications, out BindingList? outUnifications)
         {
             a = Resolve(a, inUnifications);
             b = Resolve(b, inUnifications);
@@ -180,12 +180,12 @@ namespace Step.Interpreter
             {
                 if (a is LogicVariable av)
                 {
-                    outUnifications = new BindingList<LogicVariable>(av, null, inUnifications);
+                    outUnifications = new BindingList(av, null, inUnifications);
                     return true;
                 }
                 else if (b is LogicVariable bv)
                 {
-                    outUnifications = new BindingList<LogicVariable>(bv, null, inUnifications);
+                    outUnifications = new BindingList(bv, null, inUnifications);
                     return true;
                 }
 
@@ -201,15 +201,15 @@ namespace Step.Interpreter
             {
                 if (b is LogicVariable vbb && va.Uid < vbb.Uid)
                     // a is older than b, so make b point to a
-                    outUnifications = new BindingList<LogicVariable>(vbb, va, inUnifications);
+                    outUnifications = new BindingList(vbb, va, inUnifications);
                 else
-                    outUnifications = new BindingList<LogicVariable>(va, b, inUnifications);
+                    outUnifications = new BindingList(va, b, inUnifications);
                 return true;
             }
 
             if (b is LogicVariable vb)
             {
-                outUnifications = new BindingList<LogicVariable>(vb, a, inUnifications);
+                outUnifications = new BindingList(vb, a, inUnifications);
                 return true;
             }
 
@@ -227,10 +227,10 @@ namespace Step.Interpreter
         /// <param name="b">Other term</param>
         /// <param name="outUnifications">Substitutions in place after unification, if unification successful</param>
         /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
-        public bool Unify(object a, object b, out BindingList<LogicVariable> outUnifications)
+        public bool Unify(object? a, object? b, out BindingList? outUnifications)
             => Unify(a, b, Unifications, out outUnifications);
         
-        private bool UnifyArrays(object[] a, object[] b, BindingList<LogicVariable> inUnifications, out BindingList<LogicVariable> outUnifications)
+        private bool UnifyArrays(object?[] a, object?[] b, BindingList? inUnifications, out BindingList? outUnifications)
         {
             if (a.Length != b.Length)
                 throw new ArgumentException("Argument arrays to UnifyArrays are of different lengths!");
@@ -248,7 +248,7 @@ namespace Step.Interpreter
         /// <param name="b">Second array</param>
         /// <param name="outUnifications">Extended binding list</param>
         /// <returns>True if successful</returns>
-        public bool UnifyArrays(object[] a, object[] b, out BindingList<LogicVariable> outUnifications)
+        public bool UnifyArrays(object?[] a, object?[] b, out BindingList? outUnifications)
             => UnifyArrays(a, b, Unifications, out outUnifications);
 
         /// <summary>
@@ -258,9 +258,9 @@ namespace Step.Interpreter
         /// <param name="b">Other array term</param>
         /// <param name="e">Resulting BindingEnvironment.  This is the same as this BindingEnvironment, but possibly with a longer Unifications list.</param>
         /// <returns>True if the objects are unifiable and e holds their most general unifier</returns>
-        public bool UnifyArrays(object[] a, object[] b, out BindingEnvironment e)
+        public bool UnifyArrays(object?[] a, object?[] b, out BindingEnvironment e)
         {
-            if (UnifyArrays(a, b, out BindingList<LogicVariable> outUnifications))
+            if (UnifyArrays(a, b, out BindingList? outUnifications))
             {
                 e = new BindingEnvironment(Module, Frame, outUnifications, State);
                 return true;
@@ -276,17 +276,17 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="value">Term</param>
         /// <returns>Reduced value of term.  Could be a LogicVariable, in which case it reduces to an unbound variable.</returns>
-        private object Deref(object value) => Deref(value, Unifications);
+        private object? Deref(object? value) => Deref(value, Unifications);
 
         /// <summary>
         /// If value is a LogicVariable, follow the chain of substitutions in Unifications to reduce it to its normal form.
         /// If it's not a logic variable, just returns the value.
         /// </summary>
-        public static object Deref(object value, BindingList<LogicVariable> unifications)
+        public static object? Deref(object? value, BindingList? unifications)
         {
             while (value is LogicVariable v)
             {
-                value = BindingList<LogicVariable>.Lookup(unifications, v, v);
+                value = BindingList.Lookup(unifications, v, v);
                 if (value == v)
                     // Isn't aliased to a value
                     return v;
@@ -300,7 +300,7 @@ namespace Step.Interpreter
         /// This behaves identically to Deref except in the case where term is a tuple (i.e. object[]), in which case it
         /// recursively recopies the array and dereferences its elements
         /// </summary>
-        public object CopyTerm(object term)
+        public object? CopyTerm(object? term)
         {
             switch (term)
             {
@@ -320,7 +320,7 @@ namespace Step.Interpreter
         /// Dereference all variables in term
         /// If the resulting term has uninstantiated variables, return false.
         /// </summary>
-        public bool TryCopyGround(object term, out object copied)
+        public bool TryCopyGround(object? term, out object? copied)
         {
             switch (term)
             {
@@ -338,7 +338,7 @@ namespace Step.Interpreter
                     return true;
                 
                 case object[] tuple:
-                    var newTuple = new object[tuple.Length];
+                    var newTuple = new object?[tuple.Length];
                     copied = newTuple;
                     for (var i = 0; i < newTuple.Length; i++)
                         if (!TryCopyGround(tuple[i], out newTuple[i]))

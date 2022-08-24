@@ -22,16 +22,16 @@ namespace Step.Interpreter
         /// Index for each argument, or null if that argument isn't indexed
         /// An index maps a value for the argument to a list of tuples that match it
         /// </summary>
-        private readonly Dictionary<object, List<object[]>>[] indices;
+        private readonly Dictionary<object?, List<object?[]>>?[] indices;
         /// <summary>
         /// The complete list of all tuples
         /// </summary>
-        private readonly List<object[]> tuples = new List<object[]>();
+        private readonly List<object?[]> tuples = new List<object?[]>();
 
         /// <summary>
         /// Procedure too shuffle tuples, if desired
         /// </summary>
-        public Func<IList<object[]>, IEnumerable<object[]>> Shuffler = x => x;
+        public Func<IList<object?[]>, IEnumerable<object?[]>> Shuffler = x => x;
         
 
         /// <summary>
@@ -42,16 +42,16 @@ namespace Step.Interpreter
         /// <param name="indexArgument">Array of Booleans specifying whether to build indices for each argument</param>
         /// <param name="tuples">Generator for the actual tuples to store</param>
         /// <exception cref="ArgumentException">If the signature, indexArgument, or tuple arrays don't all have the same length</exception>
-        public TuplePredicate(string name, Type[] signature, bool[] indexArgument, IEnumerable<object[]> tuples)
+        public TuplePredicate(string name, Type[] signature, bool[] indexArgument, IEnumerable<object?[]> tuples)
         : base(name, signature.Length)
         {
             Signature = signature;
             if (indexArgument.Length != Arity)
                 throw new ArgumentException("indexArgument array has different length than signature");
-            indices = new Dictionary<object, List<object[]>>[Arity];
+            indices = new Dictionary<object?, List<object?[]>>?[Arity];
 
             for (var i = 0; i < Arity; i++)
-                indices[i] = indexArgument[i] ? new Dictionary<object, List<object[]>>() : null;
+                indices[i] = indexArgument[i] ? new Dictionary<object?, List<object?[]>>() : null;
 
             foreach (var t in tuples)
             {
@@ -63,10 +63,10 @@ namespace Step.Interpreter
                     {
                         // Add to index
                         var arg = t[i];
-                        if (!indices[i].TryGetValue(arg, out var index))
+                        if (!indices[i]!.TryGetValue(arg, out var index))
                         {
-                            index = new List<object[]>();
-                            indices[i][arg] = index;
+                            index = new List<object?[]>();
+                            indices[i]![arg] = index;
                         }
 
                         index.Add(t);
@@ -75,7 +75,8 @@ namespace Step.Interpreter
         }
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(this, Arity, arglist);
             
@@ -100,7 +101,7 @@ namespace Step.Interpreter
             
             // Attempt to unify each candidate tuple with the argument list
             foreach (var t in Shuffler(candidateTuples))
-                if (env.UnifyArrays(arglist, t, out BindingList<LogicVariable> unifications))
+                if (env.UnifyArrays(arglist, t, out BindingList? unifications))
                     if (k(output, unifications, env.State, predecessor))
                         return true;
             return false;

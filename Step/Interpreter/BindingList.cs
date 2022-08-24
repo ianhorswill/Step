@@ -30,24 +30,22 @@ namespace Step.Interpreter
     /// In the case of LocalVariables, which can be unified, this might be another variable,
     /// in which case the bound variable has whatever value the other variable has.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class BindingList<T>
+    public class BindingList
     {
         /// <summary>
         /// Variable given a value by this cell of the linked list
         /// </summary>
-        public readonly T Variable;
+        public readonly LogicVariable Variable;
         /// <summary>
         /// Value given to the Variable
         /// </summary>
-        public readonly object Value;
+        public readonly object? Value;
         /// <summary>
         /// Next cell in the binding list
         /// </summary>
-        public readonly BindingList<T> Next;
+        public readonly BindingList? Next;
 
-        /// <inheritdoc />
-        public BindingList(T variable, object value, BindingList<T> next)
+        internal BindingList(LogicVariable variable, object? value, BindingList? next)
         {
             Variable = variable;
             Value = value;
@@ -55,14 +53,14 @@ namespace Step.Interpreter
         }
 
         /// <summary>
-        /// Attempt to find the value of the variable in the bindinglist
+        /// Attempt to find the value of the variable in the binding list
         /// </summary>
         /// <param name="bindingList">BindingList to check</param>
         /// <param name="variable">Variable to look for</param>
         /// <param name="value">Value, if found, or null</param>
         /// <returns>True if a value was found, otherwise false.</returns>
         // ReSharper disable once UnusedMember.Global
-        public static bool TryLookup(BindingList<T> bindingList, T variable, out object value)
+        public static bool TryLookup(BindingList? bindingList, LogicVariable variable, out object? value)
         {
             for (var cell = bindingList; cell != null; cell = cell.Next)
                 if (ReferenceEquals(cell.Variable, variable))
@@ -82,7 +80,7 @@ namespace Step.Interpreter
         /// <param name="v">Variable to look up</param>
         /// <param name="defaultValue">Default value to return if the variable isn't found</param>
         /// <returns>Value of variable or defaultValue if not found</returns>
-        public static object Lookup(BindingList<T> bindingList, T v, object defaultValue)
+        public static object? Lookup(BindingList? bindingList, LogicVariable v, object defaultValue)
             => bindingList == null ? defaultValue : bindingList.Lookup(v, defaultValue);
 
         /// <summary>
@@ -91,7 +89,7 @@ namespace Step.Interpreter
         /// <param name="v">Variable whose value to look up</param>
         /// <param name="defaultValue">Value to return if the variable isn't bound in this binding list</param>
         /// <returns>Value of the variable or defaultValue</returns>
-        public object Lookup(T v, object defaultValue)
+        public object? Lookup(LogicVariable v, object defaultValue)
         {
             for (var cell = this; cell != null; cell = cell.Next)
                 if (ReferenceEquals(cell.Variable, v))
@@ -103,13 +101,13 @@ namespace Step.Interpreter
         /// Make a new binding list with specified additional binding
         /// USE STATIC VERSION IF ORIGINAL LIST MIGHT BE NULL
         /// </summary>
-        public BindingList<T> Bind(T variable, object value)
-            => new BindingList<T>(variable, value, this);
+        public BindingList Bind(LogicVariable variable, object? value)
+            => new BindingList(variable, value, this);
 
         /// <summary>
         /// Make a new binding list with specified additional binding
         /// </summary>
-        public static BindingList<T> Bind(BindingList<T> bindings, T variable, object value)
-            => new BindingList<T>(variable, value, bindings);
+        public static BindingList Bind(BindingList? bindings, LogicVariable variable, object? value)
+            => new BindingList(variable, value, bindings);
     }
 }

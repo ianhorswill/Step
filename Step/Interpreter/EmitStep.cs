@@ -31,7 +31,7 @@ namespace Step.Interpreter
     /// </summary>
     internal class EmitStep : Step
     {
-        public EmitStep(string[] text, Step next) : base(next)
+        public EmitStep(string[] text, Step? next) : base(next)
         {
             Text = text;
         }
@@ -49,7 +49,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation to run after the end of this method.</param>
         /// <param name="predecessor">Predecessor frame</param>
         /// <returns></returns>
-        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor) => 
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor) => 
             output.Unify(Text, out var result) && Continue(result, e, k, predecessor);
 
         public override string Source => string.Join(" ", Text);

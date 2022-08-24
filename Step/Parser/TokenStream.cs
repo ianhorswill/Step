@@ -14,7 +14,7 @@ namespace Step.Parser
                 : new TextFileTokenStream(reader, path);
         }
         
-        protected TokenStream(TextReader file, string filePath)
+        protected TokenStream(TextReader file, string? filePath)
         {
             FilePath = filePath;
             LineNumber = 1;
@@ -31,7 +31,7 @@ namespace Step.Parser
         /// <summary>
         /// Path to file being read from, if any
         /// </summary>
-        public readonly string FilePath;
+        public readonly string? FilePath;
 
         /// <summary>
         /// The Unicode left double quote

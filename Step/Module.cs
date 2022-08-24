@@ -29,10 +29,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Step.Interpreter;
 using Step.Output;
 using Step.Parser;
+
+[assembly: InternalsVisibleTo("Tests")]
 
 namespace Step
 {
@@ -51,11 +54,11 @@ namespace Step
         /// <summary>
         /// Table of values assigned by this module to different global variables
         /// </summary>
-        private readonly Dictionary<StateVariableName, object> dictionary = new Dictionary<StateVariableName, object>();
+        private readonly Dictionary<StateVariableName, object?> dictionary = new Dictionary<StateVariableName, object?>();
         /// <summary>
         /// Parent module to try if a variable can't be found in this module;
         /// </summary>
-        public readonly Module Parent;
+        public readonly Module? Parent;
 
         /// <summary>
         /// A user-defined procedure that can be called to import the value of a variable
@@ -68,14 +71,14 @@ namespace Step
         /// <summary>
         /// Optional list of hooks to try when a variable can't be found.
         /// </summary>
-        private List<BindHook> bindHooks;
+        private List<BindHook>? bindHooks;
 
         /// <summary>
         /// The global Module that all other modules inherit from by default.
         /// </summary>
         public static readonly Module Global;
 
-        private List<string> loadTimeWarnings;
+        private List<string>? loadTimeWarnings;
 
         /// <summary>
         /// Name of the module for debugging purposes
@@ -128,7 +131,7 @@ namespace Step
         /// <summary>
         /// Make a module that inherits from the specified parent
         /// </summary>
-        public Module(string name, Module parent)
+        public Module(string name, Module? parent)
         {
             Parent = parent;
             Name = name;
@@ -142,7 +145,7 @@ namespace Step
         /// <param name="variableName">Name (string) of the variable</param>
         /// <returns>Value</returns>
         /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
-        public object this[string variableName]
+        public object? this[string variableName]
         {
             get => this[StateVariableName.Named(variableName)];
             set => this[StateVariableName.Named(variableName)] = value;
@@ -154,7 +157,7 @@ namespace Step
         /// <param name="v">The variable</param>
         /// <returns>Value</returns>
         /// <exception cref="UndefinedVariableException">If getting a variable and it is not listed in this module or its ancestors</exception>
-        public object this[StateVariableName v]
+        public object? this[StateVariableName v]
         {
             get => Lookup(v);
             set => dictionary[v] = value;
@@ -170,7 +173,7 @@ namespace Step
         /// </summary>
         public bool Defines(StateVariableName v) => dictionary.ContainsKey(v);
 
-        private object Lookup(StateVariableName v, bool throwOnFailure = true)
+        private object? Lookup(StateVariableName v, bool throwOnFailure = true)
         {
 // First see if it's stored in this or some ancestor module
             for (var module = this; module != null; module = module.Parent)
@@ -197,12 +200,12 @@ namespace Step
         /// <summary>
         /// All the variable bindings in this module.
         /// </summary>
-        public IEnumerable<KeyValuePair<StateVariableName, object>> Bindings => dictionary;
+        public IEnumerable<KeyValuePair<StateVariableName, object?>> Bindings => dictionary;
 
         /// <summary>
         /// All the variable bindings in this module and its parent.
         /// </summary>
-        public IEnumerable<KeyValuePair<StateVariableName, object>> AllBindings =>
+        public IEnumerable<KeyValuePair<StateVariableName, object?>> AllBindings =>
             Parent == null ? Bindings : Bindings.Concat(Parent.AllBindings);
 
 
@@ -222,9 +225,9 @@ namespace Step
         /// <param name="lineNumber">Source file line number of method referencing this task, if relevant</param>
         /// <returns>The task</returns>
         /// <exception cref="ArgumentException">If variable is defined but isn't a CompoundTask</exception>
-        internal CompoundTask FindTask(StateVariableName v, int argCount, bool createIfNeeded = true, string path = "Unknown", int lineNumber = 0)
+        internal CompoundTask? FindTask(StateVariableName v, int argCount, bool createIfNeeded = true, string? path = "Unknown", int lineNumber = 0)
         {
-            CompoundTask Recur(Module m)
+            CompoundTask? Recur(Module m)
             {
                 if (m.dictionary.TryGetValue(v, out var value))
                 {
@@ -263,7 +266,7 @@ namespace Step
         /// <param name="call">Tuple representing the task to call and its arguments</param>
         /// <exception cref="ArgumentException">If first element of call is not a task</exception>
         // ReSharper disable once UnusedMember.Global
-        public (string output, State newDynamicState) Eval(State state, object[] call)
+        public (string? output, State newDynamicState) Eval(State state, object?[] call)
         {
             if (call.Length == 0)
                 throw new ArgumentException("Attempt to evaluate a zero-length tuple");
@@ -282,8 +285,8 @@ namespace Step
         /// <param name="args">Arguments to task, if any</param>
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
 
-        public (string output, State newDynamicState) Call(
-            State state, string taskName, params object[] args)
+        public (string? output, State newDynamicState) Call(
+            State state, string taskName, params object?[] args)
         {
             var maybeTask = this[StateVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
@@ -299,13 +302,13 @@ namespace Step
         /// <param name="task">Task to call</param>
         /// <param name="args">Arguments to task, if any</param>
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
-        public (string output, State newDynamicState) Call(
-            State state, Task task, params object[] args)
+        public (string? output, State newDynamicState) Call(
+            State state, Task task, params object?[] args)
         {
 var output = TextBuffer.NewEmpty();
-            var env = new BindingEnvironment(this, null, null, state);
+            var env = new BindingEnvironment(this, null!, null, state);
 
-            string result = null;
+            string? result = null;
             State newState = State.Empty;
 
             if (task.Call(args, output, env, null,
@@ -326,7 +329,7 @@ var output = TextBuffer.NewEmpty();
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
         /// <returns>Generated text as one big string, and final values of global variables.  Or null if the task failed.</returns>
-        public string Call(string taskName, params object[] args)
+        public string? Call(string taskName, params object?[] args)
         {
             var (output, _) = Call(State.Empty, taskName, args);
             return output;
@@ -340,14 +343,14 @@ var output = TextBuffer.NewEmpty();
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
         public bool CallPredicate(
-            State state, string taskName, params object[] args)
+            State state, string taskName, params object?[] args)
         {
             var maybeTask = this[StateVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
             var output = new TextBuffer(0);
-            var env = new BindingEnvironment(this, null, null, state);
+            var env = new BindingEnvironment(this, null!, null, state);
 
             return t.Call(args, output, env, null,
                 (o, u, s, p) => true);
@@ -359,7 +362,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
-        public bool CallPredicate(string taskName, params object[] args) => CallPredicate(State.Empty, taskName, args);
+        public bool CallPredicate(string taskName, params object?[] args) => CallPredicate(State.Empty, taskName, args);
 
         private static readonly LocalVariableName FunctionResult = new LocalVariableName("??result", 0);
 
@@ -371,20 +374,20 @@ var output = TextBuffer.NewEmpty();
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
         public T CallFunction<T>(
-            State state, string taskName, params object[] args)
+            State state, string taskName, params object?[] args)
         {
             var maybeTask = this[StateVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
                 throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
 
-            var env = new BindingEnvironment(this, null, null, state);
+            var env = new BindingEnvironment(this, null!, null, state);
             var resultVar = new LogicVariable(FunctionResult);
             var extendedArgs = args.Append(resultVar).ToArray();
 
             var output = new TextBuffer(0);
 
-            BindingList<LogicVariable> bindings = null;
+            BindingList? bindings = null;
 
             if (!t.Call(extendedArgs, output, env, null,
                 (o, u, s, p) =>
@@ -395,12 +398,12 @@ var output = TextBuffer.NewEmpty();
                 throw new CallFailedException(taskName, args);
             
             // Call succeeded; pull out the binding of the result variable and return it
-            var finalEnv = new BindingEnvironment(this, null, bindings, State.Empty);
+            var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
             var result = finalEnv.CopyTerm(resultVar);
             if (result is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
                 throw new ArgumentInstantiationException(taskName, env, extendedArgs);
-            return (T) result;
+            return (T) result!;
         }
 
         /// <summary>
@@ -409,7 +412,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to task, if any</param>
-        public T CallFunction<T>(string taskName, params object[] args) => CallFunction<T>(State.Empty, taskName, args);
+        public T CallFunction<T>(string taskName, params object?[] args) => CallFunction<T>(State.Empty, taskName, args);
 
         /// <summary>
         /// Load all source files in the specified directory
@@ -450,7 +453,7 @@ var output = TextBuffer.NewEmpty();
                     RunLoadTimeInitialization(pattern, locals, chain, path, line);
                 else
                 {
-                    var compoundTask = FindTask(task, pattern.Length, true, path, line);
+                    var compoundTask = FindTask(task, pattern.Length, true, path, line)!;
                     if (locals == null)
                         // Declaration
                         compoundTask.Flags |= flags;
@@ -471,7 +474,7 @@ var output = TextBuffer.NewEmpty();
         private static readonly LocalVariableName[] NoLocals = new LocalVariableName[0];
         private void DefineMethodsFromFolderStructure(CompoundTask task, string parentDirectory)
         {
-            void Walk(string path, string name)
+            void Walk(string path, string? name)
             {
                 foreach (var sub in Directory.GetDirectories(path))
                 {
@@ -490,7 +493,7 @@ var output = TextBuffer.NewEmpty();
                             throw new SyntaxError("Invalid format in weight.txt file", weightPath, 1);
                     }
 
-                    task.Methods.Add(new Method(task, weight, new object[] {name, subName}, NoLocals, null, null, 0));
+                    task.Methods.Add(new Method(task, weight, new object?[] {name, subName}, NoLocals, null, null, 0));
 
                     Walk(sub, subName);
                 }
@@ -500,14 +503,14 @@ var output = TextBuffer.NewEmpty();
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        private void RunLoadTimeInitialization(object[] pattern, LocalVariableName[] locals, Interpreter.Step chain, string path, int line)
+        private void RunLoadTimeInitialization(object?[] pattern, LocalVariableName[]? locals, Interpreter.Step? chain, string? path, int line)
         {
             if (pattern.Length != 0)
                 throw new SyntaxError("Initially command cannot take arguments", path, line);
             State bindings = State.Empty;
-            var fakeInitiallyMethod = new Method(new CompoundTask("initially", 0), 1, new object[0],
+            var fakeInitiallyMethod = new Method(new CompoundTask("initially", 0), 1, Array.Empty<object?>(),
                 new LocalVariableName[0], null, path, line);
-            if (!chain.Try(new TextBuffer(0),
+            if (!Step.Interpreter.Step.Try(chain, new TextBuffer(0),
                 new BindingEnvironment(this,
                     new MethodCallFrame(fakeInitiallyMethod, null, locals.Select(name => new LogicVariable(name)).ToArray(), 
                         MethodCallFrame.CurrentFrame, MethodCallFrame.CurrentFrame)),
@@ -553,10 +556,10 @@ var output = TextBuffer.NewEmpty();
         /// <param name="code">Code to run.  This will be used as the RHS of a method for the task TopLevelCall</param>
         /// <param name="state">State in which to execute the task.</param>
         /// <returns>Text output of the task and the resulting state</returns>
-        public (string output, State state) ParseAndExecute(string code, State state)
+        public (string? output, State state) ParseAndExecute(string code, State state)
         {
             if (Defines("TopLevelCall"))
-                ((CompoundTask) (this["TopLevelCall"])).EraseMethods();
+                ((CompoundTask?) this["TopLevelCall"])?.EraseMethods();
             AddDefinitions($"TopLevelCall: {code}");
             return Call(state, "TopLevelCall");
         }
@@ -566,7 +569,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         /// <param name="code">Code to run.  This will be used as the RHS of a method for the task TopLevelCall</param>
         /// <returns>Text output of the task</returns>
-        public string ParseAndExecute(string code) => ParseAndExecute(code, State.Empty).output;
+        public string? ParseAndExecute(string code) => ParseAndExecute(code, State.Empty).output;
 
         /// <summary>
         /// Add a procedure to call when a variable isn't found.
@@ -656,7 +659,7 @@ var output = TextBuffer.NewEmpty();
             loadTimeWarnings.Add(warning);
         }
 
-        private object ResolveVariables(object o)
+        private object? ResolveVariables(object? o)
         {
             switch (o)
             {
@@ -678,7 +681,7 @@ var output = TextBuffer.NewEmpty();
                 return result;
             
             var callees = new HashSet<object>();
-            foreach (var c in t.Callees) callees.Add(ResolveVariables(c));
+            foreach (var c in t.Callees) callees.Add(ResolveVariables(c)!);
 
             calleeTable[t] = callees;
             return callees;
@@ -693,21 +696,21 @@ var output = TextBuffer.NewEmpty();
 
         private readonly Dictionary<CompoundTask, object[][]> subtaskTable = new Dictionary<CompoundTask, object[][]>();
 
-        internal object[][] Subtasks(CompoundTask t)
+        internal object?[][] Subtasks(CompoundTask t)
         {
             if (subtaskTable.TryGetValue(t, out var result))
                 return result;
 
             var subtasks = t.Calls.Select(c => c.Arglist.Select(ResolveVariables).Prepend(ResolveVariables(c.Task)).ToArray()).ToArray();
 
-            subtaskTable[t] = subtasks;
+            subtaskTable[t] = subtasks!;
             return subtasks;
         }
 
         /// <summary>
         /// Return a trace of the method calls from the current frame.
         /// </summary>
-        public static string StackTrace(BindingList<LogicVariable> currentBindings = null)
+        public static string StackTrace(BindingList? currentBindings = null)
         {
                 var b = new StringBuilder();
                 if (MethodCallFrame.CurrentFrame != null && MethodCallFrame.CurrentFrame.CallerChain != null)
@@ -725,13 +728,13 @@ var output = TextBuffer.NewEmpty();
         /// An event handler to be called on every method call.
         /// Used to implement single-stepping in a debugger
         /// </summary>
-        public delegate void TraceHandler(MethodTraceEvent traceEvent, Method method, object[] args, TextBuffer output, BindingEnvironment env);
+        public delegate void TraceHandler(MethodTraceEvent traceEvent, Method method, object?[] args, TextBuffer output, BindingEnvironment env);
 
         /// <summary>
         /// An event handler to be called on every method call.
         /// Used to implement single-stepping in a debugger
         /// </summary>
-        public TraceHandler Trace;
+        public TraceHandler? Trace;
 
         /// <summary>
         /// Which event is being traced (a call, success, or failure)
@@ -760,7 +763,7 @@ var output = TextBuffer.NewEmpty();
             CallFail
         };
         
-        internal void TraceMethod(MethodTraceEvent e, Method method, object[] args, TextBuffer output, BindingEnvironment env)
+        internal void TraceMethod(MethodTraceEvent e, Method method, object?[] args, TextBuffer output, BindingEnvironment env)
         {
             Trace?.Invoke(e, method, args, output, env);
         }

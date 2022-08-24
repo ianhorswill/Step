@@ -7,7 +7,7 @@ namespace Step
     /// <summary>
     /// A dictionary whose contents is stored in the global State object
     /// </summary>
-    public class DictionaryStateElement<TKey, TValue> : StateElement
+    public class DictionaryStateElement<TKey, TValue> : StateElement where TKey:notnull
     {
         /// <summary>
         /// Make a new dictionary that lives in the global state.
@@ -18,12 +18,12 @@ namespace Step
         /// <param name="name">Name to give to the dictionary</param>
         /// <param name="keyComparer">Equality comparer for to use for keys</param>
         /// <param name="valueComparer">Equality comparer to use for values</param>
-        public DictionaryStateElement(string name, IEqualityComparer<TKey> keyComparer = null, IEqualityComparer<TValue> valueComparer = null)
-            : base(name, false, null)
+        public DictionaryStateElement(string name, IEqualityComparer<TKey> keyComparer = null!, IEqualityComparer<TValue> valueComparer = null!)
+            : base(name, false, null!)
         {
-            if (keyComparer == null)
+            if (keyComparer == null!)
                 keyComparer = EqualityComparer<TKey>.Default;
-            if (valueComparer == null)
+            if (valueComparer == null!)
                 valueComparer = EqualityComparer<TValue>.Default;
             
             empty = ImmutableDictionary<TKey, TValue>.Empty.WithComparers(keyComparer, valueComparer);
@@ -34,10 +34,10 @@ namespace Step
         /// <summary>
         /// The version of the dictionary stored in the specified state
         /// </summary>
-        private ImmutableDictionary<TKey, TValue> Dictionary(State state)
+        private ImmutableDictionary<TKey, TValue>? Dictionary(State state)
         {
             if (state.TryGetValue(this, out var dict))
-                return (ImmutableDictionary<TKey, TValue>)dict;
+                return (ImmutableDictionary<TKey, TValue>)dict!;
             return null;
         }
 
@@ -61,9 +61,9 @@ namespace Step
         public bool TryGetValue(State state, TKey key, out TValue result)
         {
             var dict = Dictionary(state);
-            if (dict != null && dict.TryGetValue(key, out result))
+            if (dict != null && dict.TryGetValue(key, out result!))
                 return true;
-            result = default;
+            result = default!;
             return false;
         }
 
@@ -71,7 +71,7 @@ namespace Step
         /// Get the value of the specified key in this dictionary for the specified state, if present.
         /// Otherwise, return the specified default value.
         /// </summary>
-        public TValue GetValueOrDefault(State state, TKey key, TValue ifNotFound = default) => 
+        public TValue GetValueOrDefault(State state, TKey key, TValue ifNotFound = default!) => 
             TryGetValue(state, key, out var result) ? result : ifNotFound;
 
         /// <summary>

@@ -6,17 +6,17 @@ namespace Step.Interpreter
 {
     internal class AddStep : Step
     {
-        private readonly object element;
+        private readonly object? element;
         private readonly StateVariableName collectionVariable;
 
-        private AddStep(object element, StateVariableName collectionVariable, Step next)
+        private AddStep(object? element, StateVariableName collectionVariable, Step? next)
             : base(next)
         {
             this.element = element;
             this.collectionVariable = collectionVariable;
         }
 
-        public static void FromExpression(ChainBuilder chain, object[] expression, string sourceFile = null, int lineNumber = 0)
+        public static void FromExpression(ChainBuilder chain, object?[] expression, string? sourceFile = null, int lineNumber = 0)
         {
             if (expression.Length != 3)
                 throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
@@ -27,7 +27,7 @@ namespace Step.Interpreter
         }
 
 
-        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
         {
             if (!e.TryCopyGround(e.Resolve(element), out var elt))
                 throw new ArgumentInstantiationException("add", e,
@@ -43,21 +43,21 @@ namespace Step.Interpreter
                             e.State.Bind(collectionVariable, new Cons(elt, list))),
                         k, predecessor);
 
-                case IImmutableSet<object> set:
+                case IImmutableSet<object?> set:
                     return Continue(output,
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, set.Add(elt))),
                         k, predecessor);
 
-                case ImmutableStack<object> stack:
+                case ImmutableStack<object?> stack:
                     return Continue(output,
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, stack.Push(elt))),
                         k, predecessor);
 
-                case ImmutableQueue<object> queue:
+                case ImmutableQueue<object?> queue:
                     return Continue(output,
                         new BindingEnvironment(e,
                             e.Unifications,

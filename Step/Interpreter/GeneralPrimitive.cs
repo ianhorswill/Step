@@ -15,8 +15,8 @@
         /// <param name="e">Binding environment to use</param>
         /// <param name="predecessor">Frame of the call that most recently succeeded</param>
         /// <param name="k">Continuation to call when successful</param>
-        public delegate bool Implementation(object[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame predecessor, Step.Continuation k);
+        public delegate bool Implementation(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Continuation k);
 
         private readonly Implementation implementation;
 
@@ -31,7 +31,8 @@
         }
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
             => implementation(env.ResolveList(arglist), output, env, predecessor, k);
     }
 }

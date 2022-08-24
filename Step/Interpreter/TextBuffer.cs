@@ -179,7 +179,7 @@ namespace Step.Interpreter
         /// <param name="newBuffer">Resulting updated buffer state</param>
         /// <returns>Next token or null if end of buffer</returns>
         /// <exception cref="InvalidOperationException">If buffer is write mode</exception>
-        public string NextToken(out TextBuffer newBuffer)
+        public string? NextToken(out TextBuffer newBuffer)
         {
             if (WriteMode)
                 throw new InvalidOperationException("Attempt to read from a write mode text buffer");

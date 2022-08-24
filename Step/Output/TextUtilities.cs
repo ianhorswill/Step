@@ -62,7 +62,7 @@ namespace Step.Output
         /// <summary>
         /// Convert a sequence of tokens into a single text string, adding spaces where appropriate.
         /// </summary>
-        public static string Untokenize(this IEnumerable<string> tokens, FormattingOptions format = null)
+        public static string Untokenize(this IEnumerable<string>? tokens, FormattingOptions? format = null)
         {
             if (tokens == null)
                 return "";

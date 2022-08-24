@@ -48,7 +48,7 @@ namespace Step.Parser
         /// </summary>
         /// <param name="input">Stream to read from</param>
         /// <param name="filePath">Path of the stream if it comes from a file (for debug messages)</param>
-        public TextFileTokenStream(TextReader input, string filePath) : base(input, filePath)
+        public TextFileTokenStream(TextReader input, string? filePath) : base(input, filePath)
         { }
 
         #region Token buffer managment

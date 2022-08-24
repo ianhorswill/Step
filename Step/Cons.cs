@@ -8,12 +8,12 @@ namespace Step
     /// <summary>
     /// LISP-style cons cells for lists.
     /// </summary>
-    public class Cons : IList, IList<object>
+    public class Cons : IList, IList<object?>
     {
         /// <summary>
         /// First element of the list
         /// </summary>
-        public readonly object First;
+        public readonly object? First;
         /// <summary>
         /// Rest of the list
         /// </summary>
@@ -22,13 +22,13 @@ namespace Step
         /// <summary>
         /// Represents the empty list
         /// </summary>
-        public static readonly Cons Empty = new Cons(null, null);
+        public static readonly Cons Empty = new Cons(null, null!);
 
 
         /// <summary>
         /// Make a list with a new element at a beginning
         /// </summary>
-        public Cons(object first, Cons rest)
+        public Cons(object? first, Cons rest)
         {
             First = first;
             Rest = rest;
@@ -48,7 +48,7 @@ namespace Step
             return GetEnumerator();
         }
 
-        IEnumerator<object> IEnumerable<object>.GetEnumerator()
+        IEnumerator<object?> IEnumerable<object?>.GetEnumerator()
         {
             for (var cell = this; cell != Empty; cell = cell.Rest)
                 yield return cell.First;
@@ -84,12 +84,11 @@ namespace Step
                 array.SetValue(e, arrayIndex++);
         }
 
-        bool ICollection<object>.Remove(object item)
+        bool ICollection<object?>.Remove(object? item)
         {
             throw new NotImplementedException();
         }
 
-        /// <inheritdoc />
         public int Count
         {
             get
@@ -113,16 +112,16 @@ namespace Step
         }
 
         /// <inheritdoc />
-        public bool Contains(object value) => IndexOf(value) >= 0;
+        public bool Contains(object? value) => IndexOf(value) >= 0;
 
         /// <inheritdoc />
-        public void CopyTo(object[] array, int arrayIndex)
+        public void CopyTo(object?[] array, int arrayIndex)
         {
             for (var cell = this; cell != Empty; cell = cell.Rest)
                 array[arrayIndex++] = cell.First;
         }
 
-        void ICollection<object>.Add(object item)
+        void ICollection<object?>.Add(object? item)
         {
             throw new NotImplementedException();
         }
@@ -134,12 +133,17 @@ namespace Step
         }
 
         /// <inheritdoc />
-        public int IndexOf(object value)
+        public int IndexOf(object? value)
         {
             var cell = this;
             for (var i = 0; cell != Empty; i++)
             {
-                if (cell.First.Equals(value))
+                if (cell.First == null)
+                {
+                    if (value == null)
+                        return i;
+                }
+                else if (cell.First.Equals(value))
                     return i;
                 else
                     cell = cell.Rest;
@@ -149,7 +153,7 @@ namespace Step
         }
 
         /// <inheritdoc />
-        public void Insert(int index, object value)
+        public void Insert(int index, object? value)
         {
             throw new NotImplementedException();
         }
@@ -167,7 +171,7 @@ namespace Step
         }
 
         /// <inheritdoc />
-        public object this[int index]
+        public object? this[int index]
         {
             get
             {

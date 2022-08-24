@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Step.Interpreter;
 
 namespace Step
@@ -14,7 +15,7 @@ namespace Step
         /// This assumes that the value has already been resolved relative to an environment
         /// so any logic variables are uninstantiated.
         /// </summary>
-        public static bool IsGround(object[] tuple)
+        public static bool IsGround(object?[] tuple)
         {
             foreach (var e in tuple)
                 if (e is object[] subArray)
@@ -33,7 +34,7 @@ namespace Step
         /// This assumes that the value has already been resolved relative to an environment
         /// so any logic variables are uninstantiated.
         /// </summary>
-        public static bool IsGround(object o)
+        public static bool IsGround(object? o)
         {
             if (o is object[] tuple)
                 return IsGround(tuple);
@@ -43,10 +44,13 @@ namespace Step
         /// <summary>
         /// Test if two terms are literally equal.  So [?x] and [?x] are literally equal, but [?x] and [?y] are not, even if they are unifiable.
         /// </summary>
-        public static bool LiterallyEqual(object a, object b)
+        public static bool LiterallyEqual(object? a, object? b)
         {
-            bool Recur(object y, object x)
+            bool Recur(object? y, object? x)
             {
+                if (y == null || x == null)
+                    return ReferenceEquals(x, y);
+
                 if (x.Equals(y)) return true;
                 if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
                     return false;
@@ -64,7 +68,7 @@ namespace Step
         /// This does recursive comparison and hashing for object[] values, and the default
         /// comparison and hash implementations for others.
         /// </summary>
-        public class Comparer : IEqualityComparer<object>
+        public class Comparer : IEqualityComparer<object?>
         {
             /// <summary>
             /// Singleton instance of the comparer 
@@ -82,10 +86,12 @@ namespace Step
             /// </summary>
             public bool FunctionComparer;
             
-            bool IEqualityComparer<object>.Equals(object a, object b)
+            bool IEqualityComparer<object?>.Equals(object? a, object? b)
             {
-                bool Recur(object y, object x, int ignoredElements = 0)
+                bool Recur(object? y, object? x, int ignoredElements = 0)
                 {
+                    if (x == null || y == null)
+                        return ReferenceEquals(x, y);
                     if (x.Equals(y)) return true;
                     if (!(x is object[] xArray) || !(y is object[] yArray) || xArray.Length != yArray.Length)
                         return false;
@@ -98,20 +104,22 @@ namespace Step
                 return Recur(a, b, FunctionComparer?1:0);
             }
 
-            int IEqualityComparer<object>.GetHashCode(object obj)
+            int IEqualityComparer<object?>.GetHashCode(object? obj)
             {
                 if (obj is object[] tuple)
                     return TreeHash(tuple, FunctionComparer ? 1 : 0);
-                return obj.GetHashCode();
+                return obj!.GetHashCode();
             }
 
-            static int TreeHash(object[] tuple, int ignoredElements = 0)
+            private static int TreeHash(object?[] tuple, int ignoredElements = 0)
             {
                 var h = 0;
                 for (var index = 0; index < tuple.Length-ignoredElements; index++)
                 {
                     var e = tuple[index];
-                    if (e is object[] subTuple)
+                    if (e == null)
+                        return RuntimeHelpers.GetHashCode(null);
+                    if (e is object?[] subTuple)
                         h ^= TreeHash(subTuple);
                     else h ^= e.GetHashCode();
                 }

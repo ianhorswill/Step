@@ -43,7 +43,7 @@ namespace Step.Interpreter
         /// <param name="task">A term whose value is the sub-task to execute</param>
         /// <param name="args">Terms for the arguments of the call</param>
         /// <param name="next">Next step in the step chain of whatever method this belongs to</param>
-        public Call(object task, object[] args, Step next) : base(next)
+        public Call(object task, object?[] args, Step? next) : base(next)
         {
             Task = task;
             Arglist = args;
@@ -53,17 +53,17 @@ namespace Step.Interpreter
         /// Make a new call step to the specified task, with no arguments.
         /// </summary>
         // ReSharper disable once UnusedMember.Global
-        public static Call MakeCall(object task, Step next) => new Call(task, new object[0], next);
+        public static Call MakeCall(object task, Step? next) => new Call(task, Array.Empty<object?>(), next);
 
         /// <summary>
         /// Make a new call step to the specified task, with the specified argument.
         /// </summary>
-        public static Call MakeCall(object task, object arg1, Step next) => new Call(task, new[] { arg1 }, next);
+        public static Call MakeCall(object task, object arg1, Step? next) => new Call(task, new[] { arg1 }, next);
         
         /// <summary>
         /// Make a new call step to the specified task, with the specified arguments.
         /// </summary>
-        public static Call MakeCall(object task, object arg1, object arg2, Step next) => new Call(task, new[] { arg1, arg2 }, next);
+        public static Call MakeCall(object task, object arg1, object arg2, Step? next) => new Call(task, new[] { arg1, arg2 }, next);
 
         /// <summary>
         /// Make a new call step to the specified task, with the specified arguments.
@@ -78,7 +78,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Terms representing the arguments to the subtask.
         /// </summary>
-        public readonly object[] Arglist;
+        public readonly object?[] Arglist;
 
         /// <summary>
         /// Regenerates an approximation to the source code for this call
@@ -128,8 +128,7 @@ namespace Step.Interpreter
         }
 
         internal override IEnumerable<Call> Calls => new[] {this};
-        
-        
+
 
         /// <summary>
         /// Attempt to run this task
@@ -139,7 +138,8 @@ namespace Step.Interpreter
         /// <param name="k">Continuation to call at the end of this step's step-chain</param>
         /// <param name="predecessor">Predecessor frame</param>
         /// <returns>True if this steps, the rest of its step-chain, and the continuation all succeed.</returns>
-        public override bool Try(TextBuffer output, BindingEnvironment env, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment env, Continuation k,
+            MethodCallFrame? predecessor)
         {
             MethodCallFrame.CurrentFrame = env.Frame;
             var target = env.Resolve(Task);
@@ -148,8 +148,8 @@ namespace Step.Interpreter
             return CallTask(output, env, k, target, arglist, target, predecessor);
         }
 
-        private bool CallTask(TextBuffer output, BindingEnvironment env, Continuation k, object target, object[] arglist,
-            object originalTarget, MethodCallFrame predecessor)
+        private bool CallTask(TextBuffer output, BindingEnvironment env, Continuation k, object? target, object?[] arglist,
+            object? originalTarget, MethodCallFrame? predecessor)
         {
             switch (target)
             {
@@ -192,7 +192,7 @@ namespace Step.Interpreter
                     {
                         foreach (var e in l)
                             if (Continue(output,
-                                new BindingEnvironment(env, BindingList<LogicVariable>.Bind(env.Unifications, l0, e),
+                                new BindingEnvironment(env, BindingList.Bind(env.Unifications, l0, e),
                                     env.State),
                                 k,
                                 predecessor))
@@ -209,7 +209,7 @@ namespace Step.Interpreter
                     throw new ArgumentException($"Attempt to call an unbound variable {v}");
 
                 case null:
-                    throw new ArgumentException($"Null is not a valid task in call {CallSourceText(originalTarget, arglist)}");
+                    throw new ArgumentException($"Null is not a valid task in call {CallSourceText(originalTarget??"null", arglist)}");
 
                 case bool b:
                     if (arglist.Length != 0)
@@ -226,11 +226,11 @@ namespace Step.Interpreter
                         return Continue(output.Append(target.ToString()), env, k, predecessor);
                     }
 
-                    throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget, arglist)}");
+                    throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget??"null", arglist)}");
             }
         }
 
-        internal static string CallSourceText(object task, object[] arglist, BindingList<LogicVariable> unifications = null)
+        internal static string CallSourceText(object task, object?[] arglist, BindingList? unifications = null)
         {
             var b = new StringBuilder();
             b.Append("[");
@@ -240,7 +240,7 @@ namespace Step.Interpreter
             if (Module.RichTextStackTraces)
                 b.Append("</b>");
 
-            void WriteAtomicTerm(object o)
+            void WriteAtomicTerm(object? o)
             {
                 if (o == null)
                 {
@@ -264,7 +264,7 @@ namespace Step.Interpreter
                 }
             }
 
-            void WriteTerm(object o)
+            void WriteTerm(object? o)
             {
                 o = BindingEnvironment.Deref(o, unifications);
                 if (o is object[] tuple)

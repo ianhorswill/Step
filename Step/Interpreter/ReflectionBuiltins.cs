@@ -40,15 +40,15 @@ namespace Step.Interpreter
 
             // Second argument is in the caller chain leading to the first argument
             bool InInMode1(MethodCallFrame f, Method m) => f.CallerChain.FirstOrDefault(a => a.Method == m) != null;
-            IEnumerable<Method> InOutMode1(MethodCallFrame f) => f.CallerChain.Select(a => a.Method);
+            IEnumerable<Method> InOutMode1(MethodCallFrame f) => f.CallerChain.Select(a => a.Method!);
             g["CallerChainAncestor"] = 
                 new GeneralPredicate<MethodCallFrame, Method>("CallerChainAncestor", InInMode1, InOutMode1, null, null)
                     .Arguments("frame", "?method")
                     .Documentation("reflection//dynamic analysis", "True if ?method called frame's method or some other method that eventually called this frame's method.");
 
             // Second argument is in the goal chain leading to the first argument
-            bool InInMode2(MethodCallFrame f, Method m) => f.GoalChain.FirstOrDefault(a => a.Method == m) != null;
-            IEnumerable<Method> InOutMode2(MethodCallFrame f) => f.GoalChain.Select(a => a.Method);
+            bool InInMode2(MethodCallFrame f, Method m) => MethodCallFrame.GoalChain(f).FirstOrDefault(a => a.Method == m) != null;
+            IEnumerable<Method> InOutMode2(MethodCallFrame f) => MethodCallFrame.GoalChain(f).Select(a => a.Method!);
             g["GoalChainAncestor"] = 
                 new GeneralPredicate<MethodCallFrame, Method>("GoalChainAncestor", InInMode2, InOutMode2, null, null)
                     .Arguments("frame", "?method")
@@ -65,14 +65,14 @@ namespace Step.Interpreter
                 .Documentation("reflection//static analysis", "True if task ?caller has a method that contains the call ?call.");
         }
 
-        private static bool LastMethodCallFrame(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool LastMethodCallFrame(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("LastMethodCallFrame", 1, args);
             return e.Unify(args[0], predecessor, out var u)
                    && k(o, u, e.State, predecessor);
         }
 
-        private static bool CompoundTask(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool CompoundTask(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("CompoundTask", 1, args);
             var arg = e.Resolve(args[0]);
@@ -81,13 +81,13 @@ namespace Step.Interpreter
                 // Argument is instantiated; test if it's a compound task
                 return (arg is CompoundTask) && k(o, e.Unifications, e.State, predecessor);
             foreach (var t in e.Module.DefinedTasks)
-                if (k(o, BindingList<LogicVariable>.Bind(e.Unifications, l, t), e.State, predecessor))
+                if (k(o, BindingList.Bind(e.Unifications, l, t), e.State, predecessor))
                     return true;
 
             return false;
         }
 
-        private static bool TaskCalls(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool TaskCalls(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
             var m = e.Module;
             ArgumentCountException.Check(nameof(TaskCalls), 2, args);
@@ -102,14 +102,14 @@ namespace Step.Interpreter
                 if (calleeVar == null)
                 {
                     // in in
-                    if (m.TaskCalls(callerTask, callee))
+                    if (m.TaskCalls(callerTask!, callee!))
                         return k(o, e.Unifications, e.State, predecessor);
                 }
                 else
                 {
                     // in out
-                    foreach (var c in m.Callees(callerTask))
-                        if (k(o, BindingList<LogicVariable>.Bind(e.Unifications, calleeVar, c), e.State, predecessor))
+                    foreach (var c in m.Callees(callerTask!))
+                        if (k(o, BindingList.Bind(e.Unifications, calleeVar, c), e.State, predecessor))
                             return true;
                 }
             }
@@ -120,8 +120,8 @@ namespace Step.Interpreter
                 {
                     // out in
                     foreach (var caller in m.DefinedTasks)
-                        if (m.TaskCalls(caller, callee))
-                            if (k(o, BindingList<LogicVariable>.Bind(e.Unifications, callerVar, caller), e.State,
+                        if (m.TaskCalls(caller, callee!))
+                            if (k(o, BindingList.Bind(e.Unifications, callerVar, caller), e.State,
                                 predecessor))
                                 return true;
                 }
@@ -131,7 +131,7 @@ namespace Step.Interpreter
                     foreach (var caller in m.DefinedTasks)
                         foreach (var c in m.Callees(caller))
                             if (k(o,
-                                BindingList<LogicVariable>.Bind(e.Unifications, callerVar, caller).Bind(calleeVar, c),
+                                BindingList.Bind(e.Unifications, callerVar, caller).Bind(calleeVar, c),
                                 e.State, predecessor))
                                 return true;
                 }
@@ -140,7 +140,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        private static bool TaskSubtask(object[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame predecessor, Step.Continuation k)
+        private static bool TaskSubtask(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("TaskSubtask", 2, args);
             var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args);

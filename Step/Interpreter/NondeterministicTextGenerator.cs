@@ -22,7 +22,8 @@ namespace Step.Interpreter
         private readonly Func<IEnumerable<IEnumerable<string>>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 0, arglist);
             foreach (var tokens in implementation())
@@ -51,7 +52,8 @@ namespace Step.Interpreter
         private readonly Func<T1, IEnumerable<IEnumerable<string>>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 1, arglist);
             foreach (var tokens in implementation(ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist)))
@@ -80,7 +82,8 @@ namespace Step.Interpreter
         private readonly Func<T1, T2, IEnumerable<IEnumerable<string>>> implementation;
 
         /// <inheritdoc />
-        public override bool Call(object[] arglist, TextBuffer output, BindingEnvironment env, MethodCallFrame predecessor, Step.Continuation k)
+        public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check(Name, 1, arglist);
             foreach (var tokens in implementation(

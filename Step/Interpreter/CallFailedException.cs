@@ -8,8 +8,8 @@
         /// </summary>
         /// <param name="task">Task called</param>
         /// <param name="arguments">Arguments</param>
-        public CallFailedException(object task, object[] arguments)
-        : base(task, arguments, $"Call failed: {Call.CallSourceText(task, arguments)}")
+        public CallFailedException(object? task, object?[] arguments)
+        : base(task??"null", arguments, $"Call failed: {Call.CallSourceText(task??"null", arguments)}")
         { }
     }
 }

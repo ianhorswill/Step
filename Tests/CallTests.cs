@@ -153,7 +153,7 @@ namespace Tests
             m.Call("Test");
             Assert.AreEqual("C C B D C A Test",
                 string.Join(" ",
-                    MethodCallFrame.CurrentFrame.GoalChain.Select(f => f.Method.Task.Name)));
+                    MethodCallFrame.GoalChain(MethodCallFrame.CurrentFrame).Select(f => f.Method.Task.Name)));
         }
 
         [TestMethod]

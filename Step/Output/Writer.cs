@@ -12,7 +12,7 @@ namespace Step.Output
         /// <summary>
         /// Convert a Step term to a string as it would appear in the source code.
         /// </summary>
-        public static string TermToString(object term, BindingList<LogicVariable> bindings = null)
+        public static string TermToString(object? term, BindingList? bindings = null)
         {
             var b = new StringBuilder();
 
@@ -32,7 +32,7 @@ namespace Step.Output
                 b.Append(after);
             }
 
-            void Walk(object o)
+            void Walk(object? o)
             {
                 switch (o)
                 {

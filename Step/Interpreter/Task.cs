@@ -14,7 +14,7 @@ namespace Step.Interpreter
         /// </summary>
         public readonly string Name;
 
-        private Dictionary<string, object> propertyDictionary;
+        private Dictionary<string, object>? propertyDictionary;
 
         /// <summary>
         /// Dictionary of additional user-defined metadata
@@ -31,7 +31,7 @@ namespace Step.Interpreter
         /// Optional documentation of the names of the arguments to the task
         /// These are here purely for documentation purposes.  They aren't used during the calling sequence.
         /// </summary>
-        public string[] Arglist;
+        public string[]? Arglist;
 
         /// <summary>
         /// This task has documentation metadata
@@ -52,7 +52,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Optional documentation of what the task does
         /// </summary>
-        public string Description;
+        public string? Description;
 
         /// <summary>
         /// Adds documentation of the description of the task
@@ -68,7 +68,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Optional documentation of what section of the manual this should appear in
         /// </summary>
-        public string ManualSection;
+        public string? ManualSection;
 
         /// <summary>
         /// Adds documentation of the description of the task
@@ -102,8 +102,8 @@ namespace Step.Interpreter
         /// <param name="k">Continuation</param>
         /// <returns>True if task succeeded and continuation succeeded</returns>
         /// <exception cref="CallFailedException">If the task fails</exception>
-        public abstract bool Call(object[] arglist, TextBuffer output, BindingEnvironment env,
-            MethodCallFrame predecessor, Step.Continuation k);
+        public abstract bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k);
 
         /// <inheritdoc />
         public override string ToString() => Name;

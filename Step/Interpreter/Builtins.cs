@@ -42,7 +42,7 @@ namespace Step.Interpreter
     internal static class Builtins
     {
         private static readonly object[] EmptyArray = new object[0];
-        internal static PrimitiveTask WritePrimitive;
+        internal static PrimitiveTask? WritePrimitive;
 
         /// <summary>
         /// Add the built-in primitives to the global module.
@@ -284,7 +284,7 @@ namespace Step.Interpreter
                 int count = 0;
                 while (true)
                     if (k(o,
-                        BindingList<LogicVariable>.Bind(bindings.Unifications, (LogicVariable) args[0], count++),
+                        BindingList.Bind(bindings.Unifications, (LogicVariable) args[0]!, count++),
                         bindings.State,
                         p))
                         return true;
@@ -497,10 +497,12 @@ namespace Step.Interpreter
             return true;
         }
 
-        private static bool Throw(object[] args)
+        private static bool Throw(object?[] args)
         {
-            string Stringify(object o)
+            string Stringify(object? o)
             {
+                if (o == null)
+                    return "null";
                 var s = o.ToString();
                 if (s != "")
                     return s;

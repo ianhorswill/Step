@@ -6,9 +6,9 @@ namespace Step.Interpreter
 {
     internal abstract class BranchingStep : Step
     {
-        protected readonly Step[] Branches;
+        protected readonly Step?[] Branches;
         
-        protected BranchingStep(Step[] branches, Step next) : base(next)
+        protected BranchingStep(Step?[] branches, Step? next) : base(next)
         {
             this.Branches = branches;
         }
@@ -16,16 +16,16 @@ namespace Step.Interpreter
         internal override IEnumerable<Step> SubSteps()
         {
             foreach (var chain in Branches)
-            foreach (var step in chain.ChainSteps)
+            foreach (var step in ChainSteps(chain))
                 yield return step;
             yield return this;
         }
 
         /// <inheritdoc />
-        public override IEnumerable<object> Callees => Branches.SelectMany(s => s.CalleesOfChain);
+        public override IEnumerable<object> Callees => Branches.SelectMany(s => CalleesOfChain(s));
 
         /// <inheritdoc />
-        internal override IEnumerable<Call> Calls => Branches.SelectMany(s => s.CallsOfChain);
+        internal override IEnumerable<Call> Calls => Branches.SelectMany(s => CallsOfChain(s));
 
         public override bool AnyStep(Predicate<Step> p)
         {

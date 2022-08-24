@@ -37,7 +37,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Make a new step
         /// </summary>
-        protected Step(Step next)
+        protected Step(Step? next)
         {
             Next = next;
         }
@@ -46,14 +46,14 @@ namespace Step.Interpreter
         /// Next step in the step chain of the method to which this step belongs.
         /// Null, if this is the last step in the chain.
         /// </summary>
-        public Step Next;
+        public Step? Next;
 
         /// <summary>
         /// A continuation is a procedure to call when a step has completed successfully.
         /// It takes as arguments the things that might have changed in the process of running the step.
         /// </summary>
         /// <returns>True if everything completed successfully, false if we need to backtrack</returns>
-        public delegate bool Continuation(TextBuffer o, BindingList<LogicVariable> unifications, State state, MethodCallFrame predecessor);
+        public delegate bool Continuation(TextBuffer o, BindingList? unifications, State state, MethodCallFrame? predecessor);
 
         /// <summary>
         /// Attempt to run this step.
@@ -63,30 +63,38 @@ namespace Step.Interpreter
         /// <param name="k">Procedure to run if this step and the other steps in its chain are successful</param>
         /// <param name="predecessor">Predecessor frame</param>
         /// <returns>True if all steps in the chain, and the continuation are all successful.  False means we're backtracking</returns>
-        public abstract bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor);
+        public abstract bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor);
+
+        public static bool Try(Step? stepChain, TextBuffer output, BindingEnvironment e, Continuation k,
+            MethodCallFrame? predecessor)
+        {
+            if (stepChain == null)
+                return k(output, e.Unifications, e.State, predecessor);
+            return stepChain.Try(output, e, k, predecessor);
+        }
 
         /// <summary>
         /// Run any remaining steps in the chain, otherwise run the continuation.
         /// </summary>
         /// <returns>True if all steps in the chain, and the continuation are all successful.  False means we're backtracking</returns>
-        protected bool Continue(TextBuffer p, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        protected bool Continue(TextBuffer p, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
         {
             if (Next != null)
                 return Next.Try(p, e, k, predecessor);
-            return k == null || k(p, e.Unifications, e.State, predecessor);
+            return k(p, e.Unifications, e.State, predecessor);
         }
 
         /// <summary>
         /// An empty callee list for use in Callees
         /// </summary>
-        internal static readonly object[] EmptyCalleeList = new object[0];
+        internal static readonly object[] EmptyCalleeList = Array.Empty<object>();
         
         /// <summary>
         /// The callees of just this step, if any
         /// </summary>
         public virtual IEnumerable<object> Callees => EmptyCalleeList;
 
-        internal static readonly Call[] EmptyCallList = new Call[0];
+        internal static readonly Call[] EmptyCallList = Array.Empty<Call>();
         
         /// <summary>
         /// All the Calls contained in this Step.
@@ -96,16 +104,14 @@ namespace Step.Interpreter
         /// <summary>
         /// All the steps in the chain starting with this step
         /// </summary>
-        public IEnumerable<Step> ChainSteps
+        /// <param name="step1"></param>
+        public static IEnumerable<Step> ChainSteps(Step? step1)
         {
-            get
-            {
-                for (var step = this; step != null; step = step.Next)
-                    foreach (var sub in step.SubSteps())
-                        yield return sub;
-            }
+            for (var step = step1; step != null; step = step.Next)
+                foreach (var sub in step.SubSteps())
+                    yield return sub;
         }
-        
+
         /// <summary>
         /// The step itself plus any steps from this step's branches, if it's a branching step
         /// </summary>
@@ -118,25 +124,27 @@ namespace Step.Interpreter
         /// <summary>
         /// All the callees of all the calls in this chain
         /// </summary>
-        public IEnumerable<object> CalleesOfChain => ChainSteps.SelectMany(s => s.Callees);
+        /// <param name="chain"></param>
+        public static IEnumerable<object> CalleesOfChain(Step? chain) => ChainSteps(chain).SelectMany(s => s.Callees);
 
         /// <summary>
         /// All the Calls in this chain
         /// </summary>
-        public IEnumerable<Call> CallsOfChain => ChainSteps.SelectMany(s => s.Calls);
+        /// <param name="chain"></param>
+        public static IEnumerable<Call> CallsOfChain(Step? chain) => ChainSteps(chain).SelectMany(s => s.Calls);
 
         internal class ChainBuilder
         {
-            public readonly Func<string, LocalVariableName> GetLocal;
-            public readonly Func<object, object> Canonicalize;
-            public readonly Func<object[], object[]> CanonicalizeArglist;
+            public readonly Func<string, LocalVariableName>? GetLocal;
+            public readonly Func<object?, object?> Canonicalize;
+            public readonly Func<object?[], object?[]> CanonicalizeArglist;
             
-            public Step FirstStep;
-            private Step previousStep;
+            public Step? FirstStep;
+            private Step? previousStep;
 
-            public ChainBuilder(Func<string, LocalVariableName> getLocal, 
-                Func<object, object> canonicalize, 
-                Func<object[], object[]> canonicalizeArglist)
+            public ChainBuilder(Func<string, LocalVariableName>? getLocal, 
+                Func<object?, object?> canonicalize, 
+                Func<object?[], object?[]> canonicalizeArglist)
             {
                 GetLocal = getLocal;
                 CanonicalizeArglist = canonicalizeArglist;
@@ -149,8 +157,7 @@ namespace Step.Interpreter
                     FirstStep = previousStep = s;
                 else
                 {
-                    // ReSharper disable once PossibleNullReferenceException
-                    previousStep.Next = s;
+                    previousStep!.Next = s;
                     previousStep = s;
                 }
             }
@@ -168,7 +175,7 @@ namespace Step.Interpreter
         /// <param name="body"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentTypeException"></exception>
-        public static Step ChainFromBody(string taskName, params object[] body)
+        public static Step? ChainFromBody(string taskName, params object?[] body)
         {
             var chain = new ChainBuilder(null, x => x, x => x);
             foreach (var step in body)
@@ -178,7 +185,7 @@ namespace Step.Interpreter
                     case "\n":
                         break;
 
-                    case object[] invocation when invocation.Length > 0:
+                    case object?[] invocation when invocation.Length > 0:
                         var operation = invocation[0];
                         switch (operation)
                         {
@@ -198,6 +205,8 @@ namespace Step.Interpreter
                                 // It's a call
                                 var arglist = new object[invocation.Length - 1];
                                 Array.Copy(invocation, 1, arglist, 0, arglist.Length);
+                                if (operation == null)
+                                    throw new CallFailedException(operation, arglist);
                                 chain.AddStep(new Call(operation, arglist, null));
                                 break;
                         }

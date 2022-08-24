@@ -33,7 +33,7 @@ namespace Step.Interpreter
     public class ArgumentTypeException : CallException
     {
         /// <inheritdoc />
-        public ArgumentTypeException(object task, Type expected, object actual, object[] arglist) 
+        public ArgumentTypeException(object task, Type expected, object? actual, object?[] arglist) 
             : base(task, arglist, $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
         { }
 
@@ -48,7 +48,7 @@ namespace Step.Interpreter
         /// <param name="arglist">Full argument list of the task</param>
         /// <param name="allowUninstantiated">If true, accept an unbound variable as a value</param>
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
-        public static void Check(object task, Type expected, object actual, object[] arglist, bool allowUninstantiated = false)
+        public static void Check(object task, Type expected, object? actual, object?[] arglist, bool allowUninstantiated = false)
         {
             if (allowUninstantiated && actual is LogicVariable)
                 return;
@@ -64,12 +64,12 @@ namespace Step.Interpreter
         /// <param name="actual">Value provided</param>
         /// <param name="arglist">Full argument list of the task</param>
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
-        public static TExpected Cast<TExpected>(object task, object actual, object[] arglist)
+        public static TExpected Cast<TExpected>(object task, object? actual, object?[] arglist)
         {
             Check(task, typeof(TExpected), actual, arglist);
             if (typeof(TExpected) == typeof(float))
                 return (TExpected)(object)Convert.ToSingle(actual);
-            return (TExpected) actual;
+            return (TExpected) actual!;
         }
     }
 }

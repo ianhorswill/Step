@@ -53,7 +53,7 @@ namespace Step.Parser
         /// <summary>
         /// Reads definitions from the specified stream
         /// </summary>
-        public DefinitionStream(TextReader stream, Module module, string filePath)
+        public DefinitionStream(TextReader stream, Module module, string? filePath)
             : this(new ExpressionStream(stream, filePath), module)
         {
 
@@ -85,7 +85,7 @@ namespace Step.Parser
 
         private readonly ExpressionStream expressionStream;
 
-        public string SourceFile
+        public string? SourceFile
         {
             get
             {
@@ -94,7 +94,7 @@ namespace Step.Parser
             }
         }
 
-        public string SourcePath => expressionStream.FilePath;
+        public string? SourcePath => expressionStream.FilePath;
 
         /// <summary>
         /// Expressions being read from the stream
@@ -115,12 +115,12 @@ namespace Step.Parser
         /// <summary>
         /// Current expression
         /// </summary>
-        private object Peek => expressions.Current;
+        private object? Peek => expressions.Current;
 
         /// <summary>
         /// Peek, but apply substitution
         /// </summary>
-        private object PeekAndSubstitute
+        private object? PeekAndSubstitute
         {
             get
             {
@@ -136,7 +136,7 @@ namespace Step.Parser
         /// Return the current expression and move to the next
         /// </summary>
         /// <returns></returns>
-        private object Get()
+        private object? Get()
         {
             var result = Peek;
             MoveNext();
@@ -174,7 +174,7 @@ namespace Step.Parser
         /// <summary>
         /// True if we're at an end of line token
         /// </summary>
-        private bool EndOfLineToken => Peek.Equals(EndOfLine);
+        private bool EndOfLineToken => Equals(Peek, EndOfLine);
 
         private bool EndOfParagraphToken => ReferenceEquals(Peek, TextUtilities.NewParagraphToken);
 
@@ -204,12 +204,12 @@ namespace Step.Parser
         /// <summary>
         /// True if the string is a valid local variable name
         /// </summary>
-        public static bool IsLocalVariableName(object token) => token is string s && s.StartsWith("?");
+        public static bool IsLocalVariableName(object? token) => token is string s && s.StartsWith("?");
 
         /// <summary>
         /// The token is a valid name of a non-anonymous local variable
         /// </summary>
-        public static bool IsNonAnonymousLocalVariableName(object token) => token is string s && s.StartsWith("?") && s.Any(char.IsLetter);
+        public static bool IsNonAnonymousLocalVariableName(object? token) => token is string s && s.StartsWith("?") && s.Any(char.IsLetter);
 
         /// <summary>
         /// The local variable name indicates the programmer intended it to be a singleton.
@@ -275,16 +275,16 @@ namespace Step.Parser
         /// Identify tokens that identify non-strings (variables, numbers) and replace them
         /// with their internal representations
         /// </summary>
-        object[] CanonicalizeArglist(IEnumerable<object> objects)
+        object?[] CanonicalizeArglist(IEnumerable<object?> objects)
         {
-            var result = new List<object>();
+            var result = new List<object?>();
             using (var enumerator = objects.GetEnumerator())
             {
                 var endOfArglist = !enumerator.MoveNext();
-                object Peek() => enumerator.Current;
+                object? Peek() => enumerator.Current;
 
                 // ReSharper disable once LocalFunctionHidesMethod
-                object Get()
+                object? Get()
                 {
                     var next = Peek();
                     endOfArglist = !enumerator.MoveNext();
@@ -333,7 +333,7 @@ namespace Step.Parser
         /// <summary>
         /// Return the internal representation for the term denoted by the specified token
         /// </summary>
-        object Canonicalize(object o)
+        object? Canonicalize(object? o)
         {
             switch (o)
             {
@@ -399,12 +399,12 @@ namespace Step.Parser
         /// <summary>
         /// Read, parse, and return the information for all method definitions in the stream
         /// </summary>
-        internal IEnumerable<(StateVariableName task, float weight, object[] pattern,
-                LocalVariableName[] locals, 
-                Interpreter.Step chain, 
+        internal IEnumerable<(StateVariableName task, float weight, object?[] pattern,
+                LocalVariableName[]? locals, 
+                Interpreter.Step? chain, 
                 CompoundTask.TaskFlags flags,
-                string declaration,
-                string path, int lineNumber)>
+                string? declaration,
+                string? path, int lineNumber)>
             Definitions
         {
             get
@@ -429,12 +429,12 @@ namespace Step.Parser
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
-        private (StateVariableName task, float weight, object[] pattern,
-            LocalVariableName[] locals, 
-            Interpreter.Step chain, 
+        private (StateVariableName task, float weight, object?[] pattern,
+            LocalVariableName[]? locals, 
+            Interpreter.Step? chain, 
             CompoundTask.TaskFlags flags,
-            string declaration,
-                string path, int lineNumber) ReadDefinition()
+            string? declaration,
+                string? path, int lineNumber) ReadDefinition()
         {
             InitParserState();
 
@@ -464,19 +464,19 @@ namespace Step.Parser
             return (StateVariableName.Named(taskName), weight, pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, null, expressionStream.FilePath, lineNumber);
         }
 
-        private (StateVariableName task, float weight, object[] pattern, 
-            LocalVariableName[] locals,
-            Interpreter.Step chain,
+        private (StateVariableName task, float weight, object?[] pattern, 
+            LocalVariableName[]? locals,
+            Interpreter.Step? chain,
             CompoundTask.TaskFlags flags,
-            string declaration,
-            string path, int lineNumber)
+            string? declaration,
+            string? path, int lineNumber)
             ReadDeclaration(CompoundTask.TaskFlags flags)
         {
-            var declType = (string)Get(); // swallow "task" or "predicate
+            var declType = (string?)Get(); // swallow "task" or "predicate
 
             if (declType == "predicate"  || declType == "fluent" || declType == "folder_structure")
                 flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
-            if (declType.Equals("fluent"))
+            if (Equals(declType, "fluent"))
                 flags |= CompoundTask.TaskFlags.ReadCache;
 
             var (taskName, pattern) = ReadHead();
@@ -504,7 +504,7 @@ namespace Step.Parser
             while (Peek is object[] optionKeyword)
             {
                 Get();
-                string keyword = null;
+                string? keyword = null;
                 if (optionKeyword.Length == 1 && optionKeyword[0] is string op0)
                     keyword = op0;
                 else
@@ -566,7 +566,7 @@ namespace Step.Parser
         /// <summary>
         /// Read the task name and argument pattern
         /// </summary>
-        private (string taskName, List<object> pattern) ReadHead()
+        private (string taskName, List<object?> pattern) ReadHead()
         {
             // Get the task name
             var taskName = Get() as string;
@@ -574,15 +574,15 @@ namespace Step.Parser
                 throw new SyntaxError("Bracketed expression at start of definition", SourceFile, lineNumber);
 
             // Read the argument pattern
-            var pattern = new List<object>();
-            while (!Peek.Equals(":") && !Peek.Equals(".") && !end)
+            var pattern = new List<object?>();
+            while (!Equals(Peek, ":") && !Equals(Peek, ".") && !end)
             {
                 var argPattern = Get();
                 switch (argPattern)
                 {
                     case string quote when quote == "“":
                         var strings = new List<string>();
-                        while (!Peek.Equals("”") && !end)
+                        while (!Equals(Peek, "”") && !end)
                         {
                             var next = Get();
                             if (next is string s)
@@ -601,22 +601,22 @@ namespace Step.Parser
                         break;
                     
                     case string paren when paren == "(":
-                        var guardElements = new List<object>();
-                        while (!Peek.Equals(")") && !end) guardElements.Add(Get());
+                        var guardElements = new List<object?>();
+                        while (!Equals(Peek, ")") && !end) guardElements.Add(Get());
                         if (end)
                             throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
                                 SourcePath, lineNumber);
                         else 
                             Get();  // swallow )
 
-                        LocalVariableName argument = null;
+                        LocalVariableName? argument = null;
                         var callCopy = guardElements.ToArray();
                         for (int i = 0; i < callCopy.Length; i++)
                         {
                             var element = callCopy[i];
                             if (IsLocalVariableName(element) && !pattern.Any(arg => arg is LocalVariableName n && n.Name.Equals(element)))
                             {
-                                var local = GetLocal((string) element);
+                                var local = GetLocal((string) element!);
                                 
                                 // Found a new local variable name
                                 if (argument != null)
@@ -638,7 +638,7 @@ namespace Step.Parser
                                 SourceFile, lineNumber);
                         // It has an embedded predicate
                         pattern.Add(argument);
-                        chainBuilder.AddStep(new Call(Canonicalize(callCopy[0]), callCopy.Skip(1).Select(Canonicalize).ToArray(), null));
+                        chainBuilder.AddStep(new Call(Canonicalize(callCopy[0])!, callCopy.Skip(1).Select(Canonicalize).ToArray(), null));
                         break;
                     
                     default:
@@ -658,7 +658,7 @@ namespace Step.Parser
             // SKIP COLON
             Get();
 
-            multiLine = AtEndOfLine && !headTerminator.Equals(".");
+            multiLine = AtEndOfLine && !Equals(headTerminator, ".");
             if (multiLine && !EndOfParagraphToken)
                 Get();  // Swallow the end of line
 
@@ -715,7 +715,11 @@ namespace Step.Parser
                 case "case":
                     if (expression.Length != 2)
                         throw new ArgumentCountException("case", 1, expression.Skip(1).ToArray());
-                    chain.AddStep(ReadCase(Canonicalize(expression[1])));
+                    var controlVar = expression[1];
+                    if (controlVar == null)
+                        throw new SyntaxError($"null cannot be used as the control variable for a case statement",
+                            SourceFile, lineNumber);
+                    chain.AddStep(ReadCase(Canonicalize(controlVar)!));
                     break;
 
                 case "cool":
@@ -749,16 +753,16 @@ namespace Step.Parser
 
                 default:
                     // This is a call
-                    LocalVariableName local = null;
+                    LocalVariableName? local = null;
                     var isLocal = IsLocalVariableName(targetName);
                     if (isLocal)
                     {
                         local = GetLocal(targetName);
                         IncrementReferenceCount(local);
                     }
-                    var target = isLocal ? (object) local : StateVariableName.Named(targetName);
+                    var target = isLocal ? (object?) local : StateVariableName.Named(targetName);
                     var args = CanonicalizeArglist(expression.Skip(1).Where(token => !token.Equals("\n")));
-                    chain.AddStep(new Call(target, args, null));
+                    chain.AddStep(new Call(target!, args, null));
                     break;
             }
 
@@ -771,7 +775,7 @@ namespace Step.Parser
         /// <returns></returns>
         private Interpreter.Step ReadAlternativeBranches(string type)
         {
-            var chains = new List<Interpreter.Step>();
+            var chains = new List<Interpreter.Step?>();
             var chain = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
             while (!ExplicitEndToken)
             {
@@ -792,7 +796,7 @@ namespace Step.Parser
         /// <returns></returns>
         private BranchStep ReadCase(object controlVar)
         {
-            var chains = new List<Interpreter.Step>();
+            var chains = new List<Interpreter.Step?>();
             var chain = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
             var arglist = new List<object>();
             while (!ExplicitEndToken)
@@ -805,7 +809,7 @@ namespace Step.Parser
                     arglist.Add(controlVar);
 
                     var guard = Get();
-                    while (guard.Equals("\n"))
+                    while (Equals(guard, "\n"))
                         guard = Get();
                     
                     if (guard is object[] expr)
@@ -815,9 +819,9 @@ namespace Step.Parser
                     }
 
                     var colon = Get();
-                    if (!colon.Equals(":"))
+                    if (!Equals(colon,":"))
                         throw new SyntaxError($"Unexpected token {colon} after test in case expression", SourceFile, lineNumber);
-                    chain.AddStep(new Call(Canonicalize(guard), CanonicalizeArglist(arglist), null));
+                    chain.AddStep(new Call(Canonicalize(guard)!, CanonicalizeArglist(arglist), null));
                 }
                 else 
                     Get(); // Skip keyword
@@ -856,7 +860,7 @@ namespace Step.Parser
 
             Get();
 
-            if (!Peek.Equals("/"))
+            if (!Equals(Peek, "/"))
             {
                 // This is a simple variable mention
                 chain.AddStep(Call.MakeCall(Call.MentionHook, variable, null));
@@ -875,7 +879,7 @@ namespace Step.Parser
         private void ReadComplexMentionExpression(Interpreter.Step.ChainBuilder chain, IVariableName variable)
         {
 // This is a complex "/" expression
-            while (Peek.Equals("/"))
+            while (Equals(Peek, "/"))
             {
                 Get(); // Swallow slash
                 var t = Get();
@@ -911,7 +915,7 @@ namespace Step.Parser
         private void ReadMentionExpressionTail(Interpreter.Step.ChainBuilder chain, IVariableName variable, object targetVar)
         {
             AddMentionExpressionTail(chain, targetVar, variable);
-            while (Peek.Equals("+"))
+            while (Equals(Peek, "+"))
             {
                 Get(); // Swallow plus
                 var targetToken = Get();

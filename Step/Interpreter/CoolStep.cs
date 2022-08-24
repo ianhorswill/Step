@@ -12,7 +12,7 @@ namespace Step.Interpreter
     {
         public readonly int Duration;
 
-        private CoolStep(int duration, Step next) : base(next)
+        private CoolStep(int duration, Step? next) : base(next)
         {
             Duration = duration;
         }
@@ -36,7 +36,7 @@ namespace Step.Interpreter
             chain.AddStep(new CoolStep(int.MaxValue, null));
         }
 
-        internal static void FromCoolExpression(ChainBuilder chain, object[] expression, string sourceFile, int lineNumber)
+        internal static void FromCoolExpression(ChainBuilder chain, object[] expression, string? sourceFile, int lineNumber)
         {
             if (expression.Length > 2)
                 throw new ArgumentCountException("cool", 1, expression.Skip(1).ToArray());
@@ -55,7 +55,7 @@ namespace Step.Interpreter
             chain.AddStep(new CoolStep(duration, null));
         }
 
-        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
         {
             var s = e.State;
             var callCount = e.Frame.Task.CallCount(s);

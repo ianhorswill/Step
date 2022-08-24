@@ -6,17 +6,17 @@ namespace Step.Interpreter
 {
     internal class RemoveNextStep : Step
     {
-        private readonly object element;
+        private readonly object? element;
         private readonly StateVariableName collectionVariable;
 
-        private RemoveNextStep(object element, StateVariableName collectionVariable, Step next)
+        private RemoveNextStep(object? element, StateVariableName collectionVariable, Step? next)
             : base(next)
         {
             this.element = element;
             this.collectionVariable = collectionVariable;
         }
 
-        internal static void FromExpression(ChainBuilder chain, object[] expression, string sourceFile = null, int lineNumber = 0)
+        internal static void FromExpression(ChainBuilder chain, object?[] expression, string? sourceFile = null, int lineNumber = 0)
         {
             if (expression.Length != 3)
                 throw new ArgumentCountException("removeNext", 2, expression.Skip(1).ToArray());
@@ -28,7 +28,7 @@ namespace Step.Interpreter
         }
 
 
-        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
         {
             var collectionValue = e.Resolve(collectionVariable);
 

@@ -14,12 +14,12 @@ namespace Step
         /// A given handler should ignore any option calls it doesn't know how to handle
         /// and only throw an exception on a truly invalid call.
         /// </summary>
-        public static event Action<string, object[]> Handler;
+        public static event Action<string, object?[]>? Handler;
 
         /// <summary>
         /// Call the surrounding environment code to handle the specified option
         /// </summary>
-        public static void Handle(string optionName, params object[] options)
+        public static void Handle(string optionName, params object?[] options)
         {
             if (Handler != null)
                 Handler(optionName, options);

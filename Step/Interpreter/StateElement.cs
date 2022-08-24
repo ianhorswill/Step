@@ -20,12 +20,12 @@ namespace Step.Interpreter
         /// <summary>
         /// Default value of state element if HasDefault is true
         /// </summary>
-        public readonly object DefaultValue;
+        public readonly object? DefaultValue;
 
         /// <summary>
         /// Make a new StateElement with the specified name
         /// </summary>
-        public StateElement(string name, bool hasDefault, object defaultValue)
+        public StateElement(string name, bool hasDefault, object? defaultValue)
         {
             Name = name;
             HasDefault = hasDefault;

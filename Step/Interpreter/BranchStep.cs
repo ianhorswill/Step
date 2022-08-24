@@ -32,15 +32,15 @@ namespace Step.Interpreter
         public readonly string Name;
         private readonly bool shuffle;
 
-        public BranchStep(string name, Step[] branches, Step next, bool shuffle) : base(branches, next)
+        public BranchStep(string name, Step?[] branches, Step? next, bool shuffle) : base(branches, next)
         {
             Name = name;
             this.shuffle = shuffle;
         }
 
-        private Step[] EffectiveBranches => shuffle ? Branches.Shuffle() : Branches;
+        private Step?[] EffectiveBranches => shuffle ? Branches.Shuffle() : Branches;
 
-        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame predecessor)
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
         {
             foreach (var branch in EffectiveBranches)
             {
