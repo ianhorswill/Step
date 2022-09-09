@@ -23,10 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
 using System.Collections;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
 using Step.Interpreter;
 

@@ -442,6 +442,14 @@ var output = TextBuffer.NewEmpty();
         }
 
         /// <summary>
+        /// Read definitions from a stream
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="path"></param>
+        public void LoadDefinitions(TextReader reader, string? path) =>
+            LoadDefinitions(new DefinitionStream(reader, this, path));
+
+        /// <summary>
         /// Load the method definitions from stream into this module
         /// </summary>
         private void LoadDefinitions(DefinitionStream defs)

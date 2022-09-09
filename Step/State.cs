@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using Step.Interpreter;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
+using Step.Serialization;
 
 namespace Step
 {
@@ -10,8 +12,12 @@ namespace Step
     /// Contains the current dynamic state: the result of any set expressions that have been executed,
     /// or any other state changes that might need to be undone upon backtracking
     /// </summary>
-    public readonly struct State
+    public readonly struct State : ISerializable
     {
+        static State()
+        {
+            Deserializer.RegisterHandler(typeof(State), Deserialize);
+        }
         /// <summary>
         /// Binding list for global variables
         /// </summary>
@@ -81,6 +87,50 @@ namespace Step
                 return bindings;
             }
 
+        }
+
+        public void Serialize(Serializer s)
+        {
+            foreach (var pair in Bindings)
+            {
+                s.Write(' ');
+                s.Serialize(pair.Key);
+                s.Write("=");
+                s.Serialize(pair.Value);
+            }
+        }
+        
+        public (char start, char end, bool includeSpace) SerializationBracketing() => ('{', '}', false);
+
+        private static object Deserialize(Deserializer d)
+        {
+            var s = State.Empty;
+            d.SkipWhitespace();
+            while (d.Peek() != '}')
+            {
+                var key = d.Expect<StateElement>();
+                var equals = (char)d.Read();
+                if (equals != '=')
+                    throw new InvalidDataException($"Expected '=' after state element {key} but got {equals}");
+                var value = d.Expect<object>();
+                s = s.Bind(key, value);
+                d.SkipWhitespace();
+            }
+
+            return s;
+        }
+
+        public static bool TestEqual(State a, State b)
+        {
+            bool Compare(State x, State y)
+            {
+                foreach (var pair in x.Bindings)
+                    if (!Equals(pair.Value, y[pair.Key]))
+                        return false;
+                return true;
+            }
+
+            return Compare(a, b) && Compare(b, a);
         }
     }
 }

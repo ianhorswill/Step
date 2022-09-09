@@ -13,6 +13,13 @@ namespace Step.Parser
                 ? (TokenStream) new CsvFileTokenStream(reader, path)
                 : new TextFileTokenStream(reader, path);
         }
+
+        public static TokenStream FromReaderAndPath(TextReader reader, string? path)
+        {
+            if (path != null && Path.GetExtension(path) == ".csv")
+                return new CsvFileTokenStream(reader, path);
+            return new TextFileTokenStream(reader, path);
+        }
         
         protected TokenStream(TextReader file, string? filePath)
         {

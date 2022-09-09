@@ -25,6 +25,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using Step.Serialization;
 using Step.Interpreter;
 
 namespace Step
@@ -35,9 +36,12 @@ namespace Step
     /// tables in the Modules.  So it's like a symbol in lisp.
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public class StateVariableName : StateElement, IVariableName
+    public class StateVariableName : StateElement, IVariableName, ISerializable
     {
-
+        static StateVariableName()
+        {
+            Deserializer.RegisterHandler(typeof(StateVariableName), Deserialize);
+        }
 
         /// <summary>
         /// Table mapping names to existing global variables
@@ -60,5 +64,9 @@ namespace Step
                 return global;
             return SymbolTable[name] = new StateVariableName(name);
         }
+
+        public void Serialize(Serializer s) => s.Write(Name);
+
+        private static object Deserialize(Deserializer d) => Named(d.ReadAlphabetic());
     }
 }
