@@ -5,7 +5,7 @@
     /// </summary>
     internal class SequenceStep : BranchingStep
     {
-        private readonly StateElement branchNumber = new StateElement("sequencePosition", true, 0);
+        private readonly StateElement branchNumber = new StateElementWithDefault("sequencePosition", 0);
 
         /// <summary>
         /// Makes a step that first calls the first branch, then on successive calls, invokes successive branches.

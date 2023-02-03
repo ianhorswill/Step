@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using Step.Serialization;
 
 namespace Step.Interpreter
 {
@@ -14,25 +16,34 @@ namespace Step.Interpreter
         public readonly string Name;
 
         /// <summary>
+        /// Make a new StateElement with the specified name
+        /// </summary>
+        public StateElement(string name)
+        {
+            Name = name;
+        }
+
+        /// <summary>
         /// True if this state element has a default value
         /// </summary>
-        public readonly bool HasDefault;
+        public virtual bool HasDefault => false;
+
         /// <summary>
         /// Default value of state element if HasDefault is true
         /// </summary>
-        public readonly object? DefaultValue;
-
-        /// <summary>
-        /// Make a new StateElement with the specified name
-        /// </summary>
-        public StateElement(string name, bool hasDefault, object? defaultValue)
-        {
-            Name = name;
-            HasDefault = hasDefault;
-            DefaultValue = defaultValue;
-        }
+        public virtual object? DefaultValue => throw new NotImplementedException();
 
         /// <inheritdoc />
         public override string ToString() => Name;
+
+        /// <summary>
+        /// Method to use to serialize the value of this state element
+        /// </summary>
+        public virtual void ValueSerializer(Serializer s, object? value) => s.Serialize(value);
+
+        /// <summary>
+        /// Method to use to deserialize the value of this method.
+        /// </summary>
+        public virtual object? ValueDeserializer(Deserializer d) => d.Deserialize();
     }
 }

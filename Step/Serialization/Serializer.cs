@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -43,16 +44,6 @@ namespace Step.Serialization
                     Write("false");
                     break;
 
-                case ISerializable iSerializable:
-                    var (start, end, includeSpace) = iSerializable.SerializationBracketing();
-                    Write(start);
-                    Write(o.GetType().Name);
-                    if (includeSpace)
-                        Write(' ');
-                    iSerializable.Serialize(this);
-                    Write(end);
-                    break;
-
                 case string str:
                     Write('"');
                     foreach (var c in str)
@@ -85,9 +76,53 @@ namespace Step.Serialization
 
                     break;
 
+                case ISerializable iSerializable:
+                    var (start, typeToken, end, includeSpace) = iSerializable.SerializationBracketing();
+                    Write(start);
+                    Write(typeToken);
+                    if (includeSpace)
+                        Write(' ');
+                    iSerializable.Serialize(this);
+                    Write(end);
+                    break;
+
+                case object[] tuple:
+                    Write('[');
+                    bool firstOne = true;
+                    foreach (var elt in tuple)
+                    {
+                        if (firstOne)
+                            firstOne = false;
+                        else 
+                            Write(' ');
+                        Serialize(elt);
+                    }
+                    Write(']');
+                    break;
+
                 default:
                     throw new ArgumentException($"Cannot serialize the object {o}");
             }
+        }
+
+        /// <summary>
+        /// Writes a dictionary out in the standard JSON { key = value ... } format
+        /// </summary>
+        public void SerializeDictionary(IDictionary d, Action<object?> keySerializer, Action<object?> valueSerializer)
+        {
+            Write('{');
+            foreach (DictionaryEntry e in d)
+            {
+                keySerializer(e.Key);
+                Write(" = ");
+                valueSerializer(e.Value);
+            }
+            Write('}');
+        }
+
+        public void Space()
+        {
+            Write(' ');
         }
     }
 }

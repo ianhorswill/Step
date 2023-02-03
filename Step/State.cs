@@ -96,11 +96,11 @@ namespace Step
                 s.Write(' ');
                 s.Serialize(pair.Key);
                 s.Write("=");
-                s.Serialize(pair.Value);
+                pair.Key.ValueSerializer(s, pair.Value);
             }
         }
-        
-        public (char start, char end, bool includeSpace) SerializationBracketing() => ('{', '}', false);
+
+        (char start, string typeToken, char end, bool includeSpace) ISerializable.SerializationBracketing() => ('{', "State", '}', false);
 
         private static object Deserialize(Deserializer d)
         {
@@ -112,7 +112,7 @@ namespace Step
                 var equals = (char)d.Read();
                 if (equals != '=')
                     throw new InvalidDataException($"Expected '=' after state element {key} but got {equals}");
-                var value = d.Expect<object>();
+                var value = key.ValueDeserializer(d);
                 s = s.Bind(key, value);
                 d.SkipWhitespace();
             }

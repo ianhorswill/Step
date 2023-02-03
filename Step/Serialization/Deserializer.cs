@@ -9,16 +9,18 @@ namespace Step.Serialization
     public class Deserializer
     {
         public static TextReader Reader;
+        public Module Module { get; set; }
 
         public int Peek() => Reader.Peek();
         public int Read() => Reader.Read();
 
-        public Deserializer(TextReader reader)
+        public Deserializer(TextReader reader, Module module)
         {
             Reader = reader;
+            Module = module;
         }
 
-        public static object Deserialize(TextReader r) => new Deserializer(r).Deserialize();
+        public static object? Deserialize(TextReader r, Module module) => new Deserializer(r, module).Deserialize();
 
         public T Expect<T>()
         {
@@ -28,8 +30,9 @@ namespace Step.Serialization
             throw new InvalidDataException($"Expected an object of type {typeof(T).Name} but got {o}");
         }
 
-        public object Deserialize()
+        public object? Deserialize()
         {
+            SkipWhitespace();
             var firstChar = Peek();
             switch (firstChar)
             {
@@ -57,8 +60,7 @@ namespace Step.Serialization
                     return int.Parse(t);
 
                 case '<':
-                    case '{':
-                        case '[':
+                case '{':
                     Read(); // Swallow bracket
                     var type = ReadAlphabetic();
                     SkipIfSpace();
@@ -75,6 +77,31 @@ namespace Step.Serialization
                         throw new InvalidDataException(
                             $"Serialized data for type {type} started with {(char)firstChar} but ended with {c}");
                     return o;
+
+                case '[':
+                    var buffer = new List<object?>();
+                    Read();   // Swallow '['
+                    SkipWhitespace();
+                    while (Peek() != ']')
+                    {
+                        buffer.Add(Deserialize());
+                        SkipWhitespace();
+                    }
+
+                    Read();  // Swallow ']'
+                    return buffer.ToArray();
+
+                case 't':
+                    case 'f':
+                        case 'n':
+                    var tok = ReadAlphabetic();
+                    switch (tok)
+                    {
+                        case "true": return true;
+                        case "false": return false;
+                        case "null": return null;
+                        default: throw new InvalidDataException($"Invalid token found in serialized data: {tok}");
+                    }
 
                 default:
                     throw new InvalidDataException($"Unknown character starting serialized data: {(char)Peek()}");
@@ -131,6 +158,8 @@ namespace Step.Serialization
 
         public string ReadAlphabetic() => ReadToken(char.IsLetter);
 
+        public string ReadAlphaNumeric() => ReadToken(char.IsLetterOrDigit);
+
         public delegate object DeserializationHandler(Deserializer d);
 
         private static Dictionary<string, DeserializationHandler> HandlerTable =
@@ -139,5 +168,30 @@ namespace Step.Serialization
         public static void RegisterHandler(string t, DeserializationHandler h) => HandlerTable[t] = h;
 
         public static void RegisterHandler(Type t, DeserializationHandler h) => RegisterHandler(t.Name, h);
+
+        /// <summary>
+        /// Deserialize a dictionary in the standard json "{ key = value ... }" format
+        /// </summary>
+        public IEnumerable<KeyValuePair<TKey, TValue>> DeserializeDictionary<TKey, TValue>(Func<TKey> keyDeserializer, Func<TValue> valueDeserializer)
+        {
+            SkipWhitespace();
+            var open = Read();
+            if (open != '{')
+                throw new InvalidDataException($"Expected open curly brace but got '{open}' in serialized data");
+            SkipWhitespace();
+            while (Peek() != '}')
+            {
+                var key = keyDeserializer();
+                SkipWhitespace();
+                var equals = Read();
+                if (equals != '=')
+                    throw new InvalidDataException($"Expected '=' between key and value in serialized dictionary but got '{equals}'");
+                SkipWhitespace();
+                var value = valueDeserializer();
+                yield return new KeyValuePair<TKey, TValue>(key, value);
+            }
+
+            Read();  // Skip '}'
+        }
     }
 }

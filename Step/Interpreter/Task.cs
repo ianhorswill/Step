@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using Step.Serialization;
 
 namespace Step.Interpreter
 {
@@ -7,8 +8,13 @@ namespace Step.Interpreter
     /// Base class for objects representing tasks (things user code can call)
     /// </summary>
     [DebuggerDisplay("{" + nameof(Name) + "}")]
-    public abstract class Task
+    public abstract class Task : ISerializable
     {
+        static Task()
+        {
+            Deserializer.RegisterHandler(nameof(Task), Deserialize);
+        }
+
         /// <summary>
         /// Name, for debugging purposes
         /// </summary>
@@ -107,5 +113,18 @@ namespace Step.Interpreter
 
         /// <inheritdoc />
         public override string ToString() => Name;
+
+        public void Serialize(Serializer s)
+        {
+            s.Write(Name);
+        }
+
+        private static object? Deserialize(Deserializer d)
+        {
+            var taskName = d.ReadAlphaNumeric();
+            return d.Module[taskName];
+        }
+
+        public string SerializationTypeToken() => "Task";
     }
 }

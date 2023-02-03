@@ -73,7 +73,7 @@ namespace Step
             /// <summary>
             /// Singleton instance of the comparer 
             /// </summary>
-            public static readonly Comparer Default = new Comparer();
+            public static readonly IEqualityComparer<object?> Default = new Comparer();
 
             /// <summary>
             /// Comparer to use for cache results on function fluents; ignores the last argument.

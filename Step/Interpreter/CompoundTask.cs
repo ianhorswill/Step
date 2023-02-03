@@ -27,6 +27,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Step.Serialization;
 using Step.Utilities;
 
 namespace Step.Interpreter
@@ -61,17 +62,44 @@ namespace Step.Interpreter
         public int CallCount(State s) => CallCounts.GetValueOrDefault(s, this);
 
         #region Result cache
-        // ReSharper disable once InconsistentNaming
-        private DictionaryStateElement<IStructuralEquatable, CachedResult>? _cache;
 
-        private DictionaryStateElement<IStructuralEquatable, CachedResult> Cache
+        internal class ResultCache : DictionaryStateElement<IStructuralEquatable, CachedResult>, ISerializable
+        {
+            static ResultCache()
+            {
+                Deserializer.RegisterHandler(nameof(ResultCache), Deserialize);
+            }
+
+            private readonly CompoundTask task;
+            public ResultCache(CompoundTask task, IEqualityComparer<IStructuralEquatable> keyComparer, IEqualityComparer<CachedResult> valueComparer)
+                : base(task.Name+" cache", keyComparer, valueComparer)
+            {
+                this.task = task;
+            }
+
+            public void Serialize(Serializer s)
+            {
+                s.Serialize(task);
+            }
+
+            private static object Deserialize(Deserializer d)
+            {
+                var task = d.Expect<CompoundTask>();
+                return task.Cache;
+            }
+        }
+        // ReSharper disable once InconsistentNaming
+        private ResultCache? _cache;
+
+        private ResultCache Cache
         {
             get
             {
                 if (_cache != null)
                     return _cache;
-                return _cache = new DictionaryStateElement<IStructuralEquatable, CachedResult>(Name + " cache", 
-                    Function?Term.Comparer.ForFunctions:Term.Comparer.Default, EqualityComparer<CachedResult>.Default);
+                return _cache = new ResultCache(this, 
+                    Function?Term.Comparer.ForFunctions:Term.Comparer.Default,
+                    EqualityComparer<CachedResult>.Default);
             }
         }
 
@@ -98,18 +126,59 @@ namespace Step.Interpreter
                     "The now command can only be used to update ground instances of a fluent.");
             return StoreResult(oldState, arglist, new CachedResult(truth, Function?arglist[arglist.Length-1]:null, EmptyText));
         }
-        
-        private readonly struct CachedResult
+
+        internal readonly struct CachedResult : ISerializable
         {
             public readonly bool Success;
             public readonly object? FunctionValue;
             public readonly string[] Text;
+
+            static CachedResult()
+            {
+                Deserializer.RegisterHandler(nameof(CachedResult), Deserialize);
+            }
 
             public CachedResult(bool success, object? functionValue, string[] text)
             {
                 Success = success;
                 FunctionValue = functionValue;
                 Text = text;
+            }
+
+
+            public void Serialize(Serializer s)
+            {
+                s.Serialize(Success);
+                s.Space();
+                s.Serialize(FunctionValue);
+                s.Space();
+                s.Serialize(Text);
+            }
+
+            private static object Deserialize(Deserializer d)
+            {
+                var success = (bool)d.Deserialize()!;
+                var functionValue = d.Deserialize();
+                var text = ((object[])d.Deserialize()!).Cast<string>().ToArray();
+                return new CachedResult(success, functionValue, text);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is CachedResult cr
+                       && Success == cr.Success
+                       && Term.Comparer.Default.Equals(FunctionValue, cr.FunctionValue)
+                       && Text.SequenceEqual(cr.Text);
+            }
+
+            public bool Equals(CachedResult other)
+            {
+                return Success == other.Success && Term.Comparer.Default.Equals(FunctionValue, other.FunctionValue) && Text.SequenceEqual(other.Text);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Success, FunctionValue, Text);
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using Step.Interpreter;
+using Step.Serialization;
 
 namespace Step
 {
@@ -19,7 +20,7 @@ namespace Step
         /// <param name="keyComparer">Equality comparer for to use for keys</param>
         /// <param name="valueComparer">Equality comparer to use for values</param>
         public DictionaryStateElement(string name, IEqualityComparer<TKey> keyComparer = null!, IEqualityComparer<TValue> valueComparer = null!)
-            : base(name, false, null!)
+            : base(name)
         {
             if (keyComparer == null!)
                 keyComparer = EqualityComparer<TKey>.Default;
@@ -91,5 +92,16 @@ namespace Step
         /// Get all the key/value bindings currently in effect for this dictionary in the specified state.
         /// </summary>
         public IEnumerable<KeyValuePair<TKey, TValue>> Bindings(State s) => Dictionary(s) ?? empty;
+
+        public override void ValueSerializer(Serializer s, object? value) 
+            => s.SerializeDictionary((ImmutableDictionary<TKey, TValue>)value!, s.Serialize, s.Serialize);
+
+        public override object? ValueDeserializer(Deserializer d)
+        {
+            var dict = ImmutableDictionary<TKey, TValue>.Empty;
+            foreach (var pair in d.DeserializeDictionary(d.Deserialize, d.Deserialize))
+                dict = dict.Add((TKey)pair.Key, (TValue)pair.Value);
+            return dict;
+        }
     }
 }
