@@ -68,6 +68,17 @@ namespace Step.Interpreter
                                k, predecessor);
                 }
 
+                case ImmutableSortedSet<(object element,float priority)> heap:
+                {
+                    return !heap.IsEmpty
+                           && e.Unify(element, heap.Max.element, out var bindings)
+                           && Continue(output,
+                               new BindingEnvironment(e,
+                                   bindings,
+                                   e.State.Bind(collectionVariable, heap.Remove(heap.Max))),
+                               k, predecessor);
+                }
+
                 default:
                     throw new ArgumentTypeException("removeNext", typeof(Cons), collectionValue,
                         new[] { "removeNext", collectionValue });

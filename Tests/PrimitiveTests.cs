@@ -130,6 +130,30 @@ namespace Tests
         }
 
         [TestMethod]
+        public void MinQueueTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test1: [set Queue = EmptyMinQueue] [add [a 2] Queue] [add [b 1] Queue] [add [c 3] Queue] [removeNext ?x Queue] ?x [removeNext ?y Queue] ?y [removeNext ?z Queue] ?z",
+                "[predicate] Test2: [removeNext ? EmptyMinQueue]"
+            );
+
+            Assert.AreEqual("B a c", m.Call("Test1"));
+            Assert.IsFalse(m.CallPredicate("Test2"));
+        }
+
+        [TestMethod]
+        public void MaxQueueTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test1: [set Queue = EmptyMaxQueue] [add [a 2] Queue] [add [b 1] Queue] [add [c 3] Queue] [removeNext ?x Queue] ?x [removeNext ?y Queue] ?y [removeNext ?z Queue] ?z",
+                "[predicate] Test2: [removeNext ? EmptyMaxQueue]"
+            );
+
+            Assert.AreEqual("C a b", m.Call("Test1"));
+            Assert.IsFalse(m.CallPredicate("Test2"));
+        }
+
+        [TestMethod]
         public void EqualsTest()
         {
             var m = new Module("test");

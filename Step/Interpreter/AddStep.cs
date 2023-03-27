@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Step.Parser;
 
@@ -62,6 +63,20 @@ namespace Step.Interpreter
                         new BindingEnvironment(e,
                             e.Unifications,
                             e.State.Bind(collectionVariable, queue.Enqueue(elt))),
+                        k, predecessor);
+
+                case ImmutableSortedSet<(object element,float priority)> heap:
+                    var pair = elt as object[];
+                    if (pair == null)
+                        throw new ArgumentTypeException("add", typeof(object[]), elt,
+                            new[] { "add", elt, collectionValue });
+                    if (pair.Length != 2)
+                        throw new ArgumentException(
+                            "When adding to a priority queue, the value given should be a two-element tuple");
+                    return Continue(output,
+                        new BindingEnvironment(e,
+                            e.Unifications,
+                            e.State.Bind(collectionVariable, heap.Add((pair[0], Convert.ToSingle(pair[1]))))),
                         k, predecessor);
 
                 default:
