@@ -37,9 +37,10 @@ namespace Step.Parser
     /// </summary>
     internal class TextFileTokenStream : TokenStream
     {
-        public static string[] Tokenize(string code)
+        public static string[] Tokenize(string code, string? path = null, int lineNumber = 0)
         {
-            var stream = new TextFileTokenStream(new StringReader(code), null);
+            var stream = new TextFileTokenStream(new StringReader(code), path);
+            stream.LineNumber = lineNumber;
             return stream.Tokens.ToArray();
         }
         

@@ -25,7 +25,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -78,7 +77,6 @@ namespace Step.Parser
                     }
                     else 
                         yield return FormatCellToken(cell);
-
                 }
 
                 //
@@ -88,12 +86,17 @@ namespace Step.Parser
                 if (header.Length == 0)
                     throw new SyntaxError("Zero-length header row in CSV file", FilePath, LineNumber);
                 var normalArgs = header.Length;
+                var textColumn = false;
                 for (int i = 0; i < header.Length; i++)
                 {
                     var column = header[i];
-                    if (UnaryPredicateColumn(column) || BinaryPredicateColumn(column))
+                    var isTextColumn = string.Equals(column, "[text]", StringComparison.InvariantCultureIgnoreCase);
+                    if (UnaryPredicateColumn(column) || BinaryPredicateColumn(column)
+                                                     || isTextColumn)
                     {
                         normalArgs = i;
+                        if (isTextColumn)
+                            textColumn = true;
                         break;
                     }
                 }
@@ -143,7 +146,14 @@ namespace Step.Parser
                                 yield return token;
                     }
 
-                    yield return ".";
+                    if (textColumn)
+                    {
+                        yield return ":";
+                        foreach (var token in TextFileTokenStream.Tokenize(row[col++], FilePath, LineNumber))
+                            yield return token;
+                    }
+                    else
+                        yield return ".";
                     yield return "\n";
 
                     // Generate extra unary or binary predicates from remaining columns, if any
