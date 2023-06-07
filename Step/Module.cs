@@ -49,6 +49,11 @@ namespace Step
         /// Stack traces should be generated with Unity rich text markup
         /// </summary>
         public static bool RichTextStackTraces;
+
+        /// <summary>
+        /// Number of steps system is allowed to execute before being interrupted.
+        /// </summary>
+        public static int SearchLimit;
         
         #region Fields
         /// <summary>
@@ -773,6 +778,8 @@ var output = TextBuffer.NewEmpty();
         
         internal void TraceMethod(MethodTraceEvent e, Method method, object?[] args, TextBuffer output, BindingEnvironment env)
         {
+            if (--SearchLimit == 0)
+                throw new StepTaskTimeoutException();
             Trace?.Invoke(e, method, args, output, env);
         }
 

@@ -23,9 +23,11 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Step.Parser;
 
 namespace Step.Output
 {
@@ -51,7 +53,63 @@ namespace Step.Output
         /// </summary>
         public const string ForceSpaceToken = " ";
 
-        private static readonly string[] NoSpaceAfterTokens = {"-", "\n", "\"", "\u201c" /* left double quote */ };
+        public static readonly string VerbatimCaseToken = TokenFilter.MakeControlToken("verbatimCase");
+        public static readonly string SentenceCaseToken = TokenFilter.MakeControlToken("sentenceCase");
+        public static readonly string TitleCaseToken = TokenFilter.MakeControlToken("titleCase");
+        public static readonly string CapitalizeAllToken = TokenFilter.MakeControlToken("capitalizeAll");
+        public static readonly string AllLowerToken = TokenFilter.MakeControlToken("allLower");
+        public static readonly string AllCapsToken = TokenFilter.MakeControlToken("allCaps");
+        public static readonly string RestoreCaseToken = TokenFilter.MakeControlToken("restoreCase");
+
+        private enum CaseConversion
+        {
+            VerbatimCase,
+            SentenceCase,
+            TitleCase,
+            CapitalizeAll,
+            AllLower,
+            AllCaps
+        }
+
+        // This follows the AP style guide, modulo issues of homonyms.  "bar" removed from the list of
+        // prepositions, for example, because it's more likely to appear as a noun than a preposition, and because
+        // capitalizing a preposition will look less bad than decapitalizing a noun.
+        private static readonly HashSet<string> nonCapitalizedPrepositions =
+            new HashSet<string>()
+            {
+                // Articles
+                "the", "a", "an", "that", "some", "any",
+                // Coordinating conjunctions of less than four letters (they're all less)
+                "for", "and", "nor", "but", "or", "yet", "so",
+                // Subordinating conjunctions of less than four letters
+                "as", "for", "if", 
+                // Prepositions of less than four letters
+                "as", "at", "but", "by", "cum", "ere", "for", "in", "of", "off", "per", "to", "up", "via"
+
+            };
+
+        internal static void Initialize()
+        { }
+
+        static TextUtilities()
+        {
+            DefinitionStream.DefineSubstitution("newline", NewLineToken);
+            DefinitionStream.DefineSubstitution("paragraph", NewParagraphToken);
+            DefinitionStream.DefineSubstitution("freshLine", FreshLineToken);
+            DefinitionStream.DefineSubstitution("forceSpace", ForceSpaceToken);
+
+            DefinitionStream.DefineSubstitution("verbatimCase", VerbatimCaseToken);
+            DefinitionStream.DefineSubstitution("sentenceCase", SentenceCaseToken);
+            DefinitionStream.DefineSubstitution("titleCase", TitleCaseToken);
+            DefinitionStream.DefineSubstitution("capitalizeAll", CapitalizeAllToken);
+            DefinitionStream.DefineSubstitution("allLower", AllLowerToken);
+            DefinitionStream.DefineSubstitution("allCaps", AllCapsToken);
+
+            DefinitionStream.DefineSubstitution("restoreCase", RestoreCaseToken);
+        }
+
+        private static readonly string[] NoSpaceAfterTokens =
+            {"-", "\n", "\"", "\u201c" /* left double quote */ };
 
         private static bool LineChange(string token) => ReferenceEquals(token, NewLineToken) || ReferenceEquals(token, NewParagraphToken);
         private static bool NoSpaceAfter(string token) => NoSpaceAfterTokens.Contains(token) || LineChange(token) || ReferenceEquals(token, ForceSpaceToken);
@@ -70,6 +128,31 @@ namespace Step.Output
             if (format == null)
                 format = FormattingOptions.Default;
             
+            var caseStack = new Stack<CaseConversion>();
+            caseStack.Push(format.Capitalize?CaseConversion.SentenceCase:CaseConversion.VerbatimCase);
+
+            string TransformCase(string token, bool startOfSentence)
+            {
+                switch (caseStack!.Peek())
+                {
+                    case CaseConversion.CapitalizeAll:
+                    case CaseConversion.SentenceCase
+                        when startOfSentence && token.Length>0 && char.IsLower(token[0]):
+                    case CaseConversion.TitleCase
+                        when startOfSentence || !nonCapitalizedPrepositions.Contains(token):
+                        return token.Capitalize();
+
+                    case CaseConversion.AllCaps:
+                        return token.ToUpper();
+
+                    case CaseConversion.AllLower:
+                        return token.ToLower();
+
+                    default:
+                        return token;
+                }
+            }
+
             var b = new StringBuilder();
             var firstOne = true;
             var lastToken = "";
@@ -77,7 +160,29 @@ namespace Step.Output
             foreach (var t in TokenFilter.ApplyFilters(format.TokenFilters, tokens))
             {
                 if (TokenFilter.IsControlToken(t))
+                {
+                    if (ReferenceEquals(t, SentenceCaseToken))
+                        caseStack.Push(CaseConversion.SentenceCase);
+                    else if (ReferenceEquals(t, VerbatimCaseToken))
+                        caseStack.Push(CaseConversion.VerbatimCase);
+                    else if (ReferenceEquals(t, TitleCaseToken))
+                        caseStack.Push(CaseConversion.TitleCase);
+                    else if (ReferenceEquals(t, CapitalizeAllToken))
+                        caseStack.Push(CaseConversion.CapitalizeAll);
+                    else if (ReferenceEquals(t, AllCapsToken))
+                        caseStack.Push(CaseConversion.AllCaps);
+                    else if (ReferenceEquals(t, AllLowerToken))
+                        caseStack.Push(CaseConversion.AllLower);
+                    else if (ReferenceEquals(t, RestoreCaseToken))
+                    {
+                        caseStack.Pop();
+                        if (caseStack.Count == 0)
+                            throw new InvalidOperationException(
+                                $"Restoring case conversion when no previous case conversion had been specified.");
+                    }
+
                     continue;
+                }
 
                 if (firstOne 
                     && format.SuppressLeadingVerticalSpace 
@@ -103,8 +208,7 @@ namespace Step.Output
                 
                 if (t != "" && (!PunctuationToken(t) || t == "\u201c") && !t.StartsWith("<") && t != "\n")
                 {
-                    if (format.Capitalize && (firstOne || LineEnding(lastToken)) && char.IsLower(t[0]))
-                        token = token.Capitalize();
+                    token = TransformCase(token, firstOne || LineEnding(lastToken));
                     if (firstOne)
                         firstOne = false;
                     else if (!NoSpaceAfter(lastToken) && !lastToken.StartsWith("<")  && !lastToken.EndsWith("'") && !LineChange(token)

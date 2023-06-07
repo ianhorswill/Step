@@ -25,7 +25,7 @@ namespace Step.Output
         /// </summary>
         /// <param name="content">Some short, descriptive string indicating what the token is controlling</param>
         /// <returns>The created token</returns>
-        protected static string MakeControlToken(string content)
+        public static string MakeControlToken(string content)
         {
             var token = $" [{content}] ";
             ControlTokens.Add(token);

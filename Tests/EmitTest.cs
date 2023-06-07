@@ -78,13 +78,31 @@ namespace Tests
         public void ForceSpaceTest()
         {
             var m = Module.FromDefinitions(
-                "TestNormal: a [ForceSpace] b",
+                "TestNormal: a [forceSpace] b",
                 "TestNoBreak: :-",
                 "TestBreak: : [ForceSpace] -");
             
             Assert.AreEqual("A b", m.Call("TestNormal"));
             Assert.AreEqual(":-", m.Call("TestNoBreak"));
             Assert.AreEqual(": -", m.Call("TestBreak"));
+        }
+
+        [TestMethod]
+        public void CaseTransformation()
+        {
+            var m = Module.FromDefinitions(
+                "TestSentence: [sentenceCase] a b c [restoreCase] d.  e",
+                "TestVerbatim: [verbatimCase] a b c [restoreCase] d.  e",
+                "TestTitle: [titleCase] aa bb for cc [restoreCase] d.  e",
+                "TestCapAll: [capitalizeAll] aa bb for cc [restoreCase] d.  e",
+                "TestAllCaps: [allCaps] aa bb for cc [restoreCase] d.  e",
+                "TestAllLower: [allLower] AA bb for CC [restoreCase] d.  e"
+            );
+            Assert.AreEqual("A b c d.  E", m.Call("TestSentence"));
+            Assert.AreEqual("a b c d.  E", m.Call("TestVerbatim"));
+            Assert.AreEqual("Aa Bb for Cc d.  E", m.Call("TestTitle"));
+            Assert.AreEqual("Aa Bb For Cc d.  E", m.Call("TestCapAll"));
+            Assert.AreEqual("aa bb for cc d.  E", m.Call("TestAllLower"));
         }
 
         [TestMethod]

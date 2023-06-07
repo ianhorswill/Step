@@ -56,5 +56,21 @@ namespace Tests
             //m.LoadDirectory("C:/users/ianho/documents/github/iHunt");
             //m.Call("Run");
         }
+
+        [TestMethod, ExpectedException(typeof(StepTaskTimeoutException))]
+        public void TimeoutException()
+        {
+            var m = Module.FromDefinitions("Test: [Test]");
+            Module.SearchLimit = 50;
+            try
+            {
+                m.Call("Test");
+            }
+            finally
+            {
+                // Let the other tests run normally.
+                Module.SearchLimit = 0;
+            }
+        }
     }
 }

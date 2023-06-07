@@ -37,6 +37,13 @@ namespace Step.Parser
     /// </summary>
     internal class DefinitionStream : IDisposable
     {
+        static DefinitionStream()
+        {
+            // This is just to force TextUtilities' static constructor to run
+            // That ensures its control tokens are defined before we try to parse anything.
+            TextUtilities.Initialize();
+        }
+
         private static readonly Dictionary<string, object> Substitutions = new Dictionary<string, object>();
 
         /// <summary>
