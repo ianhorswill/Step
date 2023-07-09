@@ -37,7 +37,7 @@ namespace Tests
 
         bool Succeeds(Step.Interpreter.Step s)
         {
-            return s.Try(TextBuffer.NewEmpty(), BindingEnvironment.NewEmpty(), (o, e, ds, p) => true, null);
+            return s.Try(TextBuffer.NewEmpty(), BindingEnvironment.NewEmpty(), Step.Interpreter.Step.SucceedContinuation, null);
         }
 
         [TestMethod]

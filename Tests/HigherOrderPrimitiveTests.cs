@@ -251,5 +251,27 @@ namespace Tests
             Assert.AreEqual("1 2 3", m.Call("Test"));
             Assert.AreEqual(null, m.Call("FailTest"));
         }
+
+        [TestMethod]
+        public void TreeSearch()
+        {
+            Module.SearchLimit = 0;
+            var m = Module.FromDefinitions("[predicate] Adjacent a b.",
+                "Adjacent a d.",
+                "Adjacent a e.",
+                "Adjacent b c.",
+                "Adjacent e f.",
+                "Utility b 1.",
+                "Utility c 2.",
+                "Utility ? 0.",
+                "[predicate] Done c.",
+                "Done f.",
+                "[predicate] Next ?node ?neighbor: ?node/Write [Adjacent ?node ?neighbor]",
+                "Test: [TreeSearch a ?end ?u Next Done Utility] ?end/Write ?u/Write",
+                "Test2: [TreeSearch a ?end ?u Next Done Utility] [= ?end f] ?end/Write ?u/Write");
+            
+            Assert.AreEqual("A b c 2", m.Call("Test"));
+            Assert.AreEqual("A e f 0", m.Call("Test2"));
+        }
     }
 }

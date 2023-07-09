@@ -61,7 +61,7 @@ namespace Tests
         public void TimeoutException()
         {
             var m = Module.FromDefinitions("Test: [Test]");
-            Module.SearchLimit = 50;
+            Module.DefaultSearchLimit = 50;
             try
             {
                 m.Call("Test");
@@ -69,7 +69,32 @@ namespace Tests
             finally
             {
                 // Let the other tests run normally.
-                Module.SearchLimit = 0;
+                Module.DefaultSearchLimit = 0;
+            }
+        }
+
+        [TestMethod,ExpectedException(typeof(TaskCanceledException))]
+        public void Cancellation()
+        {
+            var s = new CancellationTokenSource();
+            var tok = s.Token;
+            var m = Module.FromDefinitions("Test: [Test]");
+            var t = Task.Factory.StartNew(
+                () =>
+                {
+                    tok.Register(Module.Cancel);
+                    return m.Call("Test");
+                },
+                tok
+                );
+            s.Cancel();
+            try
+            {
+                t.Wait();
+            }
+            catch (AggregateException e)
+            {
+                throw e.Flatten().InnerExceptions[0];
             }
         }
     }

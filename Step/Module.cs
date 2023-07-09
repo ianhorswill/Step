@@ -31,9 +31,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Step.Interpreter;
 using Step.Output;
 using Step.Parser;
+using Task = Step.Interpreter.Task;
 
 [assembly: InternalsVisibleTo("Tests")]
 
@@ -50,10 +52,36 @@ namespace Step
         /// </summary>
         public static bool RichTextStackTraces;
 
+        public static int DefaultSearchLimit = 10000;
+
         /// <summary>
         /// Number of steps system is allowed to execute before being interrupted.
         /// </summary>
         public static int SearchLimit;
+
+        /// <summary>
+        /// True if we are in the process of trying to cancel the running Step thread.
+        /// </summary>
+        private static bool isCanceling;
+
+        /// <summary>
+        /// Force whatever worker thread is running Step code to stop and throw a TaskCanceledException.
+        /// </summary>
+        public static void Cancel()
+        {
+            isCanceling = true;
+            SearchLimit = 1;
+        }
+
+        /// <summary>
+        /// Reset control variables to let the task run again.
+        /// </summary>
+        /// <param name="searchLimit">Value to set for SearchLimit.  Defaults to DefaultSearchLimit.</param>
+        internal void Uncancel(int? searchLimit = null)
+        {
+            SearchLimit = searchLimit??DefaultSearchLimit;
+            isCanceling = false;
+        }
         
         #region Fields
         /// <summary>
@@ -310,6 +338,7 @@ namespace Step
         public (string? output, State newDynamicState) Call(
             State state, Task task, params object?[] args)
         {
+            Uncancel();
 var output = TextBuffer.NewEmpty();
             var env = new BindingEnvironment(this, null!, null, state);
 
@@ -350,6 +379,7 @@ var output = TextBuffer.NewEmpty();
         public bool CallPredicate(
             State state, string taskName, params object?[] args)
         {
+            Uncancel();
             var maybeTask = this[StateVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
@@ -357,8 +387,7 @@ var output = TextBuffer.NewEmpty();
             var output = new TextBuffer(0);
             var env = new BindingEnvironment(this, null!, null, state);
 
-            return t.Call(args, output, env, null,
-                (o, u, s, p) => true);
+            return t.Call(args, output, env, null, Interpreter.Step.SucceedContinuation);
         }
 
         /// <summary>
@@ -381,6 +410,7 @@ var output = TextBuffer.NewEmpty();
         public T CallFunction<T>(
             State state, string taskName, params object?[] args)
         {
+            Uncancel();
             var maybeTask = this[StateVariableName.Named(taskName)];
             var t = maybeTask as CompoundTask;
             if (t == null)
@@ -459,6 +489,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         private void LoadDefinitions(DefinitionStream defs)
         {
+            Uncancel();  // Just to be paranoid
             foreach (var (task, weight, pattern, locals, chain, flags, declaration, path, line) 
                 in defs.Definitions)
             {
@@ -571,6 +602,7 @@ var output = TextBuffer.NewEmpty();
         /// <returns>Text output of the task and the resulting state</returns>
         public (string? output, State state) ParseAndExecute(string code, State state)
         {
+            Uncancel();
             if (Defines("TopLevelCall"))
                 ((CompoundTask?) this["TopLevelCall"])?.EraseMethods();
             AddDefinitions($"TopLevelCall: {code}");
@@ -779,7 +811,11 @@ var output = TextBuffer.NewEmpty();
         internal void TraceMethod(MethodTraceEvent e, Method method, object?[] args, TextBuffer output, BindingEnvironment env)
         {
             if (--SearchLimit == 0)
+            {
+                if (isCanceling)
+                    throw new TaskCanceledException();
                 throw new StepTaskTimeoutException();
+            }
             Trace?.Invoke(e, method, args, output, env);
         }
 

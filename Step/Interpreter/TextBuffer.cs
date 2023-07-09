@@ -65,13 +65,11 @@ namespace Step.Interpreter
 
         private const int DefaultCapacity = 5000;
 
-        private static readonly string[] EmptyStringBuffer = new string[0];
-
         /// <summary>
         /// Make an empty PartialOutput with a new buffer.
         /// </summary>
         public TextBuffer(int capacity)
-            : this(capacity == 0 ? EmptyStringBuffer : new string[capacity])
+            : this(capacity == 0 ? Array.Empty<string>() : new string[capacity])
         { }
 
         /// <summary>
@@ -235,12 +233,17 @@ namespace Step.Interpreter
             Debug.Assert(before.Buffer == after.Buffer);
             var size = after.Length - before.Length;
             if (size == 0)
-                return EmptyStringBuffer;
+                return Array.Empty<string>();
             Debug.Assert(size > 0);
             var result = new string[size];
             Array.Copy(before.Buffer, before.Length, result, 0, size);
             return result;
         }
+
+        /// <summary>
+        /// Return an array of the strings added to an output buffer between before and after
+        /// </summary>
+        public static string[] operator -(TextBuffer after, TextBuffer before) => Difference(before, after); 
 
         /// <summary>
         /// Remove and return the last token in this output

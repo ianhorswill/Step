@@ -136,6 +136,10 @@ namespace Step.Interpreter
             g[nameof(Parse)] = new GeneralPrimitive(nameof(Parse), Parse)
                 .Arguments("call", "text")
                 .Documentation("control flow//calling tasks", "True if call can generate text as its output.  This is done by running call and backtracking whenever its output diverges from text.  Used to determine if a grammar can generate a given string.");
+
+            g[nameof(TreeSearch)] = new GeneralPrimitive(nameof(TreeSearch), TreeSearch)
+                .Arguments("startNode", "finalNode", "utility", "NextNode", "GoalNode", "NodeUtility")
+                .Documentation("Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.");
         }
 
         private static bool Call(object?[] args, TextBuffer output, BindingEnvironment env,
@@ -576,6 +580,79 @@ namespace Step.Interpreter
             var parseBuffer = TextBuffer.MakeReadModeTextBuffer(text);
             return task.Call(taskArgs, parseBuffer, env, predecessor,
                 (buffer, u, s, p) => buffer.ReadCompleted && k(output, u, s, p));
+        }
+
+        private static bool TreeSearch(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            var startNode = args[0];
+            var nodeVar = args[1] as LogicVariable;
+            if (nodeVar == null)
+                throw new ArgumentInstantiationException("Search", e, args);
+            var utilityVar = args[2];
+            var next = ArgumentTypeException.Cast<Task>("Search", args[3], args);
+            var done = ArgumentTypeException.Cast<Task>("Search", args[4], args);
+            var utility = ArgumentTypeException.Cast<Task>("Search", args[5], args);
+            var queue = new List<(float priority, object? node, string[] text, BindingEnvironment env, MethodCallFrame? pred)>();
+
+            (bool isGoal, float utility) TestNode(object? node, BindingEnvironment env, MethodCallFrame? p)
+            {
+                float u=0;
+                var success = done.Call(new[] { node }, o, env, p, Step.SucceedContinuation);
+                var utilityArgs = new[] { node, utilityVar };
+                if (!utility.Call(utilityArgs, o, env, p, (_, unif, s, p2) =>
+                    {
+                        var util = BindingEnvironment.Deref(utilityVar, unif);
+                        u = Convert.ToSingle(util);
+                        return true;
+                    }))
+                    throw new CallFailedException(utility, utilityArgs);
+                return (success, u);
+            }
+
+            bool GenerateResult(object? node, float goalNodeUtility, TextBuffer output, BindingEnvironment env, MethodCallFrame? p) =>
+                env.UnifyArrays(new[] { node, goalNodeUtility }, new[] { nodeVar, utilityVar },
+                    out BindingList? unif)
+                && k(output, unif, env.State, p);
+
+            int Compare((float priority, object node, string[] text, BindingEnvironment env, MethodCallFrame? pred) x,
+                (float priority, object node, string[] text, BindingEnvironment env, MethodCallFrame? pred) y)
+            {
+                return x.priority.CompareTo(y.priority);
+            }
+
+            var startEvaluation = TestNode(startNode, e, predecessor);
+            if (startEvaluation.isGoal && GenerateResult(startNode, startEvaluation.utility, o, e, predecessor))
+                return true;
+
+            var solutionAccepted = false; // when true, out continuation has accepted a solution
+            queue.Add((startEvaluation.utility, startNode, Array.Empty<string>(), e, predecessor));
+            while (!solutionAccepted && queue.Count > 0)
+            {
+                queue.Sort(Compare);
+                var current = queue[^1];
+                queue.RemoveAt(queue.Count-1);
+                var node = current.node;
+                var nextVar = new LogicVariable(nodeVar.Name);
+                var nextArgs = new[] { node, nextVar };
+                // Get all neighbors of node
+                // This is a loop because the continuation fails, forcing it to ask for new solutions
+                next.Call(nextArgs, o.Append(current.text), current.env, current.pred, (newText, unif, state, p) =>
+                {
+                    var nextNode = BindingEnvironment.Deref(nextVar, unif);
+                    var nextEnv = new BindingEnvironment(current.env, unif, state);
+                    var evaluation = TestNode(nextNode, nextEnv, p);
+                    if (evaluation.isGoal && GenerateResult(nextNode, evaluation.utility, newText, nextEnv, p))
+                    {
+                        solutionAccepted = true;
+                        return true; // end call to next
+                    }
+
+                    queue.Add((evaluation.utility, nextNode, newText - o, nextEnv, p));
+                    return false; // ask for another solution
+                });
+            }
+            return solutionAccepted;
         }
 
         #region Data structures for recording execution state

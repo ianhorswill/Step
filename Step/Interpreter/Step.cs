@@ -56,6 +56,15 @@ namespace Step.Interpreter
         public delegate bool Continuation(TextBuffer o, BindingList? unifications, State state, MethodCallFrame? predecessor);
 
         /// <summary>
+        /// Continuation that unconditionally returns true
+        /// </summary>
+        public static Continuation SucceedContinuation = (o, u, s, p) => true;
+        /// <summary>
+        /// Continuation that unconditionally returns false
+        /// </summary>
+        public static Continuation FailContinuation = (o, u, s, p) => false;
+
+        /// <summary>
         /// Attempt to run this step.
         /// </summary>
         /// <param name="output">Output accumulated so far</param>
