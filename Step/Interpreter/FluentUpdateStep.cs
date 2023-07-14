@@ -33,7 +33,7 @@ namespace Step.Interpreter
                     polarity = false;
                     if (fluentExp.Length != 2) ThrowInvalidFluentSyntax();
                     fluentExp = (fluentExp[1] as object?[])!;
-                    if (fluentExp[1] == null) ThrowInvalidFluentSyntax();
+                    if (fluentExp.Length > 1 && fluentExp[1] == null) ThrowInvalidFluentSyntax();
                 }
                 // ReSharper disable once PossibleNullReferenceException
                 if (!(fluentExp?[0] is string fluentName) || !DefinitionStream.IsGlobalVariableName(fluentName))

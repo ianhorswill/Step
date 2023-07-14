@@ -78,6 +78,16 @@ namespace Tests
             Assert.IsTrue(m.CallPredicate("Test"));
         }
 
+        [TestMethod]
+        public void NullaryFluentTest()
+        {
+            var m = Module.FromDefinitions("fluent F.",
+                "TestF: [F] true",
+                "TestF: false",
+                "Test: [TestF] [now [F]] [TestF] [now [Not [F]]] [TestF]");
+            Assert.AreEqual("False true false", m.Call("Test"));
+        }
+
         [TestMethod, ExpectedException(typeof(ArgumentInstantiationException))]
         public void NowInstantiationExceptionTest()
         {
