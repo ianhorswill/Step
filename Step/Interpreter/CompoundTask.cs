@@ -372,7 +372,7 @@ namespace Step.Interpreter
                         // We have a match on a cached fail result, so force a failure, skipping over the methods.
                         goto failed;
                 }
-                else if (arglist.Any(x => x is LogicVariable))
+                else if (!Term.IsGround(arglist))
                     foreach (var pair in Cache.Bindings(env.State))
                     {
                         if (pair.Value.Success
