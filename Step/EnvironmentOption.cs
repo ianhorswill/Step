@@ -21,6 +21,17 @@ namespace Step
         /// </summary>
         public static void Handle(string optionName, params object?[] options)
         {
+            if (options.Length == 1 && options[0] is int limit)
+                switch (optionName)
+                {
+                    case "searchLimit":
+                        Module.SearchLimit = limit;
+                        break;
+                    case "defaultSearchLimit":
+                        Module.SearchLimit = Module.DefaultSearchLimit = limit;
+                        break;
+                }
+
             if (Handler != null)
                 Handler(optionName, options);
         }
