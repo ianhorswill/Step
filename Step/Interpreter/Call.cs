@@ -128,8 +128,7 @@ namespace Step.Interpreter
         }
 
         internal override IEnumerable<Call> Calls => new[] {this};
-
-
+        
         /// <summary>
         /// Attempt to run this task
         /// </summary>

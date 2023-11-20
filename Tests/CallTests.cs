@@ -150,7 +150,7 @@ namespace Tests
             m.Call("Test");
             Assert.AreEqual("C C B D C A Test",
                 string.Join(" ",
-                    MethodCallFrame.GoalChain(MethodCallFrame.CurrentFrame).Select(f => f.Method.Task.Name)));
+                    MethodCallFrame.GoalChain(MethodCallFrame.CurrentFrame).Select(f => f.Method!.Task.Name)));
         }
 
         [TestMethod]
@@ -167,6 +167,7 @@ namespace Tests
             var m = Module.FromDefinitions("[fallible] Test (Number ?x):");
             Assert.IsTrue(m.CallPredicate(State.Empty, "Test", 1));
             Assert.IsFalse(m.CallPredicate(State.Empty, "Test", "test"));
+            Assert.IsTrue(m.CallPredicate(State.Empty, "Not", new object[] { new [] {m["Test"], "test" }}));
         }
 
         [TestMethod]
@@ -174,6 +175,13 @@ namespace Tests
         {
             var m = Module.FromDefinitions("Test ?x ?x:");
             Assert.AreEqual(1, m.CallFunction<int>(State.Empty, "Test", 1));
+        }
+
+        [TestMethod]
+        public void CallPrimitiveTest()
+        {
+            var m = new Module(nameof(CallPrimitiveTest));
+            Assert.AreEqual("Foo", m.Call("Write", "foo"));
         }
 
         [TestMethod]

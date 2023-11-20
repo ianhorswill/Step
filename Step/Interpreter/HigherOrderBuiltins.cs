@@ -79,6 +79,9 @@ namespace Step.Interpreter
             g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call)
                 .Arguments("call", "extra_arguments", "...")
                 .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
+            g[nameof(CallDiscardingStateChanges)] = new GeneralPrimitive(nameof(CallDiscardingStateChanges), CallDiscardingStateChanges)
+                .Arguments("call", "extra_arguments", "...")
+                .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call', but discards any changes to global variables or fluents it makes. If extra_arguments are included, they will be added to the end of the call tuple.");
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput)
                 .Arguments("calls", "...")
                 .Documentation("control flow//calling tasks", "Runs each of the calls, in order, but throws away their output text.");
@@ -161,6 +164,29 @@ namespace Step.Interpreter
                 taskArgs[i++] = args[argsIndex];
 
             return task.Call(taskArgs, output, env, predecessor, k);
+        }
+
+        private static bool CallDiscardingStateChanges(object?[] args, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.CheckAtLeast(nameof(CallDiscardingStateChanges), 1, args);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args);
+
+            if (!(call[0] is Task task))
+                throw new InvalidOperationException(
+                    "Task argument to CallDiscardingStateChanges must be a task");
+
+            var taskArgs = new object?[call.Length - 1 + args.Length - 1];
+
+            var i = 0;
+            for (var callIndex = 1; callIndex < call.Length; callIndex++)
+                taskArgs[i++] = call[callIndex];
+            for (var argsIndex = 1; argsIndex < args.Length; argsIndex++)
+                taskArgs[i++] = args[argsIndex];
+
+            return task.Call(taskArgs, output, env, predecessor,
+                (newOutput, newEnvironment, newState, newFrame) =>
+                    k(newOutput, newEnvironment, env.State, newFrame));
         }
 
         private static bool Eval(object?[] call, TextBuffer output, BindingEnvironment env, MethodCallFrame? predecessor,
@@ -568,8 +594,7 @@ namespace Step.Interpreter
             var text = ArgumentTypeException.Cast<string[]>(nameof(Parse), env.Resolve(args[1]), args);
 
             if (!(call[0] is Task task))
-                throw new InvalidOperationException(
-                    "Task argument to Parse must be a compound task, i.e. a user-defined task with methods.");
+                throw new InvalidOperationException("Task argument to Parse must be a task.");
 
             var taskArgs = new object[call.Length - 1];
 
@@ -615,8 +640,8 @@ namespace Step.Interpreter
                     out BindingList? unif)
                 && k(output, unif, env.State, p);
 
-            int Compare((float priority, object node, string[] text, BindingEnvironment env, MethodCallFrame? pred) x,
-                (float priority, object node, string[] text, BindingEnvironment env, MethodCallFrame? pred) y)
+            int Compare((float priority, object? node, string[] text, BindingEnvironment env, MethodCallFrame? pred) x,
+                (float priority, object? node, string[] text, BindingEnvironment env, MethodCallFrame? pred) y)
             {
                 return x.priority.CompareTo(y.priority);
             }

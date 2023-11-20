@@ -322,9 +322,9 @@ namespace Step
             State state, string taskName, params object?[] args)
         {
             var maybeTask = this[StateVariableName.Named(taskName)];
-            var t = maybeTask as CompoundTask;
+            var t = maybeTask as Task;
             if (t == null)
-                throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
+                throw new ArgumentException($"The value of the task argument to Call, {taskName}, is not a task.  It is {maybeTask}");
             return Call(state, t, args);
         }
 
@@ -381,9 +381,9 @@ var output = TextBuffer.NewEmpty();
         {
             Uncancel();
             var maybeTask = this[StateVariableName.Named(taskName)];
-            var t = maybeTask as CompoundTask;
+            var t = maybeTask as Task;
             if (t == null)
-                throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
+                throw new ArgumentException($"The value of the task argument to Call, {taskName}, is not a task.  It is {maybeTask}");
             var output = new TextBuffer(0);
             var env = new BindingEnvironment(this, null!, null, state);
 
@@ -412,9 +412,9 @@ var output = TextBuffer.NewEmpty();
         {
             Uncancel();
             var maybeTask = this[StateVariableName.Named(taskName)];
-            var t = maybeTask as CompoundTask;
+            var t = maybeTask as Task;
             if (t == null)
-                throw new ArgumentException($"{taskName} is a task.  Its value is {maybeTask}");
+                throw new ArgumentException($"The value of the task argument to Call, {taskName}, is not a task.  It is {maybeTask}");
 
             var env = new BindingEnvironment(this, null!, null, state);
             var resultVar = new LogicVariable(FunctionResult);

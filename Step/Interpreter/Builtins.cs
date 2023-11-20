@@ -185,7 +185,11 @@ namespace Step.Interpreter
             Documentation.SectionIntroduction("data structures//lists",
                 "Predicates access lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).");
 
-            g["Member"] = new GeneralPredicate<object, IEnumerable<object>>("Member", (member, collection) => collection != null && collection.Contains(member), null, collection => collection ?? EmptyArray, null)
+            g["Member"] = new GeneralPredicate<object, IEnumerable<object>>("Member",
+                    (member, collection) => collection != null && collection.Contains(member),
+                    null,
+                    collection => collection ?? EmptyArray,
+                    null)
                 .Arguments("element", "collection")
                 .Documentation("data structures//lists", "True when element is an element of collection.");
 

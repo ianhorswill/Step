@@ -40,6 +40,24 @@ namespace Tests
         }
 
         [TestMethod]
+        public void CallPrimitiveTest()
+        {
+            var m = Module.FromDefinitions("Test: [Call [Write foo]]");
+            Assert.AreEqual("Foo", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void CallDiscardingStateChangesTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [set A = 0] ^A [CallDiscardingStateChanges [Update ?local]] ?local ^A",
+                "[predicate] FailTest: [CallDiscardingStateChanges [Update b]]",
+                "[predicate] Update a: [set A = 1] ^A");
+            Assert.AreEqual("0 1 a 0", m.Call("Test"));
+            Assert.IsFalse(m.CallPredicate("FailTest"));
+        }
+
+        [TestMethod]
         public void FindAllTest()
         {
             var m = Module.FromDefinitions("Test ?result: [FindAll ?x [Foo ?x] ?result]",
@@ -127,6 +145,13 @@ namespace Tests
             var m = Module.FromDefinitions("Succeed.", "[fallible] FailTest: [Not [Succeed]]", "SucceedTest: [Not [Fail]]");
             Assert.IsTrue(m.CallPredicate(State.Empty, "SucceedTest"));
             Assert.IsFalse(m.CallPredicate(State.Empty, "FailTest"));
+        }
+
+        [TestMethod]
+        public void NotAnyNotAnyTest()
+        {
+            var m = Module.FromDefinitions("P 1.", "Test: [NotAny [NotAny [P ?x]]] [Var ?x]");
+            Assert.IsTrue(m.CallPredicate(State.Empty, "Test"));
         }
 
         [TestMethod]
