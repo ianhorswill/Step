@@ -362,7 +362,7 @@ namespace Step
             /// <param name="showStack">Tell the controlling thread that the user should see a stack dump</param>
             private void Pause(Module.MethodTraceEvent e, bool showStack = false)
             {
-                // DebuggerBurnIn test fails in Run mode if this is removed or placed anywhere after ContinueAwaiter call
+                // BUG: DebuggerBurnIn test fails in Run mode if this is removed or placed anywhere after ContinueAwaiter call
                 Thread.Sleep(1);
                 ShowStackRequested = showStack;
                 IsPaused = true;
