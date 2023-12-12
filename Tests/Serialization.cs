@@ -5,6 +5,7 @@ using Step.Serialization;
 
 namespace Tests
 {
+    #nullable enable
     [TestClass]
     public class Serialization
     {
@@ -15,7 +16,7 @@ namespace Tests
                 void AssertSubset(State x, State y)
                 {
                     foreach (var pair in x.Bindings)
-                        AssertTreeEqual(pair.Value, y[pair.Key]);
+                        AssertTreeEqual(pair.Value!, y[pair.Key]!);
                 }
 
                 AssertSubset(sa, sb);
@@ -42,19 +43,19 @@ namespace Tests
                     => bindings.First(e => Term.Comparer.Default.Equals(key, e.Key)).Value;
 
                 foreach (DictionaryEntry e in ad)
-                    AssertTreeEqual(Lookup(e.Key, bBindings), e.Value);
+                    AssertTreeEqual(Lookup(e.Key, bBindings)!, e.Value!);
                 foreach (DictionaryEntry e in bd)
-                    AssertTreeEqual(Lookup(e.Key, aBindings), e.Value);
+                    AssertTreeEqual(Lookup(e.Key, aBindings)!, e.Value!);
                 return;
             }
             Assert.AreEqual(a, b);
         }
 
-        private void TestRoundTrip(object o, Module m = null)
+        private void TestRoundTrip(object? o, Module? m = null)
         {
-            var serialized = Serializer.SerializeToString(o);
+            var serialized = Serializer.SerializeToString(o!);
             var r = Deserializer.Deserialize(new StringReader(serialized), m!);
-            AssertTreeEqual(o, r);
+            AssertTreeEqual(o!, r!);
         }
 
         [TestMethod]
@@ -68,7 +69,7 @@ namespace Tests
             TestRoundTrip(true);
             TestRoundTrip(false);
             TestRoundTrip(null);
-            TestRoundTrip(Module.Global["Write"], Module.Global);
+            TestRoundTrip(Module.Global["Write"]!, Module.Global!);
         }
 
         [TestMethod]
