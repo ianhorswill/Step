@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Step.Output;
 using Step.Parser;
 
@@ -30,6 +29,8 @@ namespace Step.Interpreter
         /// If there is a declaration group in effect, but this head cannot be expanded by it, then cancel the current group and return the original head.
         /// </summary>
         /// <param name="head">Head to expand</param>
+        /// <param name="path">Source file from which this comes, if any</param>
+        /// <param name="lineNumber">Line number within source file, if any</param>
         /// <returns>Expanded head, or original if no expansion</returns>
         public (string taskName, object?[] pattern) ExpandHead((string taskName, IList<Object?> pattern) head, string? path, int lineNumber)
         {
@@ -72,7 +73,6 @@ namespace Step.Interpreter
         /// True if [name args] is a valid invocation of a declaration group
         /// </summary>
         /// <param name="attribute">The attribute expression that appeared in the source file</param>
-        /// <param name="m">Module into which the code is being loaded</param>
         public bool IsDeclarationGroup(object?[] attribute)
             => Module.Defines(GroupPredicate) && Module.CallPredicate(GroupPredicate, new object?[] { attribute });
     }

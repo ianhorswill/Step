@@ -23,11 +23,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System.IO;
-using System.Linq;
 using Step;
 using Step.Parser;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step.Interpreter;
 using Step.Output;
 
@@ -86,7 +83,7 @@ namespace Tests
         {
             var m = Module.FromDefinitions("[10.5] Test ?x.", "[2] Test a.", "Test ?: foo", "[randomly] [1] Foo.", "[randomly]\n[1]\nFoo.");
             var test = (CompoundTask) m["Test"];
-            Assert.AreEqual(10.5f, test.Methods[0].Weight);
+            Assert.AreEqual(10.5f, test!.Methods[0].Weight);
             Assert.AreEqual(2, test.Methods[1].Weight);
             Assert.AreEqual(1, test.Methods[2].Weight);
         }
@@ -482,7 +479,8 @@ Baz: baz");
             m.LoadDefinitions(new StringReader(@"DeclarationGroup [beat ?beatName].
                 DeclarationExpansion [beat ?beatName] [|Text|] [|Text| ?beatName].
                 DeclarationExpansion [beat ?beatName] [|Attributes| ?x] [|Attributes| ?beatName ?x].
-                [beat test] Text: Hello World!
+                [beat test]
+                Text: Hello World!
                 Attributes foo.
                 NotPartOfTheGroup."),
                 null);
