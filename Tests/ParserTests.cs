@@ -474,5 +474,21 @@ Baz: baz");
                 "Bar a b.");
             Assert.AreEqual("A a b", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void DeclarationGroupTest()
+        {
+            var m = new Module(nameof(DeclarationGroupTest));
+            m.LoadDefinitions(new StringReader(@"DeclarationGroup [beat ?beatName].
+                DeclarationExpansion [beat ?beatName] [|Text|] [|Text| ?beatName].
+                DeclarationExpansion [beat ?beatName] [|Attributes| ?x] [|Attributes| ?beatName ?x].
+                [beat test] Text: Hello World!
+                Attributes foo.
+                NotPartOfTheGroup."),
+                null);
+            Assert.AreEqual("Hello World!", m.Call("Text", "test"));
+            Assert.AreEqual("foo", m.CallFunction<string>("Attributes", "test"));
+            Assert.IsTrue(m.CallPredicate("NotPartOfTheGroup"));
+        }
     }
 }

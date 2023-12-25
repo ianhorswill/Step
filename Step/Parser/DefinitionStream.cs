@@ -81,6 +81,7 @@ namespace Step.Parser
             this.expressions = expressionStream.Expressions.GetEnumerator();
             MoveNext();
             chainBuilder = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
+            groupExpander = new DeclarationGroupExpander(module);
         }
 
         /// <summary>
@@ -91,6 +92,8 @@ namespace Step.Parser
         #region Stream interface
 
         private readonly ExpressionStream expressionStream;
+
+        private DeclarationGroupExpander groupExpander;
 
         public string? SourceFile
         {
@@ -457,7 +460,7 @@ namespace Step.Parser
             if (DeclarationKeywords.Contains(Peek))
                 return ReadDeclaration(flags);
             
-            var (taskName, pattern) = ReadHead();
+            var (taskName, pattern) = groupExpander.ExpandHead(ReadHead(), SourcePath, lineNumber);
 
             ReadBody(chainBuilder, () => EndOfDefinition);
             
@@ -468,7 +471,7 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (StateVariableName.Named(taskName), weight, pattern.ToArray(), locals.ToArray(), chainBuilder.FirstStep, flags, null, expressionStream.FilePath, lineNumber);
+            return (StateVariableName.Named(taskName), weight, pattern, locals.ToArray(), chainBuilder.FirstStep, flags, null, expressionStream.FilePath, lineNumber);
         }
 
         private (StateVariableName task, float weight, object?[] pattern, 
@@ -511,57 +514,61 @@ namespace Step.Parser
             while (Peek is object[] optionKeyword)
             {
                 Get();
-                string? keyword = null;
-                if (optionKeyword.Length == 1 && optionKeyword[0] is string op0)
-                    keyword = op0;
-                else
-                    ThrowInvalid(optionKeyword);
-
-                switch (keyword)
+                if (!groupExpander.HandleGroupAttribute(optionKeyword))
                 {
-                    // Shuffle rules when calling
-                    case "randomly":
-                        flags |= CompoundTask.TaskFlags.Shuffle;
-                        break;
+                    string? keyword = null;
+                    if (optionKeyword.Length == 1 && optionKeyword[0] is string op0)
+                        keyword = op0;
+                    else
+                        ThrowInvalid(optionKeyword);
 
-                    case "remembered":
-                        flags |= CompoundTask.TaskFlags.ReadCache | CompoundTask.TaskFlags.WriteCache;
-                        break;
+                    switch (keyword)
+                    {
+                        // Shuffle rules when calling
+                        case "randomly":
+                            flags |= CompoundTask.TaskFlags.Shuffle;
+                            break;
 
-                    case "fluent":
-                        flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions | CompoundTask.TaskFlags.ReadCache;
-                        break;
+                        case "remembered":
+                            flags |= CompoundTask.TaskFlags.ReadCache | CompoundTask.TaskFlags.WriteCache;
+                            break;
 
-                    case "function":
-                        flags |= CompoundTask.TaskFlags.Function;
-                        break;
+                        case "fluent":
+                            flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions |
+                                     CompoundTask.TaskFlags.ReadCache;
+                            break;
 
-                    case "generator":
-                    case "predicate":
-                        flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
-                        break;
+                        case "function":
+                            flags |= CompoundTask.TaskFlags.Function;
+                            break;
 
-                    // Limit it to first solution, as if the call were wrapped in Once.
-                    case "fallible":
-                        flags |= CompoundTask.TaskFlags.Fallible;
-                        break;
+                        case "generator":
+                        case "predicate":
+                            flags |= CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
+                            break;
 
-                    case "retriable":
-                        flags |= CompoundTask.TaskFlags.MultipleSolutions;
-                        break;
+                        // Limit it to first solution, as if the call were wrapped in Once.
+                        case "fallible":
+                            flags |= CompoundTask.TaskFlags.Fallible;
+                            break;
 
-                    case "main":
-                        flags |= CompoundTask.TaskFlags.Main;
-                        break;
+                        case "retriable":
+                            flags |= CompoundTask.TaskFlags.MultipleSolutions;
+                            break;
 
-                    case "suffix":
-                        flags |= CompoundTask.TaskFlags.Suffix;
-                        break;
+                        case "main":
+                            flags |= CompoundTask.TaskFlags.Main;
+                            break;
 
-                    default:
-                        if (!float.TryParse(keyword, out weight))
-                            ThrowInvalid(optionKeyword);
-                        break;
+                        case "suffix":
+                            flags |= CompoundTask.TaskFlags.Suffix;
+                            break;
+
+                        default:
+                            if (!float.TryParse(keyword, out weight))
+                                ThrowInvalid(optionKeyword);
+                            break;
+                    }
                 }
 
                 SwallowNewlines();

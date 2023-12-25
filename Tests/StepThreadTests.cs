@@ -96,7 +96,7 @@ namespace Step.Tests
                 {
                     await t2.Start();
                 }
-                catch (UndefinedVariableException e)
+                catch (UndefinedVariableException)
                 {
                     gotException = true;
                 }
@@ -115,7 +115,7 @@ namespace Step.Tests
                 {
                     await t3.Start();
                 }
-                catch (StepTaskTimeoutException e)
+                catch (StepTaskTimeoutException)
                 {
                     gotException = true;
                 }
@@ -125,6 +125,7 @@ namespace Step.Tests
             }
         }
 
+        [Ignore("This is very slow")]
         [TestMethod()]
         public void DebuggerBurnIn()
         {
@@ -183,7 +184,7 @@ namespace Step.Tests
                 {
                     await t3.Start();
                 }
-                catch (UndefinedVariableException e)
+                catch (UndefinedVariableException)
                 {
                     gotException = true;
                 }
@@ -205,7 +206,7 @@ namespace Step.Tests
                 {
                     await t4.Start();
                 }
-                catch (StepTaskTimeoutException e)
+                catch (StepTaskTimeoutException)
                 {
                     gotException = true;
                 }
