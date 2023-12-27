@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Step.Interpreter;
 using Step.Parser;
 
 namespace Step.Output
@@ -262,5 +263,7 @@ namespace Step.Output
             // ReSharper disable once StringLiteralTypo
             return x.Length > 0 && "aeiou".Contains(x[0]);
         }
+
+        public static string ToTermString(this object? term, BindingList? bindings = null) => Writer.TermToString(term, bindings);
     }
 }
