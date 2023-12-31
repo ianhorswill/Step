@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Repl.ReplPage">
+
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="File">
+            <MenuFlyoutItem Text="Open ..." Clicked="SelectProject">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="o" />
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem Text="Reload project" Clicked="ReloadStepCode">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="r" />
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
+        </MenuBarItem>
+        <MenuBarItem Text="Edit">
+            <MenuFlyoutItem Text="Copy output" Clicked="CopyOutput" />
+            <MenuFlyoutItem Text="Copy error and stack trace" Clicked="CopyError" />
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
+
+    <ScrollView>
+        <VerticalStackLayout>
+            <Entry x:Name="Command"
+                   Placeholder="Enter command"
+                   Completed="EvalAndShowOutput" />
+            <Label 
+                TextType="Html"
+                x:Name="OutputText" />
+            <Label x:Name="ErrorLabel" Text="Errors" FontAttributes="Bold" FontSize="20" TextColor="Orange"/>
+            <Label 
+                x:Name="ExceptionMessage"
+                TextColor="Orange"/>
+            <Label 
+                x:Name="StackTrace"
+                LineBreakMode="NoWrap"
+                TextType = "Html"
+                TextColor="Grey"/>
+            <Label 
+                x:Name="CStackTrace"
+                LineBreakMode="NoWrap"
+                TextColor="DimGrey"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

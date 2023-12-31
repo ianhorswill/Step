@@ -435,6 +435,7 @@ namespace Step.Interpreter
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
             Documentation.DefineGlobals(Module.Global);
+            ElNode.DefineGlobals();
         }
 
         // ReSharper disable once UnusedMember.Global

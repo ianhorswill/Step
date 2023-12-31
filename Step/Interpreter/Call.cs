@@ -152,6 +152,10 @@ namespace Step.Interpreter
         {
             switch (target)
             {
+                case "/":
+                    return ElNode.ElLookupPrimitive.Call(arglist, output, env, predecessor,
+                        (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));;
+
                 case Task p:
                     return p.Call(arglist, output, env, predecessor,
                         (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));

@@ -1,15 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using Step.Output;
+using Step.Utilities;
 
 namespace Step.Interpreter
 {
     internal abstract class ElNode
     {
-        public static readonly ElNode Empty = new NonExclusive();
+        internal static readonly ElNode Empty = new NonExclusive();
+
+        public static readonly StateElementWithDefault ElState = new StateElementWithDefault("ElKb", Empty);
+        public static readonly GeneralPrimitive ElLookupPrimitive = new GeneralPrimitive("/", ElLookup);
+
+        internal static void DefineGlobals()
+        {
+            Documentation.SectionIntroduction("exclusion logic",
+                "Implementation of Richard Evans' exclusion logic, aka eremic logic.  Not that this implementation follows the syntactic conventions of UnityProlog, meaning that the non-exclusive concatenation operator is / and the exclusive one is !");
+            Module.Global["/"] = ElLookupPrimitive.Arguments("sentence")
+                .Documentation("exclusion logic",
+                    "True if sentence unifies with at least one sentence in the KB.");
+            Module.Global[nameof(ElStore)] = new GeneralPrimitive(nameof(ElStore), ElStore)
+                .Arguments("sentence")
+                .Documentation("exclusion logic",
+                    "Adds sentence to KB.  If sentence contains ! operators then these will overwrite any existing data.");
+
+            Module.Global[nameof(ElDelete)] = new GeneralPrimitive(nameof(ElDelete), ElDelete).Arguments("sentence")
+                .Documentation("exclusion logic",
+                    "Removes sentence and any sentences it is a prefix of from the KB.");
+        }
+
+        private static bool ElStore(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(ElStore), 1, args);
+            var path = ArgumentTypeException.Cast<object?[]>(nameof(ElStore), args[0], args);
+            return k(o, e.Unifications,
+                    e.State.Bind(ElState, ((ElNode)e.State[ElState]!).Write(path)),
+                    predecessor);
+        }
+
+        private static bool ElDelete(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(ElDelete), 1, args);
+            var path = ArgumentTypeException.Cast<object?[]>(nameof(ElDelete), args[0], args);
+            return k(o, e.Unifications,
+                e.State.Bind(ElState, ((ElNode)e.State[ElState]!).Delete(path)),
+                predecessor);
+        }
+
+        public static bool ElLookup(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            return ((ElNode)e.State[ElState]!).Read(args, 0, e, u => k(o,u,e.State,predecessor));
+        }
+
+        protected bool Read(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)
+        {
+            var node = this;
+            for (; node != null && position < path.Length; position += 2)
+            {
+                var key = path[position];
+                if (Term.IsGround(key))
+                {
+                    if (!node.Lookup(key, ref node))
+                        return false;
+                }
+                else
+                    return Bind(path, position, e, k);
+            }
+
+            return position >= path.Length && k(e.Unifications);
+        }
+
+        protected abstract bool Lookup(object? atom, ref ElNode? child);
+
+        protected abstract bool Bind(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k);
 
         public ElNode? Write(ElNode? child, object?[] path, int position) 
             => (child == null) ? Build(path, position) : child.Write(path, position);
@@ -21,7 +89,7 @@ namespace Step.Interpreter
         public ElNode? Delete(params object?[] path)
         {
             if (path.Length % 2 != 0)
-                throw new ArgumentException($"Attempting to delete path with an odd length");
+                throw new ArgumentException("Attempting to delete path with an odd length");
             return Delete(path, 1);
         }
         protected ElNode? Delete(object?[] path, int position)
@@ -81,17 +149,19 @@ namespace Step.Interpreter
 
         private sealed class NonExclusive: ElNode
         {
+            private static readonly ImmutableDictionary<object, ElNode?> EmptyDictionary
+                = ImmutableDictionary.Create<object, ElNode?>(Term.Comparer.Default);
             private NonExclusive(ImmutableDictionary<object, ElNode?> children)
             {
                 Children = children;
             }
 
-            public NonExclusive() : this(ImmutableDictionary<object, ElNode?>.Empty)
+            public NonExclusive() : this(EmptyDictionary)
             { }
 
             public readonly ImmutableDictionary<object, ElNode?> Children;
 
-            public NonExclusive(object? key, ElNode? child) : this(ImmutableDictionary<object,ElNode?>.Empty.Add(key,child))
+            public NonExclusive(object? key, ElNode? child) : this(EmptyDictionary.Add(key,child))
             { }
 
             protected override ElNode Replace(object? key, ElNode? child) =>
@@ -151,6 +221,33 @@ namespace Step.Interpreter
                     }
                 }
             }
+
+            protected override bool Lookup(object? atom, ref ElNode? child)
+            {
+                if (!Children.TryGetValue(atom!, out var node))
+                    return false;
+                child = node;
+                return true;
+            }
+
+            protected override bool Bind(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)
+            {
+                foreach (var pair in Children)
+                {
+                    var key = pair.Key;
+                    var child = pair.Value;
+                    if (!e.Unify(path[position], key, out BindingList? u))
+                        continue;
+                    if (position == path.Length - 2) // end of path
+                        return k(u);
+                    if (child == null)
+                        continue;
+                    if (child!.Read(path, position + 2, new BindingEnvironment(e, u, e.State), k))
+                        return true;
+                }
+
+                return false;
+            }
         }
 
         private sealed class Exclusive : ElNode
@@ -165,7 +262,7 @@ namespace Step.Interpreter
 
             protected override ElNode Replace(object? key, ElNode? child)
             {
-                if (key == Key && child == Child) return this;
+                if (Term.LiterallyEqual(key, Key) && child == Child) return this;
                 return new Exclusive(key, child);
             }
 
@@ -174,7 +271,7 @@ namespace Step.Interpreter
 
             protected override ElNode? DeleteKey(object? key)
             {
-                return (Key == key) ? null : this;
+                return Term.LiterallyEqual(Key, key) ? null : this;
             }
 
             protected override ElNode Write(object?[] path, int position)
@@ -189,7 +286,7 @@ namespace Step.Interpreter
                         if (path[position] == null || !path[position]!.Equals("!"))
                             throw new ArgumentException($"Expected ! in exclusion logic path but got {path[position]}");
                         var k = path[position+1];
-                        if (k == Key) return this;
+                        if (Term.LiterallyEqual(k, Key)) return this;
                         return new Exclusive(k, Child);
 
                     default:
@@ -210,6 +307,24 @@ namespace Step.Interpreter
                         foreach (var sentence in Child.Contents)
                             yield return prefix + sentence;
                 }
+            }
+
+            protected override bool Lookup(object? atom, ref ElNode? child)
+            {
+                if (!Term.LiterallyEqual(Key, atom)) return false;
+                child = Child;
+                return true;
+            }
+
+            protected override bool Bind(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)
+            {
+                if (!e.Unify(path[position], Key, out BindingList? u))
+                    return false;
+                if (position == path.Length - 2) // end of path
+                    k(u);
+                else if (Child == null)
+                    return false;
+                return Child!.Read(path, position + 2, new BindingEnvironment(e, u, e.State), k);
             }
         }
 
@@ -255,6 +370,20 @@ namespace Step.Interpreter
             protected override ElNode? ChildOf(object key)
             {
                 throw new NotImplementedException();
+            }
+
+            protected override bool Lookup(object? atom, ref ElNode? child)
+            {
+                if (!Term.LiterallyEqual(Key,atom)) return false;
+                child = null;
+                return true;
+            }
+
+            protected override bool Bind(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)
+            {
+                return position == path.Length-2 // Can't match a leaf someplace other than at the end of a path
+                       && e.Unify(path[position], Key, out BindingList? u)
+                       && Read(path, position + 2, new BindingEnvironment(e, u, e.State), k);
             }
         }
     }

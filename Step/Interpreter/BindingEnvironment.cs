@@ -229,7 +229,7 @@ namespace Step.Interpreter
         /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
         public bool Unify(object? a, object? b, out BindingList? outUnifications)
             => Unify(a, b, Unifications, out outUnifications);
-        
+
         private bool UnifyArrays(object?[] a, object?[] b, BindingList? inUnifications, out BindingList? outUnifications)
         {
             if (a.Length != b.Length)
