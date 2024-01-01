@@ -12,6 +12,8 @@ namespace Repl
         private static Color TextOutputColor = Colors.White;
         private static Color WarningColor = Colors.Orange;
 
+        private readonly Dictionary<string,MenuBarItem> TemporaryMenus = new Dictionary<string,MenuBarItem>();
+
         public ReplPage()
         {
             InitializeComponent();
@@ -68,8 +70,15 @@ namespace Repl
 
         async Task EvalAndShowOutput(Task<string> evalTask)
         {
+            // Clear out previous menu items
+            foreach (var pair in TemporaryMenus)
+                MenuBarItems.Remove(pair.Value);
+            TemporaryMenus.Clear();
+            TemporaryControls.Clear();
+            // Call code and update text
             OutputText.Text = await evalTask;
             OutputText.TextColor = TextOutputColor;
+            // Update exception info
             UpdateExceptionInfo();
         }
 
@@ -112,7 +121,7 @@ namespace Repl
             if (projectCommandMenu == null)
             {
                 projectCommandMenu = new MenuBarItem() { Text = StepCode.ProjectName };
-                Instance.MenuBarItems.Add(projectCommandMenu);
+                MenuBarItems.Add(projectCommandMenu);
             }
         }
 
@@ -124,6 +133,30 @@ namespace Repl
             item.Clicked += (sender, args) => EvalAndShowOutput(StepCode.Eval(new StepThread(StepCode.Module, StepCode.State, "Call", new object[] { code })));
 #pragma warning restore CS4014
             projectCommandMenu!.Add(item);
+        }
+
+        public void AddTemporaryMenuItem(string menuName, string itemName, object[] action, State state)
+        {
+            if (!TemporaryMenus.TryGetValue(menuName, out var menu))
+            {
+                menu = new MenuBarItem() { Text = menuName };
+                MenuBarItems.Add(menu);
+                TemporaryMenus[menuName] = menu;
+            }
+            var item = new MenuFlyoutItem() { Text = itemName };
+#pragma warning disable CS4014
+            item.Clicked += (sender, args) => EvalAndShowOutput(StepCode.Eval(new StepThread(StepCode.Module, state, "Call", new object[] { action })));
+#pragma warning restore CS4014
+            menu.Add(item);
+        }
+
+        public void AddButton(string buttonName, object[] action, State state)
+        {
+            var button = new Button() { Text = buttonName};
+#pragma warning disable CS4014
+            button.Clicked += (sender, args) => EvalAndShowOutput(StepCode.Eval(new StepThread(StepCode.Module, state, "Call", new object[] { action })));
+#pragma warning restore CS4014
+            TemporaryControls.Add(button);
         }
     }
 }

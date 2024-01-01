@@ -64,26 +64,28 @@ namespace Repl
                     return k(o.Append(TextUtilities.FreshLineToken).Append(output), bindings.Unifications, bindings.State, p);
                 });
 
-            //string UpDirectory(string path, int levels)
-            //{
-            //    var result = path;
-            //    for (int i = 0; i < levels; i++)
-            //        result = Path.GetDirectoryName(result);
-            //    return result;
-            //}
+            var addMenuItem = "AddMenuItem";
+            ReplUtilities[addMenuItem] =
+                new GeneralPrimitive(addMenuItem, (args, o, e, d, k) =>
+                {
+                    ArgumentCountException.Check(addMenuItem, 3, args);
+                    var menu = ArgumentTypeException.Cast<string>(addMenuItem, args[0], args);
+                    var item = ArgumentTypeException.Cast<string>(addMenuItem, args[1], args);
+                    var action = ArgumentTypeException.Cast<object[]>(addMenuItem, args[2], args);
+                    MainThread.BeginInvokeOnMainThread(() => ReplPage.Instance.AddTemporaryMenuItem(menu, item, action, e.State));
+                    return k(o, e.Unifications, e.State, d);
+                });
 
-            //var process = Environment.ProcessPath;
-            //var platform = DeviceInfo.Current.Platform;
-            //string sourceRoot = null;
-            //if (platform == DevicePlatform.WinUI)
-            //    sourceRoot = UpDirectory(process, 6);
-            //if (platform == DevicePlatform.MacCatalyst || platform == DevicePlatform.macOS)
-            //    sourceRoot = UpDirectory(process, 6);
-
-            //if (sourceRoot != null)
-            //    ProjectDirectory = Path.Combine(sourceRoot, "Resources", "Raw", "Step");
-            //if (ProjectDirectory != null && !Directory.Exists(ProjectDirectory))
-            //    ProjectDirectory = null;
+            var addButton = "AddButton";
+            ReplUtilities[addButton] =
+                new GeneralPrimitive(addButton, (args, o, e, d, k) =>
+                {
+                    ArgumentCountException.Check(addButton, 2, args);
+                    var name = ArgumentTypeException.Cast<string>(addButton, args[0], args);
+                    var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
+                    MainThread.BeginInvokeOnMainThread(() => ReplPage.Instance.AddButton(name, action, e.State));
+                    return k(o, e.Unifications, e.State, d);
+                });
 
             ReloadStepCode();
         }
