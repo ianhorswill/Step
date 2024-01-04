@@ -476,7 +476,9 @@ Baz: baz");
         public void DeclarationGroupTest()
         {
             var m = new Module(nameof(DeclarationGroupTest));
-            m.LoadDefinitions(new StringReader(@"DeclarationGroup [beat ?beatName].
+            m.LoadDefinitions(new StringReader(@"predicate Beat ?name.
+                DeclarationGroup [beat ?beatName].
+                DeclarationExpansion [beat ?beatName] [beat ?beatName] [|Beat| ?beatName].
                 DeclarationExpansion [beat ?beatName] [|Text|] [|Text| ?beatName].
                 DeclarationExpansion [beat ?beatName] [|Attributes| ?x] [|Attributes| ?beatName ?x].
                 [beat test]
@@ -487,6 +489,8 @@ Baz: baz");
             Assert.AreEqual("Hello World!", m.Call("Text", "test"));
             Assert.AreEqual("foo", m.CallFunction<string>("Attributes", "test"));
             Assert.IsTrue(m.CallPredicate("NotPartOfTheGroup"));
+            Assert.IsTrue(m.CallPredicate("Beat", "test"));
+            Assert.IsFalse(m.CallPredicate("Beat", 1));
         }
     }
 }

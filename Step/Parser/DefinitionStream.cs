@@ -420,7 +420,37 @@ namespace Step.Parser
             get
             {
                 while (!end)
+                {
                     yield return ReadDefinition();
+                    while (groupExpander.Assertions.Count > 0)
+                    {
+                        var locals = new List<LocalVariableName>();
+
+                        LocalVariableName MakeLocal(string name)
+                        {
+                            var l = new LocalVariableName(name, locals.Count);
+                            locals.Add(l);
+                            return l;
+                        }
+
+                        LocalVariableName Localize(string name) =>
+                            locals.FirstOrDefault(l => l.Name == name) ?? MakeLocal(name);
+
+                        object Variablize(object o) => o switch
+                        {
+                            string s when IsLocalVariableName(s) => Localize(s),
+                            object?[] tuple => VariablizeTuple(tuple),
+                            _ => o
+                        };
+
+                        object?[] VariablizeTuple(object?[] tuple) => tuple.Select(Variablize).ToArray();
+
+                        var assertion = groupExpander.Assertions.Dequeue();
+                        var pattern = VariablizeTuple(assertion.pattern);
+                        yield return (assertion.task, 1, pattern, locals.ToArray(), null, CompoundTask.TaskFlags.None,
+                            null, SourcePath, lineNumber);
+                    }
+                }
             }
         }
 
@@ -444,7 +474,8 @@ namespace Step.Parser
             Interpreter.Step? chain, 
             CompoundTask.TaskFlags flags,
             string? declaration,
-                string? path, int lineNumber) ReadDefinition()
+                string? path, int lineNumber)
+            ReadDefinition()
         {
             InitParserState();
 
@@ -460,7 +491,7 @@ namespace Step.Parser
             if (DeclarationKeywords.Contains(Peek))
                 return ReadDeclaration(flags);
             
-            var (taskName, pattern) = groupExpander.ExpandHead(ReadHead(), SourcePath, lineNumber);
+            var (taskName, pattern) = groupExpander.ExpandHead(ReadHead(), GetLocal, SourcePath, lineNumber);
 
             ReadBody(chainBuilder, () => EndOfDefinition);
             
@@ -514,7 +545,7 @@ namespace Step.Parser
             while (Peek is object[] optionKeyword)
             {
                 Get();
-                if (!groupExpander.HandleGroupAttribute(optionKeyword))
+                if (!groupExpander.HandleGroupAttribute(optionKeyword, SourcePath, lineNumber))
                 {
                     string? keyword = null;
                     if (optionKeyword.Length == 1 && optionKeyword[0] is string op0)

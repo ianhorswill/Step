@@ -26,20 +26,27 @@
         <VerticalStackLayout>
             <Entry x:Name="Command"
                    Placeholder="Enter command"
-                   Completed="EvalAndShowOutput" />
+                   Completed="EvalAndShowOutput"
+                   IsSpellCheckEnabled="False"/>
             <Label 
                 TextType="Html"
                 x:Name="OutputText" />
-            <Label x:Name="ErrorLabel" Text="Errors" FontAttributes="Bold" FontSize="20" TextColor="Orange"/>
             <HorizontalStackLayout x:Name="TemporaryControls" Spacing="10" ></HorizontalStackLayout>
+            <Label x:Name="ErrorLabel" Text="Errors" FontAttributes="Bold" FontSize="20" TextColor="Orange"/>
             <Label 
                 x:Name="ExceptionMessage"
-                TextColor="Orange"/>
+                TextColor="Orange"
+                TextType="Html"/>
             <Label 
                 x:Name="StackTrace"
                 LineBreakMode="NoWrap"
                 TextType = "Html"
                 TextColor="Grey"/>
+            <Label x:Name="WarningLabel" Text="Warnings" FontAttributes="Bold" FontSize="20" TextColor="Yellow"/>
+            <Label 
+                x:Name="WarningText"
+                TextColor="Yellow"
+                TextType="Html"/>
             <Label 
                 x:Name="CStackTrace"
                 LineBreakMode="NoWrap"

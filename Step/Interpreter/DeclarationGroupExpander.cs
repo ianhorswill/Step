@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Step.Output;
 using Step.Parser;
 
@@ -12,6 +14,8 @@ namespace Step.Interpreter
         public const string ExpansionFunction = "DeclarationExpansion";
 
         public readonly Module Module;
+
+        internal Queue<(StateVariableName task, object?[] pattern)> Assertions = new Queue<(StateVariableName, object?[])>();
 
         /// <summary>
         /// Declaration group currently in effect or null
@@ -32,13 +36,19 @@ namespace Step.Interpreter
         /// <param name="path">Source file from which this comes, if any</param>
         /// <param name="lineNumber">Line number within source file, if any</param>
         /// <returns>Expanded head, or original if no expansion</returns>
-        public (string taskName, object?[] pattern) ExpandHead((string taskName, IList<Object?> pattern) head, string? path, int lineNumber)
+        public (string taskName, object?[] pattern) ExpandHead((string taskName, IList<Object?> pattern) head, Func<string, LocalVariableName> getLocal, string? path, int lineNumber)
         {
             if (CurrentDeclarationGroup == null) return (head.taskName, head.pattern.ToArray());
-            if (!Module.Defines(ExpansionFunction))
-                throw new SyntaxError(
-                    $"Declaration group {Writer.TermToString(head)} invoked without {ExpansionFunction} being defined",
-                    path, lineNumber);
+
+            object Variablize(object o) => o switch
+            {
+                string s when DefinitionStream.IsLocalVariableName(s) => getLocal(s),
+                object?[] tuple => VariablizeTuple(tuple),
+                _ => o
+            };
+
+            object?[] VariablizeTuple(object?[] tuple) => tuple.Select(Variablize).ToArray();
+
             try
             {
                 var headTuple = head.pattern.Prepend(head.taskName).ToArray();
@@ -47,7 +57,7 @@ namespace Step.Interpreter
                     throw new SyntaxError(
                         $"Expansion of {Writer.TermToString(headTuple)} within declaration group {Writer.TermToString(CurrentDeclarationGroup)} returned invalid expansion {Writer.TermToString(newHeadTuple)}",
                         path, lineNumber);
-                return ((string)newHeadTuple[0]!, newHeadTuple.Skip(1).ToArray());
+                return ((string)newHeadTuple[0]!, newHeadTuple.Skip(1).Select(Variablize).ToArray());
             }
             catch (CallFailedException)
             {
@@ -61,12 +71,41 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="possibleGroupAttribute">Attribute appearing in the source code</param>
         /// <returns>True if it was a group attribute invocation</returns>
-        public bool HandleGroupAttribute(object?[] possibleGroupAttribute)
+        public bool HandleGroupAttribute(object?[] possibleGroupAttribute, string? path, int lineNumber)
         {
+            var head = possibleGroupAttribute[0];
+            if (!(head is string name))
+                return false;
             if (!IsDeclarationGroup(possibleGroupAttribute))
                 return false;
+
+            if (!Module.Defines(ExpansionFunction))
+                throw new SyntaxError(
+                    $"Declaration group {Writer.TermToString(head)} invoked without {ExpansionFunction} being defined",
+                    path, lineNumber);
+
+            MaybeAddHeaderAssertion(possibleGroupAttribute, path, lineNumber);
+            
             CurrentDeclarationGroup = possibleGroupAttribute;
             return true;
+        }
+
+        private void MaybeAddHeaderAssertion(object?[] headTuple, string? path, int lineNumber)
+        {
+            try
+            {
+                var assertion = Module.CallFunction<object?[]>(ExpansionFunction, headTuple, headTuple);
+                if (assertion.Length < 1 && !(assertion[0] is string))
+                    throw new SyntaxError(
+                        $"Expansion of {Writer.TermToString(headTuple)} within declaration group {Writer.TermToString(CurrentDeclarationGroup)} returned invalid expansion {Writer.TermToString(assertion)}",
+                        path, lineNumber);
+
+                Assertions.Enqueue((StateVariableName.Named((string)assertion[0]!), assertion.Skip(1).ToArray()));
+            }
+            catch (CallFailedException)
+            {
+                // Do nothing
+            }
         }
 
         /// <summary>

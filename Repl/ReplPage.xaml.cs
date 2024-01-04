@@ -29,17 +29,12 @@ namespace Repl
         private void ShowWarningsAndException()
         {
             var warnings = StepCode.Module.Warnings().ToArray();
-            if (warnings.Length > 0)
-            {
-                OutputText.Text = string.Join('\n', warnings);
-                WarningColor = Colors.Yellow;
-                OutputText.TextColor = WarningColor;
-            }
+            var haveWarnings = warnings.Length > 0;
+            WarningLabel.IsVisible = haveWarnings;
+            if (haveWarnings)
+                WarningText.Text = string.Join("<br>", warnings);
             else
-            {
-                OutputText.Text = "";
-                OutputText.TextColor = TextOutputColor;
-            }
+                WarningText.Text = OutputText.Text = "";
 
             UpdateExceptionInfo();
         }
@@ -85,7 +80,7 @@ namespace Repl
         private void ReloadStepCode(object sender, EventArgs e)
         {
             StepCode.ReloadStepCode();
-            StackTrace.Text = CStackTrace.Text = "";
+            OutputText.Text = StackTrace.Text = CStackTrace.Text = "";
             ShowWarningsAndException();
         }
 

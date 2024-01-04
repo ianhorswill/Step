@@ -29,7 +29,10 @@ namespace Step.Interpreter
             Module.Global[nameof(ElDelete)] = new GeneralPrimitive(nameof(ElDelete), ElDelete).Arguments("sentence")
                 .Documentation("exclusion logic",
                     "Removes sentence and any sentences it is a prefix of from the KB.");
-        }
+            Module.Global[nameof(ElDump)] = new GeneralPrimitive(nameof(ElDump), ElDump).Arguments()
+                .Documentation("exclusion logic",
+                    "Prints the complete contents of the exclusion logic KB.");
+            }
 
         private static bool ElStore(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
             Step.Continuation k)
@@ -55,6 +58,14 @@ namespace Step.Interpreter
             Step.Continuation k)
         {
             return ((ElNode)e.State[ElState]!).Read(args, 0, e, u => k(o,u,e.State,predecessor));
+        }
+
+        public static bool ElDump(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(ElDump), 0, args);
+            var s = e.State;
+            return k(o.Append(((ElNode)s[ElState]!).SortedContents.Select(s => s+"\n").ToArray()),e.Unifications,s,predecessor);
         }
 
         protected bool Read(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)

@@ -81,9 +81,11 @@ namespace Repl
                 new GeneralPrimitive(addButton, (args, o, e, d, k) =>
                 {
                     ArgumentCountException.Check(addButton, 2, args);
-                    var name = ArgumentTypeException.Cast<string>(addButton, args[0], args);
+                    var name = args[0].ToTermString();
                     var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
-                    MainThread.BeginInvokeOnMainThread(() => ReplPage.Instance.AddButton(name, action, e.State));
+                    if (!e.TryCopyGround(action, out var finalAction))
+                        throw new ArgumentInstantiationException(addButton, e, args);
+                    MainThread.BeginInvokeOnMainThread(() => ReplPage.Instance.AddButton(name, (object[])finalAction!, e.State));
                     return k(o, e.Unifications, e.State, d);
                 });
 
@@ -92,6 +94,7 @@ namespace Repl
 
         public static void ReloadStepCode()
         {
+            LastException = null;
             if (ReplUtilities["Button"] is CompoundTask button)
             {
                 button.Methods.Clear();
