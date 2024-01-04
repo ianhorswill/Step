@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Step.Output;
 using Step.Parser;
 
@@ -33,6 +31,7 @@ namespace Step.Interpreter
         /// If there is a declaration group in effect, but this head cannot be expanded by it, then cancel the current group and return the original head.
         /// </summary>
         /// <param name="head">Head to expand</param>
+        /// <param name="getLocal">Generator for local variables for the enclosing method</param>
         /// <param name="path">Source file from which this comes, if any</param>
         /// <param name="lineNumber">Line number within source file, if any</param>
         /// <returns>Expanded head, or original if no expansion</returns>
@@ -40,8 +39,9 @@ namespace Step.Interpreter
         {
             if (CurrentDeclarationGroup == null) return (head.taskName, head.pattern.ToArray());
 
-            object Variablize(object o) => o switch
+            object? Variablize(object? o) => o switch
             {
+                null => null,
                 string s when DefinitionStream.IsLocalVariableName(s) => getLocal(s),
                 object?[] tuple => VariablizeTuple(tuple),
                 _ => o
@@ -70,11 +70,13 @@ namespace Step.Interpreter
         /// Set current declaration group to the argument, if it is indeed a declaration group attribute
         /// </summary>
         /// <param name="possibleGroupAttribute">Attribute appearing in the source code</param>
+        /// <param name="path">Path of source file, if any</param>
+        /// <param name="lineNumber">Line number within source file</param>
         /// <returns>True if it was a group attribute invocation</returns>
         public bool HandleGroupAttribute(object?[] possibleGroupAttribute, string? path, int lineNumber)
         {
             var head = possibleGroupAttribute[0];
-            if (!(head is string name))
+            if (!(head is string))
                 return false;
             if (!IsDeclarationGroup(possibleGroupAttribute))
                 return false;

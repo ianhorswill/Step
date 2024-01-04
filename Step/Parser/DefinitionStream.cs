@@ -424,20 +424,21 @@ namespace Step.Parser
                     yield return ReadDefinition();
                     while (groupExpander.Assertions.Count > 0)
                     {
-                        var locals = new List<LocalVariableName>();
+                        var assertionLocals = new List<LocalVariableName>();
 
                         LocalVariableName MakeLocal(string name)
                         {
-                            var l = new LocalVariableName(name, locals.Count);
-                            locals.Add(l);
+                            var l = new LocalVariableName(name, assertionLocals.Count);
+                            assertionLocals.Add(l);
                             return l;
                         }
 
                         LocalVariableName Localize(string name) =>
-                            locals.FirstOrDefault(l => l.Name == name) ?? MakeLocal(name);
+                            assertionLocals.FirstOrDefault(l => l.Name == name) ?? MakeLocal(name);
 
-                        object Variablize(object o) => o switch
+                        object? Variablize(object? o) => o switch
                         {
+                            null => null,
                             string s when IsLocalVariableName(s) => Localize(s),
                             object?[] tuple => VariablizeTuple(tuple),
                             _ => o
@@ -447,7 +448,7 @@ namespace Step.Parser
 
                         var assertion = groupExpander.Assertions.Dequeue();
                         var pattern = VariablizeTuple(assertion.pattern);
-                        yield return (assertion.task, 1, pattern, locals.ToArray(), null, CompoundTask.TaskFlags.None,
+                        yield return (assertion.task, 1, pattern, assertionLocals.ToArray(), null, CompoundTask.TaskFlags.None,
                             null, SourcePath, lineNumber);
                     }
                 }
