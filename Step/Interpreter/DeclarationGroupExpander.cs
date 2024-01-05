@@ -43,7 +43,15 @@ namespace Step.Interpreter
             {
                 null => null,
                 string s when DefinitionStream.IsLocalVariableName(s) => getLocal(s),
-                object?[] tuple => VariablizeTuple(tuple),
+                object?[] tuple => tuple.Select(Variablize).ToArray(),
+                _ => o
+            };
+
+            object? Devariablize(object? o) => o switch
+            {
+                null => null,
+                LocalVariableName v => v.Name,
+                object?[] tuple => tuple.Select(Devariablize).ToArray(),
                 _ => o
             };
 
@@ -51,7 +59,7 @@ namespace Step.Interpreter
 
             try
             {
-                var headTuple = head.pattern.Prepend(head.taskName).ToArray();
+                var headTuple = head.pattern.Select(Devariablize).Prepend(head.taskName).ToArray();
                 var newHeadTuple = Module.CallFunction<object?[]>(ExpansionFunction, CurrentDeclarationGroup, headTuple);
                 if (newHeadTuple.Length < 1 && !(newHeadTuple[0] is string))
                     throw new SyntaxError(

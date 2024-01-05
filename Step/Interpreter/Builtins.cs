@@ -115,6 +115,9 @@ namespace Step.Interpreter
                 .Arguments()
                 .Documentation("debugging", "Breakpoint; pauses execution and displays the current stack in the debugger.");
 
+            g["Listing"] =
+                new DeterministicTextGenerator<CompoundTask>("Listing", t => t.Methods.Select(m => m.MethodCode+"\n"));
+
             g["Throw"] = new SimpleNAryPredicate("Throw", Throw)
                 .Arguments("message", "...")
                 .Documentation("control flow", "Throws an exception (error) containing the specified message.");

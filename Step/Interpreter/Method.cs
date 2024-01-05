@@ -128,8 +128,15 @@ namespace Step.Interpreter
         /// <summary>
         /// The argument pattern for this method expressed as the course code for a call
         /// </summary>
-        public string HeadString => Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
-        
+        public string HeadString
+        {
+            get
+            {
+                var headWithBrackets = Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
+                return headWithBrackets.Substring(1, headWithBrackets.Length-2);
+            }
+        }
+
         /// <summary>
         /// An approximate reconstruction of the original course text for this method.
         /// </summary>

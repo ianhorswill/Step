@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Net.Mail;
 using Step;
 using Step.Parser;
 using Step.Interpreter;
@@ -491,6 +492,24 @@ Baz: baz");
             Assert.IsTrue(m.CallPredicate("NotPartOfTheGroup"));
             Assert.IsTrue(m.CallPredicate("Beat", "test"));
             Assert.IsFalse(m.CallPredicate("Beat", 1));
+        }
+
+        [TestMethod]
+        public void DeclarationGroupTemplateTest()
+        {
+            var m = new Module(nameof(DeclarationGroupTest));
+            m.LoadDefinitions(new StringReader(@"
+                DeclarationGroup [beat ?beatName].
+                DeclarationExpansion [beat ?beatName] [|Attributes| ?x] [|Attributes| ?beatName ?x].
+                [beat [foo ?x]]
+                Attributes [bar ?x]."),
+                null);
+            //var exp = m.CallFunction<object[]>("DeclarationExpansion",
+            //    new object[] { "beat", new object[] { "foo", "?x" } },
+            //    new object[] { "Attributes", new object[] { "bar", "?x" } });
+
+            var attr = m.CallFunction<object[]>("Attributes", new object[] { new object[] { "foo", 1 } });
+            CollectionAssert.AreEqual(new object[] { "bar", 1 }, attr);
         }
     }
 }
