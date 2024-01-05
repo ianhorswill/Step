@@ -115,6 +115,10 @@ namespace Step.Interpreter
             foreach (var e in tuple)
                 switch (e)
                 {
+                    case CompoundTask t:
+                        yield return t;
+                        break;
+
                     case StateVariableName _:
                         yield return e;
                         break;
