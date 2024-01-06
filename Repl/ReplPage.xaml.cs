@@ -1,4 +1,6 @@
-﻿using CommunityToolkit.Maui.Storage;
+﻿using System.Text.RegularExpressions;
+using System.Windows.Input;
+using CommunityToolkit.Maui.Storage;
 using Step;
 
 namespace Repl
@@ -18,6 +20,8 @@ namespace Repl
         {
             InitializeComponent();
             Instance = this;
+            ExceptionMessage.GestureRecognizers.Add(new TapGestureRecognizer() { Command = (CommandAdapter)ExceptionMessageClicked});
+            StackTrace.GestureRecognizers.Add(new TapGestureRecognizer() { Command = (CommandAdapter)StackTraceClicked});
         }
 
         protected override void OnAppearing()
@@ -152,6 +156,53 @@ namespace Repl
             button.Clicked += (sender, args) => EvalAndShowOutput(StepCode.Eval(new StepThread(StepCode.Module, state, "Call", new object[] { action })));
 #pragma warning restore CS4014
             TemporaryControls.Add(button);
+        }
+
+        private void EditProject(object? sender, EventArgs e)
+        {
+            VSCode.EditFolder(StepCode.ProjectDirectory);
+        }
+
+        private bool CanEditProject => StepCode.ProjectDirectory != null;
+
+        private void ExceptionMessageClicked()
+        {
+            var m = Regex.Match(ExceptionMessage.Text, "^([^.]+.step):([0-9]+) ");
+            if (m.Success)
+            {
+                var file = m.Groups[1].Value;
+                var lineNumber = int.Parse(m.Groups[2].Value);
+                VSCode.Edit(Path.Combine(StepCode.ProjectDirectory, file), lineNumber);
+            }
+        }
+
+        private void StackTraceClicked()
+        {
+            var m = Regex.Match(StackTrace.Text, "<i>at ([^.]+.step):([0-9]+)");
+            if (m.Success)
+            {
+                var file = m.Groups[1].Value;
+                var lineNumber = int.Parse(m.Groups[2].Value);
+                VSCode.Edit(Path.Combine(StepCode.ProjectDirectory, file), lineNumber);
+            }
+        }
+
+        private class CommandAdapter : ICommand
+        {
+            private readonly Action action;
+
+            public CommandAdapter(Action action)
+            {
+                this.action = action;
+            }
+
+            public bool CanExecute(object? parameter) => true;
+            
+            public void Execute(object? parameter) => action();
+
+            public event EventHandler? CanExecuteChanged;
+
+            public static implicit operator CommandAdapter(Action a) => new CommandAdapter(a);
         }
     }
 }

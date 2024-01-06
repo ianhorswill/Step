@@ -15,6 +15,11 @@
                     <KeyboardAccelerator Modifiers="Ctrl" Key="r" />
                 </MenuFlyoutItem.KeyboardAccelerators>
             </MenuFlyoutItem>
+            <MenuFlyoutItem Text="Edit project" Clicked="EditProject">
+                <MenuFlyoutItem.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Ctrl" Key="e" />
+                </MenuFlyoutItem.KeyboardAccelerators>
+            </MenuFlyoutItem>
         </MenuBarItem>
         <MenuBarItem Text="Edit">
             <MenuFlyoutItem Text="Copy output" Clicked="CopyOutput" />
