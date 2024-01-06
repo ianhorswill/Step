@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using Step.Interpreter;
@@ -496,7 +497,7 @@ namespace Step.Parser
 
             ReadBody(chainBuilder, () => EndOfDefinition);
             
-            CheckForWarnings();
+            CheckForWarnings(taskName, SourcePath, lineNumber);
 
             // Eat end token
             if (EndOfDefinition && !end)
@@ -1014,12 +1015,13 @@ namespace Step.Parser
         /// <summary>
         /// Issue warnings for any singleton variables
         /// </summary>
-        private void CheckForWarnings()
+        private void CheckForWarnings(string taskName, string? sourcePath, int lineNumber)
         {
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]))
                     Module.AddWarning(
-                        $"{SourceFile}:{lineNumber} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.\n");
+                        $"{SourceFile}:{lineNumber} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.\n",
+                        new MethodPlaceholder(taskName, sourcePath, lineNumber));
         }
     }
 }

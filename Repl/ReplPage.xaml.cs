@@ -2,6 +2,8 @@
 using System.Windows.Input;
 using CommunityToolkit.Maui.Storage;
 using Step;
+using Step.Interpreter;
+using Task = System.Threading.Tasks.Task;
 
 namespace Repl
 {
@@ -21,7 +23,7 @@ namespace Repl
             InitializeComponent();
             Instance = this;
             ExceptionMessage.GestureRecognizers.Add(new TapGestureRecognizer() { Command = (CommandAdapter)ExceptionMessageClicked});
-            StackTrace.GestureRecognizers.Add(new TapGestureRecognizer() { Command = (CommandAdapter)StackTraceClicked});
+            StackTrace.BindingContext = this;
         }
 
         protected override void OnAppearing()
@@ -32,16 +34,19 @@ namespace Repl
 
         private void ShowWarningsAndException()
         {
-            var warnings = StepCode.Module.Warnings().ToArray();
+            var warnings = StepCode.Module.WarningsWithOffenders().ToArray();
             var haveWarnings = warnings.Length > 0;
             WarningLabel.IsVisible = haveWarnings;
             if (haveWarnings)
-                WarningText.Text = string.Join("<br>", warnings);
+                WarningText.ItemsSource = warnings;
             else
-                WarningText.Text = OutputText.Text = "";
+                WarningText.ItemsSource = null;
 
             UpdateExceptionInfo();
         }
+
+        public IEnumerable<MethodCallFrame> StackFrames 
+            => MethodCallFrame.CurrentFrame == null?Array.Empty<MethodCallFrame>():MethodCallFrame.CurrentFrame.CallerChain;
 
         private void UpdateExceptionInfo()
         {
@@ -50,12 +55,14 @@ namespace Repl
                 ErrorLabel.IsVisible = true;
                 Module.RichTextStackTraces = true;
                 ExceptionMessage.Text = StepCode.LastException.Message;
-                StackTrace.Text = Module.StackTrace();
+                StackTrace.ItemsSource = StackFrames;
+                
                 CStackTrace.Text = "Internal debugging information for Ian:\n"+StepCode.LastException.StackTrace;
             }
             else
             {
-                ExceptionMessage.Text = StackTrace.Text = CStackTrace.Text = "";
+                ExceptionMessage.Text = CStackTrace.Text = "";
+                StackTrace.ItemsSource = null;
                 ErrorLabel.IsVisible = false;
             }
         }
@@ -84,7 +91,8 @@ namespace Repl
         private void ReloadStepCode(object sender, EventArgs e)
         {
             StepCode.ReloadStepCode();
-            OutputText.Text = StackTrace.Text = CStackTrace.Text = "";
+            OutputText.Text = CStackTrace.Text = "";
+            StackTrace.ItemsSource = null;
             ShowWarningsAndException();
         }
 
@@ -95,7 +103,7 @@ namespace Repl
 
         private async void CopyError(object sender, EventArgs e)
         {
-            await Clipboard.SetTextAsync($"{ExceptionMessage.Text}\n{StackTrace.Text}");
+            await Clipboard.SetTextAsync($"{ExceptionMessage.Text}\n{Module.StackTrace()}");
         }
 
         private async void SelectProject(object sender, EventArgs e)
@@ -176,17 +184,6 @@ namespace Repl
             }
         }
 
-        private void StackTraceClicked()
-        {
-            var m = Regex.Match(StackTrace.Text, "<i>at ([^.]+.step):([0-9]+)");
-            if (m.Success)
-            {
-                var file = m.Groups[1].Value;
-                var lineNumber = int.Parse(m.Groups[2].Value);
-                VSCode.Edit(Path.Combine(StepCode.ProjectDirectory, file), lineNumber);
-            }
-        }
-
         private class CommandAdapter : ICommand
         {
             private readonly Action action;
@@ -203,6 +200,35 @@ namespace Repl
             public event EventHandler? CanExecuteChanged;
 
             public static implicit operator CommandAdapter(Action a) => new CommandAdapter(a);
+        }
+
+        private void StackFrameSelected(object? sender, SelectedItemChangedEventArgs e)
+        {
+            var frame = e.SelectedItem as MethodCallFrame;
+            if (frame is { Method.FilePath: not null })
+            {
+                VSCode.Edit(frame.Method.FilePath, frame.Method.LineNumber);
+            }
+        }
+
+        private void WarningSelected(object? sender, SelectedItemChangedEventArgs e)
+        {
+            var warning = (WarningInfo)e.SelectedItem;
+            switch (warning.Offender)
+            {
+                case Method { FilePath: not null } m:
+                    VSCode.Edit(m.FilePath, m.LineNumber);
+                    break;
+
+                case CompoundTask { Methods.Count: > 0 } t when t.Methods[0].FilePath != null:
+                    var firstMethod = t.Methods[0];
+                    VSCode.Edit(firstMethod.FilePath!, firstMethod.LineNumber);
+                    break;
+
+                case Step.Parser.MethodPlaceholder { SourcePath: not null } p:
+                    VSCode.Edit(p.SourcePath, p.LineNumber);
+                    break;
+            }
         }
     }
 }

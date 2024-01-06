@@ -152,6 +152,8 @@ namespace Step.Interpreter
             return $"{source} {start}at {Path.GetFileName(Method.FilePath)}:{Method.LineNumber}{end}";
         }
 
+        public string CallSourceText => GetCallSourceText(BindingsAtCallTime);
+
         private object?[]? cachedCallExpression;
         
         /// <summary>

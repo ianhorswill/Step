@@ -42,16 +42,30 @@
                 x:Name="ExceptionMessage"
                 TextColor="Orange"
                 TextType="Html"/>
-            <Label 
-                x:Name="StackTrace"
-                LineBreakMode="NoWrap"
-                TextType = "Html"
-                TextColor="Grey"/>
+
+            <ListView x:Name="StackTrace" SelectionMode="Single" ItemSelected="StackFrameSelected">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <Label Text="{Binding CallSourceText}" TextType="Html" TextColor="DarkOrange"/>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
             <Label x:Name="WarningLabel" Text="Warnings" FontAttributes="Bold" FontSize="20" TextColor="Yellow"/>
-            <Label 
+            <!--<Label 
                 x:Name="WarningText"
                 TextColor="Yellow"
-                TextType="Html"/>
+                TextType="Html"/>-->
+            <ListView x:Name="WarningText" SelectionMode="Single" ItemSelected="WarningSelected">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <Label Text="{Binding Warning}" TextType="Html" TextColor="yellow"/>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
             <Label 
                 x:Name="CStackTrace"
                 LineBreakMode="NoWrap"

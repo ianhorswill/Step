@@ -111,7 +111,7 @@ namespace Step
         /// </summary>
         public static readonly Module Global;
 
-        private List<string>? loadTimeWarnings;
+        private List<WarningInfo>? loadTimeWarnings;
 
         /// <summary>
         /// Name of the module for debugging purposes
@@ -634,7 +634,7 @@ var output = TextBuffer.NewEmpty();
         /// <summary>
         /// Returns any warnings found by code analysis
         /// </summary>
-        public IEnumerable<string> Warnings()
+        public IEnumerable<WarningInfo> WarningsWithOffenders()
         {
             if (loadTimeWarnings != null)
                 foreach (var w in loadTimeWarnings)
@@ -643,7 +643,9 @@ var output = TextBuffer.NewEmpty();
                 yield return w;
         }
 
-        private IEnumerable<string> Lint()
+        public IEnumerable<string> Warnings() => WarningsWithOffenders().Select(pair => pair.Warning);
+
+        private IEnumerable<WarningInfo> Lint()
         {
             foreach (var pair in dictionary.ToArray())  // Copy the dictionary because it might get modified by TaskDefined
             {
@@ -655,7 +657,7 @@ var output = TextBuffer.NewEmpty();
                             {
                                 var fileName = method.FilePath == null ? "Unknown" : Path.GetFileName(method.FilePath);
                                 yield return
-                                    $"{fileName}:{method.LineNumber} {variable.Name} called undefined task {g.Name}";
+                                    (method, $"{variable.Name} called undefined task {g.Name}");
                             }
             }
 
@@ -671,7 +673,7 @@ var output = TextBuffer.NewEmpty();
                         }
 
                     if (!called)
-                        yield return RichTextStackTraces?$"<b>{t}</b> is defined but never called.  If this is deliberate, you can add the annotation [main] to {t} to suppress this message.\n" : $"{t} is defined but never called.    If this is deliberate, you can add the annotation [main] to {t} to suppress this message.";
+                        yield return (t, RichTextStackTraces?$"<b>{t}</b> is defined but never called.  If this is deliberate, you can add the annotation [main] to {t} to suppress this message.\n" : $"{t} is defined but never called.    If this is deliberate, you can add the annotation [main] to {t} to suppress this message.");
                 }
         }
 
@@ -697,11 +699,11 @@ var output = TextBuffer.NewEmpty();
             }
         }
 
-        internal void AddWarning(string warning)
+        internal void AddWarning(string warning, object? offender=null)
         {
             if (loadTimeWarnings == null)
-                loadTimeWarnings = new List<string>();
-            loadTimeWarnings.Add(warning);
+                loadTimeWarnings = new List<WarningInfo>();
+            loadTimeWarnings.Add((offender, warning));
         }
 
         private object? ResolveVariables(object? o)
