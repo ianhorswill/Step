@@ -32,36 +32,37 @@
             <Entry x:Name="Command"
                    Placeholder="Enter command"
                    Completed="EvalAndShowOutput"
-                   IsSpellCheckEnabled="False"/>
+                   IsSpellCheckEnabled="False"
+                   ToolTipProperties.Text ="Type a call to a step task here and press return or enter to run it."/>
             <Label 
                 TextType="Html"
                 x:Name="OutputText" />
             <HorizontalStackLayout x:Name="TemporaryControls" Spacing="10" ></HorizontalStackLayout>
-            <Label x:Name="ErrorLabel" Text="Errors" FontAttributes="Bold" FontSize="20" TextColor="Orange"/>
+            <Label x:Name="ErrorLabel" Text="An problem occurred in your program" FontAttributes="Bold" FontSize="20" TextColor="DarkOrange"/>
             <Label 
                 x:Name="ExceptionMessage"
                 TextColor="Orange"
-                TextType="Html"/>
+                TextType="Html"
+                FontSize="20"
+                ToolTipProperties.Text ="This is the description of the error that occurred in your program." />
 
             <ListView x:Name="StackTrace" SelectionMode="Single" ItemSelected="StackFrameSelected">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell>
-                            <Label Text="{Binding CallSourceText}" TextType="Html" TextColor="DarkOrange"/>
+                            <Label Text="{Binding CallSourceText}" TextType="Html" TextColor="DarkOrange"
+                                   ToolTipProperties.Text ="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."/>
                         </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            <Label x:Name="WarningLabel" Text="Warnings" FontAttributes="Bold" FontSize="20" TextColor="Yellow"/>
-            <!--<Label 
-                x:Name="WarningText"
-                TextColor="Yellow"
-                TextType="Html"/>-->
+            <Label x:Name="WarningLabel" Text="Possible problems in your code. These may not be errors, but they're worth checking." FontAttributes="Bold" FontSize="20" TextColor="Yellow"/>
             <ListView x:Name="WarningText" SelectionMode="Single" ItemSelected="WarningSelected">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell>
-                            <Label Text="{Binding Warning}" TextType="Html" TextColor="yellow"/>
+                            <Label Text="{Binding Warning}" TextType="Html" TextColor="yellow"
+                                   ToolTipProperties.Text ="Click to view in Visual Studio Code." />
                         </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
@@ -69,7 +70,8 @@
             <Label 
                 x:Name="CStackTrace"
                 LineBreakMode="NoWrap"
-                TextColor="DimGrey"/>
+                TextColor="DimGrey"
+                ToolTipProperties.Text ="You can ignore this.  This is in case there is a bug in Step and Ian needs to know more information."/>
 
         </VerticalStackLayout>
     </ScrollView>
