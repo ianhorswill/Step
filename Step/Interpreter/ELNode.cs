@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Step.Output;
 using Step.Utilities;
+#pragma warning disable CS8604
 
 namespace Step.Interpreter
 {
@@ -65,7 +66,7 @@ namespace Step.Interpreter
         {
             ArgumentCountException.Check(nameof(ElDump), 0, args);
             var s = e.State;
-            return k(o.Append(((ElNode)s[ElState]!).SortedContents.Select(s => s+"\n").ToArray()),e.Unifications,s,predecessor);
+            return k(o.Append(((ElNode)s[ElState]!).SortedContents.Select(c => c+"\n").ToArray()),e.Unifications,s,predecessor);
         }
 
         protected bool Read(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)
@@ -164,29 +165,29 @@ namespace Step.Interpreter
                 = ImmutableDictionary.Create<object, ElNode?>(Term.Comparer.Default);
             private NonExclusive(ImmutableDictionary<object, ElNode?> children)
             {
-                Children = children;
+                this.children = children;
             }
 
             public NonExclusive() : this(EmptyDictionary)
             { }
 
-            public readonly ImmutableDictionary<object, ElNode?> Children;
+            private readonly ImmutableDictionary<object, ElNode?> children;
 
             public NonExclusive(object? key, ElNode? child) : this(EmptyDictionary.Add(key,child))
             { }
 
             protected override ElNode Replace(object? key, ElNode? child) =>
-                Children.TryGetValue(key, out var oldChild) && child == oldChild
+                children.TryGetValue(key, out var oldChild) && child == oldChild
                     ? this
-                    : new NonExclusive(Children.SetItem(key, child));
+                    : new NonExclusive(children.SetItem(key, child));
 
             protected override ElNode? ChildOf(object? key)
-                => Children.TryGetValue(key, out var child) ? child : null;
+                => children.TryGetValue(key, out var child) ? child : null;
 
-            protected override ElNode? DeleteKey(object? key)
+            protected override ElNode DeleteKey(object? key)
             {
-                if (Children.ContainsKey(key!))
-                    return new NonExclusive(Children.Remove(key!));
+                if (children.ContainsKey(key!))
+                    return new NonExclusive(children.Remove(key!));
                 return this;
             }
 
@@ -220,7 +221,7 @@ namespace Step.Interpreter
             {
                 get
                 {
-                    foreach (var pair in Children)
+                    foreach (var pair in children)
                     {
                         var prefix = "/" + pair.Key.ToTermString();
                         var child = pair.Value;
@@ -235,7 +236,7 @@ namespace Step.Interpreter
 
             protected override bool Lookup(object? atom, ref ElNode? child)
             {
-                if (!Children.TryGetValue(atom!, out var node))
+                if (!children.TryGetValue(atom!, out var node))
                     return false;
                 child = node;
                 return true;
@@ -243,7 +244,7 @@ namespace Step.Interpreter
 
             protected override bool Bind(object?[] path, int position, BindingEnvironment e, Predicate<BindingList?> k)
             {
-                foreach (var pair in Children)
+                foreach (var pair in children)
                 {
                     var key = pair.Key;
                     var child = pair.Value;
@@ -253,7 +254,7 @@ namespace Step.Interpreter
                         return k(u);
                     if (child == null)
                         continue;
-                    if (child!.Read(path, position + 2, new BindingEnvironment(e, u, e.State), k))
+                    if (child.Read(path, position + 2, new BindingEnvironment(e, u, e.State), k))
                         return true;
                 }
 
@@ -263,7 +264,9 @@ namespace Step.Interpreter
 
         private sealed class Exclusive : ElNode
         {
+            // ReSharper disable once MemberCanBePrivate.Local
             public readonly object? Key;
+            // ReSharper disable once MemberCanBePrivate.Local
             public readonly ElNode? Child;
             public Exclusive(object? key, ElNode? child)
             {
@@ -341,6 +344,7 @@ namespace Step.Interpreter
 
         private sealed class Leaf : ElNode
         {
+            // ReSharper disable once MemberCanBePrivate.Local
             public readonly object? Key;
 
             public Leaf(object? key)
@@ -362,13 +366,13 @@ namespace Step.Interpreter
                         return new Leaf(path[position + 1]);
 
                     default:
-                        return Build(path, position);
+                        return Build(path, position)!;
                 }
             }
 
             public override IEnumerable<string> Contents => new[] { Key.ToTermString() };
 
-            protected override ElNode Replace(object key, ElNode? child)
+            protected override ElNode Replace(object? key, ElNode? child)
             {
                 throw new NotImplementedException();
             }
@@ -378,7 +382,7 @@ namespace Step.Interpreter
                 return (Key == key) ? null : this;
             }
 
-            protected override ElNode? ChildOf(object key)
+            protected override ElNode ChildOf(object? key)
             {
                 throw new NotImplementedException();
             }

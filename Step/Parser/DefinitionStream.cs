@@ -25,7 +25,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.IO;
 using System.Linq;
 using Step.Interpreter;
@@ -94,7 +93,7 @@ namespace Step.Parser
 
         private readonly ExpressionStream expressionStream;
 
-        private DeclarationGroupExpander groupExpander;
+        private readonly DeclarationGroupExpander groupExpander;
 
         public string? SourceFile
         {
@@ -136,7 +135,7 @@ namespace Step.Parser
             get
             {
                 var next = Peek;
-                if (next is object[] a && a.Length == 1 && a[0] is string keyword &&
+                if (next is object[] { Length: 1 } a && a[0] is string keyword &&
                     Substitutions.TryGetValue(keyword, out var subst))
                     return subst;
                 return next;
@@ -195,10 +194,10 @@ namespace Step.Parser
         private bool ExplicitEndToken => KeywordMarker("end");
 
         private bool KeywordMarker(string keyword) =>
-            Peek is object[] array && array.Length == 1 && array[0].Equals(keyword);
+            Peek is object[] { Length: 1 } array && array[0].Equals(keyword);
 
         private bool OneOfKeywordMarkers(params string[] keywords) =>
-            Peek is object[] array && array.Length == 1 && array[0] is string k && Array.IndexOf(keywords, k) >= 0;
+            Peek is object[] { Length: 1 } array && array[0] is string k && Array.IndexOf(keywords, k) >= 0;
 
         private readonly string[] keywordMarkers = new[] {"end", "or", "else", "then" };
         private bool AtKeywordMarker => OneOfKeywordMarkers(keywordMarkers);
@@ -429,7 +428,8 @@ namespace Step.Parser
 
                         LocalVariableName MakeLocal(string name)
                         {
-                            var l = new LocalVariableName(name, assertionLocals.Count);
+                            // ReSharper disable once RedundantSuppressNullableWarningExpression
+                            var l = new LocalVariableName(name, assertionLocals!.Count);
                             assertionLocals.Add(l);
                             return l;
                         }
@@ -1015,13 +1015,13 @@ namespace Step.Parser
         /// <summary>
         /// Issue warnings for any singleton variables
         /// </summary>
-        private void CheckForWarnings(string taskName, string? sourcePath, int lineNumber)
+        private void CheckForWarnings(string taskName, string? sourcePath, int warningLine)
         {
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]))
                     Module.AddWarning(
-                        $"{SourceFile}:{lineNumber} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.\n",
-                        new MethodPlaceholder(taskName, sourcePath, lineNumber));
+                        $"{SourceFile}:{warningLine} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.\n",
+                        new MethodPlaceholder(taskName, sourcePath, warningLine));
         }
     }
 }

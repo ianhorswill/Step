@@ -64,18 +64,6 @@ namespace Repl
                     return k(o.Append(TextUtilities.FreshLineToken).Append(output), bindings.Unifications, bindings.State, p);
                 });
 
-            var addMenuItem = "AddMenuItem";
-            ReplUtilities[addMenuItem] =
-                new GeneralPrimitive(addMenuItem, (args, o, e, d, k) =>
-                {
-                    ArgumentCountException.Check(addMenuItem, 3, args);
-                    var menu = ArgumentTypeException.Cast<string>(addMenuItem, args[0], args);
-                    var item = ArgumentTypeException.Cast<string>(addMenuItem, args[1], args);
-                    var action = ArgumentTypeException.Cast<object[]>(addMenuItem, args[2], args);
-                    MainThread.BeginInvokeOnMainThread(() => ReplPage.Instance.AddTemporaryMenuItem(menu, item, action, e.State));
-                    return k(o, e.Unifications, e.State, d);
-                });
-
             var addButton = "AddButton";
             ReplUtilities[addButton] =
                 new GeneralPrimitive(addButton, (args, o, e, d, k) =>
@@ -112,6 +100,7 @@ namespace Repl
             {
                 if (ProjectDirectory != "")
                     Module.LoadDirectory(ProjectDirectory);
+                ReplPage.Instance.RemoveProjectMenu();
                 foreach (object[] spec in Module.CallFunction<object[]>("FindAllButtons"))
                 {
                     var label = spec[0] as string[];
@@ -128,7 +117,7 @@ namespace Repl
                     if (code == null)
                         throw new ArgumentException(
                             $"Invalid code {Writer.TermToString(spec[1])} to run for button {stringLabel}");
-                    ReplPage.Instance.AddButton(stringLabel, code);
+                    ReplPage.Instance.AddProjectMenuEntry(stringLabel, code);
                 }
             }
             catch (Exception e)

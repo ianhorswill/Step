@@ -55,8 +55,6 @@ namespace Step.Interpreter
                 _ => o
             };
 
-            object?[] VariablizeTuple(object?[] tuple) => tuple.Select(Variablize).ToArray();
-
             try
             {
                 var headTuple = head.pattern.Select(Devariablize).Prepend(head.taskName).ToArray();

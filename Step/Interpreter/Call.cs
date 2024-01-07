@@ -158,11 +158,13 @@ namespace Step.Interpreter
             {
                 case "/":
                     return ElNode.ElLookupPrimitive.Call(arglist, output, env, predecessor,
-                        (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));;
+                        (newOutput, u, s, newPredecessor)
+                            => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));
 
                 case Task p:
                     return p.Call(arglist, output, env, predecessor,
-                        (newOutput, u, s, newPredecessor) => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));
+                        (newOutput, u, s, newPredecessor)
+                            => Continue(newOutput, new BindingEnvironment(env, u, s), k, newPredecessor));
 
                 case string[] text:
                     return Continue(output.Append(text), env, k, predecessor);
@@ -174,8 +176,8 @@ namespace Step.Interpreter
                     var arg1 = arglist[1];
                     if (v0 == null)
                     {
-                        return d.Contains(arg0)
-                               && env.Unify(arg1, d[arg0], out var u)
+                        return d.Contains(arg0!)
+                               && env.Unify(arg1, d[arg0!], out var u)
                                && Continue(output,
                                    new BindingEnvironment(env, u, env.State), k, predecessor);
                     }

@@ -62,6 +62,7 @@ namespace Step
         /// <summary>
         /// True if we are in the process of trying to cancel the running Step thread.
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         private static bool isCanceling;
 
         /// <summary>
@@ -472,8 +473,8 @@ var output = TextBuffer.NewEmpty();
         /// <param name="path">Path to the file</param>
         public void LoadDefinitions(string path)
         {
-            using (var defs = new DefinitionStream(this, path))
-                LoadDefinitions(defs);
+            using var defs = new DefinitionStream(this, path);
+            LoadDefinitions(defs);
         }
 
         /// <summary>
@@ -503,19 +504,19 @@ var output = TextBuffer.NewEmpty();
                         compoundTask.Flags |= flags;
                     else
                         compoundTask.AddMethod(weight, pattern, locals, chain, flags, path, line);
-                    if (compoundTask.Arglist == null)
-                        compoundTask.Arglist = pattern.Select(x =>x==null?"?":x.ToString()).ToArray();
+                    compoundTask.Arglist ??= pattern.Select(x => x == null ? "?" : x.ToString()).ToArray();
 
                     if (declaration == "folder_structure")
                     {
                         var dir = Path.GetDirectoryName(defs.SourcePath);
+                        Debug.Assert(dir != null, nameof(dir) + " != null");
                         DefineMethodsFromFolderStructure(compoundTask, dir);
                     }
                 }
             }
         }
 
-        private static readonly LocalVariableName[] NoLocals = new LocalVariableName[0];
+        private static readonly LocalVariableName[] NoLocals = Array.Empty<LocalVariableName>();
         private void DefineMethodsFromFolderStructure(CompoundTask task, string parentDirectory)
         {
             void Walk(string path, string? name)
@@ -553,10 +554,10 @@ var output = TextBuffer.NewEmpty();
                 throw new SyntaxError("Initially command cannot take arguments", path, line);
             State bindings = State.Empty;
             var fakeInitiallyMethod = new Method(new CompoundTask("initially", 0), 1, Array.Empty<object?>(),
-                new LocalVariableName[0], null, path, line);
+                Array.Empty<LocalVariableName>(), null, path, line);
             if (!Step.Interpreter.Step.Try(chain, new TextBuffer(0),
                 new BindingEnvironment(this,
-                    new MethodCallFrame(fakeInitiallyMethod, null, locals.Select(name => new LogicVariable(name)).ToArray(), 
+                    new MethodCallFrame(fakeInitiallyMethod, null, locals!.Select(name => new LogicVariable(name)).ToArray(), 
                         MethodCallFrame.CurrentFrame, MethodCallFrame.CurrentFrame)),
                 (o, u, d, p ) =>
                 {
@@ -624,8 +625,7 @@ var output = TextBuffer.NewEmpty();
         // ReSharper disable once UnusedMember.Global
         public void AddBindHook(BindHook hook)
         {
-            if (bindHooks == null)
-                bindHooks = new List<BindHook>();
+            bindHooks ??= new List<BindHook>();
             bindHooks.Add(hook);
         }
 
@@ -653,12 +653,9 @@ var output = TextBuffer.NewEmpty();
                 if (pair.Value is CompoundTask task)
                     foreach (var method in task.Methods)
                         for (var step = method.StepChain; step != null; step = step.Next)
-                            if (step is Call c && c.Task is StateVariableName g && !TaskDefined(g))
-                            {
-                                var fileName = method.FilePath == null ? "Unknown" : Path.GetFileName(method.FilePath);
+                            if (step is Call { Task: StateVariableName g } && !TaskDefined(g))
                                 yield return
                                     (method, $"{variable.Name} called undefined task {g.Name}");
-                            }
             }
 
             foreach (var t in DefinedTasks)
@@ -677,7 +674,7 @@ var output = TextBuffer.NewEmpty();
                 }
         }
 
-        private bool TaskDefined(StateVariableName stateVariableName)
+        private bool TaskDefined(StateVariableName? stateVariableName)
         {
             if (stateVariableName == null)
                 return false;
@@ -701,8 +698,7 @@ var output = TextBuffer.NewEmpty();
 
         internal void AddWarning(string warning, object? offender=null)
         {
-            if (loadTimeWarnings == null)
-                loadTimeWarnings = new List<WarningInfo>();
+            loadTimeWarnings ??= new List<WarningInfo>();
             loadTimeWarnings.Add((offender, warning));
         }
 
@@ -760,10 +756,9 @@ var output = TextBuffer.NewEmpty();
         public static string StackTrace(BindingList? currentBindings = null)
         {
                 var b = new StringBuilder();
-                if (MethodCallFrame.CurrentFrame != null && MethodCallFrame.CurrentFrame.CallerChain != null)
+                if (MethodCallFrame.CurrentFrame != null)
                 {
-                    if (currentBindings == null)
-                        currentBindings = MethodCallFrame.CurrentFrame.BindingsAtCallTime;
+                    currentBindings ??= MethodCallFrame.CurrentFrame.BindingsAtCallTime;
                     foreach (var frame in MethodCallFrame.CurrentFrame.CallerChain)
                         b.AppendLine(frame.GetCallSourceText(currentBindings));
                 }

@@ -8,7 +8,7 @@ namespace Step.Serialization
 {
     public class Deserializer
     {
-        public static TextReader Reader;
+        public TextReader Reader;
         public Module Module { get; set; }
 
         public int Peek() => Reader.Peek();
@@ -160,9 +160,9 @@ namespace Step.Serialization
 
         public string ReadAlphaNumeric() => ReadToken(char.IsLetterOrDigit);
 
-        public delegate object DeserializationHandler(Deserializer d);
+        public delegate object? DeserializationHandler(Deserializer d);
 
-        private static Dictionary<string, DeserializationHandler> HandlerTable =
+        private static readonly Dictionary<string, DeserializationHandler> HandlerTable =
             new Dictionary<string, DeserializationHandler>();
 
         public static void RegisterHandler(string t, DeserializationHandler h) => HandlerTable[t] = h;

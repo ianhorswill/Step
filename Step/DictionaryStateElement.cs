@@ -96,11 +96,11 @@ namespace Step
         public override void ValueSerializer(Serializer s, object? value) 
             => s.SerializeDictionary((ImmutableDictionary<TKey, TValue>)value!, s.Serialize, s.Serialize);
 
-        public override object? ValueDeserializer(Deserializer d)
+        public override object ValueDeserializer(Deserializer d)
         {
             var dict = ImmutableDictionary<TKey, TValue>.Empty;
             foreach (var pair in d.DeserializeDictionary(d.Deserialize, d.Deserialize))
-                dict = dict.Add((TKey)pair.Key, (TValue)pair.Value);
+                dict = dict.Add((TKey)pair.Key!, (TValue)pair.Value!);
             return dict;
         }
     }
