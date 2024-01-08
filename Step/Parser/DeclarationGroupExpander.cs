@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Step.Interpreter;
 using Step.Output;
-using Step.Parser;
 
-namespace Step.Interpreter
+namespace Step.Parser
 {
     internal class DeclarationGroupExpander
     {
@@ -19,6 +19,10 @@ namespace Step.Interpreter
         /// Declaration group currently in effect or null
         /// </summary>
         public object?[]? CurrentDeclarationGroup { get; private set; }
+
+        private readonly HashSet<string> currentDeclarationGroupVariableNames = new HashSet<string>();
+
+        public bool IsVariableFromCurrentDeclarationGroup(LocalVariableName l) => currentDeclarationGroupVariableNames.Contains(l.Name);
 
         public DeclarationGroupExpander(Module module)
         {
@@ -95,6 +99,25 @@ namespace Step.Interpreter
             MaybeAddHeaderAssertion(possibleGroupAttribute, path, lineNumber);
             
             CurrentDeclarationGroup = possibleGroupAttribute;
+
+            currentDeclarationGroupVariableNames.Clear();
+
+            void FindVariables(object?[] tuple)
+            {
+                foreach (var element in tuple)
+                    switch (element)
+                    {
+                        case string s when DefinitionStream.IsLocalVariableName(s):
+                            currentDeclarationGroupVariableNames.Add(s);
+                            break;
+                        case object?[] subtuple:
+                            FindVariables(subtuple);
+                            break;
+                    }
+            }
+
+            FindVariables(CurrentDeclarationGroup);
+
             return true;
         }
 

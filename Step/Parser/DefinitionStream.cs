@@ -1018,9 +1018,9 @@ namespace Step.Parser
         private void CheckForWarnings(string taskName, string? sourcePath, int warningLine)
         {
             for (var i = 0; i < locals.Count; i++)
-                if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]))
+                if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]) && !groupExpander.IsVariableFromCurrentDeclarationGroup(locals[i]))
                     Module.AddWarning(
-                        $"{SourceFile}:{warningLine} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.\n",
+                        $"{SourceFile}:{warningLine} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.",
                         new MethodPlaceholder(taskName, sourcePath, warningLine));
         }
     }
