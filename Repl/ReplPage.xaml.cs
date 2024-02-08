@@ -74,7 +74,7 @@ namespace Repl
 
             UpdateExceptionInfo();
         }
-
+    
         /// <summary>
         /// Stack frames of the running or most recently deceased step call.
         /// </summary>
