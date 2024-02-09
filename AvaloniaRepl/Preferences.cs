@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace AvaloniaRepl;
 
-public class Preferences
+public sealed class Preferences
 {
     private static Dictionary<string, string> _prefs = new();
     
@@ -17,6 +17,7 @@ public class Preferences
     public static void Set(string key, string value)
     {
         _prefs[key] = value;
+        SaveToDisk();
     }
     
     public static void LoadFromDisk()
