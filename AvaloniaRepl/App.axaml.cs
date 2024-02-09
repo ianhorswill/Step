@@ -17,6 +17,9 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // save user prefs on shutdown
+            desktop.Exit += (sender, args) => Preferences.SaveToDisk();
+            
             desktop.MainWindow = new MainWindow
             {
                 DataContext = new MainWindowViewModel(),

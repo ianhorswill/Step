@@ -24,6 +24,14 @@ public partial class MainWindow : Window
         StepOutput.Text = "";
         ShowWarningsAndException();
     }
+    
+    private void EditProject(object? sender, RoutedEventArgs e)
+    {
+        if (Directory.Exists(StepCode.ProjectDirectory))
+        {
+            VSCode.EditFolder(StepCode.ProjectDirectory);
+        }
+    }
 
     private async void SelectProjectFolder(object? sender, RoutedEventArgs e)
     {
@@ -73,6 +81,8 @@ public partial class MainWindow : Window
         }
 
         recentProjects.Insert(0, path);
+        
+        ((MainWindowViewModel) DataContext).RecentProjectPaths = recentProjects;
     }
 
     private void ShowWarningsAndException()

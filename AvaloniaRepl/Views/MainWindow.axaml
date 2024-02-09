@@ -25,10 +25,9 @@
                             <MenuItem Header="{Binding}" Click="OpenRecentProject"/>
                         </DataTemplate>
                     </MenuItem.ItemTemplate>
-                    
                 </MenuItem>
-                <MenuItem Header="Reload project" Click="ReloadStepCode"/>
-                <MenuItem Header="Edit project"/>
+                <MenuItem Header="_Reload project" Click="ReloadStepCode"/>
+                <MenuItem Header="_Edit project" Click="EditProject"/>
                 <Separator/>
                 <MenuItem Header="_Quit" Click="Quit"/>
             </MenuItem>
@@ -39,7 +38,7 @@
             </MenuItem>
         </Menu>
         
-        <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here..."/>
+        <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
         
         <!-- scroll view with a template for displaying text output-->
         <ScrollViewer>

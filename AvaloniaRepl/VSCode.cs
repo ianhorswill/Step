@@ -1,6 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
 
-namespace Repl
+namespace AvaloniaRepl
 {
     /// <summary>
     /// Interface for invoking Visual Studio Code editor from within the Repl.
