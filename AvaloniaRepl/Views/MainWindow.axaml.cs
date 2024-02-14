@@ -21,6 +21,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
+
+    #region Page Controls
     
     private void ReloadStepCode(object? sender, RoutedEventArgs e)
     {
@@ -34,6 +36,23 @@ public partial class MainWindow : Window
         {
             VSCode.EditFolder(StepCode.ProjectDirectory);
         }
+    }
+    
+    private void Quit(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+    
+    private async void StepCommandField_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Return || e.Key != Key.Enter) return;
+        if (sender is not TextBox textBox) return;
+
+        string command = textBox.Text;
+        textBox.Text = "";
+        if (string.IsNullOrEmpty(command)) return;
+
+        await EvalAndShowOutput(command);
     }
 
     private async void SelectProjectFolder(object? sender, RoutedEventArgs e)
@@ -60,6 +79,8 @@ public partial class MainWindow : Window
             OpenProject(path);
         }
     }
+    
+    #endregion
 
     private void OpenProject(string path)
     {
@@ -68,11 +89,6 @@ public partial class MainWindow : Window
         UpdateRecentProjects(path);
         this.Title = $"{StepCode.ProjectName} - StepRepl";
         ShowWarningsAndException();
-    }
-
-    private void Quit(object? sender, RoutedEventArgs e)
-    {
-        Close();
     }
 
     private void UpdateRecentProjects(string path)
@@ -87,11 +103,12 @@ public partial class MainWindow : Window
         
         ((MainWindowViewModel) DataContext).RecentProjectPaths = recentProjects;
     }
+    
+    #region Step Code Execution
 
     private void ShowWarningsAndException()
     {
         var warnings = StepCode.Module.WarningsWithOffenders().ToArray();
-        var warningText = warnings.Select(info => info.Warning);
         var haveWarnings = warnings.Length > 0;
         WarningLabel.IsVisible = haveWarnings;
         WarningText.ItemsSource = haveWarnings ? warnings : null;
@@ -121,18 +138,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void StepCommandField_OnKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Return || e.Key != Key.Enter) return;
-        if (sender is not TextBox textBox) return;
-
-        string command = textBox.Text;
-        textBox.Text = "";
-        if (string.IsNullOrEmpty(command)) return;
-
-        await EvalAndShowOutput(command);
-    }
-
     Task EvalAndShowOutput(string command) => EvalAndShowOutput(StepCode.Eval(command));
 
     /// <summary>
@@ -146,4 +151,6 @@ public partial class MainWindow : Window
         // Update exception info
         UpdateExceptionInfo();
     }
+    
+    #endregion
 }
