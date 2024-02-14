@@ -3,11 +3,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:AvaloniaRepl.ViewModels"
+        xmlns:interpreter="clr-namespace:Step.Interpreter;assembly=Step"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaRepl.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="{Binding ProjectTitle}">
+        Title="StepRepl">
     
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -40,9 +41,49 @@
         
         <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
         
-        <!-- scroll view with a template for displaying text output-->
-        <ScrollViewer>
-            <SelectableTextBlock x:Name="StepOutput"/>
+        <ScrollViewer FontStretch="Normal">
+            <StackPanel>
+                
+                <!-- Error display information -->
+                <SelectableTextBlock x:Name="ErrorLabel" Text="An problem occurred in your program" FontWeight="Bold" FontSize="20" Foreground="Coral"> </SelectableTextBlock>
+                <SelectableTextBlock 
+                    x:Name="ExceptionMessage"
+                    Foreground="Orange"
+                    FontSize="20"
+                    ToolTip.Tip ="This is the description of the error that occurred in your program." />
+                <ListBox x:Name="StackTrace" SelectionMode="Single">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="interpreter:MethodCallFrame">
+                            <Viewbox>
+                                <SelectableTextBlock Text="{Binding CallSourceText}" Foreground="DarkOrange"
+                                                     ToolTip.Tip ="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."/>
+                            </Viewbox>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+                <!-- Warning display information -->
+                <SelectableTextBlock x:Name="WarningLabel" Text="Possible problems in your code. These may not be errors, but they're worth checking." FontWeight="Bold" FontSize="20" Foreground="Yellow"> </SelectableTextBlock>
+                <ListBox x:Name="WarningText" SelectionMode="Single">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="interpreter:WarningInfo">
+                            <Viewbox>
+                                <SelectableTextBlock Text="{Binding Warning}" Foreground="Yellow"
+                                                     ToolTip.Tip ="Click to view in Visual Studio Code."/>
+                            </Viewbox>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+                <!-- CSharp stack information -->
+                <SelectableTextBlock 
+                    x:Name="CStackTrace"
+                    TextWrapping="NoWrap"
+                    Foreground="DimGray"
+                    ToolTip.Tip ="You can ignore this.  This is in case there is a bug in Step and Ian needs to know more information."/>
+                
+                
+            </StackPanel>
         </ScrollViewer>
         
     </StackPanel>

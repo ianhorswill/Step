@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
@@ -6,6 +9,8 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using AvaloniaRepl.ViewModels;
+using Step.Interpreter;
+using Task = System.Threading.Tasks.Task;
 
 namespace AvaloniaRepl.Views;
 
@@ -20,8 +25,6 @@ public partial class MainWindow : Window
     private void ReloadStepCode(object? sender, RoutedEventArgs e)
     {
         StepCode.ReloadStepCode();
-        ((MainWindowViewModel) DataContext).StepOutput.Clear();
-        StepOutput.Text = "";
         ShowWarningsAndException();
     }
     
@@ -63,6 +66,7 @@ public partial class MainWindow : Window
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
         UpdateRecentProjects(path);
+        this.Title = $"{StepCode.ProjectName} - StepRepl";
         ShowWarningsAndException();
     }
 
@@ -86,11 +90,35 @@ public partial class MainWindow : Window
 
     private void ShowWarningsAndException()
     {
-        this.Title = $"{StepCode.ProjectName} - StepRepl";
-        if (StepCode.LastException == null) return;
+        var warnings = StepCode.Module.WarningsWithOffenders().ToArray();
+        var warningText = warnings.Select(info => info.Warning);
+        var haveWarnings = warnings.Length > 0;
+        WarningLabel.IsVisible = haveWarnings;
+        WarningText.ItemsSource = haveWarnings ? warnings : null;
 
-
-
+        UpdateExceptionInfo();
+    }
+    
+    public IEnumerable<MethodCallFrame> StackFrames 
+        => MethodCallFrame.CurrentFrame == null?Array.Empty<MethodCallFrame>():MethodCallFrame.CurrentFrame.CallerChain;
+    
+    private void UpdateExceptionInfo()
+    {
+        if (StepCode.LastException != null)
+        {
+            ErrorLabel.IsVisible = true;
+            //Module.RichTextStackTraces = true;
+            ExceptionMessage.Text = StepCode.LastException.Message;
+            StackTrace.ItemsSource = StackFrames;
+                
+            CStackTrace.Text = "Internal debugging information for Ian:\n"+StepCode.LastException.StackTrace;
+        }
+        else
+        {
+            ExceptionMessage.Text = CStackTrace.Text = "";
+            StackTrace.ItemsSource = null;
+            ErrorLabel.IsVisible = false;
+        }
     }
 
     private async void StepCommandField_OnKeyDown(object? sender, KeyEventArgs e)
@@ -113,11 +141,6 @@ public partial class MainWindow : Window
     /// <param name="evalTask">Task that runs the step code and returns its output text</param>
     async Task EvalAndShowOutput(Task<string> evalTask)
     {
-        // Update step output in view model
-        var stepOutput = ((MainWindowViewModel) DataContext).StepOutput;
-        var outputText = await evalTask;
         
-        stepOutput.Add(outputText);
-        StepOutput.Text = outputText;
     }
 }
