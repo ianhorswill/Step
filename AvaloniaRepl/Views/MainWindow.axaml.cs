@@ -141,6 +141,9 @@ public partial class MainWindow : Window
     /// <param name="evalTask">Task that runs the step code and returns its output text</param>
     async Task EvalAndShowOutput(Task<string> evalTask)
     {
-        
+        // Call code and update text
+        OutputText.Text = await evalTask;
+        // Update exception info
+        UpdateExceptionInfo();
     }
 }
