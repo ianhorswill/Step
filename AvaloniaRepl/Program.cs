@@ -16,7 +16,6 @@ sealed class Program
             .StartWithClassicDesktopLifetime(args);
         
         Preferences.LoadFromDisk();
-        
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

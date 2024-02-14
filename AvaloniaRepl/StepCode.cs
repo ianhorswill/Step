@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using AvaloniaRepl;
 using Step;
 using Step.Interpreter;
 using Step.Output;
@@ -122,12 +121,14 @@ namespace AvaloniaRepl
                     if (code == null)
                         throw new ArgumentException(
                             $"Invalid code {Writer.TermToString(spec[1])} to run for button {stringLabel}");
-                   // ReplPage.Instance.AddProjectMenuEntry(stringLabel, code);
                 }
+                
+                Console.WriteLine($"Loaded Step project at {ProjectDirectory}");
             }
             catch (Exception e)
             {
                 LastException = e;
+                Console.WriteLine($"Error loading project at {ProjectDirectory}: {e.Message}");
             }
         }
 

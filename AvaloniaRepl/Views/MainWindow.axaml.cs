@@ -42,20 +42,19 @@ public partial class MainWindow : Window
             SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(StepCode.ProjectDirectory)
         });
 
-        if (chosen.Count == 0 || !Directory.Exists(chosen[0].Path.AbsolutePath)) return;
-        string path = chosen[0].Path.AbsolutePath;
+        if (chosen.Count == 0 || !Directory.Exists(chosen[0].Path.LocalPath)) return;
+        string path = chosen[0].Path.LocalPath;
         OpenProject(path);
     }
 
     private void OpenRecentProject(object? sender, RoutedEventArgs e)
     {
-        if (sender is TextBlock textBlock)
+        if (sender is not MenuItem menuItem) return;
+        
+        string? path = (string?)menuItem.Header;
+        if (Directory.Exists(path))
         {
-            string path = textBlock.Text;
-            if (Directory.Exists(path))
-            {
-                OpenProject(path);
-            }
+            OpenProject(path);
         }
     }
 
@@ -87,6 +86,7 @@ public partial class MainWindow : Window
 
     private void ShowWarningsAndException()
     {
+        this.Title = $"{StepCode.ProjectName} - StepRepl";
         if (StepCode.LastException == null) return;
 
 
