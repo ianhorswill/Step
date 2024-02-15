@@ -9,7 +9,7 @@ public class MainWindowViewModel : ViewModelBase
     public ObservableCollection<string> RecentProjectPaths { get; set; } = [];
     public ObservableCollection<string> CommandHistory { get; set; } = [];
 
-    public void ModifyCommandHistory(string cmd)
+    public void AddCommandHistory(string cmd)
     {
         CommandHistory.Remove(cmd);
         
@@ -17,7 +17,7 @@ public class MainWindowViewModel : ViewModelBase
         if (CommandHistory.Count > 16) CommandHistory.RemoveAt(CommandHistory.Count -1);
     }
 
-    public void ModifyRecentProjects(string path)
+    public void AddRecentProjects(string path)
     {
         RecentProjectPaths.Remove(path);
 

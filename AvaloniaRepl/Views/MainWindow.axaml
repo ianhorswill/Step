@@ -66,8 +66,9 @@
                             Foreground="Orange"
                             FontSize="16"
                             Margin="0, 10"
+                            PointerReleased="ExceptionMessageClicked"
                             ToolTip.Tip ="This is the description of the error that occurred in your program." />
-                        <ListBox x:Name="StackTrace" SelectionMode="Single">
+                        <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="interpreter:MethodCallFrame">
                                         <SelectableTextBlock Text="{Binding CallSourceText}" Foreground="DarkOrange" FontSize="14" TextWrapping="Wrap"
@@ -83,7 +84,7 @@
                     <Expander.Header>
                         <SelectableTextBlock Text="Possible problems in your code. These may not be errors, but they're worth checking." FontWeight="Bold" FontSize="20" Foreground="Yellow" TextWrapping="Wrap"/>
                     </Expander.Header>
-                <ListBox x:Name="WarningText" SelectionMode="Single">
+                <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="interpreter:WarningInfo">
                                 <SelectableTextBlock Text="{Binding Warning}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 

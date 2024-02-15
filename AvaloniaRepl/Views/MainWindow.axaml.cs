@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using AvaloniaRepl.ViewModels;
+using Step;
 using Step.Interpreter;
 using Task = System.Threading.Tasks.Task;
 
@@ -20,6 +23,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ShowWarningsAndException();
     }
 
     #region Page Controls
@@ -52,7 +56,7 @@ public partial class MainWindow : Window
         textBox.Text = "";
         if (string.IsNullOrEmpty(command)) return;
 
-        ((MainWindowViewModel)DataContext).ModifyCommandHistory(command);
+        ((MainWindowViewModel)DataContext).AddCommandHistory(command);
         await EvalAndShowOutput(command);
     }
     
@@ -90,12 +94,66 @@ public partial class MainWindow : Window
     }
     
     #endregion
+    
+    #region Editor support
+    private bool CanEditProject => StepCode.ProjectDirectory != "";
+
+    /// <summary>
+    /// Invoke the editor to edit the line referenced in the exception, if any.
+    /// </summary>
+    private void ExceptionMessageClicked(object? obj, PointerReleasedEventArgs e)
+    {
+        var m = Regex.Match(ExceptionMessage.Text, "^([^.]+.step):([0-9]+) ");
+        if (m.Success)
+        {
+            var file = m.Groups[1].Value;
+            var lineNumber = int.Parse(m.Groups[2].Value);
+            VSCode.Edit(Path.Combine(StepCode.ProjectDirectory, file), lineNumber);
+        }
+    }
+
+    /// <summary>
+    /// Invoke the editor on the source code for the method being called in the selected stack frame.
+    /// </summary>
+    private void StackFrameSelected(object? sender, SelectionChangedEventArgs e)
+    {
+        if (StackTrace.SelectedItem is MethodCallFrame { Method.FilePath: not null } frame)
+        {
+            VSCode.Edit(frame.Method.FilePath, frame.Method.LineNumber);
+        }
+    }
+
+    /// <summary>
+    /// Invoke the editor on the line referred to in the selected warning.
+    /// </summary>
+    private void WarningSelected(object? sender, SelectionChangedEventArgs e)
+    {
+        if (WarningText.SelectedItem is not WarningInfo warning) return;
+        
+        switch (warning.Offender)
+        {
+            case Method { FilePath: not null } m:
+                VSCode.Edit(m.FilePath, m.LineNumber);
+                break;
+
+            case CompoundTask { Methods.Count: > 0 } t when t.Methods[0].FilePath != null:
+                var firstMethod = t.Methods[0];
+                VSCode.Edit(firstMethod.FilePath!, firstMethod.LineNumber);
+                break;
+
+            case Step.Parser.MethodPlaceholder { SourcePath: not null } p:
+                VSCode.Edit(p.SourcePath, p.LineNumber);
+                break;
+        }
+    }
+    #endregion
+
 
     private void OpenProject(string path)
     {
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
-        ((MainWindowViewModel)DataContext).ModifyRecentProjects(path);
+        ((MainWindowViewModel)DataContext).AddRecentProjects(path);
         this.Title = $"{StepCode.ProjectName} - StepRepl";
         ShowWarningsAndException();
     }
@@ -120,7 +178,7 @@ public partial class MainWindow : Window
         if (StepCode.LastException != null)
         {
             ErrorLabel.IsVisible = true;
-            //Module.RichTextStackTraces = true;
+            Module.RichTextStackTraces = true;
             ExceptionMessage.Text = StepCode.LastException.Message;
             StackTrace.ItemsSource = StackFrames;
                 
