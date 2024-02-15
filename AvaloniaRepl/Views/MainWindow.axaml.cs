@@ -52,9 +52,18 @@ public partial class MainWindow : Window
         textBox.Text = "";
         if (string.IsNullOrEmpty(command)) return;
 
+        ((MainWindowViewModel)DataContext).ModifyCommandHistory(command);
         await EvalAndShowOutput(command);
     }
-
+    
+    private void SetCommandFieldText(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem menuItem) return;
+        if (menuItem.Header is not string cmd) return;
+        
+        StepCommandField.Text = cmd;
+    }
+    
     private async void SelectProjectFolder(object? sender, RoutedEventArgs e)
     {
         var chosen = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
@@ -86,22 +95,9 @@ public partial class MainWindow : Window
     {
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
-        UpdateRecentProjects(path);
+        ((MainWindowViewModel)DataContext).ModifyRecentProjects(path);
         this.Title = $"{StepCode.ProjectName} - StepRepl";
         ShowWarningsAndException();
-    }
-
-    private void UpdateRecentProjects(string path)
-    {
-        var recentProjects = ((MainWindowViewModel) DataContext).RecentProjectPaths;
-        if (recentProjects.Contains(path))
-        {
-            recentProjects.Remove(path);
-        }
-
-        recentProjects.Insert(0, path);
-        
-        ((MainWindowViewModel) DataContext).RecentProjectPaths = recentProjects;
     }
     
     #region Step Code Execution
