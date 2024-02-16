@@ -1,0 +1,108 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:AvaloniaRepl.ViewModels"
+        xmlns:interpreter="clr-namespace:Step.Interpreter;assembly=Step"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AvaloniaRepl.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/cat-icon.png"
+        Title="StepRepl">
+    
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <StackPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Open project..." Click="SelectProjectFolder"/>
+                <MenuItem x:Name="OpenRecentDropdown" Header="Open recent" ItemsSource="{Binding RecentProjectPaths}">
+                    <MenuItem.ItemTemplate>
+                        <DataTemplate>
+                            <MenuItem Header="{Binding}" Click="OpenRecentProject"/>
+                        </DataTemplate>
+                    </MenuItem.ItemTemplate>
+                </MenuItem>
+                <MenuItem Header="_Reload project" Click="ReloadStepCode"/>
+                <MenuItem Header="_Edit project" Click="EditProject"/>
+                <Separator/>
+                <MenuItem Header="_Quit" Click="Quit"/>
+            </MenuItem>
+            
+            <MenuItem Header="_Edit">
+                <MenuItem Header="Copy"/>
+                <MenuItem Header="Paste"/>
+            </MenuItem>
+            
+            <MenuItem Header="_History" ItemsSource="{Binding CommandHistory}">
+                    <MenuItem.ItemTemplate>
+                        <DataTemplate>
+                            <MenuItem Header="{Binding}" Click="SetCommandFieldText"/>
+                        </DataTemplate>
+                    </MenuItem.ItemTemplate>
+            </MenuItem>
+        </Menu>
+        
+        <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
+        
+        <ScrollViewer>
+            <StackPanel>
+                <!-- Standard Step output-->
+                <SelectableTextBlock x:Name="OutputText" TextWrapping="Wrap" FontSize="14" Foreground="White" ToolTip.Tip ="This is the output of your program." Margin="0, 10"/>
+                
+                <!-- Error display information -->
+                <Expander x:Name="ErrorLabel" IsExpanded="True" IsVisible="False" Margin="0, 10">
+                    <Expander.Header>
+                        <SelectableTextBlock Text="A problem occurred while running your program!" FontWeight="Bold" FontSize="20" Foreground="Coral" TextWrapping="Wrap"/>
+                    </Expander.Header>
+                    <StackPanel>
+                        <SelectableTextBlock 
+                            x:Name="ExceptionMessage"
+                            Foreground="Orange"
+                            FontSize="16"
+                            Margin="0, 10"
+                            PointerReleased="ExceptionMessageClicked"
+                            ToolTip.Tip ="This is the description of the error that occurred in your program." />
+                        <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="interpreter:MethodCallFrame">
+                                        <SelectableTextBlock Text="{Binding CallSourceText}" Foreground="DarkOrange" FontSize="14" TextWrapping="Wrap"
+                                                             ToolTip.Tip ="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </Expander>
+                
+                <!-- Warning display information -->
+                <Expander x:Name="WarningLabel" IsExpanded="False" IsVisible="False" Margin="0, 10">
+                    <Expander.Header>
+                        <SelectableTextBlock Text="Possible problems in your code. These may not be errors, but they're worth checking." FontWeight="Bold" FontSize="20" Foreground="Yellow" TextWrapping="Wrap"/>
+                    </Expander.Header>
+                <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="interpreter:WarningInfo">
+                                <SelectableTextBlock Text="{Binding Warning}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
+                                                     ToolTip.Tip ="Click to view in Visual Studio Code."/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                </Expander>
+                
+                <!-- CSharp stack information -->
+                <SelectableTextBlock 
+                    Margin="0, 10"
+                    x:Name="CStackTrace"
+                    TextWrapping="NoWrap"
+                    Foreground="DimGray"
+                    ToolTip.Tip ="You can ignore this.  This is in case there is a bug in Step and Ian needs to know more information."/>
+                
+            </StackPanel>
+        </ScrollViewer>
+    </StackPanel>
+</Window>

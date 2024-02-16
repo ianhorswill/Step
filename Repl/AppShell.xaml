@@ -10,5 +10,9 @@
         Title="Step"
         ContentTemplate="{DataTemplate local:ReplPage}"
         Route="ReplPage" />
+        
+    <ShellContent>
+        
+    </ShellContent>
 
 </Shell>
