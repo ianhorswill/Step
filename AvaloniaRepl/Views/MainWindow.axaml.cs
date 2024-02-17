@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -200,11 +201,10 @@ public partial class MainWindow : Window
     /// <param name="evalTask">Task that runs the step code and returns its output text</param>
     async Task EvalAndShowOutput(Task<string> evalTask)
     {
-        // Call code and update text
-        OutputText.Text = await evalTask;
+        HtmlTextFormatter.SetFormattedText(OutputText, await evalTask);
+
         // Update exception info
         UpdateExceptionInfo();
     }
-    
     #endregion
 }

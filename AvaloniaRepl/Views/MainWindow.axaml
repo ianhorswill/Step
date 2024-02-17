@@ -5,11 +5,16 @@
         xmlns:vm="using:AvaloniaRepl.ViewModels"
         xmlns:interpreter="clr-namespace:Step.Interpreter;assembly=Step"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        xmlns:local="clr-namespace:AvaloniaRepl"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaRepl.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/cat-icon.png"
         Title="StepRepl">
+
+    <Window.Resources>
+        <local:HtmlTextFormatter x:Key="htmlTextFormatter"/>
+    </Window.Resources>
     
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -71,7 +76,7 @@
                         <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="interpreter:MethodCallFrame">
-                                        <SelectableTextBlock Text="{Binding CallSourceText}" Foreground="DarkOrange" FontSize="14" TextWrapping="Wrap"
+                                        <SelectableTextBlock Inlines="{Binding CallSourceText, Converter={StaticResource htmlTextFormatter}}" Foreground="DarkOrange" FontSize="14" TextWrapping="Wrap"
                                                              ToolTip.Tip ="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
@@ -87,7 +92,7 @@
                 <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="interpreter:WarningInfo">
-                                <SelectableTextBlock Text="{Binding Warning}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
+                                <SelectableTextBlock Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
                                                      ToolTip.Tip ="Click to view in Visual Studio Code."/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
