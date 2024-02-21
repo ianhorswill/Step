@@ -2,12 +2,17 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Threading;
+using AvaloniaRepl.ViewModels;
+using AvaloniaRepl.Views;
 using Step;
 using Step.Interpreter;
 using Step.Output;
 
 namespace AvaloniaRepl
 {
+    public record StepButton(string Label, object[] Action, State State);
     internal static class StepCode
     {
         public static Exception? LastException;
@@ -77,7 +82,12 @@ namespace AvaloniaRepl
                     var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
                     if (!e.TryCopyGround(action, out var finalAction))
                         throw new ArgumentInstantiationException(addButton, e, args);
-                    //MainThread.BeginInvokeOnMainThread(() => ReplPage.Instance.AddButton(name, (object[])finalAction!, e.State));
+                    Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        StepButton button = new(name, (object[])finalAction!, e.State);
+                        var mainWindow = Application.Current.DataContext as MainWindowViewModel;
+                        mainWindow?.StepButtons.Add(button);
+                    });
                     return k(o, e.Unifications, e.State, d);
                 });
 

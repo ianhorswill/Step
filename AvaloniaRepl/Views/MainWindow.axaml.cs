@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
-using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using AvaloniaRepl.ViewModels;
@@ -92,6 +90,16 @@ public partial class MainWindow : Window
         {
             OpenProject(path);
         }
+    }
+    
+    private async void StepButtonClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button) return;
+        if (button.DataContext is not StepButton stepButton) return;
+        
+        await EvalAndShowOutput(StepCode.Eval(
+            new StepThread(StepCode.Module, stepButton.State, "Call", stepButton.Action)
+        ));
     }
     
     #endregion

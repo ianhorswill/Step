@@ -53,6 +53,16 @@
             </MenuItem>
         </Menu>
         
+        <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
+            <ItemsControl ItemsSource="{Binding StepButtons}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="local:StepButton">
+                        <Button Content="{Binding Label}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+        
         <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
         
         <ScrollViewer>
