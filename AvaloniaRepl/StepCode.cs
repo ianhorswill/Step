@@ -1,10 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Threading;
-using AvaloniaRepl.ViewModels;
 using AvaloniaRepl.Views;
 using Step;
 using Step.Interpreter;
@@ -82,12 +81,10 @@ namespace AvaloniaRepl
                     var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
                     if (!e.TryCopyGround(action, out var finalAction))
                         throw new ArgumentInstantiationException(addButton, e, args);
-                    Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        StepButton button = new(name, (object[])finalAction!, e.State);
-                        var mainWindow = Application.Current.DataContext as MainWindowViewModel;
-                        mainWindow?.StepButtons.Add(button);
-                    });
+
+                    StepButton button = new(name, (object[])finalAction!, e.State);
+                    Dispatcher.UIThread.Post(() => MainWindow.Instance.RegisterNewButton(button));
+                    
                     return k(o, e.Unifications, e.State, d);
                 });
 

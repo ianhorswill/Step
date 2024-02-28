@@ -18,11 +18,14 @@ namespace AvaloniaRepl.Views;
 
 public partial class MainWindow : Window
 {
-
+    public static MainWindow? Instance;
+    public List<StepButton> StepButtons = new();
+    
     public MainWindow()
     {
         InitializeComponent();
         ShowWarningsAndException();
+        Instance = this;
     }
 
     #region Page Controls
@@ -91,6 +94,12 @@ public partial class MainWindow : Window
             OpenProject(path);
         }
     }
+
+    public void RegisterNewButton(StepButton btn)
+    {
+        StepButtons.Add(btn);
+        ButtonPanelItems.Items.Add(btn);
+    }
     
     private async void StepButtonClicked(object? sender, RoutedEventArgs e)
     {
@@ -100,6 +109,15 @@ public partial class MainWindow : Window
         await EvalAndShowOutput(StepCode.Eval(
             new StepThread(StepCode.Module, stepButton.State, "Call", stepButton.Action)
         ));
+    }
+    
+    private void RemoveStepButton(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem menuItem) return;
+        if (menuItem.DataContext is not StepButton stepButton) return;
+        
+        StepButtons.Remove(stepButton);
+        ButtonPanelItems.Items.Remove(stepButton);
     }
     
     #endregion
@@ -155,6 +173,16 @@ public partial class MainWindow : Window
                 break;
         }
     }
+    
+    
+    private void WarningSelectedContext(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem menuItem) return;
+        if (menuItem.DataContext is not WarningInfo warning) return;
+        
+        // This assignment will trigger the WarningSelected event
+        WarningText.SelectedItem = warning;
+    }
     #endregion
 
 
@@ -188,7 +216,7 @@ public partial class MainWindow : Window
         {
             ErrorLabel.IsVisible = true;
             Module.RichTextStackTraces = true;
-            ExceptionMessage.Text = StepCode.LastException.Message;
+            HtmlTextFormatter.SetFormattedText(ExceptionMessage, StepCode.LastException.Message);
             StackTrace.ItemsSource = StackFrames;
                 
             CStackTrace.Text = "Internal debugging information for Ian:\n"+StepCode.LastException.StackTrace;

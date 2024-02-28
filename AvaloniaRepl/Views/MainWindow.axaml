@@ -33,7 +33,7 @@
                         </DataTemplate>
                     </MenuItem.ItemTemplate>
                 </MenuItem>
-                <MenuItem Header="_Reload project" Click="ReloadStepCode"/>
+                <MenuItem Header="_Reload project" Click="ReloadStepCode" HotKey="Ctrl+R"/>
                 <MenuItem Header="_Edit project" Click="EditProject"/>
                 <Separator/>
                 <MenuItem Header="_Quit" Click="Quit"/>
@@ -54,10 +54,16 @@
         </Menu>
         
         <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
-            <ItemsControl ItemsSource="{Binding StepButtons}">
+            <ItemsControl x:Name="ButtonPanelItems">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:StepButton">
-                        <Button Content="{Binding Label}"/>
+                        <Button Content="{Binding Label}" Click="StepButtonClicked">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Click="RemoveStepButton" Header="Remove"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -103,7 +109,13 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="interpreter:WarningInfo">
                                 <SelectableTextBlock Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
-                                                     ToolTip.Tip ="Click to view in Visual Studio Code."/>
+                                                     ToolTip.Tip ="Click to view in Visual Studio Code.">
+                                    <SelectableTextBlock.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Click="WarningSelectedContext" Header="Open in Visual Studio Code"/>
+                                        </ContextMenu>
+                                    </SelectableTextBlock.ContextMenu>
+                                </SelectableTextBlock>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

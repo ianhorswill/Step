@@ -8,7 +8,6 @@ public class MainWindowViewModel : ViewModelBase
 #pragma warning disable CA1822 // Mark members as static
     public ObservableCollection<string> RecentProjectPaths { get; set; } = [];
     public ObservableCollection<string> CommandHistory { get; set; } = [];
-    public ObservableCollection<StepButton> StepButtons { get; set; } = [];
 
     public void AddCommandHistory(string cmd)
     {
