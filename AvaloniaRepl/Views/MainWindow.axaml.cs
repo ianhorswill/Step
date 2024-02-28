@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     {
         StepCode.ReloadStepCode();
         ShowWarningsAndException();
+        OutputText.Text = $"Reloaded project {StepCode.ProjectName}!\n";
     }
     
     private void EditProject(object? sender, RoutedEventArgs e)
