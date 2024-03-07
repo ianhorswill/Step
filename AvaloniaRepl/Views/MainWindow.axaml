@@ -51,7 +51,8 @@
                     </MenuItem.ItemTemplate>
             </MenuItem>
         </Menu>
-        
+
+        <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
         <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
             <ItemsControl x:Name="ButtonPanelItems">
                 <ItemsControl.ItemTemplate>
@@ -68,7 +69,6 @@
             </ItemsControl>
         </StackPanel>
         
-        <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
         
         <ScrollViewer>
             <StackPanel>
