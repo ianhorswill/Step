@@ -108,7 +108,7 @@ public partial class MainWindow : Window
         if (button.DataContext is not StepButton stepButton) return;
         
         await EvalAndShowOutput(StepCode.Eval(
-            new StepThread(StepCode.Module, stepButton.State, "Call", stepButton.Action)
+            new StepThread(StepCode.Module, stepButton.State, "Call", new object[] { stepButton.Action })
         ));
     }
     
@@ -120,6 +120,11 @@ public partial class MainWindow : Window
         StepButtons.Remove(stepButton);
         ButtonPanelItems.Items.Remove(stepButton);
     }
+
+    /// <summary>
+    /// Remove all buttons
+    /// </summary>
+    private void ClearButtons() => ButtonPanelItems.Items.Clear();
     
     #endregion
     
@@ -238,6 +243,7 @@ public partial class MainWindow : Window
     /// <param name="evalTask">Task that runs the step code and returns its output text</param>
     async Task EvalAndShowOutput(Task<string> evalTask)
     {
+        ClearButtons();
         HtmlTextFormatter.SetFormattedText(OutputText, await evalTask);
 
         // Update exception info
