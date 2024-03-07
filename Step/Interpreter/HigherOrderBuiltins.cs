@@ -85,7 +85,7 @@ namespace Step.Interpreter
             g[nameof(IgnoreOutput)] = new GeneralPrimitive(nameof(IgnoreOutput), IgnoreOutput)
                 .Arguments("calls", "...")
                 .Documentation("control flow//calling tasks", "Runs each of the calls, in order, but throws away their output text.");
-            g[nameof(Begin)] = new GeneralPrimitive(nameof(AndImplementation), Begin)
+            g[nameof(Begin)] = new GeneralPrimitive(nameof(Begin), Begin)
                 .Arguments("task", "...")
                 .Documentation("control flow", "Runs each of the tasks, in order.");
             g[nameof(And)] = And;
