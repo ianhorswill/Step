@@ -137,6 +137,7 @@ namespace AvaloniaRepl
                 LastException = e;
                 Console.WriteLine($"Error loading project at {ProjectDirectory}: {e.Message}");
             }
+
         }
 
         public static Task<string> Eval(string command)

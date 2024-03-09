@@ -57,13 +57,7 @@
             <ItemsControl x:Name="ButtonPanelItems">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:StepButton">
-                        <Button Content="{Binding Label}" Click="StepButtonClicked">
-                            <Button.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Click="RemoveStepButton" Header="Remove"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
+                        <Button Content="{Binding Label}" Click="StepButtonClicked" Background="BlueViolet" CornerRadius="30"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

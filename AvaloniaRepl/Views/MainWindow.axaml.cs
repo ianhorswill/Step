@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         ShowWarningsAndException();
         Instance = this;
+        StepCommandField.AttachedToVisualTree += (s, e) => StepCommandField.Focus();
     }
 
     #region Page Controls
@@ -110,15 +111,6 @@ public partial class MainWindow : Window
         await EvalAndShowOutput(StepCode.Eval(
             new StepThread(StepCode.Module, stepButton.State, "Call", new object[] { stepButton.Action })
         ));
-    }
-    
-    private void RemoveStepButton(object? sender, RoutedEventArgs e)
-    {
-        if (sender is not MenuItem menuItem) return;
-        if (menuItem.DataContext is not StepButton stepButton) return;
-        
-        StepButtons.Remove(stepButton);
-        ButtonPanelItems.Items.Remove(stepButton);
     }
 
     /// <summary>
@@ -211,6 +203,7 @@ public partial class MainWindow : Window
         WarningText.ItemsSource = haveWarnings ? warnings : null;
 
         UpdateExceptionInfo();
+        StepCommandField.Focus();
     }
     
     public IEnumerable<MethodCallFrame> StackFrames 
