@@ -83,6 +83,10 @@ namespace AvaloniaRepl
                                 StartSpan(t, "/i", new Italic());
                                 break;
 
+                            case "u":
+                                StartSpan(t, "/u", new Underline());
+                                break;
+
                             default:
                                 var close = NextToken();
                                 if (type.Replace(" ", "") == stack.Peek().terminator && close == ">")
