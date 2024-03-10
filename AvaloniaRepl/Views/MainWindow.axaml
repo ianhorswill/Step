@@ -63,7 +63,10 @@
         <ScrollViewer>
             <StackPanel>
                 <!-- Standard Step output-->
-                <SelectableTextBlock x:Name="OutputText" TextWrapping="Wrap" FontSize="14" Foreground="White" ToolTip.Tip ="This is the output of your program." Margin="0, 10"/>
+                <SelectableTextBlock x:Name="OutputText" TextWrapping="Wrap"
+                                     FontFamily="Default" FontSize="14" Foreground="White" 
+                                     ToolTip.Tip ="This is the output of your program."
+                                     Margin="0, 10"/>
 
               <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
                   <ItemsControl x:Name="ButtonPanelItems">
