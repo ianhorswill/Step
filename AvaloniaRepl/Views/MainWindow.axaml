@@ -52,7 +52,10 @@
             </MenuItem>
         </Menu>
 
-        <TextBox x:Name="StepCommandField" KeyDown="StepCommandField_OnKeyDown" Watermark="Run Step commands here (press Return or Enter)..."/>
+        <TextBox x:Name="StepCommandField"
+                 KeyDown="StepCommandField_OnKeyDown"
+                 Watermark="Run Step commands here (press Return or Enter)..."/>
+
         <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
             <ItemsControl x:Name="ButtonPanelItems">
                 <ItemsControl.ItemTemplate>
@@ -98,20 +101,20 @@
                     <Expander.Header>
                         <SelectableTextBlock Text="Possible problems in your code. These may not be errors, but they're worth checking." FontWeight="Bold" FontSize="20" Foreground="Yellow" TextWrapping="Wrap"/>
                     </Expander.Header>
-                <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="interpreter:WarningInfo">
-                                <SelectableTextBlock Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
-                                                     ToolTip.Tip ="Click to view in Visual Studio Code.">
-                                    <SelectableTextBlock.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Open in Visual Studio Code" Click="WarningSelectedContext" />
-                                        </ContextMenu>
-                                    </SelectableTextBlock.ContextMenu>
-                                </SelectableTextBlock>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="interpreter:WarningInfo">
+                                    <SelectableTextBlock Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
+                                                         ToolTip.Tip ="Click to view in Visual Studio Code.">
+                                        <SelectableTextBlock.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Open in Visual Studio Code" Click="WarningSelectedContext" />
+                                            </ContextMenu>
+                                        </SelectableTextBlock.ContextMenu>
+                                    </SelectableTextBlock>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </Expander>
                 
                 <!-- CSharp stack information -->

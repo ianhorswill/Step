@@ -10,6 +10,13 @@
     </Application.DataTemplates>
   
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <!-- Palette for Light theme variant -->
+                <ColorPaletteResources x:Key="Light" Accent="Green" />
+                <!-- Palette for Dark theme variant -->
+                <ColorPaletteResources x:Key="Dark" Accent="DarkGreen"  />
+            </FluentTheme.Palettes>
+        </FluentTheme>
     </Application.Styles>
 </Application>

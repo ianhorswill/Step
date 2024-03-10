@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Input;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using AvaloniaRepl.ViewModels;
 using Step;
@@ -200,6 +201,7 @@ public partial class MainWindow : Window
         var warnings = StepCode.Module.WarningsWithOffenders().ToArray();
         var haveWarnings = warnings.Length > 0;
         WarningLabel.IsVisible = haveWarnings;
+        //WarningLabel.IsExpanded = haveWarnings;
         WarningText.ItemsSource = haveWarnings ? warnings : null;
 
         UpdateExceptionInfo();
