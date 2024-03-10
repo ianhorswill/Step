@@ -93,6 +93,7 @@ namespace AvaloniaRepl
 
         public static void ReloadStepCode()
         {
+            Module.DefaultSearchLimit = int.MaxValue;
             LastException = null;
             if (ReplUtilities["Button"] is CompoundTask button)
             {
@@ -140,14 +141,21 @@ namespace AvaloniaRepl
 
         }
 
+        public static StepThread? CurrentStepThread;
+
+        public static bool StepThreadRunning => CurrentStepThread != null && !CurrentStepThread.IsCompleted;
+
         public static Task<string> Eval(string command)
         {
             command = command.Trim();
             if (!command.StartsWith("["))
                 command = $"[{command}]";
             command = $"[Begin {command} [PrintLocalBindings]]";
-            return Eval(new StepThread(Module, command, State));
+            CurrentStepThread = new StepThread(Module, command, State);
+            return Eval(CurrentStepThread);
         }
+
+        public static void AbortCurrentStepThread() => Module.Cancel();
 
         public static async Task<string> Eval(StepThread stepThread)
         {

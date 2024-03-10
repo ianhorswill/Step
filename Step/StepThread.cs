@@ -144,7 +144,7 @@ namespace Step
         /// </summary>
         public void Abort()
         {
-            Module.SearchLimit = 1;
+            Module.Cancel();
         }
 
         /// <summary>

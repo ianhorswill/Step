@@ -182,6 +182,12 @@ public partial class MainWindow : Window
         // This assignment will trigger the WarningSelected event
         WarningText.SelectedItem = warning;
     }
+
+    private void WarningGotFocus(object? sender, GotFocusEventArgs e)
+    {
+        var t = (SelectableTextBlock)sender;
+        WarningText.SelectedItem = t.DataContext;
+    }
     #endregion
 
 
@@ -217,7 +223,7 @@ public partial class MainWindow : Window
         {
             ErrorLabel.IsVisible = true;
             Module.RichTextStackTraces = true;
-            HtmlTextFormatter.SetFormattedText(ExceptionMessage, StepCode.LastException.Message);
+            HtmlTextFormatter.SetFormattedText(ExceptionMessage, StepCode.LastException is TaskCanceledException?"Your stopped the step program":StepCode.LastException.Message);
             StackTrace.ItemsSource = StackFrames;
                 
             CStackTrace.Text = "Internal debugging information for Ian:\n"+StepCode.LastException.StackTrace;
@@ -239,10 +245,25 @@ public partial class MainWindow : Window
     async Task EvalAndShowOutput(Task<string> evalTask)
     {
         ClearButtons();
-        HtmlTextFormatter.SetFormattedText(OutputText, await evalTask);
+        HtmlTextFormatter.SetFormattedText(OutputText, "<i>Running...</i>");
+        var output = await evalTask;
+        if (string.IsNullOrEmpty(output))
+            output = StepCode.LastException==null?"<i>Execution succeeded</i>":"";
+        HtmlTextFormatter.SetFormattedText(OutputText, output);
 
         // Update exception info
         UpdateExceptionInfo();
     }
     #endregion
+
+    private void AbortMenuItemClicked(object? sender, RoutedEventArgs e)
+    {
+        StepCode.AbortCurrentStepThread();
+    }
+
+    private void StackFrameGotFocus(object? sender, GotFocusEventArgs e)
+    {
+        var t = (SelectableTextBlock)sender;
+        StackTrace.SelectedItem = t.DataContext;
+    }
 }

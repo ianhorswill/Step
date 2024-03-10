@@ -42,6 +42,10 @@
                 <MenuItem Header="Copy"/>
                 <MenuItem Header="Paste"/>
             </MenuItem>
+
+            <MenuItem Header="_Debug">
+                <MenuItem Header="_Abort" Click="AbortMenuItemClicked"/>
+            </MenuItem>
             
             <MenuItem Header="_History" ItemsSource="{Binding CommandHistory}">
                     <MenuItem.ItemTemplate>
@@ -56,23 +60,22 @@
                  KeyDown="StepCommandField_OnKeyDown"
                  Watermark="Run Step commands here (press Return or Enter)..."/>
 
-        <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
-            <ItemsControl x:Name="ButtonPanelItems">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="local:StepButton">
-                        <Button Content="{Binding Label}" Click="StepButtonClicked" Background="BlueViolet" CornerRadius="30"/>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </StackPanel>
-        
-        
         <ScrollViewer>
             <StackPanel>
                 <!-- Standard Step output-->
                 <SelectableTextBlock x:Name="OutputText" TextWrapping="Wrap" FontSize="14" Foreground="White" ToolTip.Tip ="This is the output of your program." Margin="0, 10"/>
-                
-                <!-- Error display information -->
+
+              <StackPanel x:Name="ButtonPanel" Orientation="Horizontal">
+                  <ItemsControl x:Name="ButtonPanelItems">
+                      <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="local:StepButton">
+                              <Button Content="{Binding Label}" Click="StepButtonClicked" Background="BlueViolet" CornerRadius="30"/>
+                          </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+              </StackPanel>
+
+              <!-- Error display information -->
                 <Expander x:Name="ErrorLabel" IsExpanded="True" IsVisible="False" Margin="0, 10">
                     <Expander.Header>
                         <SelectableTextBlock Text="A problem occurred while running your program!" FontWeight="Bold" FontSize="20" Foreground="Coral" TextWrapping="Wrap"/>
@@ -88,8 +91,10 @@
                         <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="interpreter:MethodCallFrame">
-                                        <SelectableTextBlock Inlines="{Binding CallSourceText, Converter={StaticResource htmlTextFormatter}}" Foreground="DarkOrange" FontSize="14" TextWrapping="Wrap"
-                                                             ToolTip.Tip ="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."/>
+                                        <SelectableTextBlock Inlines="{Binding CallSourceText, Converter={StaticResource htmlTextFormatter}}"
+                                                             Foreground="DarkOrange" FontSize="14" TextWrapping="Wrap"
+                                                             ToolTip.Tip ="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."
+                                                             GotFocus="StackFrameGotFocus"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
@@ -104,8 +109,10 @@
                     <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="interpreter:WarningInfo">
-                                    <SelectableTextBlock Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}" Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
-                                                         ToolTip.Tip ="Click to view in Visual Studio Code.">
+                                    <SelectableTextBlock Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}"
+                                                         Foreground="Yellow" FontSize="14" TextWrapping="Wrap" 
+                                                         ToolTip.Tip ="Click to view in Visual Studio Code."
+                                                         GotFocus="WarningGotFocus">
                                         <SelectableTextBlock.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="Open in Visual Studio Code" Click="WarningSelectedContext" />
