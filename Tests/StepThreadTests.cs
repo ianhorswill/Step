@@ -34,7 +34,7 @@ namespace Step.Tests
             await new StepThread(Module.Global, State.Empty, "TestBlork").Start();
         }
 
-        [TestMethod,ExpectedException(typeof(StepTaskTimeoutException))]
+        [TestMethod,ExpectedException(typeof(TaskCanceledException))]
         public async Task AbortTest()
         {
             var m = Module.FromDefinitions("Test: [Sub] [KillMeNow] [Sub] [Write success] [Sub]", "Sub.");
@@ -115,7 +115,7 @@ namespace Step.Tests
                 {
                     await t3.Start();
                 }
-                catch (StepTaskTimeoutException)
+                catch (TaskCanceledException)
                 {
                     gotException = true;
                 }
