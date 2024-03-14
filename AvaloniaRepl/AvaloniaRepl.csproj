@@ -9,8 +9,26 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Models\" />
         <AvaloniaResource Include="Assets\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AvaloniaXaml Remove="GraphVisualization\**" />
+      <AvaloniaXaml Remove="Models\**" />
+      <Compile Remove="GraphVisualization\**" />
+      <Compile Remove="Models\**" />
+      <EmbeddedResource Remove="GraphVisualization\**" />
+      <EmbeddedResource Remove="Models\**" />
+      <None Remove="GraphVisualization\**" />
+      <None Remove="Models\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <AvaloniaXaml Remove="Views\GraphVisualization.axaml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Views\GraphVisualization.axaml.cs" />
     </ItemGroup>
 
 

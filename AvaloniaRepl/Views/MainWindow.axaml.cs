@@ -266,4 +266,12 @@ public partial class MainWindow : Window
         var t = (SelectableTextBlock)sender;
         StackTrace.SelectedItem = t.DataContext;
     }
+
+    private void ShowStackFrame(object? sender, RoutedEventArgs e)
+    {
+        var item = (MenuItem)sender;
+        var frame = (MethodCallFrame)item.DataContext;
+        var window = new MethodCallFrameViewer() { DataContext = frame };
+        window.Show();
+    }
 }

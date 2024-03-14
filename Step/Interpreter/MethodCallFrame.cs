@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Step.Output;
 
 namespace Step.Interpreter
 {
@@ -29,6 +30,8 @@ namespace Step.Interpreter
         /// The method being called
         /// </summary>
         public readonly Method? Method;
+
+        public string MethodSource => Method != null?Method.MethodCode:"No source";
 
         /// <summary>
         /// The task being called in this frame.
@@ -153,6 +156,24 @@ namespace Step.Interpreter
         }
 
         public string CallSourceText => GetCallSourceText(BindingsAtCallTime);
+
+        public string CallSourceTextWithoutFileName => Call.CallSourceText(Method!.Task, Arglist, BindingsAtCallTime);
+
+
+        public class BindingForDisplay
+        {
+            public string Variable { get; private set; }
+            public string Value { get; private set; }
+
+            public BindingForDisplay(LogicVariable v, BindingList? b)
+            {
+                Variable = v.ToString();
+                Value = Writer.TermToString(v, b);
+            }
+        }
+
+        public IEnumerable<BindingForDisplay> LocalVariableValuesForDisplay =>
+            Locals.Select(l => new BindingForDisplay(l, BindingsAtCallTime));
 
         private object?[]? cachedCallExpression;
         
