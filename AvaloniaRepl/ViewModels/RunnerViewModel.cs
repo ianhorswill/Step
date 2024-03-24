@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 
 namespace AvaloniaRepl.ViewModels;
 
-public class MainWindowViewModel : ViewModelBase
+public class RunnerViewModel : ViewModelBase
 {
 #pragma warning disable CA1822 // Mark members as static
     public ObservableCollection<string> RecentProjectPaths { get; set; } = [];
