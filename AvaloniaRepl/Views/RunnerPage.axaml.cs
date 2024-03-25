@@ -194,7 +194,7 @@ public partial class RunnerPage : UserControl
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
         ((RunnerViewModel)DataContext).AddRecentProjects(path);
-        //parentWindow.Title = $"{StepCode.ProjectName} - StepRepl";
+        MainWindow.Instance.SetTabDisplayName(this, $"{StepCode.ProjectName}");
         ShowWarningsAndException();
     }
     

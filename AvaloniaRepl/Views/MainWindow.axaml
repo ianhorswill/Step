@@ -10,14 +10,9 @@
         x:DataType="vm:RunnerViewModel"
         Icon="/Assets/cat-icon.png"
         Title="StepRepl">
-
-    <Window.Resources>
-        <local:HtmlTextFormatter x:Key="htmlTextFormatter"/>
-        
-    </Window.Resources>
     
         <TabControl x:Name="Tabs">
-            <TabItem Header="Runner Page">
+            <TabItem Header="Runner">
                 <views:RunnerPage/>
             </TabItem>
         </TabControl>
