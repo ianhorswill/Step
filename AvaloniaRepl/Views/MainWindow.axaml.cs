@@ -4,13 +4,15 @@ namespace AvaloniaRepl.Views;
 
 public partial class MainWindow : Window
 {
-    public static MainWindow? Instance;
+    private static MainWindow? _instance;
 
     public MainWindow()
     {
         InitializeComponent();
-        Instance = this;
+        _instance = this;
     }
+    
+    public static MainWindow Instance => _instance ?? new MainWindow();
     
     public object? GetActiveTab()
     {

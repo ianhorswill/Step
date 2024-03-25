@@ -20,13 +20,11 @@ namespace AvaloniaRepl.Views;
 public partial class RunnerPage : UserControl
 {
     public List<StepButton> StepButtons = new();
-    private Window parentWindow;
     
     public RunnerPage()
     {
         InitializeComponent();
         ShowWarningsAndException();
-        parentWindow = (Window)VisualRoot;
         StepCommandField.AttachedToVisualTree += (s, e) => StepCommandField.Focus();
     }
 
@@ -49,7 +47,7 @@ public partial class RunnerPage : UserControl
     
     private void Quit(object? sender, RoutedEventArgs e)
     {
-        parentWindow.Close();
+        MainWindow.Instance.Close();
     }
     
     private async void StepCommandField_OnKeyDown(object? sender, KeyEventArgs e)
@@ -75,11 +73,11 @@ public partial class RunnerPage : UserControl
     
     private async void SelectProjectFolder(object? sender, RoutedEventArgs e)
     {
-        var chosen = await parentWindow.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        var chosen = await MainWindow.Instance.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             AllowMultiple = false,
             Title = "Select a project directory",
-            SuggestedStartLocation = await parentWindow.StorageProvider.TryGetFolderFromPathAsync(StepCode.ProjectDirectory)
+            SuggestedStartLocation = await MainWindow.Instance.StorageProvider.TryGetFolderFromPathAsync(StepCode.ProjectDirectory)
         });
 
         if (chosen.Count == 0 || !Directory.Exists(chosen[0].Path.LocalPath)) return;
@@ -196,7 +194,7 @@ public partial class RunnerPage : UserControl
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
         ((RunnerViewModel)DataContext).AddRecentProjects(path);
-        parentWindow.Title = $"{StepCode.ProjectName} - StepRepl";
+        //parentWindow.Title = $"{StepCode.ProjectName} - StepRepl";
         ShowWarningsAndException();
     }
     
