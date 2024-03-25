@@ -85,7 +85,7 @@ namespace AvaloniaRepl
                     StepButton button = new(name, (object[])finalAction!, e.State);
                     Dispatcher.UIThread.Post(() =>
                     {
-                        if (MainWindow.Instance.GetActiveTab() is RunnerPage runnerPage)
+                        if (MainWindow.Instance.GetActiveTabContent() is RunnerPage runnerPage)
                             runnerPage.RegisterNewButton(button);
                     });
                     

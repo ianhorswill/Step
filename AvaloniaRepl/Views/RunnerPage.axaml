@@ -43,7 +43,7 @@
 
             <MenuItem Header="_Debug">
                 <MenuItem Header="_Abort" Click="AbortMenuItemClicked"/>
-                <MenuItem Header="_Start Debugger"/>
+                <MenuItem Header="_Start Debugger" Click="StartDebugButtonClicked"/>
             </MenuItem>
             
             <MenuItem Header="_History" ItemsSource="{Binding CommandHistory}">
