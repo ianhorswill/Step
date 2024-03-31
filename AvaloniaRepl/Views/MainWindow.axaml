@@ -66,6 +66,9 @@
                         </DataTemplate>
                     </MenuItem.ItemTemplate>
             </MenuItem>
+            <MenuItem Header="_Test">
+                <MenuItem Header="Graph" Click="TestGraph_Click"></MenuItem>
+            </MenuItem>
         </Menu>
 
         <TextBox x:Name="StepCommandField"

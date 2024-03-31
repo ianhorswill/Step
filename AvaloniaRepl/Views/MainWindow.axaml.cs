@@ -274,4 +274,9 @@ public partial class MainWindow : Window
         var window = new MethodCallFrameViewer() { DataContext = frame };
         window.Show();
     }
+
+    private void TestGraph_Click(object? sender, RoutedEventArgs e)
+    {
+        new GraphVisualization().Show();
+    }
 }
