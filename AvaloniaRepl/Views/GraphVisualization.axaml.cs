@@ -6,7 +6,7 @@ using GraphViz;
 
 namespace AvaloniaRepl.Views
 {
-    public partial class GraphVisualization : Window
+    public partial class GraphVisualization : UserControl
     {
         public GraphVisualization()
         {

@@ -4,29 +4,62 @@ namespace AvaloniaRepl.Views;
 
 public partial class MainWindow : Window
 {
-    public static MainWindow? Instance;
+    private static MainWindow? _instance;
 
     public MainWindow()
     {
         InitializeComponent();
-        Instance = this;
+        _instance = this;
     }
     
-    public object? GetActiveTab()
+    public static MainWindow Instance => _instance ?? new MainWindow();
+    
+    public object? GetActiveTabContent()
     {
         return Tabs.SelectedContent;
     }
-
-    private void ShowStackFrame(object? sender, RoutedEventArgs e)
+    
+    public void AddTab(string name, object content, bool select = true)
     {
-        var item = (MenuItem)sender;
-        var frame = (MethodCallFrame)item.DataContext;
-        var window = new MethodCallFrameViewer() { DataContext = frame };
-        window.Show();
+        var tab = new TabItem
+        {
+            Header = name,
+            Content = content
+        };
+        Tabs.Items.Add(tab);
+        if (select) Tabs.SelectedItem = tab;
     }
-
-    private void TestGraph_Click(object? sender, RoutedEventArgs e)
+    
+    public T? FindTabByContentType<T>() where T : class
     {
-        new GraphVisualization().Show();
+        foreach (TabItem item in Tabs.Items)
+        {
+            if (item.Content is T tab)
+            {
+                return tab;
+            }
+        }
+        return null;
+    }
+    
+    public TabItem? FindTabByContent(object tab)
+    {
+        foreach (TabItem item in Tabs.Items)
+        {
+            if (item.Content == tab)
+            {
+                return item;
+            }
+        }
+        return null;
+    }
+    
+    public void SetTabDisplayName(object tabContent, string name)
+    {
+        var foundTab = FindTabByContent(tabContent);
+        if (foundTab != null)
+        {
+            foundTab.Header = name;
+        }
     }
 }
