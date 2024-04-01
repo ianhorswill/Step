@@ -1,4 +1,5 @@
-﻿using Step;
+﻿using System;
+using Step;
 using Step.Interpreter;
 using Step.Output;
 
@@ -8,9 +9,14 @@ public class ReplDebugger
 {
     private readonly StepThread.StepThreadDebugger _debugger;
     private StepThread.StepThreadDebugger.DebuggerAwaiter _awaiter;
-    private (Module.MethodTraceEvent TraceEvent, Method? CalledMethod, object?[]? args, string? Text, BindingEnvironment? Environment) _lastResult; 
+    private (Module.MethodTraceEvent TraceEvent, Method? CalledMethod, object?[]? args, string? Text, BindingEnvironment? Environment) _lastResult;
+    public Action? DebugPauseCallback;
     
-    public delegate void DebugBreakHandler();
+    public Module.MethodTraceEvent LastResult_TraceEvent => _lastResult.TraceEvent;
+    public Method? LastResult_CalledMethod => _lastResult.CalledMethod;
+    public object?[]? LastResult_Args => _lastResult.args;
+    public string? LastResult_Text => _lastResult.Text;
+    public BindingEnvironment? LastResult_Environment => _lastResult.Environment;
     
     public ReplDebugger(StepThread.StepThreadDebugger debugger)
     {
@@ -18,6 +24,7 @@ public class ReplDebugger
         _debugger.ShowStackRequested = true;
         EstablishAwaiter();
         _debugger.Start();
+        Console.WriteLine($"Confirming a debug session started for project {StepCode.ProjectName}");
     }
     
     public void ToggleSingleStepping(bool singleStep)
@@ -46,7 +53,7 @@ public class ReplDebugger
     private void DebugBreakReady()
     {
         _lastResult = _awaiter.GetResult();
-        // todo: inform the UI thread that we have new data for it
+        DebugPauseCallback?.Invoke();
     }
     
     /// <summary>
