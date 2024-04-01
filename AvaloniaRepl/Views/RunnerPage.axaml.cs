@@ -51,6 +51,21 @@ public partial class RunnerPage : UserControl
         MainWindow.Instance.AddTab($"Graph ({StepCode.ProjectName})", graphVisPage);
     }
     
+    private void StartDebugButtonClicked(object? sender, RoutedEventArgs e)
+    {
+        if (StepCode.CurrentStepThread == null) return;
+
+        // get the active debugger tab (if we have one)
+        var debugger = MainWindow.Instance.FindTabByContentType<DebuggerPage>();
+        if (debugger == null)
+        {
+            debugger = new DebuggerPage();
+            MainWindow.Instance.AddTab("Debugger", debugger);
+        }
+
+        debugger.SetThreadForDebugger(StepCode.CurrentStepThread);
+    }
+    
     private void Quit(object? sender, RoutedEventArgs e)
     {
         MainWindow.Instance.Close();

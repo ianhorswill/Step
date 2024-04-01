@@ -54,6 +54,7 @@
             </MenuItem>
 
             <MenuItem Header="_Debug">
+                <MenuItem Header="Run Debugger" Click="StartDebugButtonClicked"></MenuItem>
                 <MenuItem Header="_Abort" Click="AbortMenuItemClicked"/>
             </MenuItem>
             
