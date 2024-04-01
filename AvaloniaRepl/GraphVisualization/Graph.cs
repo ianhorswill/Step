@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -102,8 +103,11 @@ namespace GraphViz
         public abstract IEnumerable<(object Node, Dictionary<string, object> Attributes, string Label)> NodesUntyped { get; }
         public abstract IEnumerable<(object From, object To, Dictionary<string, object>? Attributes, bool IsDirected, string? Label)> EdgesUntyped { get; }
 
-        public abstract float Distance(object from, object to);
+        public abstract float UndirectedDistance(object from, object to);
         public abstract float Diameter { get; }
+
+        public abstract int ConnectedComponentCount { get; }
+        public abstract int ConnectedComponentNumber(object node);
     }
 
     /// <summary>
@@ -551,10 +555,13 @@ namespace GraphViz
         }
         #endregion
 
-        #region Layout
-
+        #region Topology
         // ReSharper disable once InconsistentNaming
         private float[,]? _nodeDistances;
+
+        /// <summary>
+        /// UndirectedDistance between nodes, ignoring edge direction, or infinity, if the nodes are disconnected
+        /// </summary>
         private float[,] NodeDistances 
         {
             get
@@ -568,6 +575,10 @@ namespace GraphViz
                     for (var i = 0; i < count; i++)
                     for (var j = 0; j < count; j++)
                         distances[i, j] = float.PositiveInfinity;
+
+                    for (var i = 0; i < count; i++)
+                        distances[i, i] = 0;
+
                     foreach (var edge in edges)
                     {
                         var s = NodeIndex[edge.StartNode];
@@ -575,24 +586,32 @@ namespace GraphViz
                         distances[e, s] = distances[s, e] = 1;
                     }
 
+                    for (var k = 0; k < count; k++)
                     for (var i = 0; i < count; i++)
                     for (var j = 0; j < count; j++)
-                    for (var k = 0; k < count; k++)
-                        distances[i, j] = Math.Min(distances[i, j], distances[i, k] + distances[k, j]);
+                        distances[j,i] = distances[i, j] = Math.Min(distances[i, j], distances[i, k] + distances[k, j]);
                     _nodeDistances = distances;
+
+                    //for (var i = 0; i < count; i++)
+                    //for (var j = 0; j < count; j++)
+                    //    Debug.Assert(distances[i,j] == distances[j,i]);
                 }
+
                 return _nodeDistances;
             }
         }
 
-        public override float Distance(object node1, object node2) =>
+        /// <summary>
+        /// UndirectedDistance between nodes, ignoring edge direction, or infinity, if the nodes are disconnected
+        /// </summary>
+        public override float UndirectedDistance(object node1, object node2) =>
             NodeDistances[NodeIndex[(T)node1], NodeIndex[(T)node2]];
 
         // ReSharper disable once InconsistentNaming
         private float _diameter = -1;
 
         /// <summary>
-        /// Distance between the two most distant nodes that are still connected.
+        /// UndirectedDistance between the two most distant nodes that are still connected.
         /// </summary>
         public override float Diameter
         {
@@ -616,6 +635,50 @@ namespace GraphViz
                 return _diameter;
             }
         }
+
+        private int _connectedComponentCount;
+        private Dictionary<T, int>? _connectedComponent;
+        private int[] _nodeComponentNumbers;
+
+        private void FindConnectedComponents()
+        {
+            _nodeComponentNumbers = new int[nodes.Count];
+            Array.Fill(_nodeComponentNumbers, -1);
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (_nodeComponentNumbers[i] < 0)
+                {
+                    // New component
+                    for (int j = 0; j < nodes.Count; j++)
+                        if (!float.IsPositiveInfinity(NodeDistances[i, j]))
+                        {
+                            // They're connected
+                            _nodeComponentNumbers[j] = _connectedComponentCount;
+                        }
+                    _connectedComponentCount++;
+                }
+            }
+            Debug.Assert(_nodeComponentNumbers.All(n => n>=0));
+        }
+
+        public override int ConnectedComponentCount
+        {
+            get
+            {
+                if (_nodeComponentNumbers == null)
+                    FindConnectedComponents();
+                return _connectedComponentCount;
+            }
+        }
+
+        public int ConnectedComponentNumber(T node)
+        {
+            if (_nodeComponentNumbers == null)
+                FindConnectedComponents();
+            return _nodeComponentNumbers[NodeIndex[node]];
+        }
+
+        public override int ConnectedComponentNumber(object node) => ConnectedComponentNumber((T)node);
         #endregion
     }
 }

@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Media;
 
@@ -85,7 +86,13 @@ namespace AvaloniaRepl.GraphVisualization {
             foreach (var nodeInfo in Graph.NodesUntyped)
             {
                 var n = GetNode(nodeInfo.Node);
-                n.Brush = new SolidColorBrush(Colors.White);
+                IBrush b = Brushes.White;
+                if ((nodeInfo.Attributes.TryGetValue("color", out var v) || Graph.GlobalNodeAttributes.TryGetValue("color", out v)) && v is string colorName)
+                {
+                    b = GetColorBrushByName(colorName);
+                }
+
+                n.Brush = b;
                 n.Label = nodeInfo.Label;
             }
 
@@ -94,17 +101,34 @@ namespace AvaloniaRepl.GraphVisualization {
                 AddEdge(GetNode(edgeInfo.From), GetNode(edgeInfo.To), edgeInfo.IsDirected, edgeInfo.Label, edgeInfo.Attributes);
             }
 
-            UpdateConnectedComponents();
             TopologicalDistance = new short[Nodes.Count, Nodes.Count];
             foreach (var n1 in Nodes)
             foreach (var n2 in Nodes)
             {
-                var d = g.Distance(n1.Key, n2.Key);
+                var d = g.UndirectedDistance(n1.Key, n2.Key);
                 TopologicalDistance[n1.Index, n2.Index] = float.IsPositiveInfinity(d)?short.MaxValue:(short)d;
             }
             PlaceComponents(bounds);
 
             targetEdgeLength = (float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
+        }
+
+        private IBrush GetColorBrushByName(string colorName)
+        {
+            var t = typeof(Brushes);
+            var prop = t.GetProperty(colorName, BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public);
+            if (prop != null)
+                return (IBrush)prop.GetValue(null);
+            return Brushes.White;
+        }
+
+        private Color GetColorByName(string colorName)
+        {
+            var t = typeof(Colors);
+            var prop = t.GetProperty(colorName, BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public);
+            if (prop != null)
+                return (Color)prop.GetValue(null);
+            return Colors.White;
         }
 
         #region Node and edge data structures
@@ -171,74 +195,33 @@ namespace AvaloniaRepl.GraphVisualization {
 
         private void AddEdge(GraphNode start, GraphNode end, bool isDirected, string label, Dictionary<string,object>? attributes)
         {
-            var e = new GraphEdge(start, end, label, Colors.White, true, 1);
+            Color c = Colors.White;
+            if ((attributes.TryGetValue("color", out var v) || Graph.GlobalEdgeAttributes.TryGetValue("color", out v)) && v is string colorName)
+            {
+                c = GetColorByName(colorName);
+            }
+            var e = new GraphEdge(start, end, label, c, true, 1);
             Edges.Add(e);
             start.AdjacentEdges.Add(e);
             end.AdjacentEdges.Add(e);
-            adjacency.Add((start, end));
-            adjacency.Add((end, start));
         }
 
 
-
-        /// <summary>
-        /// Mapping from client-side vertex objects ("keys") to internal GraphNode objects
-        /// </summary>
-        private readonly Dictionary<object, GraphNode> nodeDict = new();
-        /// <summary>
-        /// Set of pairs of nodes that are adjacent.  This relation is symmetric even when the edge is directed.
-        /// Used to determine if nodes should repel one another, and if nodes should be dimmed when another node is selected.
-        /// </summary>
-        private readonly HashSet<(GraphNode, GraphNode)> adjacency = new();
 
         /// <summary>
         /// The set of pairs of nodes that are siblings, i.e. that share a connection to the same node
         /// </summary>
         private HashSet<(GraphNode, GraphNode)> siblings;
 
-        /// <summary>
-        /// True if there is an edge from a to be *or* vice-versa.
-        /// </summary>
-        private bool Adjacent(GraphNode a, GraphNode b) => adjacency.Contains((a, b));
-
         private short[,] TopologicalDistance;
 
-        private short[] ConnectedComponent;
-        private readonly List<short> ConnectedComponentSize = new();
-
-        private int ConnectedComponentCount => ConnectedComponentSize.Count;
+        private int ConnectedComponentCount => Graph.ConnectedComponentCount;
         #endregion
 
-      /// <summary>
-        /// Find all the connected components and their sizes, and note the component number of each node.
-        /// </summary>
-        private void UpdateConnectedComponents() {
-            ConnectedComponentSize.Clear();
-            ConnectedComponent = new short[Nodes.Count];
-            Array.Fill(ConnectedComponent, (short)-1);
-
-            void Walk(GraphNode node) {
-                var index = node.Index;
-                if (ConnectedComponent[index] >= 0) return;
-                var componentNumber = ConnectedComponentCount - 1;
-                node.Component = ConnectedComponent[index] = (short)componentNumber;
-                ConnectedComponentSize[componentNumber]++;
-                foreach (var n in Nodes)
-                    if (n != node && Adjacent(n, node))
-                        Walk(n);
-            }
-
-            foreach (var n in Nodes)
-                if (ConnectedComponent[n.Index] < 0) {
-                    ConnectedComponentSize.Add(0);
-                    Walk(n);
-                }
-        }
-
-      protected void PlaceComponents(Rect r) {
+        protected void PlaceComponents(Rect r) {
             void PlaceSingleComponent(int component, Rect rect) {
                 foreach (var n in Nodes)
-                    if (ConnectedComponent[n.Index] == component)
+                    if (Graph.ConnectedComponentNumber(n.Key) == component)
                         n.Position = n.PreviousPosition = 
                             new Vector2(RandomInRange((float)rect.Left, (float)rect.Right),
                                         RandomInRange((float)rect.Top, (float)rect.Bottom));
