@@ -83,7 +83,11 @@ namespace AvaloniaRepl
                         throw new ArgumentInstantiationException(addButton, e, args);
 
                     StepButton button = new(name, (object[])finalAction!, e.State);
-                    Dispatcher.UIThread.Post(() => MainWindow.Instance.RegisterNewButton(button));
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (MainWindow.Instance.GetActiveTabContent() is RunnerPage runnerPage)
+                            runnerPage.RegisterNewButton(button);
+                    });
                     
                     return k(o, e.Unifications, e.State, d);
                 });
