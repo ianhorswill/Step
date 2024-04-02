@@ -87,7 +87,7 @@ namespace AvaloniaRepl.GraphVisualization {
             {
                 var n = GetNode(nodeInfo.Node);
                 IBrush b = Brushes.White;
-                if ((nodeInfo.Attributes.TryGetValue("color", out var v) || Graph.GlobalNodeAttributes.TryGetValue("color", out v)) && v is string colorName)
+                if ((nodeInfo.Attributes.TryGetValue("fillcolor", out var v) || Graph.GlobalNodeAttributes.TryGetValue("fillcolor", out v)) && v is string colorName)
                 {
                     b = GetColorBrushByName(colorName);
                 }
@@ -113,23 +113,9 @@ namespace AvaloniaRepl.GraphVisualization {
             targetEdgeLength = (float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
         }
 
-        private IBrush GetColorBrushByName(string colorName)
-        {
-            var t = typeof(Brushes);
-            var prop = t.GetProperty(colorName, BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public);
-            if (prop != null)
-                return (IBrush)prop.GetValue(null);
-            return Brushes.White;
-        }
+        private IBrush GetColorBrushByName(string colorName) => new SolidColorBrush(GetColorByName(colorName));
 
-        private Color GetColorByName(string colorName)
-        {
-            var t = typeof(Colors);
-            var prop = t.GetProperty(colorName, BindingFlags.IgnoreCase | BindingFlags.Static | BindingFlags.Public);
-            if (prop != null)
-                return (Color)prop.GetValue(null);
-            return Colors.White;
-        }
+        private Color GetColorByName(string colorName) => Color.Parse(colorName);
 
         #region Node and edge data structures
 

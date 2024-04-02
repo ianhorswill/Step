@@ -22,6 +22,7 @@ namespace AvaloniaRepl.GraphVisualization
             //g.AddEdge(new Graph<string>.Edge("A", "C"), true);
             //Graph = g;
             Graph = CallGraph();
+            Graph.RecolorByComponent();
         }
 
         private static Graph<string> CallGraph()
@@ -55,12 +56,12 @@ namespace AvaloniaRepl.GraphVisualization
         private GraphLayout? Layout;
 
         private FormattedText[]? NodeLabels;
-        private Pen redPen = new Pen(new SolidColorBrush(Colors.Red), 3);
-        private Pen greenPen = new Pen(new SolidColorBrush(Colors.GreenYellow), 3);
+        private Pen redPen = new(new SolidColorBrush(Colors.Red), 3);
+        private Pen greenPen = new(new SolidColorBrush(Colors.GreenYellow), 3);
         private Brush greenBrush = new SolidColorBrush(Colors.GreenYellow);
 
         public double NodeSize = 7;
-        public Point TextOffset = new Point(0, -30);
+        public Point TextOffset = new(0, -30);
 
         public float ArrowHeadSize = 10;
 

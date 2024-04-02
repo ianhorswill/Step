@@ -108,6 +108,8 @@ namespace GraphViz
 
         public abstract int ConnectedComponentCount { get; }
         public abstract int ConnectedComponentNumber(object node);
+
+        public abstract void RecolorByComponent();
     }
 
     /// <summary>
@@ -680,5 +682,29 @@ namespace GraphViz
 
         public override int ConnectedComponentNumber(object node) => ConnectedComponentNumber((T)node);
         #endregion
+
+        public override void RecolorByComponent()
+        {
+            var palette = new string[ConnectedComponentCount];
+            if (ConnectedComponentCount == 1)
+                palette[0] = "#00FF00";
+            else
+                for (int i = 0; i < ConnectedComponentCount; i++)
+                {
+                    int green = (int)((255.0  * i)/(ConnectedComponentCount-1));
+                    palette[i] = $"#00{green:X2}{255 - green:X2}";
+                }
+
+            foreach (var n in NodeIndex)
+                NodeAttributes[n.Key]["fillcolor"] = palette[_nodeComponentNumbers[n.Value]];
+
+            foreach (var e in edges)
+            {
+                var component = _nodeComponentNumbers[NodeIndex[e.StartNode]];
+                if (e.Attributes == null)
+                    e.Attributes = new Dictionary<string, object>();
+                e.Attributes["color"] = palette[component];
+            }
+        }
     }
 }
