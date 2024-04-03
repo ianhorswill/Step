@@ -109,6 +109,9 @@ namespace GraphViz
         public abstract int ConnectedComponentCount { get; }
         public abstract int ConnectedComponentNumber(object node);
 
+        /// <summary>
+        /// Change colors in graph so that each connected component has its own color
+        /// </summary>
         public abstract void RecolorByComponent();
     }
 
@@ -147,14 +150,14 @@ namespace GraphViz
         /// The internal ID string assigned to a node
         /// This is not defined until the node is added to the graph
         /// </summary>
-        public readonly Dictionary<T, string> IdOf = new Dictionary<T, string>();
+        public readonly Dictionary<T, string> IdOf;
 
         /// <summary>
         /// The set of all nodes in the graph
         /// </summary>
-        private readonly HashSet<T> nodes = new HashSet<T>();
+        private readonly HashSet<T> nodes;
 
-        public readonly Dictionary<T, int> NodeIndex = new Dictionary<T, int>();
+        public readonly Dictionary<T, int> NodeIndex;
 
         /// <summary>
         /// The set of all nodes in the graph
@@ -165,7 +168,7 @@ namespace GraphViz
         /// The attributes assigned to a given node
         /// </summary>
         public Dictionary<T, Dictionary<string, object>>
-            NodeAttributes = new Dictionary<T, Dictionary<string, object>>();
+            NodeAttributes;
 
         public override IEnumerable<(object Node, Dictionary<string, object> Attributes, string Label)> NodesUntyped =>
             nodes.Select(n => ((object)n!, NodeAttributes[n], NodeLabel(n)));
@@ -177,12 +180,16 @@ namespace GraphViz
         /// <summary>
         /// Make a graph to be rendered using Graph.
         /// </summary>
-        public Graph()
+        public Graph(IEqualityComparer<T>? comparer = null)
         {
             NodeId = (_) => $"v{NextNodeUid++}";
-            NodeLabel = v => v!.ToString();
+            NodeLabel = v => (v == null)?"null":v.ToString()!;
             DefaultNodeAttributes = n => EmptyAttributeDictionary;
             DefaultEdgeAttributes = edge => EmptyAttributeDictionary;
+            IdOf = new Dictionary<T, string>(comparer);
+            NodeIndex = new Dictionary<T, int>(comparer);
+            nodes = new HashSet<T>(comparer);
+            NodeAttributes = new Dictionary<T, Dictionary<string, object>>(comparer);
         }
 
         /// <summary>
@@ -689,9 +696,9 @@ namespace GraphViz
             if (ConnectedComponentCount == 1)
                 palette[0] = "#00FF00";
             else
-                for (int i = 0; i < ConnectedComponentCount; i++)
+                for (var i = 0; i < ConnectedComponentCount; i++)
                 {
-                    int green = (int)((255.0  * i)/(ConnectedComponentCount-1));
+                    var green = (int)((255.0  * i)/(ConnectedComponentCount-1));
                     palette[i] = $"#00{green:X2}{255 - green:X2}";
                 }
 
@@ -701,8 +708,7 @@ namespace GraphViz
             foreach (var e in edges)
             {
                 var component = _nodeComponentNumbers[NodeIndex[e.StartNode]];
-                if (e.Attributes == null)
-                    e.Attributes = new Dictionary<string, object>();
+                e.Attributes ??= new Dictionary<string, object>();
                 e.Attributes["color"] = palette[component];
             }
         }
