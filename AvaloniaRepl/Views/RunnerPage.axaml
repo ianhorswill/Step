@@ -34,7 +34,7 @@
     <StackPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="Open project..." Click="SelectProjectFolder"/>
+                <MenuItem Header="Open project..." Click="SelectProjectFolder" HotKey="Ctrl+O" InputGesture="Ctrl+O"/>
                 <MenuItem x:Name="OpenRecentDropdown" Header="Open recent" ItemsSource="{Binding RecentProjectPaths}">
                     <MenuItem.ItemTemplate>
                         <DataTemplate>
@@ -42,10 +42,10 @@
                         </DataTemplate>
                     </MenuItem.ItemTemplate>
                 </MenuItem>
-                <MenuItem Header="_Reload project" Click="ReloadStepCode" HotKey="Ctrl+R"/>
-                <MenuItem Header="_Edit project" Click="EditProject"/>
+                <MenuItem Header="_Reload project" Click="ReloadStepCode" HotKey="Ctrl+R" InputGesture="Ctrl+R"/>
+                <MenuItem Header="_Edit project" Click="EditProject" HotKey="Ctrl+E" InputGesture="Ctrl+E"/>
                 <Separator/>
-                <MenuItem Header="_Quit" Click="Quit"/>
+                <MenuItem Header="_Quit" Click="Quit" HotKey="Ctrl+Q" InputGesture="Ctrl+Q"/>
             </MenuItem>
             
             <MenuItem Header="_Edit">
@@ -73,8 +73,7 @@
         <TextBox x:Name="StepCommandField"
                  KeyDown="StepCommandField_OnKeyDown"
                  Watermark="Run Step commands here (press Return or Enter)..."/>
-
-        <ScrollViewer>
+        
             <StackPanel>
                 <!-- Standard Step output-->
                 <SelectableTextBlock x:Name="OutputText" TextWrapping="Wrap"
@@ -158,6 +157,5 @@
                     ToolTip.Tip ="You can ignore this.  This is in case there is a bug in Step and Ian needs to know more information."/>
                 
             </StackPanel>
-        </ScrollViewer>
     </StackPanel>
 </UserControl>

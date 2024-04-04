@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Avalonia.Controls;
+using AvaloniaRepl.Views;
 
 namespace AvaloniaRepl.ViewModels;
 
@@ -8,6 +10,7 @@ public class RunnerViewModel : ViewModelBase
 #pragma warning disable CA1822 // Mark members as static
     public ObservableCollection<string> RecentProjectPaths { get; set; } = [];
     public ObservableCollection<string> CommandHistory { get; set; } = [];
+    public ObservableCollection<TabInfo> Tabs { get; set; } = new();
 
     public void AddCommandHistory(string cmd)
     {

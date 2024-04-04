@@ -1,6 +1,14 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using AvaloniaRepl.ViewModels;
 
 namespace AvaloniaRepl.Views;
+
+public class TabInfo
+{
+    public string Header { get; set; }
+    public UserControl Content { get; set; }
+}
 
 public partial class MainWindow : Window
 {
@@ -10,29 +18,35 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _instance = this;
+        Loaded += (sender, args) =>
+        {
+            AddTab("Runner", new RunnerPage(), true);
+        };
     }
-    
+
     public static MainWindow Instance => _instance ?? new MainWindow();
+    public RunnerViewModel ViewModel => (RunnerViewModel)Instance.DataContext;
     
     public object? GetActiveTabContent()
     {
-        return Tabs.SelectedContent;
+        return TabView.SelectedContent;
     }
     
-    public void AddTab(string name, object content, bool select = true)
+    public void AddTab(string name, UserControl content, bool select = true)
     {
-        var tab = new TabItem
+        var tab = new TabInfo
         {
             Header = name,
             Content = content
         };
-        Tabs.Items.Add(tab);
-        if (select) Tabs.SelectedItem = tab;
+        
+        ((RunnerViewModel)DataContext).Tabs.Add(tab);
+        if (select) TabView.SelectedItem = tab;
     }
     
     public T? FindTabByContentType<T>() where T : class
     {
-        foreach (TabItem item in Tabs.Items)
+        foreach (TabInfo item in ((RunnerViewModel)DataContext).Tabs)
         {
             if (item.Content is T tab)
             {
@@ -42,9 +56,9 @@ public partial class MainWindow : Window
         return null;
     }
     
-    public TabItem? FindTabByContent(object tab)
+    public TabInfo? FindTabByContent(object tab)
     {
-        foreach (TabItem item in Tabs.Items)
+        foreach (TabInfo item in ((RunnerViewModel)DataContext).Tabs)
         {
             if (item.Content == tab)
             {
@@ -60,6 +74,20 @@ public partial class MainWindow : Window
         if (foundTab != null)
         {
             foundTab.Header = name;
+        }
+    }
+
+    private void CloseTabClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button) return;
+        if (button.DataContext is not TabInfo tab) return;
+
+        ((RunnerViewModel)DataContext).Tabs.Remove(tab);
+        
+        // if no tabs left, close the app
+        if (((RunnerViewModel)DataContext).Tabs.Count == 0)
+        {
+            Close();
         }
     }
 }
