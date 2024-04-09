@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using AvaloniaRepl.GraphVisualization;
 using AvaloniaRepl.ViewModels;
 using Step;
 using Step.Interpreter;
@@ -47,8 +48,9 @@ public partial class RunnerPage : UserControl
     
     private void TestGraph_Click(object? sender, RoutedEventArgs e)
     {
-        var graphVisPage = new GraphVisualization();
-        MainWindow.Instance.AddTab($"Graph ({StepCode.ProjectName})", graphVisPage);
+        //var graphVisPage = new GraphVisualization();
+        //MainWindow.Instance.AddTab($"Graph ({StepCode.ProjectName})", graphVisPage);
+        StepGraph.ShowCallGraph();
     }
     
     private void StartDebugButtonClicked(object? sender, RoutedEventArgs e)

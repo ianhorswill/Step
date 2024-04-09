@@ -48,6 +48,9 @@ namespace Step.Interpreter
             Name = name;
         }
 
+        public LogicVariable(string name, int index) : this(new LocalVariableName(name, index))
+        {}
+
         /// <summary>
         /// The name as it should appear in the debugger.
         /// This name has the UID appended rather than just the raw Name field

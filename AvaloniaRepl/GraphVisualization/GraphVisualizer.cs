@@ -17,42 +17,23 @@ namespace AvaloniaRepl.GraphVisualization
     {
         public GraphVisualizer()
         {
-            //var g = new Graph<string>();
-            //g.AddEdge(new Graph<string>.Edge("A", "B"), true);
-            //g.AddEdge(new Graph<string>.Edge("A", "C"), true);
-            //Graph = g;
-            Graph = CallGraph();
-            Graph.RecolorByComponent();
         }
 
-        private static Graph<string> CallGraph()
+        private void MakeLayout()
         {
-            var g = new GraphViz.Graph<string>();
-            foreach (var t in StepCode.Module.DefinedTasks)
-            foreach (var callee in t.Callees)
+            var layoutBounds = new Rect(Bounds.Size);
+            if (Graph != null)
             {
-                switch (callee)
-                {
-                    case Task t2:
-                        g.AddEdge(new Graph<string>.Edge(t.Name, t2.Name, true), true);
-                        break;
-
-                    case StateVariableName v:
-                        g.AddEdge(new Graph<string>.Edge(t.Name, v.Name, true), true);
-                        break;
-
-                    default:
-                        if (callee == null)
-                            continue;
-                        g.AddEdge(new Graph<string>.Edge(t.Name, callee.ToString(), true), true);
-                        break;
-                }
+                Layout = new GraphLayout(Graph, layoutBounds);
+                NodeLabels = Layout.Nodes.Select(n => new FormattedText(n.Label ?? n.ToString(),
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight, Typeface.Default, 14, n.Brush)).ToArray();
+                Update();
             }
-
-            return g;
         }
 
-        private Graph Graph;
+
+        private Graph Graph => DataContext as Graph;
         private GraphLayout? Layout;
 
         private FormattedText[]? NodeLabels;
@@ -68,16 +49,10 @@ namespace AvaloniaRepl.GraphVisualization
         protected override void OnSizeChanged(SizeChangedEventArgs e)
         {
             base.OnSizeChanged(e);
-            var layoutBounds = new Rect(e.NewSize);
             if (Layout == null)
-            {
-                Layout = new GraphLayout(Graph, layoutBounds);
-                NodeLabels = Layout.Nodes.Select(n => new FormattedText(n.Label ?? n.ToString(),
-                    CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight, Typeface.Default, 14, n.Brush)).ToArray();
-                Update();
-            }
-            else Layout.Bounds = layoutBounds;
+                MakeLayout();
+            if (Layout != null)
+                Layout.Bounds = new Rect(e.NewSize);
         }
 
         private void Update()
@@ -89,6 +64,8 @@ namespace AvaloniaRepl.GraphVisualization
 
         public override void Render(DrawingContext context)
         {
+            if (Layout == null)
+                return;
             var b = Bounds;
             foreach (var n in Layout.Nodes)
             {

@@ -451,6 +451,114 @@ var output = TextBuffer.NewEmpty();
         public T CallFunction<T>(string taskName, params object?[] args) => CallFunction<T>(State.Empty, taskName, args);
 
         /// <summary>
+        /// Call task on args and return the value of resultVar
+        /// </summary>
+        /// <exception cref="CallFailedException">If call to task fails</exception>
+        /// <exception cref="ArgumentInstantiationException">If task fails to bind the result variable</exception>
+        public T SolveFor<T>(Task task, object?[] args, LogicVariable resultVar, State? state = null)
+        {
+            if (state == null)
+                state = State.Empty;
+            Uncancel();
+            var env = new BindingEnvironment(this, null!, null, state.Value);
+            var output = new TextBuffer(0);
+
+            BindingList? bindings = null;
+
+            if (!task.Call(args, output, env, null,
+                    (o, u, s, p) =>
+                    {
+                        bindings = u;
+                        return true;
+                    })) 
+                throw new CallFailedException(task, args);
+            
+            // Call succeeded; pull out the binding of the result variable and return it
+            var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
+            var result = finalEnv.CopyTerm(resultVar);
+            if (result is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(task, env, args);
+            return (T) result!;
+        }
+
+        /// <summary>
+        /// Call task on args and return the value of resultVar
+        /// </summary>
+        /// <exception cref="CallFailedException">If call to task fails</exception>
+        /// <exception cref="ArgumentInstantiationException">If task fails to bind the result variable</exception>
+        public (T1,T2) SolveFor<T1,T2>(Task task, object?[] args, LogicVariable resultVar1, LogicVariable resultVar2, State? state = null)
+        {
+            if (state == null)
+                state = State.Empty;
+            Uncancel();
+            var env = new BindingEnvironment(this, null!, null, state.Value);
+            var output = new TextBuffer(0);
+
+            BindingList? bindings = null;
+
+            if (!task.Call(args, output, env, null,
+                    (o, u, s, p) =>
+                    {
+                        bindings = u;
+                        return true;
+                    })) 
+                throw new CallFailedException(task, args);
+            
+            // Call succeeded; pull out the binding of the result variable and return it
+            var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
+            var result1 = finalEnv.CopyTerm(resultVar1);
+            if (result1 is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(task, env, args);
+            var result2 = finalEnv.CopyTerm(resultVar2);
+            if (result2 is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(task, env, args);
+            return ((T1)result1!, (T2)result2!);
+        }
+
+        /// <summary>
+        /// Call task on args and return the value of resultVar
+        /// </summary>
+        /// <exception cref="CallFailedException">If call to task fails</exception>
+        /// <exception cref="ArgumentInstantiationException">If task fails to bind the result variable</exception>
+        public (T1,T2,T3) SolveFor<T1,T2,T3>(Task task, object?[] args, LogicVariable resultVar1, LogicVariable resultVar2, LogicVariable resultVar3, State? state = null)
+        {
+            if (state == null)
+                state = State.Empty;
+            Uncancel();
+            var env = new BindingEnvironment(this, null!, null, state.Value);
+            var output = new TextBuffer(0);
+
+            BindingList? bindings = null;
+
+            if (!task.Call(args, output, env, null,
+                    (o, u, s, p) =>
+                    {
+                        bindings = u;
+                        return true;
+                    })) 
+                throw new CallFailedException(task, args);
+            
+            // Call succeeded; pull out the binding of the result variable and return it
+            var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
+            var result1 = finalEnv.CopyTerm(resultVar1);
+            if (result1 is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(task, env, args);
+            var result2 = finalEnv.CopyTerm(resultVar2);
+            if (result2 is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(task, env, args);
+            var result3 = finalEnv.CopyTerm(resultVar3);
+            if (result3 is LogicVariable)
+                // resultVar is unbound or bound to an unbound variable
+                throw new ArgumentInstantiationException(task, env, args);
+            return ((T1)result1!, (T2)result2!, (T3)result3!);
+        }
+
+        /// <summary>
         /// Load all source files in the specified directory
         /// </summary>
         /// <param name="path">Path for the directory</param>

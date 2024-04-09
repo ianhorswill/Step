@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using AvaloniaRepl.GraphVisualization;
 using AvaloniaRepl.Views;
 using Step;
 using Step.Interpreter;
@@ -33,6 +34,7 @@ namespace AvaloniaRepl
         static StepCode()
         {
             ReplUtilities = new Module("ReplUtilities", Module.Global);
+            StepGraph.AddPrimitives(ReplUtilities);
             ReplUtilities.AddDefinitions(
                 "predicate TestCase ?code.",
                 "predicate Button ?label ?code.",
