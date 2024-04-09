@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:AvaloniaRepl.ViewModels"
-        xmlns:local="clr-namespace:AvaloniaRepl"
+        xmlns:local="clr-namespace:AvaloniaRepl.Views"
         xmlns:views="clr-namespace:AvaloniaRepl.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaRepl.Views.MainWindow"
@@ -11,9 +11,21 @@
         Icon="/Assets/cat-icon.png"
         Title="StepRepl">
     
-    <TabControl x:Name="Tabs">
-        <TabItem Header="Runner">
-            <views:RunnerPage/>
-        </TabItem>
+    <TabControl x:Name="TabView" ItemsSource="{Binding Tabs}">
+        <TabControl.ItemTemplate>
+            <DataTemplate>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Header}" Padding="0,0,8,0"/>
+                <Button Content="X" Click="CloseTabClicked" FontSize="14"/>
+            </StackPanel>
+            </DataTemplate>
+        </TabControl.ItemTemplate>
+        <TabControl.ContentTemplate>
+            <DataTemplate DataType="views:TabInfo">
+                <ScrollViewer>
+                    <ContentControl Content="{Binding Content}"/>
+                </ScrollViewer>
+            </DataTemplate>
+        </TabControl.ContentTemplate>
     </TabControl>
 </Window>

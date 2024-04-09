@@ -82,7 +82,7 @@ public partial class RunnerPage : UserControl
         textBox.Text = "";
         if (string.IsNullOrEmpty(command)) return;
 
-        ((RunnerViewModel)DataContext).AddCommandHistory(command);
+        MainWindow.Instance.ViewModel.AddCommandHistory(command);
         await EvalAndShowOutput(command);
     }
     
@@ -216,8 +216,8 @@ public partial class RunnerPage : UserControl
     {
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
-        ((RunnerViewModel)DataContext).AddRecentProjects(path);
-        MainWindow.Instance.Title = $"{StepCode.ProjectName} - StepRepl";
+        MainWindow.Instance.ViewModel.AddRecentProjects(path);
+        MainWindow.Instance.SetTabDisplayName(this, $"{StepCode.ProjectName}"); 
         ShowWarningsAndException();
     }
     
