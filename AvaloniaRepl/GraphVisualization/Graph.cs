@@ -175,7 +175,7 @@ namespace GraphViz
 
         public override
             IEnumerable<(object From, object To, Dictionary<string, object>? Attributes, bool IsDirected, string? Label)> EdgesUntyped =>
-            edges.Select(e => ((object)e.StartNode!, (object)e.EndNode!, e.Attributes, e.Directed, e.Label));
+            edges.Select(e => ((object)CanonicalizeNode(e.StartNode)!, (object)CanonicalizeNode(e.EndNode)!, e.Attributes, e.Directed, e.Label));
 
         /// <summary>
         /// Make a graph to be rendered using Graph.
@@ -230,6 +230,8 @@ namespace GraphViz
                 }
             }
         }
+
+        private T CanonicalizeNode(T node) => nodes.TryGetValue(node, out var actual) ? actual : node;
 
         /// <summary>
         /// Add all the nodes listed, and all the nodes reachable from them via the nodeEdges.

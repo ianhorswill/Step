@@ -26,7 +26,7 @@ namespace AvaloniaRepl.GraphVisualization
         {
             Dispatcher.UIThread.Post(() =>
             {
-                var visualization = new GraphVisualizer() { DataContext = graph };
+                var visualization = new Views.GraphVisualization() { DataContext = graph };
                 MainWindow.Instance.AddTab(name, visualization, true);
             });
         }
@@ -89,24 +89,45 @@ namespace AvaloniaRepl.GraphVisualization
                         break;
 
                     case "name":
-                        windowName = ArgumentTypeException.Cast<string>(VisualizeGraph, value, args);
+                        windowName = StringifyStepObject(value);
                         break;
 
                     default:
-                        throw new ArgumentException($"Unknown keyword {keyword}in call to {VisualizeGraph.Name}");
+                        throw new ArgumentException($"Unknown keyword {keyword} in call to {VisualizeGraph.Name}");
                 }
             }
 
             var startNodeVar = new LogicVariable("?startNode", 0);
             var endNodeVar = new LogicVariable("?endNode", 1);
+            var labelVar = new LogicVariable("?label", 2);
+            var colorVar = new LogicVariable("?color", 2);
+            var directedVar = new LogicVariable("?directed", 2);
 
-            var edgeArgs = new object[] { startNodeVar, endNodeVar };
+            var edgeArgCount = edges.ArgumentCount??2;
+            var edgeArgs = edgeArgCount switch
+            {
+                2 => new object[] { startNodeVar, endNodeVar },
+                3 => new object[] { startNodeVar, endNodeVar, labelVar },
+                4 => new object[] { startNodeVar, endNodeVar, labelVar, colorVar },
+                5 => new object[] { startNodeVar, endNodeVar, labelVar, colorVar, directedVar },
+                _ => throw new ArgumentException($"First argument to {nameof(VisualizeGraph)}, {Writer.TermToString(edges)}, must be a task that accepts 2-5 arguments.")
+            };
+            
             edges.Call(edgeArgs, o, e, predecessor, (no, u, s, f) =>
             {
                 var env = new BindingEnvironment(e, u, s);
                 var start = env.Resolve(startNodeVar);
                 var end = env.Resolve(endNodeVar);
-                graph.AddEdge(new Graph<object>.Edge(start, end, directed), true);
+                var label = edgeArgCount>2?StringifyStepObject(env.Resolve(labelVar)):null;
+                var color = edgeArgCount > 3 ? env.Resolve(colorVar) as string : null;
+                var thisEdgeDirected = edgeArgCount > 4 ? (bool)env.Resolve(directedVar) : directed;
+                var edge = new Graph<object>.Edge(
+                    start, end, 
+                    thisEdgeDirected,
+                    label,
+                    color != null?new Dictionary<string, object>() { { "color", color } }:null);
+                graph.AddEdge(edge, 
+                    true);
                 return false; // backtrack
             });
             ShowGraph(windowName, graph);
@@ -153,10 +174,11 @@ namespace AvaloniaRepl.GraphVisualization
             return g;
         }
 
-        public static string StringifyStepObject(object o)
+        public static string StringifyStepObject(object? o)
         {
             return o switch
             {
+                null => "null",
                 string[] text => text.Untokenize(),
                 object?[] tuple => Writer.TermToString(tuple),
                 _ => o.ToString()

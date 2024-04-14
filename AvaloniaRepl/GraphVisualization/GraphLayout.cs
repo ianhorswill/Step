@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -78,6 +79,11 @@ namespace AvaloniaRepl.GraphVisualization {
         /// Name of the string property of a selected node to be displayed in the ToolTop element.
         /// </summary>
         public string ToolTipProperty;
+
+        /// <summary>
+        /// Count of edges from first node to second node, for multigraphs.
+        /// </summary>
+        private Dictionary<(object, object), int> EdgeCount = new Dictionary<(object, object), int>();
 
         public GraphLayout(GraphViz.Graph g, Rect bounds)
         {
@@ -142,19 +148,21 @@ namespace AvaloniaRepl.GraphVisualization {
         {
             public readonly GraphNode Start;
             public readonly GraphNode End;
-            public readonly string Label;
+            public readonly string? Label;
             public readonly IPen Pen;
             public readonly bool IsDirected;
-            public readonly float targetLength;
+            public readonly float TargetLength;
+            public readonly int RenderPosition;
 
-            public GraphEdge(GraphNode start, GraphNode end, string label, Color color, bool isDirected, float targetLength)
+            public GraphEdge(GraphNode start, GraphNode end, string? label, Color color, bool isDirected, float targetLength, int renderPosition)
             {
                 Start = start;
                 End = end;
                 Label = label;
                 Pen = new Pen(new SolidColorBrush(color));
                 IsDirected = isDirected;
-                this.targetLength = targetLength;
+                TargetLength = targetLength;
+                RenderPosition = renderPosition;
             }
         }
         
@@ -186,7 +194,11 @@ namespace AvaloniaRepl.GraphVisualization {
             {
                 c = GetColorByName(colorName);
             }
-            var e = new GraphEdge(start, end, label, c, true, 1);
+
+            EdgeCount.TryGetValue((start, end), out var renderPosition);
+            renderPosition++;
+            EdgeCount[(start, end)] = renderPosition;
+            var e = new GraphEdge(start, end, label, c, true, 1,renderPosition);
             Edges.Add(e);
             start.AdjacentEdges.Add(e);
             end.AdjacentEdges.Add(e);
@@ -362,5 +374,7 @@ namespace AvaloniaRepl.GraphVisualization {
             Nodes.FirstOrDefault(n => Vector2.Distance(location, n.Position) <= nodeSize);
 
         #endregion
+
+        public bool HasReverseEdge(GraphEdge e) => EdgeCount.ContainsKey((e.End, e.Start));
     }
 }
