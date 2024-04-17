@@ -215,6 +215,9 @@ namespace GraphViz
         /// </summary>
         public void AddEdge(Edge e, bool addNodes = false)
         {
+            e.StartNode = CanonicalizeNode(e.StartNode);
+            e.EndNode = CanonicalizeNode(e.EndNode);
+
             if (edges.TryGetValue(e, out var canonical))
                 canonical.AddAttributes(e);
             else
@@ -401,12 +404,12 @@ namespace GraphViz
             /// Node this edge originates at.
             /// If this is an undirected edge, then StartNode and EndNode are interchangeable
             /// </summary>
-            public readonly T StartNode;
+            public T StartNode;
             /// <summary>
             /// Node this edge ends at.
             /// If this is an undirected edge, then StartNode and EndNode are interchangeable
             /// </summary>
-            public readonly T EndNode;
+            public T EndNode;
             /// <summary>
             /// Whether this is a directed edge or not
             /// </summary>

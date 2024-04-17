@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -116,7 +117,7 @@ namespace AvaloniaRepl.GraphVisualization {
             }
             PlaceComponents(bounds);
 
-            targetEdgeLength = (float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
+            targetEdgeLength = 0.7f*(float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
         }
 
         private IBrush GetColorBrushByName(string colorName) => new SolidColorBrush(GetColorByName(colorName));
@@ -198,7 +199,7 @@ namespace AvaloniaRepl.GraphVisualization {
             EdgeCount.TryGetValue((start, end), out var renderPosition);
             renderPosition++;
             EdgeCount[(start, end)] = renderPosition;
-            var e = new GraphEdge(start, end, label, c, true, 1,renderPosition);
+            var e = new GraphEdge(start, end, label, c, isDirected, 1,renderPosition);
             Edges.Add(e);
             start.AdjacentEdges.Add(e);
             end.AdjacentEdges.Add(e);

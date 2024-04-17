@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
+using AvaloniaRepl.Views;
 using GraphViz;
 using Step;
 using Task = Step.Interpreter.Task;
@@ -68,28 +69,23 @@ namespace AvaloniaRepl.GraphVisualization
         private void Update()
         {
             Layout.FixedUpdate();
-            InvalidateVisual();
-            DispatcherTimer.RunOnce(Update, new TimeSpan(0, 0, 0, 0, 30));
+            //InvalidateVisual();
+            //DispatcherTimer.RunOnce(Update, new TimeSpan(0, 0, 0, 0, 30));
+            DispatcherTimer.RunOnce(InvalidateVisual, new TimeSpan(0, 0, 0, 0, 30));
         }
 
         public override void Render(DrawingContext context)
         {
             if (Layout == null)
                 return;
-            var b = Bounds;
-            foreach (var n in Layout.Nodes)
-            {
-                var p = ToPoint(n.Position);
-                context.DrawEllipse((n == Selected)?Brushes.GreenYellow:n.Brush, null, p, NodeSize, NodeSize);
-                var nodeLabel = NodeLabels[n.Index];
-                context.DrawText(nodeLabel, p + TextOffset - new Point(0.5*nodeLabel.Width,0));
-            }
 
             foreach (var e in Layout.Edges)
             {
                 var pen = e.Start == Selected || e.End == Selected ? greenPen : e.Pen;
                 var startEndOffset = e.End.Position - e.Start.Position;
                 var len = startEndOffset.Length();
+                if (len < 1)
+                    continue;
                 // Unit vector in the direction of the line
                 var unit = startEndOffset / len;
                 // Unit vector perpendicular to the line
@@ -103,30 +99,55 @@ namespace AvaloniaRepl.GraphVisualization
                 // Draw primary line
                 context.DrawLine(pen, ToPoint(e.Start.Position + perpOffset + tangentialOffset), end);
 
-                if (e.IsDirected && len > 0.1)
+                if (e.IsDirected && len > 1)
                 {
                     // Draw arrowhead
-                    context.DrawLine(pen, end, end + ToPoint(ArrowHeadSize * (0.5f*perp - unit)));
-                    context.DrawLine(pen, end, end + ToPoint(ArrowHeadSize * (-0.5f*perp - unit)));
-                    if (e.Label != null)
-                    {
-                        var edgeLabel = EdgeLabels[e];
-                        var textPosition = ToPoint(perpOffset + (float)edgeLabel.Height*perp + 0.5f * (e.Start.Position + e.End.Position - unit*(float)edgeLabel.Width));
-                        var t = context.PushTransform(Matrix.CreateRotation(Math.Atan2(unit.Y, unit.X))*Matrix.CreateTranslation(textPosition));
-                        context.DrawText(edgeLabel, new Point(0,0));
-                        t.Dispose();
-                    }
+                    context.DrawLine(pen, end, end + ToPoint(ArrowHeadSize * (0.5f * perp - unit)));
+                    context.DrawLine(pen, end, end + ToPoint(ArrowHeadSize * (-0.5f * perp - unit)));
+                }
+                if (e.Label != null)
+                {
+                    var edgeLabel = EdgeLabels[e];
+                    var textPosition = ToPoint(perpOffset + (float)edgeLabel.Height * perp + 0.5f * (e.Start.Position + e.End.Position - unit * (float)edgeLabel.Width));
+                    var t = context.PushTransform(Matrix.CreateRotation(Math.Atan2(unit.Y, unit.X)) * Matrix.CreateTranslation(textPosition));
+                    context.DrawText(edgeLabel, new Point(0, 0));
+                    t.Dispose();
                 }
             }
-            Layout.FixedUpdate();
+
+            foreach (var n in Layout.Nodes)
+            {
+                var p = ToPoint(n.Position);
+                if (n == Selected)
+                    continue;
+                context.DrawEllipse(n.Brush, null, p, NodeSize, NodeSize);
+                var nodeLabel = NodeLabels[n.Index];
+                context.DrawText(nodeLabel, p + TextOffset - new Point(0.5 * nodeLabel.Width, 0));
+            }
+
+            if (Selected != null)
+            {
+                var p = ToPoint(Selected.Position);
+                context.DrawEllipse(Brushes.Yellow, null, p, NodeSize, NodeSize);
+                var nodeLabel = NodeLabels[Selected.Index];
+                var backgroundText = new FormattedText(Selected.Label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Black);
+                var center = p + 1.2*TextOffset - new Point(0.5 * backgroundText.Width, 0);
+                for (var i = -2; i < 3; i++)
+                for (var j = -2; j < 3; j++)
+                    context.DrawText(backgroundText, center+new Point(i,j));
+                var foregroundText = new FormattedText(Selected.Label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Yellow);
+                context.DrawText(foregroundText, center);
+            }
+
             base.Render(context);
+            Update();
         }
 
         private const float edgeSpacing = 16;
 
         private float EdgeOffset(GraphLayout.GraphEdge e)
         {
-            var initialSpacing = Layout.HasReverseEdge(e) ? 0: -1;
+            var initialSpacing = Layout.HasReverseEdge(e) ? -0.75f: -1;
             return edgeSpacing*(initialSpacing+e.RenderPosition);
         }
 

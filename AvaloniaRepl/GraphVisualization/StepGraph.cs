@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Threading;
 using AvaloniaRepl.Views;
@@ -65,8 +66,13 @@ namespace AvaloniaRepl.GraphVisualization
             ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args);
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args);
             Task nodes = null;
+            Task nodeColor = null;
+            Task nodeLabel = null;
             var directed = false;
             var windowName = "Graph";
+            var colorByComponent = false;
+
+            var labelVar = new LogicVariable("?label", 2);
 
             var graph = new Graph<object>(Term.Comparer.Default);
             graph.NodeLabel = x => Writer.TermToString(x, null);
@@ -84,12 +90,35 @@ namespace AvaloniaRepl.GraphVisualization
                         nodes = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args);
                         break;
 
+                    case "node_color":
+                        nodeColor = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args);
+                        break;
+
+                    case "node_label":
+                        nodeLabel = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args);
+                        graph.NodeLabel = node =>
+                        {
+                            var label = "unknown label";
+                            nodeLabel.Call(new object?[] { node, labelVar }, o, e, predecessor, (no, u, s, f) =>
+                            {
+                                var env = new BindingEnvironment(e, u, s);
+                                label = StringifyStepObject(env.Resolve(labelVar));
+                                return true;
+                            });
+                            return label;
+                        };
+                        break;
+
                     case "directed":
                         directed = ArgumentTypeException.Cast<bool>(VisualizeGraph, value, args);
                         break;
 
                     case "name":
                         windowName = StringifyStepObject(value);
+                        break;
+
+                    case "color_components":
+                        colorByComponent = true;
                         break;
 
                     default:
@@ -99,7 +128,6 @@ namespace AvaloniaRepl.GraphVisualization
 
             var startNodeVar = new LogicVariable("?startNode", 0);
             var endNodeVar = new LogicVariable("?endNode", 1);
-            var labelVar = new LogicVariable("?label", 2);
             var colorVar = new LogicVariable("?color", 2);
             var directedVar = new LogicVariable("?directed", 2);
 
@@ -113,6 +141,7 @@ namespace AvaloniaRepl.GraphVisualization
                 _ => throw new ArgumentException($"First argument to {nameof(VisualizeGraph)}, {Writer.TermToString(edges)}, must be a task that accepts 2-5 arguments.")
             };
             
+            // Add all the edges
             edges.Call(edgeArgs, o, e, predecessor, (no, u, s, f) =>
             {
                 var env = new BindingEnvironment(e, u, s);
@@ -130,6 +159,42 @@ namespace AvaloniaRepl.GraphVisualization
                     true);
                 return false; // backtrack
             });
+
+            // Add any nodes not added as part of the edges
+            if (nodes != null)
+            {
+                var nodeVar = new LogicVariable("?node", 0);
+                var nodesArgs = new object?[] { nodeVar };
+                nodes.Call(nodesArgs, o, e, predecessor, (no, u, s, f) =>
+                {
+                    var env = new BindingEnvironment(e, u, s);
+                    var node = env.Resolve(nodeVar);
+                    if (!graph.Nodes.Contains(node))
+                        graph.AddNode(node);
+                    return false;
+                });
+            }
+
+            // Assign colors for nodes
+            if (nodeColor != null)
+            {
+                var colorArgs = new object?[] { null, colorVar };
+                foreach (var node in graph.Nodes )
+                {
+                    colorArgs[0] = node;
+                    nodeColor.Call(colorArgs, o, e, predecessor, (no, u, s, f) =>
+                    {
+                        var env = new BindingEnvironment(e, u, s);
+                        var color = env.Resolve(colorVar);
+                        graph.NodeAttributes[node]["fillcolor"] = color;
+                        return true;
+                    });
+                }
+            }
+
+
+            if (colorByComponent)
+                graph.RecolorByComponent();
             ShowGraph(windowName, graph);
             return true;
         }
