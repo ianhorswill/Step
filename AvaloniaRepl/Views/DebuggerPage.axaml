@@ -12,8 +12,8 @@
     
     <StackPanel>
         <DockPanel x:Name="DebuggerControlButtons">
-            <ToggleButton>Single Step</ToggleButton>
-            <Button>Continue</Button>
+            <ToggleButton Click="SingleStepButtonPressed">Single Step</ToggleButton>
+            <Button Click="ContinueButtonPressed">Continue</Button>
             <Button>Step Over</Button>
         </DockPanel>
         

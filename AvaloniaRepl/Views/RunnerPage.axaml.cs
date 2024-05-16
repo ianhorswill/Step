@@ -28,6 +28,8 @@ public partial class RunnerPage : UserControl
         ShowWarningsAndException();
         StepCommandField.AttachedToVisualTree += (s, e) => StepCommandField.Focus();
     }
+    
+    private RunnerViewModel ViewModel => (RunnerViewModel)DataContext;
 
     #region Page Controls
     
@@ -82,7 +84,7 @@ public partial class RunnerPage : UserControl
         textBox.Text = "";
         if (string.IsNullOrEmpty(command)) return;
 
-        MainWindow.Instance.ViewModel.AddCommandHistory(command);
+        ViewModel.AddCommandHistory(command);
         await EvalAndShowOutput(command);
     }
     
@@ -216,7 +218,7 @@ public partial class RunnerPage : UserControl
     {
         StepCode.ProjectDirectory = path;
         StepCode.ReloadStepCode();
-        MainWindow.Instance.ViewModel.AddRecentProjects(path);
+        ViewModel.AddRecentProjects(path);
         MainWindow.Instance.SetTabDisplayName(this, $"{StepCode.ProjectName}"); 
         ShowWarningsAndException();
     }

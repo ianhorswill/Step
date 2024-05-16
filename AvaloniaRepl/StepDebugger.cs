@@ -2,6 +2,7 @@
 using Step;
 using Step.Interpreter;
 using Step.Output;
+using Task = System.Threading.Tasks.Task;
 
 namespace AvaloniaRepl;
 
@@ -10,7 +11,9 @@ public class ReplDebugger
     private readonly StepThread.StepThreadDebugger _debugger;
     private StepThread.StepThreadDebugger.DebuggerAwaiter _awaiter;
     private (Module.MethodTraceEvent TraceEvent, Method? CalledMethod, object?[]? args, string? Text, BindingEnvironment? Environment) _lastResult;
-    public Action? DebugPauseCallback;
+    public delegate void DebugPauseCallbackDelegate();
+    public event DebugPauseCallbackDelegate? OnDebugPauseCallback;
+    
     
     public Module.MethodTraceEvent LastResult_TraceEvent => _lastResult.TraceEvent;
     public Method? LastResult_CalledMethod => _lastResult.CalledMethod;
@@ -22,7 +25,7 @@ public class ReplDebugger
     {
         _debugger = debugger;
         _debugger.ShowStackRequested = true;
-        EstablishAwaiter();
+        Task.Run(EstablishAwaiter);
         _debugger.Start();
         Console.WriteLine($"Confirming a debug session started for project {StepCode.ProjectName}");
     }
@@ -36,24 +39,17 @@ public class ReplDebugger
     {
         _debugger.Continue();
         if (awaitNextBreak)
-            EstablishAwaiter();
+            Task.Run(EstablishAwaiter);
     }
 
     /// <summary>
-    /// Sets up an Awaiter which allows us to catch the debugger's breaks.
-    /// Must be reset after each break.
+    /// Await the next debugger break and update the last result.
     /// </summary>
-    private void EstablishAwaiter()
+    private async Task EstablishAwaiter()
     {
-        _awaiter = _debugger.GetAwaiter();
-        _awaiter.OnCompleted(DebugBreakReady);
-    }
-
-    // Grab the Step execution information from the Awaiter
-    private void DebugBreakReady()
-    {
-        _lastResult = _awaiter.GetResult();
-        DebugPauseCallback?.Invoke();
+        var debugResult = await _debugger;
+        _lastResult = (debugResult.TraceEvent, debugResult.CalledMethod, debugResult.args, debugResult.Text, debugResult.Environment);
+        OnDebugPauseCallback?.Invoke();
     }
     
     /// <summary>

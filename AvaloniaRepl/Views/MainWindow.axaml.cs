@@ -20,12 +20,12 @@ public partial class MainWindow : Window
         _instance = this;
         Loaded += (sender, args) =>
         {
-            AddTab("Runner", new RunnerPage(), true);
+            AddTab("Runner", new RunnerPage{DataContext = new RunnerViewModel()}, true);
         };
     }
 
     public static MainWindow Instance => _instance ?? new MainWindow();
-    public RunnerViewModel ViewModel => (RunnerViewModel)Instance.DataContext;
+    public TabViewModel ViewModel => (TabViewModel)Instance.DataContext;
     
     public object? GetActiveTabContent()
     {
@@ -40,13 +40,13 @@ public partial class MainWindow : Window
             Content = content
         };
         
-        ((RunnerViewModel)DataContext).Tabs.Add(tab);
+        MainWindow.Instance.ViewModel.Tabs.Add(tab);
         if (select) TabView.SelectedItem = tab;
     }
     
     public T? FindTabByContentType<T>() where T : class
     {
-        foreach (TabInfo item in ((RunnerViewModel)DataContext).Tabs)
+        foreach (TabInfo item in ViewModel.Tabs)
         {
             if (item.Content is T tab)
             {
@@ -58,7 +58,7 @@ public partial class MainWindow : Window
     
     public TabInfo? FindTabByContent(object tab)
     {
-        foreach (TabInfo item in ((RunnerViewModel)DataContext).Tabs)
+        foreach (TabInfo item in ViewModel.Tabs)
         {
             if (item.Content == tab)
             {
@@ -82,10 +82,10 @@ public partial class MainWindow : Window
         if (sender is not Button button) return;
         if (button.DataContext is not TabInfo tab) return;
 
-        ((RunnerViewModel)DataContext).Tabs.Remove(tab);
+        ViewModel.Tabs.Remove(tab);
         
         // if no tabs left, close the app
-        if (((RunnerViewModel)DataContext).Tabs.Count == 0)
+        if (ViewModel.Tabs.Count == 0)
         {
             Close();
         }

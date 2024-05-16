@@ -3,11 +3,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:AvaloniaRepl.ViewModels"
-        xmlns:local="clr-namespace:AvaloniaRepl.Views"
         xmlns:views="clr-namespace:AvaloniaRepl.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AvaloniaRepl.Views.MainWindow"
-        x:DataType="vm:RunnerViewModel"
+        x:DataType="vm:TabViewModel"
         Icon="/Assets/cat-icon.png"
         Title="StepRepl">
     
