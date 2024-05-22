@@ -32,7 +32,7 @@
         <vm:RunnerViewModel />
     </Design.DataContext>
 
-    <StackPanel>
+    <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="Open project..." Click="SelectProjectFolder" HotKey="Ctrl+O" InputGesture="Ctrl+O" />
@@ -77,7 +77,7 @@
             </MenuItem>
         </Menu>
 
-        <SplitView DisplayMode="Inline" IsPaneOpen="{Binding EvalWithDebugging}" PaneBackground="LimeGreen" PanePlacement="Right">
+        <SplitView DisplayMode="Inline" CornerRadius="4" IsPaneOpen="{Binding EvalWithDebugging}" PaneBackground="Indigo" PanePlacement="Right">
             <StackPanel>
                 <TextBox x:Name="StepCommandField"
                          KeyDown="StepCommandField_OnKeyDown"
@@ -174,12 +174,15 @@
                         ToolTip.Tip="You can ignore this.  This is in case there is a bug in Step and Ian needs to know more information." />
 
                 </StackPanel>
-
-            <!-- pane for the debugger -->
-            <SplitView.Pane>
-            </SplitView.Pane>
                 
             </StackPanel>
+            
+            <!-- pane for the debugger -->
+            <SplitView.Pane>
+                <UserControl>
+                    <views:DebuggerPanel x:Name="DebuggerPanelControl" CornerRadius="4"/>
+                </UserControl>
+            </SplitView.Pane>
 
         </SplitView>
     </StackPanel>

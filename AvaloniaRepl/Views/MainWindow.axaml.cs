@@ -68,6 +68,18 @@ public partial class MainWindow : Window
         return null;
     }
     
+    public TabInfo? FindTabByHeader(string header)
+    {
+        foreach (TabInfo item in ViewModel.Tabs)
+        {
+            if (item.Header == header)
+            {
+                return item;
+            }
+        }
+        return null;
+    }
+    
     public void SetTabDisplayName(object tabContent, string name)
     {
         var foundTab = FindTabByContent(tabContent);

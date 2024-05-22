@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:avaloniaRepl="clr-namespace:AvaloniaRepl"
+             xmlns:interpreter="clr-namespace:Step.Interpreter;assembly=Step"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="AvaloniaRepl.Views.DebuggerPanel">
     
@@ -11,18 +12,44 @@
     </UserControl.Resources>
     
     <StackPanel>
-        <DockPanel x:Name="DebuggerControlButtons">
-            <ToggleButton Click="SingleStepButtonPressed">Single Step</ToggleButton>
+        <DockPanel x:Name="DebuggerControlButtons" Margin="0,3,0,5" HorizontalAlignment="Center">
+            <ToggleButton x:Name="SingleStepButton" Click="SingleStepButtonPressed">Single Step</ToggleButton>
             <Button Click="ContinueButtonPressed">Continue</Button>
-            <Button>Step Over</Button>
+            <Button Click="AbortButtonPressed">Abort</Button>
         </DockPanel>
         
-        <SelectableTextBlock x:Name="MethodInfo"/>
-        <StackPanel Orientation="Horizontal">
-            <SelectableTextBlock x:Name="StackTrace"/>
-            <SelectableTextBlock x:Name="BindingEnvironment"/>
-        </StackPanel>
+        <SelectableTextBlock x:Name="DebugHint" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center">
+            Run a Step procedure to see breakpoint info here. Use [Break] to set breakpoints. Click 'Single Step' to stop at breakpoints.
+        </SelectableTextBlock>
         
-        <SelectableTextBlock x:Name="Output"/>
+        <StackPanel x:Name="OutputArea">
+            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,5">Called Method:</TextBlock>
+            <SelectableTextBlock x:Name="MethodInfo" TextWrapping="Wrap"/>
+            <TextBlock FontWeight="Bold" FontSize="14" Margin="0,5">Arguments:</TextBlock>
+            <SelectableTextBlock x:Name="MethodArgs" TextWrapping="Wrap"/>
+            
+            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Current Output:</TextBlock>
+            <SelectableTextBlock x:Name="Output" TextWrapping="Wrap"/>
+            
+            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Stack Trace:</TextBlock>
+            <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="interpreter:MethodCallFrame">
+                        <SelectableTextBlock
+                            Inlines="{Binding CallSourceText, Converter={StaticResource htmlTextFormatter}}"
+                            FontSize="14"
+                            TextWrapping="Wrap"
+                            ToolTip.Tip="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."
+                            GotFocus="StackFrameGotFocus">
+                            <SelectableTextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Show details" Click="ShowStackFrame" />
+                                </ContextMenu>
+                            </SelectableTextBlock.ContextMenu>
+                        </SelectableTextBlock>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
     </StackPanel>
 </UserControl>

@@ -252,7 +252,7 @@ public partial class RunnerPage : UserControl
 
     Task EvalAndShowOutput(string command)
     {
-        Task<string> evalTask = ViewModel.EvalWithDebugging ? StepCode.EvalWithDebugger(command, OnDebugPause) : StepCode.Eval(command);
+        Task<string> evalTask = ViewModel.EvalWithDebugging ? StepCode.EvalWithDebugger(command, OnDebugPause, DebuggerPanelControl.SingleStepButton.IsChecked ?? true) : StepCode.Eval(command);
         return EvalAndShowOutput(evalTask);
     }
 
@@ -284,8 +284,7 @@ public partial class RunnerPage : UserControl
         Dispatcher.UIThread.Post(() =>
         {
             var runnerPage = MainWindow.Instance.FindTabByContentType<RunnerPage>();
-            // add a side panel with the DebuggerPanel
-            
+            runnerPage?.DebuggerPanelControl.SetDebugger(debugger);
         });
     }
 

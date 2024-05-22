@@ -22,7 +22,7 @@
         <TabControl.ContentTemplate>
             <DataTemplate DataType="views:TabInfo">
                 <ScrollViewer>
-                    <ContentControl Content="{Binding Content}"/>
+                    <ContentControl Content="{Binding Content}" VerticalAlignment="Stretch"/>
                 </ScrollViewer>
             </DataTemplate>
         </TabControl.ContentTemplate>

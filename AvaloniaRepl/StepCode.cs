@@ -138,6 +138,11 @@ namespace AvaloniaRepl
                 }
                 
                 Console.WriteLine($"Loaded Step project at {ProjectDirectory}");
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var runnerPage = MainWindow.Instance.FindTabByContentType<RunnerPage>();
+                    MainWindow.Instance.SetTabDisplayName(runnerPage, $"{StepCode.ProjectName}"); 
+                });
             }
             catch (Exception e)
             {
@@ -171,7 +176,7 @@ namespace AvaloniaRepl
             CurrentStepThread = new StepThread(Module, command, State);
             ReplDebugger debugger = new ReplDebugger(CurrentStepThread.Debugger);
             debugger.OnDebugPauseCallback = debuggerCallback;
-            debugger.ToggleSingleStepping(true);
+            debugger.SingleStepping = singleStep;
 
             return Eval(CurrentStepThread);
         }
