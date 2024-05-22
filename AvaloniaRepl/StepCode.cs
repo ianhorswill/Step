@@ -158,6 +158,21 @@ namespace AvaloniaRepl
                 command = $"[{command}]";
             command = $"[Begin {command} [PrintLocalBindings]]";
             CurrentStepThread = new StepThread(Module, command, State);
+            
+            return Eval(CurrentStepThread);
+        }
+
+        public static Task<string> EvalWithDebugger(string command, Action<ReplDebugger> debuggerCallback, bool singleStep = true)
+        {
+            command = command.Trim();
+            if (!command.StartsWith("["))
+                command = $"[{command}]";
+            command = $"[Begin {command} [PrintLocalBindings]]";
+            CurrentStepThread = new StepThread(Module, command, State);
+            ReplDebugger debugger = new ReplDebugger(CurrentStepThread.Debugger);
+            debugger.OnDebugPauseCallback = debuggerCallback;
+            debugger.ToggleSingleStepping(true);
+
             return Eval(CurrentStepThread);
         }
 

@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using AvaloniaRepl.GraphVisualization;
 using AvaloniaRepl.ViewModels;
 using Step;
@@ -53,21 +54,6 @@ public partial class RunnerPage : UserControl
         //var graphVisPage = new GraphVisualization();
         //MainWindow.Instance.AddTab($"Graph ({StepCode.ProjectName})", graphVisPage);
         StepGraph.ShowCallGraph();
-    }
-    
-    private void StartDebugButtonClicked(object? sender, RoutedEventArgs e)
-    {
-        if (StepCode.CurrentStepThread == null) return;
-
-        // get the active debugger tab (if we have one)
-        var debugger = MainWindow.Instance.FindTabByContentType<DebuggerPage>();
-        if (debugger == null)
-        {
-            debugger = new DebuggerPage();
-            MainWindow.Instance.AddTab("Debugger", debugger);
-        }
-
-        debugger.SetThreadForDebugger(StepCode.CurrentStepThread);
     }
     
     private void Quit(object? sender, RoutedEventArgs e)
@@ -125,6 +111,11 @@ public partial class RunnerPage : UserControl
     {
         StepButtons.Add(btn);
         ButtonPanelItems.Items.Add(btn);
+    }
+    
+    private void ToggleEvalWithDebugger(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.EvalWithDebugging = !ViewModel.EvalWithDebugging;
     }
     
     private async void StepButtonClicked(object? sender, RoutedEventArgs e)
@@ -259,7 +250,11 @@ public partial class RunnerPage : UserControl
         }
     }
 
-    Task EvalAndShowOutput(string command) => EvalAndShowOutput(StepCode.Eval(command));
+    Task EvalAndShowOutput(string command)
+    {
+        Task<string> evalTask = ViewModel.EvalWithDebugging ? StepCode.EvalWithDebugger(command, OnDebugPause) : StepCode.Eval(command);
+        return EvalAndShowOutput(evalTask);
+    }
 
     /// <summary>
     /// Run some step code and then update the page with its output and/or exceptions
@@ -282,6 +277,16 @@ public partial class RunnerPage : UserControl
     private void AbortMenuItemClicked(object? sender, RoutedEventArgs e)
     {
         StepCode.AbortCurrentStepThread();
+    }
+    
+    private void OnDebugPause(ReplDebugger debugger)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var runnerPage = MainWindow.Instance.FindTabByContentType<RunnerPage>();
+            // add a side panel with the DebuggerPanel
+            
+        });
     }
 
     private void StackFrameGotFocus(object? sender, GotFocusEventArgs e)

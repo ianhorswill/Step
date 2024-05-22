@@ -1,15 +1,35 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using Avalonia.Controls;
 using AvaloniaRepl.Views;
 
 namespace AvaloniaRepl.ViewModels;
 
-public class RunnerViewModel : ViewModelBase
+public class RunnerViewModel : ViewModelBase, INotifyPropertyChanged
 {
 #pragma warning disable CA1822 // Mark members as static
     public ObservableCollection<string> RecentProjectPaths { get; set; } = [];
     public ObservableCollection<string> CommandHistory { get; set; } = [];
+    
+    private bool _evalWithDebugging;
+
+    public bool EvalWithDebugging
+    {
+        get { return _evalWithDebugging; }
+        set
+        {
+            _evalWithDebugging = value;
+            OnPropertyChanged(nameof(EvalWithDebugging));
+        }
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    protected virtual void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 
     public void AddCommandHistory(string cmd)
     {

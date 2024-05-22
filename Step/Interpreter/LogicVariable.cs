@@ -58,7 +58,7 @@ namespace Step.Interpreter
         /// </summary>
         public string DebuggerName => ToString();
 
-#if DEBUG
+//#if DEBUG
         private static int uidCounter;
         /// <summary>
         /// A unique counter distinguishing this LogicVariable from all others
@@ -66,9 +66,9 @@ namespace Step.Interpreter
         internal readonly int Uid = uidCounter++;
         /// <inheritdoc />
         public override string ToString() => Name.Name + Uid;
-#else
+//#else
         /// <inheritdoc />
-        public override string ToString() => Name.Name;
-#endif
+  //      public override string ToString() => Name.Name;
+//#endif
     }
 }

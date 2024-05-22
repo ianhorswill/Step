@@ -11,9 +11,7 @@ public class ReplDebugger
     private readonly StepThread.StepThreadDebugger _debugger;
     private StepThread.StepThreadDebugger.DebuggerAwaiter _awaiter;
     private (Module.MethodTraceEvent TraceEvent, Method? CalledMethod, object?[]? args, string? Text, BindingEnvironment? Environment) _lastResult;
-    public delegate void DebugPauseCallbackDelegate();
-    public event DebugPauseCallbackDelegate? OnDebugPauseCallback;
-    
+    public Action<ReplDebugger>? OnDebugPauseCallback;
     
     public Module.MethodTraceEvent LastResult_TraceEvent => _lastResult.TraceEvent;
     public Method? LastResult_CalledMethod => _lastResult.CalledMethod;
@@ -26,7 +24,6 @@ public class ReplDebugger
         _debugger = debugger;
         _debugger.ShowStackRequested = true;
         Task.Run(EstablishAwaiter);
-        _debugger.Start();
         Console.WriteLine($"Confirming a debug session started for project {StepCode.ProjectName}");
     }
     
@@ -35,11 +32,18 @@ public class ReplDebugger
         _debugger.SingleStep = singleStep;
     }
     
-    public void Continue(bool awaitNextBreak = true)
+    public void Continue()
     {
-        _debugger.Continue();
-        if (awaitNextBreak)
-            Task.Run(EstablishAwaiter);
+        try
+        {
+            _debugger.Continue();
+            if (_debugger.SingleStep)
+                Task.Run(EstablishAwaiter);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error while continuing debugger: {e.Message}");
+        }
     }
 
     /// <summary>
@@ -49,7 +53,8 @@ public class ReplDebugger
     {
         var debugResult = await _debugger;
         _lastResult = (debugResult.TraceEvent, debugResult.CalledMethod, debugResult.args, debugResult.Text, debugResult.Environment);
-        OnDebugPauseCallback?.Invoke();
+        Console.WriteLine("Broadcasting breakpoint data.");
+        OnDebugPauseCallback?.Invoke(this);
     }
     
     /// <summary>
@@ -57,6 +62,10 @@ public class ReplDebugger
     /// </summary>
     public void End()
     {
+        // keeps the thread from getting stuck
+        _debugger.SingleStep = false;
+        _debugger.Continue();
+        
         _debugger.Dispose();
     }
 }

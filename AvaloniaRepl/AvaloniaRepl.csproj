@@ -2,10 +2,15 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
+        <PublishSingleFile Condition=" '$(Configuration)' != 'Debug' ">true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifiers>win-x64;osx-x64;osx-arm64;linux-x64</RuntimeIdentifiers>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <PlatformTarget>AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,11 +22,11 @@
       <Compile Remove="Models\**" />
       <EmbeddedResource Remove="Models\**" />
       <None Remove="Models\**" />
-      <Compile Update="Views\DebuggerPage.axaml.cs">
+      <Compile Update="Views\DebuggerPanel.axaml.cs">
         <DependentUpon>DebuggerPage.axaml</DependentUpon>
       </Compile>
     </ItemGroup>
-
+    
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.0.10" />
