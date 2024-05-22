@@ -21,7 +21,6 @@ namespace StepRepl.Views;
 
 public partial class RunnerPage : UserControl
 {
-    public List<StepButton> StepButtons = new();
     
     public RunnerPage()
     {
@@ -109,7 +108,7 @@ public partial class RunnerPage : UserControl
 
     public void RegisterNewButton(StepButton btn)
     {
-        StepButtons.Add(btn);
+        ViewModel.StepButtons.Add(btn);
         ButtonPanelItems.Items.Add(btn);
     }
     

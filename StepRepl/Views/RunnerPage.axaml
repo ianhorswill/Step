@@ -55,7 +55,7 @@
             </MenuItem>
 
             <MenuItem Header="_Debug">
-                <MenuItem Header="_Enable Debugger" Click="ToggleEvalWithDebugger">
+                <MenuItem Header="_Enable Debugger" Click="ToggleEvalWithDebugger" HotKey="Ctrl+D" InputGesture="Ctrl+D">
                     <MenuItem.Icon>
                         <CheckBox IsChecked="{Binding EvalWithDebugging}"
                                   BorderThickness="0" IsHitTestVisible="False">

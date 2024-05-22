@@ -31,7 +31,7 @@
             <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Current Output:</TextBlock>
             <SelectableTextBlock x:Name="Output" TextWrapping="Wrap"/>
             
-            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Stack Trace:</TextBlock>
+            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Call Trace:</TextBlock>
             <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="interpreter:MethodCallFrame">

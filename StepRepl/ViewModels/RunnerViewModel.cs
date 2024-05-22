@@ -11,6 +11,7 @@ public class RunnerViewModel : ViewModelBase, INotifyPropertyChanged
 #pragma warning disable CA1822 // Mark members as static
     public ObservableCollection<string> RecentProjectPaths { get; set; } = [];
     public ObservableCollection<string> CommandHistory { get; set; } = [];
+    public ObservableCollection<StepButton> StepButtons { get; set; } = new();
     
     private bool _evalWithDebugging;
 
