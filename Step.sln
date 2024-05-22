@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Step", "Step\Step.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{B3D909FB-264A-47B0-8DA8-065F2087F8C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaRepl", "AvaloniaRepl\AvaloniaRepl.csproj", "{835D169B-F82A-47C1-8EFF-441DA3EBFC5E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StepRepl", "StepRepl\StepRepl.csproj", "{835D169B-F82A-47C1-8EFF-441DA3EBFC5E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
