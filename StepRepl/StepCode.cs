@@ -87,7 +87,8 @@ namespace StepRepl
                     StepButton button = new(name, (object[])finalAction!, e.State);
                     Dispatcher.UIThread.Post(() =>
                     {
-                        if (MainWindow.Instance.GetActiveTabContent() is RunnerPage runnerPage)
+                        var activeTabContent = MainWindow.Instance.GetActiveTabContent();
+                        if (activeTabContent is TabInfo { Content: RunnerPage runnerPage })
                             runnerPage.RegisterNewButton(button);
                     });
                     
