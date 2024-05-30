@@ -19,23 +19,35 @@ namespace StepRepl
             // isn't the actual executable, it's a shell script.  Somehow if you run "code" from the windows shell, it finds it, but
             // it doesn't work from Process.Start unless you set UseShell, in which case it's both slower and also pops up a console window.
             editorPath = null;
-            foreach (var dir in Environment.GetEnvironmentVariable("PATH")!.Split(';'))
+            if (OperatingSystem.IsWindows())
             {
-                if (string.IsNullOrWhiteSpace(dir))
-                    continue;
-                
-                var p = Path.Combine(dir, "Code.exe");
-                if (File.Exists(p))
+                foreach (var dir in Environment.GetEnvironmentVariable("PATH")!.Split(';'))
                 {
-                    editorPath = p;
-                    return;
-                }
+                    if (string.IsNullOrWhiteSpace(dir))
+                        continue;
 
-                p = Path.Combine(Path.GetDirectoryName(dir)!, "Code.exe");
-                if (File.Exists(p))
+                    var p = Path.Combine(dir, "Code.exe");
+                    if (File.Exists(p))
+                    {
+                        editorPath = p;
+                        return;
+                    }
+
+                    p = Path.Combine(Path.GetDirectoryName(dir)!, "Code.exe");
+                    if (File.Exists(p))
+                    {
+                        editorPath = p;
+                        return;
+                    }
+                }
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                editorPath = "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code";
+                if (!File.Exists(editorPath))
                 {
-                    editorPath = p;
-                    return;
+                    editorPath = null;
                 }
             }
         }

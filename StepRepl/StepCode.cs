@@ -137,13 +137,16 @@ namespace StepRepl
                         throw new ArgumentException(
                             $"Invalid code {Writer.TermToString(spec[1])} to run for button {stringLabel}");
                 }
-                
-                Console.WriteLine($"Loaded Step project at {ProjectDirectory}");
-                Dispatcher.UIThread.Post(() =>
+
+                if (ProjectDirectory != "")
                 {
-                    var runnerPage = MainWindow.Instance.FindTabByContentType<RunnerPage>();
-                    MainWindow.Instance.SetTabDisplayName(runnerPage, $"{StepCode.ProjectName}"); 
-                });
+                    Console.WriteLine($"Loaded Step project at {ProjectDirectory}");
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        var runnerPage = MainWindow.Instance.FindTabByContentType<RunnerPage>();
+                        MainWindow.Instance.SetTabDisplayName(runnerPage, $"{StepCode.ProjectName}");
+                    });
+                }
             }
             catch (Exception e)
             {
