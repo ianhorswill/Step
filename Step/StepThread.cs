@@ -16,6 +16,12 @@ namespace Step
     public class StepThread : IDisposable
     {
         /// <summary>
+        /// When a caller awaits a StepThread that threw an exception, and so the await code throws that exception,
+        /// into the caller, wrap the exception in a StepException so we can preserve the original C# stack.
+        /// </summary>
+        public static bool WrapExceptions;
+
+        /// <summary>
         /// Make a new thread to run a Step task.
         /// </summary>
         /// <param name="m">Module containing Step code</param>
@@ -221,7 +227,7 @@ namespace Step
             public (string? text, State? finalState) GetResult()
             {
                 if (StepThread.Exception != null)
-                    throw StepThread.Exception;
+                    throw WrapExceptions?new StepException(StepThread.Exception): StepThread.Exception;
                 return (StepThread.Text, StepThread.FinalState);
             }
 

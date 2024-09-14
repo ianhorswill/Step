@@ -33,6 +33,8 @@ namespace StepRepl
 
         static StepCode()
         {
+            StepThread.WrapExceptions = true;
+
             ReplUtilities = new Module("ReplUtilities", Module.Global);
             StepGraph.AddPrimitives(ReplUtilities);
             ReplUtilities.AddDefinitions(
@@ -201,7 +203,7 @@ namespace StepRepl
             }
             catch (Exception e)
             {
-                LastException = e;
+                LastException = e is StepException?e.InnerException:e;
                 output = "";
                 newState = State;
             }
