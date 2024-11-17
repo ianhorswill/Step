@@ -28,7 +28,7 @@ namespace Step
         /// <param name="code">Call to execute</param>
         /// <param name="state">Initial state for the call</param>
         public StepThread(Module m, string code, State? state=null)
-            : this(m, () => m.ParseAndExecute(code, state??State.Empty))
+            : this(m, () => m.ParseAndExecute(code, state??Step.State.Empty))
         {
         }
 
@@ -108,6 +108,7 @@ namespace Step
                     {
                         var (output, newState) = start();
                         Text = output;
+                        State = newState;
                         if (debugger != null)
                             debugger.State = newState;
                     }
@@ -131,6 +132,14 @@ namespace Step
         }
 
         private StepThreadDebugger? debugger;
+
+        public static void BreakPoint()
+        {
+            if (Current != null && Current.debugger != null)
+            {
+                Current.debugger.SingleStep = true;
+            }
+        }
 
         public StepThreadDebugger Debugger => debugger ??= new StepThreadDebugger(this);
 
@@ -168,7 +177,9 @@ namespace Step
         /// </summary>
         public string? Text;
 
-        public State? FinalState;
+        public bool NewSample;
+
+        public State? State;
 
         /// <summary>
         /// Exception thrown by the job, if any
@@ -228,7 +239,7 @@ namespace Step
             {
                 if (StepThread.Exception != null)
                     throw WrapExceptions?new StepException(StepThread.Exception): StepThread.Exception;
-                return (StepThread.Text, StepThread.FinalState);
+                return (StepThread.Text, StepThread.State);
             }
 
             internal StepThreadAwaiter(StepThread stepThread)

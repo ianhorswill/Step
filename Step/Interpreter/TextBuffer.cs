@@ -187,7 +187,7 @@ namespace Step.Interpreter
                 return false;
             }
             for (var i = 0; i < tokens.Length; i++)
-                if (tokens[i] != Buffer[Length + i])
+                if (!string.Equals(tokens[i],Buffer[Length + i], StringComparison.CurrentCultureIgnoreCase))
                 {
                     result = this;
                     return false;

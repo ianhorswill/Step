@@ -111,9 +111,17 @@ namespace Step.Interpreter
             Documentation.SectionIntroduction("debugging",
                 "Tasks used to help debug code.");
 
-            g["Break"] = new SimplePredicate("Break", Break)
+            g["Break"] = new SimplePredicate("Break", () =>
+                {
+                    StepThread.BreakPoint();
+                    return true;
+                })
                 .Arguments()
-                .Documentation("debugging", "Breakpoint; pauses execution and displays the current stack in the debugger.");
+                .Documentation("When running under the Step debugger, puts the Step interpreter in single-step mode");
+
+            g["InterpreterBreak"] = new SimplePredicate("InterpreterBreak", Break)
+                .Arguments()
+                .Documentation("debugging", "Trigger a C# breakpoint inside the Step interpreter.  Don't use this unless you're debugging C# code.");
 
             g["Listing"] =
                 new DeterministicTextGenerator<CompoundTask>("Listing", t => t.Methods.Select(m => m.MethodCode+"\n"));
@@ -186,7 +194,7 @@ namespace Step.Interpreter
                 "Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictionary and and [list ?element] is true when ?element is an element of the list.");
 
             Documentation.SectionIntroduction("data structures//lists",
-                "Predicates access lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).");
+                "Predicates access tuples/lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).");
 
             g["Member"] = new GeneralPredicate<object, IEnumerable<object>>("Member",
                     (member, collection) => collection != null && collection.Contains(member),
@@ -198,7 +206,7 @@ namespace Step.Interpreter
 
             g["Length"] = new SimpleFunction<IList, int>("Length", l => l.Count)
                 .Arguments("list", "?length")
-                .Documentation("data structures//list", "True when list has exactly ?length elements");
+                .Documentation("data structures//lists", "True when list has exactly ?length elements");
 
             g["Nth"] = new GeneralNAryPredicate("Nth",
                 args =>
@@ -226,7 +234,7 @@ namespace Step.Interpreter
                     throw new ArgumentInstantiationException("Nth", new BindingEnvironment(), args);
                 })
                 .Arguments("list", "index", "?element")
-                .Documentation("data structures//list", "True when element of list at index is ?element");
+                .Documentation("data structures//lists", "True when element of list at index is ?element");
 
             g["Cons"] = new GeneralNAryPredicate("Cons", args =>
             {
@@ -238,7 +246,7 @@ namespace Step.Interpreter
                 throw new ArgumentException("Either the second or argument of Cons must be a tuple.");
             })
                 .Arguments("firstElement", "restElements", "tuple")
-                .Documentation("True when tuple starts with firstElement and continues with restElements.");
+                .Documentation("data structures//lists", "True when tuple starts with firstElement and continues with restElements.");
 
             Documentation.SectionIntroduction("metalogical",
                 "Predicates that test the binding state of a variable.");

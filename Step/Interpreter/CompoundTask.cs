@@ -124,6 +124,7 @@ namespace Step.Interpreter
             if (!Term.IsGround(arglist))
                 throw new ArgumentInstantiationException(this, new BindingEnvironment(), arglist,
                     "The now command can only be used to update ground instances of a fluent.");
+
             return StoreResult(oldState, arglist, new CachedResult(truth, Function?arglist[arglist.Length-1]:null, EmptyText));
         }
 
@@ -400,6 +401,27 @@ namespace Step.Interpreter
                 if (method.Try(arglist, output, env, predecessor,
                     (o, u, s, newPredecessor) =>
                     {
+                        var resultArgs = env.ResolveList(arglist, u);
+                        if (ReadCache)
+                        {
+                            if (Cache.TryGetValue(env.State, resultArgs, out var result))
+                            {
+                                // Already in the cache
+                                if (result.Success)
+                                    
+                                {
+                                    if (Function && !Term.LiterallyEqual(resultArgs[^1], result.FunctionValue))
+                                        // It's in the cache as a function with a different value
+                                        return false;
+                                }
+                                else
+                                {
+                                    // It's in the cache as a failure; override it.
+                                    return false;
+                                }
+                            }
+                        }
+
                         successCount++;
                         if (WriteCache)
                         {

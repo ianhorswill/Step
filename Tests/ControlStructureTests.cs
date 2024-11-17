@@ -118,6 +118,27 @@ namespace Tests
         }
 
         [TestMethod]
+        public void FunctionFluentUpdateTest2()
+        {
+            var m = Module.FromDefinitions(
+                "[function] [predicate] fluent At ?what ?where.",
+                "[predicate] ShouldFail: [now [At x y]] [now [At x z]] [At x ?x] [= ?x y]");
+            
+            Assert.IsFalse(m.CallPredicate("ShouldFail"));
+        }
+
+        [TestMethod]
+        public void FunctionFluentUpdateTest3()
+        {
+            var m = Module.FromDefinitions(
+                "[function] [predicate] fluent At ?what ?where.",
+                "At x y.",
+                "[predicate] ShouldFail: [now [At x z]] [At x ?x] [= ?x y]");
+            
+            Assert.IsFalse(m.CallPredicate("ShouldFail"));
+        }
+
+        [TestMethod]
         public void CaseTest()
         {
             var m = new Module("test");

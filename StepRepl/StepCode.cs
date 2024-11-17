@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,11 +8,13 @@ using StepRepl.Views;
 using Step;
 using Step.Interpreter;
 using Step.Output;
+using Step.Utilities;
+using System.Collections.Generic;
 
 namespace StepRepl
 {
     public record StepButton(string Label, object[] Action, State State);
-    internal static class StepCode
+    public static class StepCode
     {
         public static Exception? LastException;
 
@@ -26,16 +27,95 @@ namespace StepRepl
         public static string ProjectDirectory
         {
             get => Preferences.Get(ProjectKey, "");
-            set => Preferences.Set(ProjectKey, value);
+            set
+            {
+                if (value.EndsWith("/") || value.EndsWith("\\"))
+                    value = value.Substring(0, value.Length - 1);
+                Preferences.Set(ProjectKey, value);
+            }
         }
 
         public static string ProjectName => Path.GetFileName(ProjectDirectory);
 
+        public static bool RetainState = true;
+        public static Step.Interpreter.Task? CommandProcessor;
+
+        private static void AddDocumentation(string taskName, string section, string docstring) =>
+            ((Step.Interpreter.Task) ReplUtilities[taskName]).Documentation(section, docstring);
+
         static StepCode()
         {
+            Step.EnvironmentOption.Handler += EnvironmentOption;
             StepThread.WrapExceptions = true;
 
-            ReplUtilities = new Module("ReplUtilities", Module.Global);
+            ReplUtilities = new Module("ReplUtilities", Module.Global)
+            {
+                ["ClearOutput"] = new GeneralPrimitive("ClearOutput",
+                        // ReSharper disable once UnusedParameter.Local
+                        (args, o, bindings, p, k) =>
+                            k(new TextBuffer(o.Buffer.Length), bindings.Unifications, bindings.State, p))
+                    .Arguments()
+                    .Documentation("StepRepl//display control", "Throws away any previously generated output"),
+
+                ["SampleOutputText"] = new GeneralPrimitive("SampleOutputText",
+                        (args, o, bindings, p, k) =>
+                        {
+                            ArgumentCountException.Check("SampleOutputText", 0, args);
+                            var t = StepThread.Current;
+                            // Don't generate another sample if the last one hasn't been displayed yet.
+                            if (!t.NewSample)
+                            {
+                                t.Text = o.AsString;
+                                t.State = bindings.State;
+                                t.NewSample = true;
+                            }
+
+                            return k(o, bindings.Unifications, bindings.State, p);
+                        })
+                    .Arguments()
+                    .Documentation("StepRepl//display control",
+                        "Update the screen with a snapshot of the current output, even if the program hasn't finished running yet.  This is used for testing code that is running something over and over again so you can see that it's still running."),
+
+                ["EmptyCallSummary"] = new GeneralPredicate<Dictionary<CompoundTask, int>>("EmptyCallSummary",
+                        _ => false,
+                        () => new[] { new Dictionary<CompoundTask, int>() }
+                    )
+                    .Arguments("?summary")
+                    .Documentation("StepRepl//profiling",
+                        "Makes a call summary object that can be used with NoteCalledTasks to record what tasks have been called."),
+
+                ["NoteCalledTasks"] = new GeneralPrimitive("NoteCalledTasks",
+                        (args, output, env, predecessor, k) =>
+                        {
+                            ArgumentCountException.Check("NoteCalledTasks", 1, args);
+                            var callSummary =
+                                ArgumentTypeException.Cast<Dictionary<CompoundTask, int>>("NoteCalledTasks", args[0],
+                                    args);
+                            foreach (var frame in MethodCallFrame.GoalChain(predecessor))
+                            {
+                                var task = frame.Method.Task;
+                                callSummary.TryGetValue(task, out var previousCount);
+                                callSummary[task] = previousCount + 1;
+                            }
+
+                            return k(output, env.Unifications, env.State, predecessor);
+                        })
+                    .Arguments("call_summary")
+                    .Documentation("StepRepl//profiling",
+                        "Adds all the tasks that were successfully executed on the path leading to this call to the specified call summary."),
+
+            };
+
+            Documentation.SectionIntroduction("StepRepl",
+                "These tasks are defined by the StepRepl IDE.  To use them within a game not running inside StepRepl, you would need to copy their source into your game.");
+            Documentation.SectionIntroduction("StepRepl//internals", "These are internal functions used by StepRepl.");
+            Documentation.SectionIntroduction("StepRepl//display control",
+                "Tasks that control how and when text is displayed on the screen.");
+            Documentation.SectionIntroduction("StepRepl//profiling",
+                "Tasks used to check how often other tasks are run.");
+            Documentation.SectionIntroduction("StepRepl//user interaction",
+                "Tasks used to allow user control of Step code.");
+
             StepGraph.AddPrimitives(ReplUtilities);
             ReplUtilities.AddDefinitions(
                 "predicate TestCase ?code.",
@@ -47,63 +127,94 @@ namespace StepRepl
                 "Debug ?task: [Break \"Press F10 to run one step, F5 to finish execution without stopping.\"] [begin ?task]",
                 "CallCounts ?task ?subTaskPredicate ?count: [IgnoreOutput [Sample ?task ?count ?s]] [ForEach [?subTaskPredicate ?t] [Write ?t] [Write \"<pos=400>\"] [DisplayCallCount ?s ?t ?count] [NewLine]]",
                 "DisplayCallCount ?s ?t ?count: [?s ?t ?value] [set ?average = ?value/?count] [Write ?average]",
-                "Uncalled ?task ?subTaskPredicate ?count: [IgnoreOutput [Sample ?task ?count ?s]] [ForEach [?subTaskPredicate ?t] [Write ?t] [Not [?s ?t ?value]] [Write ?t] [NewLine]]",
-                "predicate HotKey ?key ?doc ?implementation.",
-                "RunHotKey ?key: [firstOf] [HotKey ?key ? ?code] [else] [= ?code [UndefinedHotKey ?key]] [end] [firstOf] [Call ?code] [else] Command failed: ?code/Write [end]",
-                "UndefinedHotKey ?key: ?key/Write is not a defined hot key.",
-                "ShowHotKeys: <b>Key <indent=100> Function </indent></b> [NewLine] [ForEach [HotKey ?key ?doc ?] [WriteHotKeyDocs ?key ?doc]]",
-                "WriteHotKeyDocs ?k ?d: Alt- ?k/Write <indent=100> ?d/Write </indent> [NewLine]",
-                "[main] predicate Button ?label ?code.",
-                "FindAllButtons ?buttonList: [FindAll [?label ?code] [Button ?label ?code] ?buttonList]",
-                "Link ?.", 
-                "EndLink.");
-            ReplUtilities["PrintLocalBindings"] = new GeneralPrimitive("PrintLocalBindings",
-                (args, o, bindings, p, k) =>
-                {
-                    ArgumentCountException.Check("PrintLocalBindings", 0, args);
-                    var locals = bindings.Frame.Locals;
-                    var output = new string[locals.Length * 4];
-                    var index = 0;
-                    foreach (var v in locals)
-                    {
-                        output[index++] = v.Name.Name;
-                        output[index++] = "=";
-                        var value = bindings.CopyTerm(v);
-                        output[index++] = Writer.TermToString(value); //+$":{value.GetType().Name}";
-                        output[index++] = TextUtilities.NewLineToken;
-                    }
+                "Uncalled ?task ?subTaskPredicate ?count: [IgnoreOutput [Sample ?task ?count ?s]] [ForEach [?subTaskPredicate ?t] [Write ?t] [Not [?s ?t ?value]] [Write ?t] [NewLine]]");
 
-                    return k(o.Append(TextUtilities.FreshLineToken).Append(output), bindings.Unifications, bindings.State, p);
-                });
+            AddDocumentation("TestCase", "StepRepl//testing",
+                "(Defined by you).  Declares that code should be run when testing your program.");
+            AddDocumentation("RunTestCases", "StepRepl//testing", "Runs all test cases defined by TestCase.");
+            AddDocumentation("Test", "StepRepl//testing", "Runs ?task ?testCount times, showing its output each time");
+            AddDocumentation("Sample", "StepRepl//profiling",
+                "Runs ?task ?testCount times, and returns a sampling of the call stack in ?sampling.");
+            AddDocumentation("CallCounts", "StepRepl//profiling",
+                "Runs ?Task ?count times, then displays the counts of every subtask that satisfies ?subTaskPredicate.");
+            AddDocumentation("Uncalled", "StepRepl//profiling",
+                "Runs ?task ?count times, then displays every task satisfying ?subTaskPredicate that is never called.");
+            
+            ReplUtilities["PrintLocalBindings"] = new GeneralPrimitive("PrintLocalBindings",
+                    (args, o, bindings, p, k) =>
+                    {
+                        ArgumentCountException.Check("PrintLocalBindings", 0, args);
+                        var locals = bindings.Frame.Locals;
+                        var output = new string[locals.Length * 4];
+                        var index = 0;
+                        foreach (var v in locals)
+                        {
+                            output[index++] = v.Name.Name;
+                            output[index++] = "=";
+                            var value = bindings.CopyTerm(v);
+                            output[index++] = Writer.TermToString(value); //+$":{value.GetType().Name}";
+                            output[index++] = TextUtilities.NewLineToken;
+                        }
+
+                        return k(o.Append(TextUtilities.FreshLineToken).Append(output), bindings.Unifications,
+                            bindings.State, p);
+                    })
+                .Arguments()
+                .Documentation("StepRepl//internals",
+                    "Prints the values of all local variables.  There probably isn't any reason for you to use this directly, but it's used by StepRepl to print the results of queries.");
 
             var addButton = "AddButton";
             ReplUtilities[addButton] =
                 new GeneralPrimitive(addButton, (args, o, e, d, k) =>
-                {
-                    ArgumentCountException.Check(addButton, 2, args);
-                    var name = args[0].ToTermString();
-                    var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
-                    if (!e.TryCopyGround(action, out var finalAction))
-                        throw new ArgumentInstantiationException(addButton, e, args);
-
-                    StepButton button = new(name, (object[])finalAction!, e.State);
-                    Dispatcher.UIThread.Post(() =>
                     {
-                        var activeTabContent = MainWindow.Instance.GetActiveTabContent();
-                        if (activeTabContent is TabInfo { Content: RunnerPage runnerPage })
-                            runnerPage.RegisterNewButton(button);
-                    });
-                    
-                    return k(o, e.Unifications, e.State, d);
-                });
+                        ArgumentCountException.Check(addButton, 2, args);
+                        var name = args[0].ToTermString();
+                        var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
+                        if (!e.TryCopyGround(action, out var finalAction))
+                            throw new ArgumentInstantiationException(addButton, e, args);
+
+                        StepButton button = new(name, (object[])finalAction!, e.State);
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            var activeTabContent = MainWindow.Instance.GetActiveTabContent();
+                            if (activeTabContent is TabInfo { Content: RunnerPage runnerPage })
+                                runnerPage.RegisterNewButton(button);
+                        });
+
+                        return k(o, e.Unifications, e.State, d);
+                    })
+                    .Arguments("label", "code")
+                    .Documentation(
+                        "Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.");
 
             ReloadStepCode();
+        }
+
+        private static void EnvironmentOption(string option, object[] args)
+        {
+            switch (option)
+            {
+                case "retainState":
+                    RetainState = true;
+                    break;
+
+                case "discardState":
+                    RetainState = false;
+                    State = State.Empty;
+                    break;
+
+                case "commandProcessor":
+                    CommandProcessor = (Step.Interpreter.Task)args[0];
+                    break;
+            }
         }
 
         public static void ReloadStepCode()
         {
             Module.DefaultSearchLimit = int.MaxValue;
             LastException = null;
+            RetainState = true;
+            CommandProcessor = null;
             if (ReplUtilities["Button"] is CompoundTask button)
             {
                 button.Methods.Clear();
@@ -121,24 +232,6 @@ namespace StepRepl
             {
                 if (ProjectDirectory != "")
                     Module.LoadDirectory(ProjectDirectory);
-                //ReplPage.Instance.RemoveProjectMenu();
-                foreach (object[] spec in Module.CallFunction<object[]>("FindAllButtons"))
-                {
-                    var label = spec[0] as string[];
-                    if (label == null)
-                    {
-                        if (spec[0] is object[] objectArray)
-                            label = objectArray.Cast<string>().ToArray();
-                        else
-                            throw new ArgumentException($"Label on button is not text: {Writer.TermToString(spec[0])}");
-                    }
-
-                    var stringLabel = label.Untokenize();
-                    var code = spec[1] as object[];
-                    if (code == null)
-                        throw new ArgumentException(
-                            $"Invalid code {Writer.TermToString(spec[1])} to run for button {stringLabel}");
-                }
 
                 if (ProjectDirectory != "")
                 {
@@ -164,22 +257,25 @@ namespace StepRepl
 
         public static Task<string> Eval(string command)
         {
-            command = command.Trim();
-            if (!command.StartsWith("["))
-                command = $"[{command}]";
-            command = $"[Begin {command} [PrintLocalBindings]]";
-            CurrentStepThread = new StepThread(Module, command, State);
+            CurrentStepThread = new StepThread(Module, NormalizeCommand(command), State);
             
             return Eval(CurrentStepThread);
         }
 
-        public static Task<string> EvalWithDebugger(string command, Action<ReplDebugger> debuggerCallback, bool singleStep = true)
+        private static string NormalizeCommand(string command)
         {
             command = command.Trim();
+            if (CommandProcessor != null && !command.StartsWith("["))
+                command = $"[{CommandProcessor.Name} \"{command}\"]";
             if (!command.StartsWith("["))
                 command = $"[{command}]";
             command = $"[Begin {command} [PrintLocalBindings]]";
-            CurrentStepThread = new StepThread(Module, command, State);
+            return command;
+        }
+
+        public static Task<string> EvalWithDebugger(string command, Action<ReplDebugger> debuggerCallback, bool singleStep = true)
+        {
+            CurrentStepThread = new StepThread(Module, NormalizeCommand(command), State);
             ReplDebugger debugger = new ReplDebugger(CurrentStepThread.Debugger);
             debugger.OnDebugPauseCallback = debuggerCallback;
             debugger.SingleStepping = singleStep;
@@ -207,7 +303,7 @@ namespace StepRepl
                 output = "";
                 newState = State;
             }
-            if (newState != null)
+            if (newState != null && RetainState)
                 State = newState.Value;
             return output!;
         }

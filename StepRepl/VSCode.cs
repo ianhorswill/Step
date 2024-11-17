@@ -65,7 +65,7 @@ namespace StepRepl
         /// </summary>
         public static void Edit(string path, int lineNumber)
         {
-            LaunchEditor("-r", "-g", $"{path}:{lineNumber}");
+            LaunchEditor("-r", StepCode.ProjectDirectory, "-g", $"{path}:{lineNumber}");
         }
 
         private static void LaunchEditor(params string[] args)

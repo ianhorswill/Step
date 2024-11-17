@@ -62,8 +62,18 @@ public partial class RunnerPage : UserControl
     
     private async void StepCommandField_OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Return || e.Key != Key.Enter) return;
         if (sender is not TextBox textBox) return;
+
+        if (e.Key == Key.Up && e.KeyModifiers == KeyModifiers.Control && ViewModel.CommandHistory.Count > 0)
+        {
+            // User typed Control-Up; select the previous command
+            var index = ViewModel.CommandHistory.IndexOf(textBox.Text);
+            textBox.Text = ViewModel.CommandHistory[(index+1) % ViewModel.CommandHistory.Count];
+            textBox.SelectionStart = textBox.SelectionEnd = textBox.Text!.Length;
+            return;
+        }
+
+        if (e.Key != Key.Return || e.Key != Key.Enter) return;
 
         string command = textBox.Text;
         textBox.Text = "";
@@ -251,7 +261,9 @@ public partial class RunnerPage : UserControl
 
     Task EvalAndShowOutput(string command)
     {
-        Task<string> evalTask = ViewModel.EvalWithDebugging ? StepCode.EvalWithDebugger(command, OnDebugPause, DebuggerPanelControl.SingleStepButton.IsChecked ?? true) : StepCode.Eval(command);
+        Task<string> evalTask = ViewModel.EvalWithDebugging ?
+            StepCode.EvalWithDebugger(command, OnDebugPause, DebuggerPanelControl.SingleStepButton.IsChecked ?? true)
+            : StepCode.Eval(command);
         return EvalAndShowOutput(evalTask);
     }
 
