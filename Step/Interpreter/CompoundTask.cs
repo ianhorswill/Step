@@ -420,19 +420,20 @@ namespace Step.Interpreter
                         {
                             if (Cache.TryGetValue(env.State, resultArgs, out var result))
                             {
-                                // Already in the cache
-                                if (result.Success)
-                                    
-                                {
-                                    if (Function && !Term.LiterallyEqual(resultArgs[^1], result.FunctionValue))
-                                        // It's in the cache as a function with a different value
-                                        return false;
-                                }
-                                else
-                                {
-                                    // It's in the cache as a failure; override it.
-                                    return false;
-                                }
+                                // Already in the cache so we already would have generated this answer
+                                return false;
+                                //if (result.Success)
+
+                                //{
+                                //    if (Function && !Term.LiterallyEqual(resultArgs[^1], result.FunctionValue))
+                                //        // It's in the cache as a function with a different value
+                                //        return false;
+                                //}
+                                //else
+                                //{
+                                //    // It's in the cache as a failure; override it.
+                                //    return false;
+                                //}
                             }
                         }
 

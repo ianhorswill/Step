@@ -139,6 +139,17 @@ namespace Tests
         }
 
         [TestMethod]
+        public void FunctionFluentUpdateTest4()
+        {
+            var m = Module.FromDefinitions(
+                "[function] [predicate] fluent At ?what ?where.",
+                "At x y.",
+                "[predicate] Test: [now [At x y]] [now [At x z]] [now [At x y]] [now [At x y]] [FindAll ?w [At x ?w] ?l] ?l");
+            
+            Assert.AreEqual("[y]", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void CaseTest()
         {
             var m = new Module("test");
