@@ -27,6 +27,7 @@ using System;
 using System.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
+using Step.Interpreter;
 using Step.Utilities;
 
 namespace Tests
@@ -34,7 +35,7 @@ namespace Tests
     [TestClass]
     public class PrimitiveTests
     {
-        [TestMethod, ExpectedException(typeof(Exception))]
+        [TestMethod, ExpectedException(typeof(StepExecutionException))]
         public void ThrowTest()
         {
             var m = new Module("test");

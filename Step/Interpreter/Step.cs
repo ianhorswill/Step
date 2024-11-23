@@ -215,14 +215,14 @@ namespace Step.Interpreter
                                 var arglist = new object[invocation.Length - 1];
                                 Array.Copy(invocation, 1, arglist, 0, arglist.Length);
                                 if (operation == null)
-                                    throw new CallFailedException(operation, arglist);
+                                    throw new CallFailedException(operation, arglist, new TextBuffer());
                                 chain.AddStep(new Call(operation, arglist, null));
                                 break;
                         }
                         break;
 
                     default:
-                        throw new ArgumentTypeException(taskName, typeof(Call), step, body);
+                        throw new ArgumentTypeException(taskName, typeof(Call), step, body, new TextBuffer());
                 }
             }
 

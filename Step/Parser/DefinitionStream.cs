@@ -482,16 +482,18 @@ namespace Step.Parser
             InitParserState();
 
             SwallowNewlines();
-
             lineNumber = expressionStream.LineNumber;
 
             var (flags, weight) = ReadOptions();
+
             SwallowNewlines();
-
             lineNumber = expressionStream.LineNumber;
-
+                
             if (DeclarationKeywords.Contains(Peek))
                 return ReadDeclaration(flags);
+
+            SwallowNewlines();
+            lineNumber = expressionStream.LineNumber+1;  // lineNumber seems to end up pointing at the previous line here.
             
             var (taskName, pattern) = groupExpander.ExpandHead(ReadHead(), GetLocal, SourcePath, lineNumber);
 
@@ -761,7 +763,7 @@ namespace Step.Parser
 
                 case "case":
                     if (expression.Length != 2)
-                        throw new ArgumentCountException("case", 1, expression.Skip(1).ToArray());
+                        throw new ArgumentCountException("case", 1, expression.Skip(1).ToArray(), new TextBuffer());
                     var controlVar = expression[1];
                     if (controlVar == null)
                         throw new SyntaxError($"null cannot be used as the control variable for a case statement",
@@ -788,7 +790,7 @@ namespace Step.Parser
                 case "randomly":
                 case "sequence":
                     if (expression.Length != 1)
-                        throw new ArgumentCountException(targetName, 1, expression.Skip(1).ToArray());
+                        throw new ArgumentCountException(targetName, 1, expression.Skip(1).ToArray(), new TextBuffer());
                     chain.AddStep(ReadAlternativeBranches(targetName));
                     break;
 
@@ -1020,7 +1022,7 @@ namespace Step.Parser
             for (var i = 0; i < locals.Count; i++)
                 if (referenceCounts[i] == 1 && !IsIntendedAsSingleton(locals[i]) && !groupExpander.IsVariableFromCurrentDeclarationGroup(locals[i]))
                     Module.AddWarning(
-                        $"{SourceFile}:{warningLine} Variable {locals[i].Name} used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.",
+                        $"{SourceFile}:{warningLine} In task {taskName}, variable {locals[i].Name} was used only once, which often means it's a type-o.  If it's deliberate, change the name to {locals[i].Name.Replace("?", "?_")} to suppress this message.",
                         new MethodPlaceholder(taskName, sourcePath, warningLine));
         }
     }

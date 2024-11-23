@@ -23,7 +23,7 @@ namespace Step.Interpreter
         public override bool Call(object?[] args, TextBuffer buffer, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(Name, 1, args);
+            ArgumentCountException.Check(Name, 1, args, buffer);
             var arg = env.Resolve(args[0]);
             var text = arg as string[];
             if (buffer.WriteMode)

@@ -32,6 +32,13 @@ namespace Step
         {
         }
 
+        public static void ErrorText(TextBuffer b)
+        {
+            if (Current == null)
+                return;
+            Current.mostRecentText = b;
+        }
+
         /// <summary>
         /// Make a new thread to run a Step task.
         /// </summary>
@@ -115,7 +122,10 @@ namespace Step
                     catch (Exception e)
                     {
                         Exception = e;
-                        Text = null;
+                        if (e is StepExecutionException see)
+                            Text = see.Output.AsString;
+                        else
+                            Text = mostRecentText.AsString;
                     }
 
                     lock (this) // paranoia
@@ -176,6 +186,8 @@ namespace Step
         /// Text output from the job
         /// </summary>
         public string? Text;
+
+        private TextBuffer mostRecentText = new TextBuffer(0);
 
         public bool NewSample;
 

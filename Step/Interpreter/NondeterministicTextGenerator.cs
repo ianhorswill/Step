@@ -25,7 +25,7 @@ namespace Step.Interpreter
         public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(Name, 0, arglist);
+            ArgumentCountException.Check(Name, 0, arglist, output);
             foreach (var tokens in implementation())
                 if (k(output.Append(tokens), env.Unifications, env.State, predecessor))
                     return true;
@@ -55,8 +55,8 @@ namespace Step.Interpreter
         public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(Name, 1, arglist);
-            foreach (var tokens in implementation(ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist)))
+            ArgumentCountException.Check(Name, 1, arglist, output);
+            foreach (var tokens in implementation(ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist, output)))
                 if (k(output.Append(tokens), env.Unifications, env.State, predecessor))
                     return true;
             return false;
@@ -85,10 +85,10 @@ namespace Step.Interpreter
         public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(Name, 1, arglist);
+            ArgumentCountException.Check(Name, 1, arglist, output);
             foreach (var tokens in implementation(
-                ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist),
-                ArgumentTypeException.Cast<T2>(Name, env.Resolve(arglist[1]), arglist)))
+                ArgumentTypeException.Cast<T1>(Name, env.Resolve(arglist[0]), arglist, output),
+                ArgumentTypeException.Cast<T2>(Name, env.Resolve(arglist[1]), arglist, output)))
                 if (k(output.Append(tokens), env.Unifications, env.State, predecessor))
                     return true;
             return false;

@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace StepRepl.ViewModels;
 
@@ -19,6 +21,19 @@ public class RunnerViewModel : ViewModelBase, INotifyPropertyChanged
         {
             _evalWithDebugging = value;
             OnPropertyChanged(nameof(EvalWithDebugging));
+        }
+    }
+
+    private bool _autoReload;
+
+    public bool AutoReload
+    {
+        get => _autoReload;
+        set
+        {
+            _autoReload = value;
+            StepCode.UpdateWatcher(AutoReload);
+            OnPropertyChanged(nameof(AutoReload));
         }
     }
 

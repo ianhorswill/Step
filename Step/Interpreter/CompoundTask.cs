@@ -48,7 +48,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Methods for accomplishing the task
         /// </summary>
-        public readonly List<Method> Methods = new List<Method>();
+        public List<Method> Methods = new List<Method>();
 
         /// <summary>
         /// Dictionary of how many successful or pending calls to this task are on this execution path.
@@ -119,13 +119,13 @@ namespace Step.Interpreter
         /// <param name="arglist">Argument values for this fluent to update</param>
         /// <param name="truth">New truth value for this fluent on these arguments</param>
         /// <returns>New global state</returns>
-        public State SetFluent(State oldState, object?[] arglist, bool truth)
+        public State SetFluent(State oldState, object?[] arglist, bool truth, TextBuffer output)
         {
             if (!Term.IsGround(arglist))
                 throw new ArgumentInstantiationException(this, new BindingEnvironment(), arglist,
-                    "The now command can only be used to update ground instances of a fluent.");
+                    "The now command can only be used to update ground instances of a fluent.", output);
 
-            return StoreResult(oldState, arglist, new CachedResult(truth, Function?arglist[arglist.Length-1]:null, EmptyText));
+            return StoreResult(oldState, arglist, new CachedResult(truth, Function?arglist[^1]:null, EmptyText));
         }
 
         internal readonly struct CachedResult : ISerializable
@@ -194,7 +194,17 @@ namespace Step.Interpreter
 
         #endregion
 
-        internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) : Methods;
+        private bool requiresSort;
+        internal IList<Method> EffectiveMethods => Shuffle ? (IList<Method>)Methods.WeightedShuffle(m => m.Weight) :
+            (requiresSort?SortMethods():Methods);
+
+        private IList<Method> SortMethods()
+        {
+            // We want a stable sort for this, so we can't use List<T>.Sort.  But OrderByDescending is documented as being stable.
+            Methods = new List<Method>(Methods.OrderByDescending(m => m.Weight));
+            requiresSort = false;
+            return Methods;
+        }
 
         #region Task flags
         /// <summary>
@@ -320,6 +330,10 @@ namespace Step.Interpreter
                 && stepChain != null
                 && stepChain.AnyStep(s => s is CoolStep))
                 Flags |= TaskFlags.ContainsCoolStep;
+
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (weight != 1)
+                requiresSort = true;
             
             Methods.Add(new Method(this, weight, argumentPattern, localVariableNames, stepChain, path, lineNumber));
         }
@@ -344,7 +358,7 @@ namespace Step.Interpreter
                 arglist = new object[] {lastToken};
             }
             
-            ArgumentCountException.Check(this, this.ArgCount, arglist);
+            ArgumentCountException.Check(this, this.ArgCount, arglist, output);
             var successCount = 0;
 
             if (ReadCache)
@@ -358,7 +372,7 @@ namespace Step.Interpreter
                         {
                             // We got a hit, and since this is a function, it's the only allowable hit.
                             // So we succeed deterministically.
-                            return env.Unify(arglist[arglist.Length - 1], result.FunctionValue,
+                            return env.Unify(arglist[^1], result.FunctionValue,
                                        out BindingList? u) &&
                                    k(output.Append(result.Text), u, env.State, predecessor);
                         }
@@ -428,7 +442,7 @@ namespace Step.Interpreter
                             var final = env.ResolveList(arglist, u);
                             if (Term.IsGround(final))
                                 s = StoreResult(s, final, new CachedResult(true,
-                                    Function?final[final.Length-1]:null,
+                                    Function?final[^1]:null,
                                     TextBuffer.Difference(output, o)));
                         }
                         return k(o, u, s, newPredecessor);
@@ -445,7 +459,8 @@ namespace Step.Interpreter
                 currentFrame.BindingsAtCallTime = env.Unifications;
             if (successCount == 0 && this.MustSucceed)
             {
-                throw new CallFailedException(this, arglist);
+                StepThread.ErrorText(output);
+                throw new CallFailedException(this, arglist, output);
             }
 
             if (currentFrame != null)

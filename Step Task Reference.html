@@ -19,6 +19,8 @@ Tasks that run or otherwise control the execution of other tasks.
 <p>
 <code>[<b>And</b> <i>calls</i> <i>...</i>]</code><br>Runs each of the calls, in order.
 <p>
+<code>[<b>BailOut</b> <i>message</i> <i>...</i>]</code><br>Immediately stop execution and display the the specified message, but do not print a stack trace.
+<p>
 <code>[<b>Begin</b> <i>task</i> <i>...</i>]</code><br>Runs each of the tasks, in order.
 <p>
 <code>[<b>CountAttempts</b> <i>?count</i>]</code><br>Binds ?count to 0, then to increasing numbers each time the system backtracks to the call.  Used in a loop to run something repeatedly: [CountAttempts ?count] [DoSomething] [= ?count 100] will run DoSomething until ?count is 100.
@@ -51,6 +53,10 @@ Tasks that control how or whether execution backtracks.
 <p>
 <h3>Looping</h3>
 Tasks that repeatedly call other tasks.
+<p>
+<code>[<b>AccumulateOutput</b> <i>generator</i> <i>printer</i>]</code><br>Runs generator, finding all its solutions by backtracking.  For each solution, runs printer, accumulating their text output and changes to global variables.
+<p>
+<code>[<b>AccumulateOutputWithSeparators</b> <i>generator</i> <i>printer</i> <i>separator</i> <i>lastSeparator</i>]</code><br>Runs generator, finding all its solutions by backtracking.  For each solution, runs printer, accumulating their text output and changes to global variables.  Between output from different solutions, it inserts the string separator, or lastSeparator if it is the last solution.
 <p>
 <code>[<b>DoAll</b> <i>generator_call</i> <i>other_calls</i> <i>...</i>]</code><br>Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings or set commands are undone.
 <p>

@@ -431,14 +431,14 @@ var output = TextBuffer.NewEmpty();
                     bindings = u;
                     return true;
                 })) 
-                throw new CallFailedException(taskName, args);
+                throw new CallFailedException(taskName, args, output);
             
             // Call succeeded; pull out the binding of the result variable and return it
             var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
             var result = finalEnv.CopyTerm(resultVar);
             if (result is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(taskName, env, extendedArgs);
+                throw new ArgumentInstantiationException(taskName, env, extendedArgs, output);
             return (T) result!;
         }
 
@@ -471,14 +471,14 @@ var output = TextBuffer.NewEmpty();
                         bindings = u;
                         return true;
                     })) 
-                throw new CallFailedException(task, args);
+                throw new CallFailedException(task, args, output);
             
             // Call succeeded; pull out the binding of the result variable and return it
             var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
             var result = finalEnv.CopyTerm(resultVar);
             if (result is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(task, env, args);
+                throw new ArgumentInstantiationException(task, env, args, output);
             return (T) result!;
         }
 
@@ -503,18 +503,18 @@ var output = TextBuffer.NewEmpty();
                         bindings = u;
                         return true;
                     })) 
-                throw new CallFailedException(task, args);
+                throw new CallFailedException(task, args, output);
             
             // Call succeeded; pull out the binding of the result variable and return it
             var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
             var result1 = finalEnv.CopyTerm(resultVar1);
             if (result1 is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(task, env, args);
+                throw new ArgumentInstantiationException(task, env, args, output);
             var result2 = finalEnv.CopyTerm(resultVar2);
             if (result2 is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(task, env, args);
+                throw new ArgumentInstantiationException(task, env, args, output);
             return ((T1)result1!, (T2)result2!);
         }
 
@@ -539,22 +539,22 @@ var output = TextBuffer.NewEmpty();
                         bindings = u;
                         return true;
                     })) 
-                throw new CallFailedException(task, args);
+                throw new CallFailedException(task, args, output);
             
             // Call succeeded; pull out the binding of the result variable and return it
             var finalEnv = new BindingEnvironment(this, null!, bindings, State.Empty);
             var result1 = finalEnv.CopyTerm(resultVar1);
             if (result1 is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(task, env, args);
+                throw new ArgumentInstantiationException(task, env, args, output);
             var result2 = finalEnv.CopyTerm(resultVar2);
             if (result2 is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(task, env, args);
+                throw new ArgumentInstantiationException(task, env, args, output);
             var result3 = finalEnv.CopyTerm(resultVar3);
             if (result3 is LogicVariable)
                 // resultVar is unbound or bound to an unbound variable
-                throw new ArgumentInstantiationException(task, env, args);
+                throw new ArgumentInstantiationException(task, env, args, output);
             return ((T1)result1!, (T2)result2!, (T3)result3!);
         }
 

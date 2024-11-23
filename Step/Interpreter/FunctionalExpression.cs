@@ -7,7 +7,7 @@ namespace Step.Interpreter
     [DebuggerDisplay("{" + nameof(DebugName) + "}")]
     internal abstract class FunctionalExpression
     {
-        public abstract object? Eval(BindingEnvironment e);
+        public abstract object? Eval(BindingEnvironment e, TextBuffer output);
 
         public abstract void BuildString(StringBuilder b, bool nested);
 
@@ -30,7 +30,7 @@ namespace Step.Interpreter
             Value = value;
         }
 
-        public override object? Eval(BindingEnvironment e) => Value;
+        public override object? Eval(BindingEnvironment e, TextBuffer output) => Value;
 
         public override void BuildString(StringBuilder b, bool nested)
         {
@@ -47,11 +47,11 @@ namespace Step.Interpreter
             Variable = variable;
         }
 
-        public override object? Eval(BindingEnvironment e)
+        public override object? Eval(BindingEnvironment e, TextBuffer output)
         {
             var value = e.Resolve(Variable);
             if (value is LogicVariable)
-                throw new ArgumentInstantiationException("variable reference", e, new[] {value});
+                throw new ArgumentInstantiationException("variable reference", e, new[] {value}, output);
             return value;
         }
 
@@ -63,16 +63,16 @@ namespace Step.Interpreter
 
     class UnaryOperator : FunctionalExpression
     {
-        public readonly FunctionalOperator<Func<object?, object?>> Operator;
+        public readonly FunctionalOperator<Func<object?, TextBuffer, object?>> Operator;
         public readonly FunctionalExpression Arg;
 
-        public UnaryOperator(FunctionalOperator<Func<object?, object?>> op, FunctionalExpression arg)
+        public UnaryOperator(FunctionalOperator<Func<object?, TextBuffer, object?>> op, FunctionalExpression arg)
         {
             Arg = arg;
             Operator = op;
         }
 
-        public override object? Eval(BindingEnvironment e) => Operator.Implementation(Arg.Eval(e));
+        public override object? Eval(BindingEnvironment e, TextBuffer output) => Operator.Implementation(Arg.Eval(e, output), output);
 
         public override void BuildString(StringBuilder b, bool nested)
         {
@@ -87,11 +87,11 @@ namespace Step.Interpreter
 
     class BinaryOperator : FunctionalExpression
     {
-        public readonly FunctionalOperator<Func<object?, object?, object?>> Operator;
+        public readonly FunctionalOperator<Func<object?, object?, TextBuffer, object?>> Operator;
         public readonly FunctionalExpression Arg1;
         public readonly FunctionalExpression Arg2;
 
-        public BinaryOperator(FunctionalOperator<Func<object?, object?, object?>> op,
+        public BinaryOperator(FunctionalOperator<Func<object?, object?, TextBuffer, object?>> op,
             FunctionalExpression arg1, FunctionalExpression arg2)
         {
             Operator = op;
@@ -99,7 +99,8 @@ namespace Step.Interpreter
             Arg2 = arg2;
         }
 
-        public override object? Eval(BindingEnvironment e) => Operator.Implementation(Arg1.Eval(e), Arg2.Eval(e));
+        public override object? Eval(BindingEnvironment e, TextBuffer output) =>
+            Operator.Implementation(Arg1.Eval(e, output), Arg2.Eval(e, output), output);
 
         public override void BuildString(StringBuilder b, bool nested)
         {

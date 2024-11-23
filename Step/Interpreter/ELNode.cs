@@ -38,8 +38,8 @@ namespace Step.Interpreter
         private static bool ElStore(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
             Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(ElStore), 1, args);
-            var path = ArgumentTypeException.Cast<object?[]>(nameof(ElStore), args[0], args);
+            ArgumentCountException.Check(nameof(ElStore), 1, args, o);
+            var path = ArgumentTypeException.Cast<object?[]>(nameof(ElStore), args[0], args, o);
             return k(o, e.Unifications,
                     e.State.Bind(ElState, ((ElNode)e.State[ElState]!).Write(path)),
                     predecessor);
@@ -48,8 +48,8 @@ namespace Step.Interpreter
         private static bool ElDelete(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
             Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(ElDelete), 1, args);
-            var path = ArgumentTypeException.Cast<object?[]>(nameof(ElDelete), args[0], args);
+            ArgumentCountException.Check(nameof(ElDelete), 1, args, o);
+            var path = ArgumentTypeException.Cast<object?[]>(nameof(ElDelete), args[0], args, o);
             return k(o, e.Unifications,
                 e.State.Bind(ElState, ((ElNode)e.State[ElState]!).Delete(path)),
                 predecessor);
@@ -64,7 +64,7 @@ namespace Step.Interpreter
         public static bool ElDump(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
             Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(ElDump), 0, args);
+            ArgumentCountException.Check(nameof(ElDump), 0, args, o);
             var s = e.State;
             return k(o.Append(((ElNode)s[ElState]!).SortedContents.Select(c => c+"\n").ToArray()),e.Unifications,s,predecessor);
         }

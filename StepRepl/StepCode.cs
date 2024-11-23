@@ -35,6 +35,40 @@ namespace StepRepl
             }
         }
 
+        private static bool projectChanged;
+
+        private static FileSystemWatcher watcher;
+
+        public static void UpdateWatcher(bool watch)
+        {
+            if (watcher != null)
+                watcher.Dispose();
+            if (watch)
+            {
+                watcher = new FileSystemWatcher(StepCode.ProjectDirectory)
+                {
+                    IncludeSubdirectories = true,
+                    EnableRaisingEvents = true
+                };
+                watcher.Filters.Add("*.step");
+                watcher.Filters.Add("*.csv");
+                watcher.Changed += OnChange;
+                watcher.Created += OnChange;
+                watcher.Deleted += OnChange;
+                watcher.Renamed += OnChange;
+            }
+            else
+            {
+                watcher = null;
+                projectChanged = false;
+            }
+        }
+
+        private static void OnChange(object sender, FileSystemEventArgs e)
+        {
+            projectChanged = true;
+        }
+
         public static string ProjectName => Path.GetFileName(ProjectDirectory);
 
         public static bool RetainState = true;
@@ -60,7 +94,7 @@ namespace StepRepl
                 ["SampleOutputText"] = new GeneralPrimitive("SampleOutputText",
                         (args, o, bindings, p, k) =>
                         {
-                            ArgumentCountException.Check("SampleOutputText", 0, args);
+                            ArgumentCountException.Check("SampleOutputText", 0, args, o);
                             var t = StepThread.Current;
                             // Don't generate another sample if the last one hasn't been displayed yet.
                             if (!t.NewSample)
@@ -87,10 +121,10 @@ namespace StepRepl
                 ["NoteCalledTasks"] = new GeneralPrimitive("NoteCalledTasks",
                         (args, output, env, predecessor, k) =>
                         {
-                            ArgumentCountException.Check("NoteCalledTasks", 1, args);
+                            ArgumentCountException.Check("NoteCalledTasks", 1, args, output);
                             var callSummary =
                                 ArgumentTypeException.Cast<Dictionary<CompoundTask, int>>("NoteCalledTasks", args[0],
-                                    args);
+                                    args, output);
                             foreach (var frame in MethodCallFrame.GoalChain(predecessor))
                             {
                                 var task = frame.Method.Task;
@@ -143,7 +177,7 @@ namespace StepRepl
             ReplUtilities["PrintLocalBindings"] = new GeneralPrimitive("PrintLocalBindings",
                     (args, o, bindings, p, k) =>
                     {
-                        ArgumentCountException.Check("PrintLocalBindings", 0, args);
+                        ArgumentCountException.Check("PrintLocalBindings", 0, args, o);
                         var locals = bindings.Frame.Locals;
                         var output = new string[locals.Length * 4];
                         var index = 0;
@@ -167,11 +201,11 @@ namespace StepRepl
             ReplUtilities[addButton] =
                 new GeneralPrimitive(addButton, (args, o, e, d, k) =>
                     {
-                        ArgumentCountException.Check(addButton, 2, args);
+                        ArgumentCountException.Check(addButton, 2, args, o);
                         var name = args[0].ToTermString();
-                        var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args);
+                        var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args, o);
                         if (!e.TryCopyGround(action, out var finalAction))
-                            throw new ArgumentInstantiationException(addButton, e, args);
+                            throw new ArgumentInstantiationException(addButton, e, args, o);
 
                         StepButton button = new(name, (object[])finalAction!, e.State);
                         Dispatcher.UIThread.Post(() =>
@@ -209,8 +243,16 @@ namespace StepRepl
             }
         }
 
+        public static void ReloadIfNecessary()
+        {
+            if (projectChanged)
+                ReloadStepCode();
+        }
+
         public static void ReloadStepCode()
         {
+            projectChanged = false;
+
             Module.DefaultSearchLimit = int.MaxValue;
             LastException = null;
             RetainState = true;
@@ -300,7 +342,9 @@ namespace StepRepl
             catch (Exception e)
             {
                 LastException = e is StepException?e.InnerException:e;
-                output = "";
+                if (LastException is StepExecutionException { SuppressStackTrace: true })
+                    LastException = null;
+                output = stepThread.Text;
                 newState = State;
             }
             if (newState != null && RetainState)

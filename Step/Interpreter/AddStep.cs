@@ -20,7 +20,7 @@ namespace Step.Interpreter
         public static void FromExpression(ChainBuilder chain, object?[] expression, string? sourceFile = null, int lineNumber = 0)
         {
             if (expression.Length != 3)
-                throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray());
+                throw new ArgumentCountException("add", 2, expression.Skip(1).ToArray(), new TextBuffer());
             if (!(expression[2] is string vName && DefinitionStream.IsGlobalVariableName(vName)))
                 throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", sourceFile,
                     lineNumber);
@@ -32,7 +32,7 @@ namespace Step.Interpreter
         {
             if (!e.TryCopyGround(e.Resolve(element), out var elt))
                 throw new ArgumentInstantiationException("add", e,
-                new[] {"add", collectionVariable, elt});
+                new[] {"add", collectionVariable, elt}, output);
             var collectionValue = e.Resolve(collectionVariable);
 
             switch (collectionValue)
@@ -69,7 +69,7 @@ namespace Step.Interpreter
                     var pair = elt as object[];
                     if (pair == null)
                         throw new ArgumentTypeException("add", typeof(object[]), elt,
-                            new[] { "add", elt, collectionValue });
+                            new[] { "add", elt, collectionValue }, output);
                     if (pair.Length != 2)
                         throw new ArgumentException(
                             "When adding to a priority queue, the value given should be a two-element tuple");
@@ -81,7 +81,7 @@ namespace Step.Interpreter
 
                 default:
                     throw new ArgumentTypeException("add", typeof(Cons), collectionValue,
-                        new[] { "add", elt, collectionValue });
+                        new[] { "add", elt, collectionValue }, output);
             }
         }
 

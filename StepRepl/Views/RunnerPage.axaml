@@ -44,6 +44,13 @@
                     </MenuItem.ItemTemplate>
                 </MenuItem>
                 <MenuItem Header="_Reload project" Click="ReloadStepCode" HotKey="Ctrl+R" InputGesture="Ctrl+R" />
+                <MenuItem Header="Reload _automatically" Click="ToggleAutoReload">
+                    <MenuItem.Icon>
+                        <CheckBox IsChecked="{Binding AutoReload}"
+                                  BorderThickness="0" IsHitTestVisible="False">
+                        </CheckBox>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="_Edit project" Click="EditProject" HotKey="Ctrl+E" InputGesture="Ctrl+E" />
                 <Separator />
                 <MenuItem Header="_Quit" Click="Quit" HotKey="Ctrl+Q" InputGesture="Ctrl+Q" />
@@ -81,7 +88,9 @@
             <StackPanel>
                 <TextBox x:Name="StepCommandField"
                          KeyDown="StepCommandField_OnKeyDown"
-                         Watermark="Run Step commands here (press Return or Enter)..." />
+                         Watermark="Run Step commands here (press Return or Enter)..."
+                         GotFocus="StepCommandField_OnGotFocus"
+                         />
 
                 <StackPanel>
                     <!-- Standard Step output-->

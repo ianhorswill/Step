@@ -265,5 +265,16 @@ namespace Step.Output
         }
 
         public static string ToTermString(this object? term, BindingList? bindings = null) => Writer.TermToString(term, bindings);
+
+        private static IEnumerable<string> CommaSeparate(List<string[]> text, string[] first, string[] middle, string[] last)
+        {
+            for (var i = 0; i < text.Count; i++)
+            {
+                foreach (var word in i == 0 ? first : i == text.Count - 1 ? last : middle)
+                    yield return word;
+                foreach (var word in text[i])
+                    yield return word;
+            }
+        }
     }
 }

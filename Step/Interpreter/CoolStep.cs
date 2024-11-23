@@ -31,7 +31,7 @@ namespace Step.Interpreter
         internal static void FromOnceExpression(ChainBuilder chain, object[] expression)
         {
             if (expression.Length != 1)
-                throw new ArgumentCountException("once", 0, expression.Skip(1).ToArray());
+                throw new ArgumentCountException("once", 0, expression.Skip(1).ToArray(), new TextBuffer());
 
             chain.AddStep(new CoolStep(int.MaxValue, null));
         }
@@ -39,7 +39,7 @@ namespace Step.Interpreter
         internal static void FromCoolExpression(ChainBuilder chain, object[] expression, string? sourceFile, int lineNumber)
         {
             if (expression.Length > 2)
-                throw new ArgumentCountException("cool", 1, expression.Skip(1).ToArray());
+                throw new ArgumentCountException("cool", 1, expression.Skip(1).ToArray(), new TextBuffer());
 
             var duration = 1;
             if (expression.Length == 2)

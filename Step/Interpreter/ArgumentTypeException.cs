@@ -33,8 +33,12 @@ namespace Step.Interpreter
     public class ArgumentTypeException : CallException
     {
         /// <inheritdoc />
-        public ArgumentTypeException(object task, Type expected, object? actual, object?[] arglist) 
-            : base(task, arglist, $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}")
+        public ArgumentTypeException(object task, Type expected, object? actual, object?[]? arglist, TextBuffer output) 
+            : base(task, arglist, 
+                arglist ==null?
+                    $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"}"
+                    : $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}",
+                output)
         { }
 
         private static string TypeName(Type t) => t == typeof(object[]) ? "tuple" : t.Name;
@@ -48,12 +52,12 @@ namespace Step.Interpreter
         /// <param name="arglist">Full argument list of the task</param>
         /// <param name="allowUninstantiated">If true, accept an unbound variable as a value</param>
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
-        public static void Check(object task, Type expected, object? actual, object?[] arglist, bool allowUninstantiated = false)
+        public static void Check(object task, Type expected, object? actual, object?[]? arglist, TextBuffer output, bool allowUninstantiated = false)
         {
             if (allowUninstantiated && actual is LogicVariable)
                 return;
             if (actual == null || (!expected.IsInstanceOfType(actual) && !(expected == typeof(float) && actual is int)))
-                throw new ArgumentTypeException(task, expected, actual, arglist);
+                throw new ArgumentTypeException(task, expected, actual, arglist, output);
         }
 
         /// <summary>
@@ -64,9 +68,9 @@ namespace Step.Interpreter
         /// <param name="actual">Value provided</param>
         /// <param name="arglist">Full argument list of the task</param>
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
-        public static TExpected Cast<TExpected>(object task, object? actual, object?[] arglist)
+        public static TExpected Cast<TExpected>(object task, object? actual, object?[]? arglist, TextBuffer output)
         {
-            Check(task, typeof(TExpected), actual, arglist);
+            Check(task, typeof(TExpected), actual, arglist, output);
             if (typeof(TExpected) == typeof(float))
                 return (TExpected)(object)Convert.ToSingle(actual);
             return (TExpected) actual!;

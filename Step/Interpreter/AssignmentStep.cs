@@ -29,10 +29,10 @@ namespace Step.Interpreter
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k,
             MethodCallFrame? predecessor)
         {
-            if (!e.TryCopyGround(Value.Eval(e), out var expValue))
+            if (!e.TryCopyGround(Value.Eval(e, output), out var expValue))
                 // You can't set a variable to a non-ground value
                 throw new ArgumentInstantiationException("set", e,
-                    new[] { (object?)GlobalVariable??LocalVariable, Value});
+                    new[] { (object?)GlobalVariable??LocalVariable, Value}, output);
 
             if (LocalVariable == null)
                 return Continue(output,

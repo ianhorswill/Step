@@ -109,6 +109,12 @@ namespace Step.Interpreter
             g[nameof(DoAll)] = new DeterministicTextGeneratorMetaTask(nameof(DoAll), DoAll)
                 .Arguments("generator_call", "other_calls", "...")
                 .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings or set commands are undone.");
+            g[nameof(AccumulateOutput)] = new GeneralPrimitive(nameof(AccumulateOutput), AccumulateOutput)
+                .Arguments("generator", "printer")
+                .Documentation("control flow//looping", "Runs generator, finding all its solutions by backtracking.  For each solution, runs printer, accumulating their text output and changes to global variables.");
+            g[nameof(AccumulateOutputWithSeparators)] = new GeneralPrimitive(nameof(AccumulateOutputWithSeparators), AccumulateOutputWithSeparators)
+                .Arguments("generator", "printer", "separator", "lastSeparator")
+                .Documentation("control flow//looping", "Runs generator, finding all its solutions by backtracking.  For each solution, runs printer, accumulating their text output and changes to global variables.  Between output from different solutions, it inserts the string separator, or lastSeparator if it is the last solution.");
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach)
                 .Arguments("generator_call", "other_calls", "...")
                 .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings are undone.  However, all text generated and set commands performed are preserved.");
@@ -148,8 +154,8 @@ namespace Step.Interpreter
         private static bool Call(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.CheckAtLeast(nameof(Call), 1, args);
-            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args);
+            ArgumentCountException.CheckAtLeast(nameof(Call), 1, args, output);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args, output);
 
             if (!(call[0] is Task task))
                 throw new InvalidOperationException(
@@ -169,8 +175,8 @@ namespace Step.Interpreter
         private static bool CallDiscardingStateChanges(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.CheckAtLeast(nameof(CallDiscardingStateChanges), 1, args);
-            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args);
+            ArgumentCountException.CheckAtLeast(nameof(CallDiscardingStateChanges), 1, args, output);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args, output);
 
             if (!(call[0] is Task task))
                 throw new InvalidOperationException(
@@ -208,7 +214,7 @@ namespace Step.Interpreter
         private static bool OrImplementation(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
             => args.Any(call =>
             {
-                var tuple = ArgumentTypeException.Cast<object[]>("OrImplementation", call, args);
+                var tuple = ArgumentTypeException.Cast<object[]>("OrImplementation", call, args, o);
                 return Eval(tuple, o, e, predecessor, k, "OrImplementation");
             });
 
@@ -224,7 +230,7 @@ namespace Step.Interpreter
         {
             foreach (var arg in args)
                 if (!Term.IsGround(arg))
-                    throw new ArgumentInstantiationException("Not", e, args, "Use NotAny if you intend goals that aren't ground.");
+                    throw new ArgumentInstantiationException("Not", e, args, "Use NotAny if you intend goals that aren't ground.", o);
             // Whether the call to args below succeeded
             var success = false;
             
@@ -263,17 +269,42 @@ namespace Step.Interpreter
             return !success && k(o, e.Unifications, e.State, predecessor);
         }
 
-        private static IEnumerable<string> DoAll(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor) 
-            => AllSolutionTextFromBody("DoAll", args, o, e, predecessor).SelectMany(strings => strings);
+        private static IEnumerable<string> DoAll(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor)
+        {
+            var t = AllSolutionTextFromBody("DoAll", args, o, e, predecessor);
+            return t.SelectMany(strings => strings);
+        }
+
+        private static bool AccumulateOutput(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(AccumulateOutput), 2, args, o);
+            var generator = ArgumentTypeException.Cast<object[]>(nameof(AccumulateOutput), args[0], args, o);
+
+            var (text, state) = AccumulateEffectsFromGenerator(nameof(AccumulateOutput), generator, args[1], o, e, predecessor);
+            return k(text, e.Unifications, state, predecessor);
+        }
+
+        private static bool AccumulateOutputWithSeparators(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(AccumulateOutput), 4, args, o);
+            var generator = ArgumentTypeException.Cast<object[]>(nameof(AccumulateOutput), args[0], args, o);
+            var separator = ArgumentTypeException.Cast<string[]>(nameof(AccumulateOutput), args[2], args, o);
+            var terminator = ArgumentTypeException.Cast<string[]>(nameof(AccumulateOutput), args[3], args, o);
+
+            var (text, state) = AccumulateEffectsFromGenerator(separator, terminator, nameof(AccumulateOutput), generator, args[1], o, e, predecessor);
+            return k(text, e.Unifications, state, predecessor);
+        }
 
         private static bool FindAll(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("FindAll", 3, args);
+            ArgumentCountException.Check("FindAll", 3, args, o);
             var solution = args[0];
             var call = args[1] as object[];
             if (call == null || call.Length == 0)
                 throw new ArgumentException("Invalid goal expression");
-            var task = ArgumentTypeException.Cast<Task>("FindAll", call[0], args);
+            var task = ArgumentTypeException.Cast<Task>("FindAll", call[0], args, o);
             var taskArgs = call.Skip(1).ToArray();
 
             var result = args[2];
@@ -290,12 +321,15 @@ namespace Step.Interpreter
 
         private static bool FindUnique(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("FindUnique", 3, args);
+            ArgumentCountException.Check("FindUnique", 3, args, o);
             var solution = args[0];
             var call = args[1] as object[];
             if (call == null || call.Length == 0)
+            {
+                StepThread.ErrorText(o);
                 throw new ArgumentException("Invalid goal expression");
-            var task = ArgumentTypeException.Cast<Task>("FindUnique", call[0], args);
+            }
+            var task = ArgumentTypeException.Cast<Task>("FindUnique", call[0], args, o);
             var taskArgs = call.Skip(1).ToArray();
 
             var result = args[2];
@@ -304,13 +338,16 @@ namespace Step.Interpreter
 
         private static bool FindFirstNUnique(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(FindFirstNUnique), 4, args);
-            var count = ArgumentTypeException.Cast<int>(nameof(FindFirstNUnique), args[0], args);
+            ArgumentCountException.Check(nameof(FindFirstNUnique), 4, args, o);
+            var count = ArgumentTypeException.Cast<int>(nameof(FindFirstNUnique), args[0], args, o);
             var solution = args[1];
             var call = args[2] as object[];
             if (call == null || call.Length == 0)
+            {
+                StepThread.ErrorText(o);
                 throw new ArgumentException("Invalid goal expression");
-            var task = ArgumentTypeException.Cast<Task>(nameof(FindFirstNUnique), call[0], args);
+            }
+            var task = ArgumentTypeException.Cast<Task>(nameof(FindFirstNUnique), call[0], args, o);
             var taskArgs = call.Skip(1).ToArray();
 
             var result = args[3];
@@ -319,13 +356,16 @@ namespace Step.Interpreter
 
         private static bool FindAtMostNUnique(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(FindAtMostNUnique), 4, args);
-            var count = ArgumentTypeException.Cast<int>(nameof(FindAtMostNUnique), args[0], args);
+            ArgumentCountException.Check(nameof(FindAtMostNUnique), 4, args, o);
+            var count = ArgumentTypeException.Cast<int>(nameof(FindAtMostNUnique), args[0], args, o);
             var solution = args[1];
             var call = args[2] as object[];
             if (call == null || call.Length == 0)
+            {
+                StepThread.ErrorText(o);
                 throw new ArgumentException("Invalid goal expression");
-            var task = ArgumentTypeException.Cast<Task>(nameof(FindAtMostNUnique), call[0], args);
+            }
+            var task = ArgumentTypeException.Cast<Task>(nameof(FindAtMostNUnique), call[0], args, o);
             var taskArgs = call.Skip(1).ToArray();
 
             var result = args[3];
@@ -352,7 +392,7 @@ namespace Step.Interpreter
         private static bool ForEach(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? predecessor, Step.Continuation k)
         {
             if (args.Length < 2)
-                throw new ArgumentCountException("ForEach", 2, args);
+                throw new ArgumentCountException("ForEach", 2, args, output);
 
             var producer = args[0];
             var producerChain = Step.ChainFromBody("ForEach", producer);
@@ -390,7 +430,7 @@ namespace Step.Interpreter
         private static bool Implies(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? predecessor, Step.Continuation k)
         {
             if (args.Length < 2)
-                throw new ArgumentCountException(nameof(Implies), 2, args);
+                throw new ArgumentCountException(nameof(Implies), 2, args, output);
 
             var producer = args[0];
             var producerChain = Step.ChainFromBody(nameof(Implies), producer);
@@ -450,7 +490,7 @@ namespace Step.Interpreter
 
         private static bool ExactlyOnce(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("ExactlyOnce", 1, args);
+            ArgumentCountException.Check("ExactlyOnce", 1, args, output);
             TextBuffer finalOutput = output;
             BindingList? finalBindings = null;
             State finalState = State.Empty;
@@ -473,7 +513,7 @@ namespace Step.Interpreter
             if (failure)
             {
                 var failedCall = (Call?)chain;
-                throw new CallFailedException(env.Resolve(failedCall!.Task), env.ResolveList(failedCall.Arglist));
+                throw new CallFailedException(env.Resolve(failedCall!.Task), env.ResolveList(failedCall.Arglist), output);
             }
             return k(finalOutput, finalBindings, finalState, finalFrame);
         }
@@ -498,7 +538,7 @@ namespace Step.Interpreter
         {
             var scoreVar = args[0] as LogicVariable;
             if (scoreVar == null)
-                throw new ArgumentInstantiationException(taskName, e, args);
+                throw new ArgumentInstantiationException(taskName, e, args, o);
 
             var bestScore = multiplier * float.NegativeInfinity;
             var bestFrame = predecessor;
@@ -529,10 +569,10 @@ namespace Step.Interpreter
                             break;
 
                         case LogicVariable _:
-                            throw new ArgumentInstantiationException(taskName, new BindingEnvironment(e, u, d), args);
+                            throw new ArgumentInstantiationException(taskName, new BindingEnvironment(e, u, d), args, o);
 
                         default:
-                            throw new ArgumentTypeException(taskName, typeof(float), maybeScore, args);
+                            throw new ArgumentTypeException(taskName, typeof(float), maybeScore, args, o);
                     }
 
                     if (multiplier * score > multiplier * bestScore)
@@ -555,15 +595,15 @@ namespace Step.Interpreter
 
         private static bool SaveText(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("SaveText", 2, args);
+            ArgumentCountException.Check("SaveText", 2, args, o);
 
             var textVar = e.Resolve(args[1]);
             if (textVar == null)
-                throw new ArgumentInstantiationException("SaveText", e, args);
+                throw new ArgumentInstantiationException("SaveText", e, args, o);
 
             var invocation = args[0] as object[];
             if (invocation == null || invocation.Length == 0)
-                throw new ArgumentTypeException("SaveText", typeof(Call), args[0], args);
+                throw new ArgumentTypeException("SaveText", typeof(Call), args[0], args, o);
             var arglist = new object[invocation.Length - 1];
             Array.Copy(invocation, 1, arglist, 0, arglist.Length);
             var call = new Call(invocation[0], arglist, null);
@@ -589,9 +629,9 @@ namespace Step.Interpreter
         private static bool Parse(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.CheckAtLeast(nameof(Parse), 2, args);
-            var call = ArgumentTypeException.Cast<object[]>(nameof(Parse),env.Resolve(args[0]), args);
-            var text = ArgumentTypeException.Cast<string[]>(nameof(Parse), env.Resolve(args[1]), args);
+            ArgumentCountException.CheckAtLeast(nameof(Parse), 2, args, output);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(Parse),env.Resolve(args[0]), args, output);
+            var text = ArgumentTypeException.Cast<string[]>(nameof(Parse), env.Resolve(args[1]), args, output);
 
             if (!(call[0] is Task task))
                 throw new InvalidOperationException("Task argument to Parse must be a task.");
@@ -613,11 +653,11 @@ namespace Step.Interpreter
             var startNode = args[0];
             var nodeVar = args[1] as LogicVariable;
             if (nodeVar == null)
-                throw new ArgumentInstantiationException("Search", e, args);
+                throw new ArgumentInstantiationException("Search", e, args, o);
             var utilityVar = args[2];
-            var next = ArgumentTypeException.Cast<Task>("Search", args[3], args);
-            var done = ArgumentTypeException.Cast<Task>("Search", args[4], args);
-            var utility = ArgumentTypeException.Cast<Task>("Search", args[5], args);
+            var next = ArgumentTypeException.Cast<Task>("Search", args[3], args, o);
+            var done = ArgumentTypeException.Cast<Task>("Search", args[4], args, o);
+            var utility = ArgumentTypeException.Cast<Task>("Search", args[5], args, o);
             var queue = new List<(float priority, object? node, string[] text, BindingEnvironment env, MethodCallFrame? pred)>();
 
             (bool isGoal, float utility) TestNode(object? node, BindingEnvironment env, MethodCallFrame? p)
@@ -631,7 +671,7 @@ namespace Step.Interpreter
                         u = Convert.ToSingle(util);
                         return true;
                     }))
-                    throw new CallFailedException(utility, utilityArgs);
+                    throw new CallFailedException(utility, utilityArgs, o);
                 return (success, u);
             }
 
@@ -770,10 +810,90 @@ namespace Step.Interpreter
             return results;
         }
 
+        internal static (TextBuffer, State) AccumulateEffectsFromGenerator(string callingTask, object[] generator, object? call,
+            TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor)
+        {
+            var gTask = ArgumentTypeException.Cast<Task>(callingTask, generator[0], generator, o);
+            var gArgs = generator.Skip(1).ToArray();
+
+            var state = e.State;
+            var text = o;
+
+            gTask.Call(gArgs, o, e, predecessor,
+                (tb, b, s, p) =>
+                {
+                    var newCall = ArgumentTypeException.Cast<object?[]>(
+                        callingTask,
+                        new BindingEnvironment(e, b, s).Resolve(call),
+                        null, tb);
+
+                    var cTask = ArgumentTypeException.Cast<Task>(callingTask, newCall[0], newCall, o);
+                    var cArgs = newCall.Skip(1).ToArray();
+
+                    cTask.Call(cArgs, text, new BindingEnvironment(e, b, state), p,
+                        (output, _3, d, _4) =>
+                        {
+                            text = output;
+                            state = d;
+                            return true;
+                        });
+                    return false;
+                });
+            return (text, state);
+        }
+
+        internal static (TextBuffer, State) AccumulateEffectsFromGenerator(string[] separator, string[] terminator, string callingTask, object[] generator, object? call,
+            TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor)
+        {
+            var gTask = ArgumentTypeException.Cast<Task>(callingTask, generator[0], generator, o);
+            var gArgs = generator.Skip(1).ToArray();
+            
+            var state = e.State;
+            var text = o;
+            var buffer = new TextBuffer(10);
+            var lastText = buffer;
+            var count = 0;
+            gTask.Call(gArgs, o, e, predecessor,
+                (tb, b, s, p) =>
+                {
+                    count++;
+                    // Add the text from the last time around
+                    if (count > 2)
+                        text = text.Append(separator);
+                    if (count > 1) 
+                        text = text.Append(lastText);
+
+                    var newCall = ArgumentTypeException.Cast<object?[]>(
+                        callingTask,
+                        new BindingEnvironment(e, b, s).Resolve(call),
+                        null, tb);
+                    var cTask = ArgumentTypeException.Cast<Task>(callingTask, newCall[0], null, o);
+                    var cArgs = newCall.Skip(1).ToArray();
+
+                    cTask.Call(cArgs, buffer, new BindingEnvironment(e, b, state), p,
+                        (output, _3, d, _4) =>
+                        {
+                            lastText = output;
+                            state = d;
+                            return true;
+                        });
+                    return false;
+                });
+            if (count > 0)
+            {
+                if (count > 1)
+                    text = text.Append(terminator);
+                text = text.Append(lastText);
+            }
+            return (text, state);
+        }
+
         private static bool PreviousCall(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(PreviousCall), 1, args);
+            ArgumentCountException.Check(nameof(PreviousCall), 1, args, output);
             if (args[0] is LogicVariable)
             {
                 // [PreviousCall ?var]
@@ -789,7 +909,7 @@ namespace Step.Interpreter
             }
 
             // [PreviousCall [Task ?args]]
-            var call = ArgumentTypeException.Cast<object?[]>(nameof(PreviousCall), args[0], args);
+            var call = ArgumentTypeException.Cast<object?[]>(nameof(PreviousCall), args[0], args, output);
             foreach (var priorGoal in MethodCallFrame.GoalChain(predecessor))
             {
                 if (priorGoal.Method == null || priorGoal.Method.Task != call[0])
@@ -809,8 +929,8 @@ namespace Step.Interpreter
         private static bool UniqueCall(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.CheckAtLeast(nameof(UniqueCall), 1, args);
-            var call = ArgumentTypeException.Cast<object?[]>(nameof(PreviousCall), args[0], args);
+            ArgumentCountException.CheckAtLeast(nameof(UniqueCall), 1, args, output);
+            var call = ArgumentTypeException.Cast<object?[]>(nameof(PreviousCall), args[0], args, output);
             if (!(call[0] is Task task))
                 throw new InvalidOperationException(
                     "Task argument to UniqueCall must be a task.");

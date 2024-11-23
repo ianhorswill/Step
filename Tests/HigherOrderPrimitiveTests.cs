@@ -122,6 +122,32 @@ namespace Tests
         }
 
         [TestMethod]
+        public void AccumulateOutputTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[generator] Generate a.",
+                "Generate b.",
+                "Generate c.",
+                "initially: [set Counter = 0]",
+                "Writer ?a: ?a/Write [set Counter = Counter + 1]",
+                "Test: [AccumulateOutput [Generate ?a] [Writer ?a]] ^Counter");
+            Assert.AreEqual("A b c 3", m.Call("Test"));
+        }
+
+        [TestMethod]
+        public void AccumulateOutputWithSeparatorsTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[generator] Generate a.",
+                "Generate b.",
+                "Generate c.",
+                "initially: [set Counter = 0]",
+                "Writer ?a: ?a/Write [set Counter = Counter + 1]",
+                "Test: [AccumulateOutputWithSeparators [Generate ?a] [Writer ?a] \",\" \"and\"] ^Counter");
+            Assert.AreEqual("A, b and c 3", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void BeginTest()
         {
             var m = TestUtils.Module("Test: [Write x] [Begin [Write a] [Write b] [Write c]] [Write y]");

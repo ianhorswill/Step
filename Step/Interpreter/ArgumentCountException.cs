@@ -31,8 +31,8 @@ namespace Step.Interpreter
     public class ArgumentCountException : CallException
     {
         /// <inheritdoc />
-        public ArgumentCountException(object task, int expected, object?[] actual) 
-            : base(task,actual, $"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual)}")
+        public ArgumentCountException(object task, int expected, object?[] actual, TextBuffer output) 
+            : base(task,actual, $"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual)}", output)
         { }
 
         /// <summary>
@@ -42,10 +42,10 @@ namespace Step.Interpreter
         /// <param name="expected">Number of arguments the task should take</param>
         /// <param name="arglist">Actual arguments passed</param>
         /// <exception cref="ArgumentCountException">When the number of arguments is incorrect.</exception>
-        public static void Check(object task, int expected, object?[] arglist)
+        public static void Check(object task, int expected, object?[] arglist, TextBuffer output)
         {
             if (expected != arglist.Length)
-                throw new ArgumentCountException(task, expected, arglist);
+                throw new ArgumentCountException(task, expected, arglist, output);
         }
 
         /// <summary>
@@ -55,10 +55,12 @@ namespace Step.Interpreter
         /// <param name="minArgs">Minimum number of arguments the task should take</param>
         /// <param name="arglist">Actual arguments passed</param>
         /// <exception cref="ArgumentCountException">When the number of arguments is incorrect.</exception>
-        public static void CheckAtLeast(object task, int minArgs, object?[] arglist)
+        public static void CheckAtLeast(object task, int minArgs, object?[] arglist, TextBuffer output)
         {
             if (arglist.Length < minArgs)
-                throw new ArgumentCountException(task, minArgs, arglist);
+            {
+                throw new ArgumentCountException(task, minArgs, arglist, output);
+            }
         }
     }
 }

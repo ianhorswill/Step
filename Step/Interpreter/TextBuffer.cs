@@ -134,6 +134,22 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="tokens">Tokens to add to output</param>
         /// <returns>New buf state</returns>
+        public TextBuffer Append(TextBuffer tokens)
+        {
+            if (!WriteMode)
+                throw new InvalidOperationException("Attempt to write to a read mode Text buf");
+            CheckSpace(tokens.Length);
+            Array.Copy(tokens.buffer.Buffer, 0, Buffer, Length, tokens.Length);
+            return new TextBuffer(buffer, Length + tokens.Length, true);
+        }
+
+        /// <summary>
+        /// Add tokens to buf and return a new PartialOutput with the updated length.
+        /// Upon backtracking, the new PartialOutput can be thrown away and this one
+        /// reused.
+        /// </summary>
+        /// <param name="tokens">Tokens to add to output</param>
+        /// <returns>New buf state</returns>
         public TextBuffer Append(IEnumerable<string> tokens)
         {
             if (!WriteMode)

@@ -78,7 +78,7 @@ namespace Step.Interpreter
         public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check(this, Arity, arglist);
+            ArgumentCountException.Check(this, Arity, arglist, output);
             
             // Check types and find the shortest list of candidate tuples that match
             var candidateTuples = tuples;
@@ -87,7 +87,7 @@ namespace Step.Interpreter
                 var arg = arglist[i];
                 if (arg is LogicVariable)
                     continue;
-                ArgumentTypeException.Check(this, Signature[i], arg, arglist);
+                ArgumentTypeException.Check(this, Signature[i], arg, arglist, output);
                 var index = indices[i];
                 if (index != null)
                 {

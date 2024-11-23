@@ -57,7 +57,7 @@ namespace Step.Interpreter
 
             g["="] = new GeneralPrimitive("=", (args, o, e, predecessor, k) =>
             {
-                ArgumentCountException.Check("=", 2, args);
+                ArgumentCountException.Check("=", 2, args, o);
                 return e.Unify(args[0], args[1], e.Unifications, out var newBindings) &&
                        k(o, newBindings, e.State, predecessor);
             }).Arguments("a", "b")
@@ -129,6 +129,10 @@ namespace Step.Interpreter
             g["Throw"] = new SimpleNAryPredicate("Throw", Throw)
                 .Arguments("message", "...")
                 .Documentation("control flow", "Throws an exception (error) containing the specified message.");
+
+            g["BailOut"] = new SimpleNAryPredicate("BailOut", BailOut)
+                .Arguments("message", "...")
+                .Documentation("control flow", "Immediately stop execution and display the the specified message, but do not print a stack trace.");
 
             g["StringForm"] = 
                 new GeneralPredicate<object, string>("StringForm",
@@ -209,16 +213,16 @@ namespace Step.Interpreter
                 .Documentation("data structures//lists", "True when list has exactly ?length elements");
 
             g["Nth"] = new GeneralNAryPredicate("Nth",
-                args =>
+                (args, output) =>
                 {
-                    ArgumentCountException.Check("Nth", 3, args);
-                    var list = ArgumentTypeException.Cast<IList>("Nth", args[0], args);
+                    ArgumentCountException.Check("Nth", 3, args, output);
+                    var list = ArgumentTypeException.Cast<IList>("Nth", args[0], args, output);
                     var indexVar = args[1] as LogicVariable;
                     var elementVar = args[2] as LogicVariable;
 
                     if (indexVar == null)
                     {
-                        var index = ArgumentTypeException.Cast<int>("Nth", args[1], args);
+                        var index = ArgumentTypeException.Cast<int>("Nth", args[1], args, output);
                         return new[] {new[] {list, index, list[index]}};
                     }
                     else if (elementVar == null)
@@ -231,18 +235,19 @@ namespace Step.Interpreter
                             return new object[0][];
                     }
 
-                    throw new ArgumentInstantiationException("Nth", new BindingEnvironment(), args);
+                    throw new ArgumentInstantiationException("Nth", new BindingEnvironment(), args, output);
                 })
                 .Arguments("list", "index", "?element")
                 .Documentation("data structures//lists", "True when element of list at index is ?element");
 
-            g["Cons"] = new GeneralNAryPredicate("Cons", args =>
+            g["Cons"] = new GeneralNAryPredicate("Cons", (args, output) =>
             {
-                ArgumentCountException.Check("Cons", 3, args);
+                ArgumentCountException.Check("Cons", 3, args, output);
                 if (args[2] is object[] tuple)
                     return new[] {new[] { tuple[0], tuple.Skip(1).ToArray(), tuple }};
                 if (args[1] is object[] restTuple)
                     return new[] {new[] {args[0], restTuple, restTuple.Prepend(args[0]).ToArray() } };
+                StepThread.ErrorText(output);
                 throw new ArgumentException("Either the second or argument of Cons must be a tuple.");
             })
                 .Arguments("firstElement", "restElements", "tuple")
@@ -268,7 +273,7 @@ namespace Step.Interpreter
             g["CopyTerm"] = new GeneralPrimitive("CopyTerm",
                 (args, t, b, f, k) =>
                 {
-                    ArgumentCountException.Check("CopyTerm", 2, args);
+                    ArgumentCountException.Check("CopyTerm", 2, args, t);
                     return b.Unify(args[1], b.CopyTerm(args[0]), out var u) && k(t, u, b.State, f);
                 })
                 .Arguments("in", "out")
@@ -297,8 +302,8 @@ namespace Step.Interpreter
 
             g["CountAttempts"] = new GeneralPrimitive("CountAttempts", (args, o, bindings, p, k) =>
             {
-                ArgumentCountException.Check("CountAttempts", 1, args);
-                ArgumentInstantiationException.Check("CountAttempts", args[0], false, bindings, args);
+                ArgumentCountException.Check("CountAttempts", 1, args, o);
+                ArgumentInstantiationException.Check("CountAttempts", args[0], false, bindings, args, o);
                 int count = 0;
                 while (true)
                     if (k(o,
@@ -413,10 +418,10 @@ namespace Step.Interpreter
                 "Tasks that control the behavior of StepRepl or whatever other game engine the Step code is running inside of.");
 
             g["EnvironmentOption"] = new SimpleNAryPredicate("EnvironmentOption",
-                arglist =>
+                (arglist, output) =>
                 {
-                    ArgumentCountException.CheckAtLeast("EnvironmentOption", 1, arglist);
-                    var optionName = ArgumentTypeException.Cast<string>("EnvironmentOption", arglist[0], arglist);
+                    ArgumentCountException.CheckAtLeast("EnvironmentOption", 1, arglist, output);
+                    var optionName = ArgumentTypeException.Cast<string>("EnvironmentOption", arglist[0], arglist, output);
                     EnvironmentOption.Handle(optionName, arglist.Skip(1).ToArray());
                     return true;
                 })
@@ -459,19 +464,19 @@ namespace Step.Interpreter
             
             ImportFunction("PathExtension", Path.GetExtension);
             m["PathStructure"] = new GeneralNAryPredicate("PathStructure",
-                args =>
+                (args, output) =>
                 {
-                    ArgumentCountException.Check("PathStructure", 3, args);
+                    ArgumentCountException.Check("PathStructure", 3, args, output);
                     if (args[2] is LogicVariable)
                     {
                         // Path argument uninstantiated
-                        args[2] = Path.Combine(ArgumentTypeException.Cast<string>("PathStructure", args[0], args),
-                            ArgumentTypeException.Cast<string>("PathStructure", args[1], args));
+                        args[2] = Path.Combine(ArgumentTypeException.Cast<string>("PathStructure", args[0], args, output),
+                            ArgumentTypeException.Cast<string>("PathStructure", args[1], args, output));
                         return new[] {args};
                     }
                     else
                     {
-                        var path = ArgumentTypeException.Cast<string>("PathStructure", args[2], args);
+                        var path = ArgumentTypeException.Cast<string>("PathStructure", args[2], args, output);
                         // Path argument is instantiated
                         return new[] {new object[] {Path.GetDirectoryName(path), Path.GetFileName(path), path}};
                     }
@@ -516,19 +521,24 @@ namespace Step.Interpreter
             return true;
         }
 
-        private static bool Throw(object?[] args)
+        private static bool Throw(object?[] args, TextBuffer output) => ThrowDriver(args, output, false);
+        private static bool BailOut(object?[] args, TextBuffer output) => ThrowDriver(args, output, true);
+
+        private static bool ThrowDriver(object?[] args, TextBuffer output, bool suppressStackTrace)
         {
-            string Stringify(object? o)
+            string[] Stringify(object? o)
             {
+                if (o is string[] text)
+                    return text;
                 if (o == null)
-                    return "null";
-                var s = o.ToString();
+                    return new [] {"null"};
+                var s = Writer.TermToString(o);
                 if (s != "")
-                    return s;
-                return o.GetType().Name;
+                    return new[] { s };
+                return Array.Empty<string>();
             }
 
-            throw new Exception(args.Select(Stringify).Untokenize());
+            throw new StepExecutionException(args.SelectMany(Stringify).Untokenize(), output, suppressStackTrace);
         }
 
         private class PriorityQueueComparer : IComparer<(object element, float priority)>

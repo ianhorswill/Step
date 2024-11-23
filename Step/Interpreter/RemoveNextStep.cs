@@ -19,7 +19,7 @@ namespace Step.Interpreter
         internal static void FromExpression(ChainBuilder chain, object?[] expression, string? sourceFile = null, int lineNumber = 0)
         {
             if (expression.Length != 3)
-                throw new ArgumentCountException("removeNext", 2, expression.Skip(1).ToArray());
+                throw new ArgumentCountException("removeNext", 2, expression.Skip(1).ToArray(), new TextBuffer());
             if (!(expression[2] is string vName && DefinitionStream.IsGlobalVariableName(vName)))
                 throw new SyntaxError($"Invalid global variable name in add: {expression[2]}", sourceFile,
                     lineNumber);
@@ -81,7 +81,7 @@ namespace Step.Interpreter
 
                 default:
                     throw new ArgumentTypeException("removeNext", typeof(Cons), collectionValue,
-                        new[] { "removeNext", collectionValue });
+                        new[] { "removeNext", collectionValue }, output);
             }
         }
 

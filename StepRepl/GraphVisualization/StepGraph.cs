@@ -65,8 +65,8 @@ namespace StepRepl.GraphVisualization
         private static bool VisualizeGraphImplementation(object?[] args, TextBuffer o, BindingEnvironment e,
             MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k)
         {
-            ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args);
-            var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args);
+            ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args, o);
+            var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
             Task nodes = null;
             Task nodeColor = null;
             Task nodeLabel = null;
@@ -81,23 +81,23 @@ namespace StepRepl.GraphVisualization
 
             for (var i = 1; i < args.Length; i += 2)
             {
-                var keyword = ArgumentTypeException.Cast<string>(VisualizeGraph, args[i], args);
+                var keyword = ArgumentTypeException.Cast<string>(VisualizeGraph, args[i], args, o);
                 if (args.Length == i + 1)
-                    throw new ArgumentCountException(VisualizeGraph, args.Length + 1, args);
+                    throw new ArgumentCountException(VisualizeGraph, args.Length + 1, args, o);
                 var value = args[i + 1];
 
                 switch (keyword)
                 {
                     case "nodes":
-                        nodes = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args);
+                        nodes = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
                         break;
 
                     case "node_color":
-                        nodeColor = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args);
+                        nodeColor = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
                         break;
 
                     case "node_label":
-                        nodeLabel = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args);
+                        nodeLabel = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
                         graph.NodeLabel = node =>
                         {
                             var label = "unknown label";
@@ -112,7 +112,7 @@ namespace StepRepl.GraphVisualization
                         break;
 
                     case "directed":
-                        directed = ArgumentTypeException.Cast<bool>(VisualizeGraph, value, args);
+                        directed = ArgumentTypeException.Cast<bool>(VisualizeGraph, value, args, o);
                         break;
 
                     case "name":

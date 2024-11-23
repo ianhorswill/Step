@@ -44,8 +44,8 @@ namespace Step.Utilities
         private static bool Apropos(object?[] args, TextBuffer o, BindingEnvironment e,
             MethodCallFrame? predecessor, Interpreter.Step.Continuation k)
         {
-            ArgumentCountException.Check(nameof(Apropos), 1, args);
-            var topic = ArgumentTypeException.Cast<string>(nameof(Apropos), args[0], args);
+            ArgumentCountException.Check(nameof(Apropos), 1, args, o);
+            var topic = ArgumentTypeException.Cast<string>(nameof(Apropos), args[0], args, o);
             var output = new StringBuilder();
 
             bool Relevant(string? x) => x != null && x.IndexOf(topic, StringComparison.InvariantCultureIgnoreCase) >= 0;

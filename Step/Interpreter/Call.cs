@@ -170,7 +170,7 @@ namespace Step.Interpreter
                     return Continue(output.Append(text), env, k, predecessor);
 
                 case IDictionary d:
-                    ArgumentCountException.Check(d, 2, arglist);
+                    ArgumentCountException.Check(d, 2, arglist, output);
                     var arg0 = arglist[0];
                     var v0 = arg0 as LogicVariable;
                     var arg1 = arglist[1];
@@ -195,7 +195,7 @@ namespace Step.Interpreter
                 case IList l:
                     // If it's a list in the operator position, pretend it's a call to member
                     if (arglist.Length != 1)
-                        throw new ArgumentCountException("<list member>", 1, arglist);
+                        throw new ArgumentCountException("<list member>", 1, arglist, output);
 
                     if (arglist[0] is LogicVariable l0)
                     {
@@ -222,7 +222,7 @@ namespace Step.Interpreter
 
                 case bool b:
                     if (arglist.Length != 0)
-                        throw new ArgumentCountException(b, 0, arglist);
+                        throw new ArgumentCountException(b, 0, arglist, output);
                     return b && Continue(output, env, k, predecessor);
 
                 default:

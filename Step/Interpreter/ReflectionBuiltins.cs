@@ -67,14 +67,14 @@ namespace Step.Interpreter
 
         private static bool LastMethodCallFrame(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("LastMethodCallFrame", 1, args);
+            ArgumentCountException.Check("LastMethodCallFrame", 1, args, o);
             return e.Unify(args[0], predecessor, out var u)
                    && k(o, u, e.State, predecessor);
         }
 
         private static bool CompoundTask(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("CompoundTask", 1, args);
+            ArgumentCountException.Check("CompoundTask", 1, args, o);
             var arg = e.Resolve(args[0]);
             var l = arg as LogicVariable;
             if (l == null)
@@ -90,8 +90,8 @@ namespace Step.Interpreter
         private static bool TaskCalls(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
             var m = e.Module;
-            ArgumentCountException.Check(nameof(TaskCalls), 2, args);
-            ArgumentTypeException.Check(nameof(TaskCalls), typeof(CompoundTask), args[0], args, true);
+            ArgumentCountException.Check(nameof(TaskCalls), 2, args, o);
+            ArgumentTypeException.Check(nameof(TaskCalls), typeof(CompoundTask), args[0], args, o, true);
             var callerVar = args[0] as LogicVariable;
             var callerTask = args[0] as CompoundTask;
             var callee = args[1];
@@ -142,8 +142,8 @@ namespace Step.Interpreter
 
         private static bool TaskSubtask(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.Check("TaskSubtask", 2, args);
-            var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args);
+            ArgumentCountException.Check("TaskSubtask", 2, args, o);
+            var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args, o);
             foreach (var callExpression in e.Module.Subtasks(task))
                 if (e.Unify(args[1], callExpression, out var unifications))
                     if (k(o, unifications, e.State, predecessor))

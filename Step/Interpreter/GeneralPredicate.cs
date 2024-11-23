@@ -24,13 +24,13 @@ namespace Step.Interpreter
         /// <param name="args">Arguments in the call</param>
         /// <param name="e">Binding environment</param>
         /// <returns></returns>
-        protected abstract IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e);
+        protected abstract IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e, TextBuffer output);
 
         /// <inheritdoc />
         public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            foreach (var bindings in Iterator(arglist, env))
+            foreach (var bindings in Iterator(arglist, env, output))
                 if (k(output, bindings, env.State, predecessor))
                     return true;
             return false;
@@ -103,9 +103,9 @@ namespace Step.Interpreter
         private readonly Func<IEnumerable<T1>> outMode;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e, TextBuffer output)
         {
-            ArgumentCountException.Check(Name, 1, args);
+            ArgumentCountException.Check(Name, 1, args, output);
             var arg = e.Resolve(args[0]);
             switch (arg)
             {
@@ -120,7 +120,7 @@ namespace Step.Interpreter
                         yield return e.Unifications;
                     break;
                 default:
-                    throw new ArgumentTypeException(Name, typeof(T1), arg, args);
+                    throw new ArgumentTypeException(Name, typeof(T1), arg, args, output);
             }
         }
     }
@@ -159,9 +159,9 @@ namespace Step.Interpreter
         private readonly Func<IEnumerable<(T1, T2)>>? outOutMode;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e, TextBuffer output)
         {
-            ArgumentCountException.Check(Name, 2, args);
+            ArgumentCountException.Check(Name, 2, args, output);
             var arg1 = e.Resolve(args[0]);
             var arg2 = e.Resolve(args[1]);
             switch (arg1)
@@ -171,7 +171,7 @@ namespace Step.Interpreter
                     {
                         case LogicVariable v2:
                             if (outOutMode == null)
-                                throw new ArgumentInstantiationException(Name, e, args);
+                                throw new ArgumentInstantiationException(Name, e, args, output);
 
                             foreach (var (out1, out2) in outOutMode())
                                 yield return BindingList.Bind(e.Unifications, v1, out1).Bind(v2, out2);
@@ -179,14 +179,14 @@ namespace Step.Interpreter
 
                         case T2 in2:
                             if (outInMode == null)
-                                throw new ArgumentInstantiationException(Name, e, args);
+                                throw new ArgumentInstantiationException(Name, e, args, output);
 
                             foreach (var out1 in outInMode(in2))
                                 yield return BindingList.Bind(e.Unifications, v1, out1);
                             break;
 
                         default:
-                            throw new ArgumentTypeException(Name, typeof(T2), arg2, new[] { arg1, arg2 });
+                            throw new ArgumentTypeException(Name, typeof(T2), arg2, new[] { arg1, arg2 }, output);
                     }
 
                     break;
@@ -196,7 +196,7 @@ namespace Step.Interpreter
                     {
                         case LogicVariable v2:
                             if (inOutMode == null)
-                                throw new ArgumentInstantiationException(Name, e, args);
+                                throw new ArgumentInstantiationException(Name, e, args, output);
 
                             foreach (var out2 in inOutMode(in1))
                                 yield return BindingList.Bind(e.Unifications, v2, out2);
@@ -204,20 +204,20 @@ namespace Step.Interpreter
 
                         case T2 in2:
                             if (inInMode == null)
-                                throw new ArgumentInstantiationException(Name, e, args);
+                                throw new ArgumentInstantiationException(Name, e, args, output);
 
                             if (inInMode(in1, in2))
                                 yield return e.Unifications;
                             break;
 
                         default:
-                            throw new ArgumentTypeException(Name, typeof(T2), arg2, new[] { arg1, arg2 });
+                            throw new ArgumentTypeException(Name, typeof(T2), arg2, new[] { arg1, arg2 }, output);
                     }
 
                     break;
 
                 default:
-                    throw new ArgumentTypeException(Name, typeof(T1), arg1, new[] { arg1, arg2 });
+                    throw new ArgumentTypeException(Name, typeof(T1), arg1, new[] { arg1, arg2 }, output);
             }
         }
     }
@@ -237,17 +237,17 @@ namespace Step.Interpreter
         /// Returning the empty sequence means failure,
         /// but returning multiple arglists means the predicate can succeed multiple times.
         /// </param>
-        public GeneralNAryPredicate(string name, Func<object?[], IEnumerable<object?[]>> implementation) : base(name, null)
+        public GeneralNAryPredicate(string name, Func<object?[], TextBuffer, IEnumerable<object?[]>> implementation) : base(name, null)
         {
             this.implementation = implementation;
         }
 
-        private readonly Func<object?[], IEnumerable<object?[]>> implementation;
+        private readonly Func<object?[], TextBuffer, IEnumerable<object?[]>> implementation;
 
         /// <inheritdoc />
-        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e)
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment e, TextBuffer output)
         {
-            foreach (var result in implementation(e.ResolveList(args))) {
+            foreach (var result in implementation(e.ResolveList(args), output)) {
                 if (!e.UnifyArrays(args, result, out BindingList? bindings))
                     throw new Exception($"Internal error in {Name}: could not unify result with arguments");
                 yield return bindings;

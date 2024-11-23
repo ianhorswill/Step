@@ -31,23 +31,23 @@ namespace Step.Interpreter
     public class ArgumentInstantiationException : CallException
     {
         /// <inheritdoc />
-        public ArgumentInstantiationException(object task, BindingEnvironment e, object?[] args) 
-            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}")
+        public ArgumentInstantiationException(object task, BindingEnvironment e, object?[] args, TextBuffer output) 
+            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}", output)
         { }
 
         /// <inheritdoc />
-        public ArgumentInstantiationException(object task, BindingEnvironment e, object?[] args, string additionalMessage)
-            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}.  {additionalMessage}")
+        public ArgumentInstantiationException(object task, BindingEnvironment e, object?[] args, string additionalMessage, TextBuffer output)
+            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}.  {additionalMessage}", output)
         { }
 
         /// <summary>
         /// Check argument and throw instantiation exception if necessary.
         /// </summary>
         public static void Check(object task, object? arg, bool shouldBeInstantiated, BindingEnvironment e,
-            object?[] args)
+            object?[] args, TextBuffer output)
         {
             if (!(e.Resolve(arg) is LogicVariable) != shouldBeInstantiated)
-                throw new ArgumentInstantiationException(task, e, args);
+                throw new ArgumentInstantiationException(task, e, args, output);
         }
     }
 }

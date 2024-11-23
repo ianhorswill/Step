@@ -126,6 +126,11 @@ public partial class RunnerPage : UserControl
     {
         ViewModel.EvalWithDebugging = !ViewModel.EvalWithDebugging;
     }
+
+    private void ToggleAutoReload(object? sender, RoutedEventArgs e)
+    {
+        ViewModel.AutoReload = !ViewModel.AutoReload;
+    }
     
     private async void StepButtonClicked(object? sender, RoutedEventArgs e)
     {
@@ -152,6 +157,8 @@ public partial class RunnerPage : UserControl
     /// </summary>
     private void ExceptionMessageClicked(object? obj, PointerReleasedEventArgs e)
     {
+        if (ExceptionMessage.Text == null)
+            return;
         var m = Regex.Match(ExceptionMessage.Text, "^([^.]+.step):([0-9]+) ");
         if (m.Success)
         {
@@ -311,5 +318,10 @@ public partial class RunnerPage : UserControl
         var frame = (MethodCallFrame)item.DataContext;
         var window = new MethodCallFrameViewer() { DataContext = frame };
         window.Show();
+    }
+
+    private void StepCommandField_OnGotFocus(object sender, GotFocusEventArgs e)
+    {
+        StepCode.ReloadIfNecessary();
     }
 }

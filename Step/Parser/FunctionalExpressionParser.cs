@@ -13,45 +13,45 @@ namespace Step.Interpreter
     /// </summary>
     internal static class FunctionalExpressionParser
     {
-        private static FunctionalOperator<Func<object?, object?>>? LookupUnary(object? token)
+        private static FunctionalOperator<Func<object?, TextBuffer, object?>>? LookupUnary(object? token)
         {
             if (token is string s && UnaryOperatorTable.TryGetValue(s, out var op))
                 return op;
             return null;
         }
 
-        private static FunctionalOperator<Func<object?, object?, object?>>? LookupBinary(object? token)
+        private static FunctionalOperator<Func<object?, object?, TextBuffer, object?>>? LookupBinary(object? token)
         {
             if (token is string s && BinaryOperatorTable.TryGetValue(s, out var op))
                 return op;
             return null;
         }
 
-        private static readonly Dictionary<string, FunctionalOperator<Func<object?, object?>>> UnaryOperatorTable =
-            new Dictionary<string, FunctionalOperator<Func<object?, object?>>>()
+        private static readonly Dictionary<string, FunctionalOperator<Func<object?, TextBuffer, object?>>> UnaryOperatorTable =
+            new Dictionary<string, FunctionalOperator<Func<object?, TextBuffer, object?>>>()
             {
                 {
                     "-",
-                    new FunctionalOperator<Func<object?, object?>>("-", 10,
-                        o =>
+                    new FunctionalOperator<Func<object?, TextBuffer, object?>>("-", 10,
+                        (o, output) =>
                         {
                             switch (o)
                             {
                                 case int i: return -i;
                                 case float f: return -f;
-                                default: throw new ArgumentTypeException("-", typeof(float), o, new[] {o});
+                                default: throw new ArgumentTypeException("-", typeof(float), o, new[] {o}, output);
                             }
                         })
                 }
             };
 
-        private static readonly Dictionary<string, FunctionalOperator<Func<object?, object?, object?>>> BinaryOperatorTable =
-            new Dictionary<string, FunctionalOperator<Func<object?, object?, object?>>>()
+        private static readonly Dictionary<string, FunctionalOperator<Func<object?, object?, TextBuffer, object?>>> BinaryOperatorTable =
+            new Dictionary<string, FunctionalOperator<Func<object?, object?, TextBuffer, object?>>>()
             {
                 {
                     "+",
-                    new FunctionalOperator<Func<object?, object?, object?>>("+", 1,
-                        (a1, a2) =>
+                    new FunctionalOperator<Func<object?, object?, TextBuffer, object?>>("+", 1,
+                        (a1, a2, output) =>
                         {
                             switch (a1)
                             {
@@ -60,7 +60,7 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return i1 + i2;
                                         case float f2: return i1 + f2;
-                                        default: throw new ArgumentTypeException("+", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("+", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
                                 case float f1:
@@ -68,17 +68,17 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return f1 + i2;
                                         case float f2: return f1 + f2;
-                                        default: throw new ArgumentTypeException("+", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("+", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
-                                default: throw new ArgumentTypeException("+", typeof(float), a1, new[] { a1, a2 });
+                                default: throw new ArgumentTypeException("+", typeof(float), a1, new[] { a1, a2 }, output);
                             }
                         })
                 },
                 {
                     "-",
-                    new FunctionalOperator<Func<object?, object?, object?>>("-", 1,
-                        (a1, a2) =>
+                    new FunctionalOperator<Func< object ?, object ?, TextBuffer, object ? >>("-", 1,
+                        (a1, a2, output) =>
                         {
                             switch (a1)
                             {
@@ -87,7 +87,7 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return i1 - i2;
                                         case float f2: return i1 - f2;
-                                        default: throw new ArgumentTypeException("-", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("-", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
                                 case float f1:
@@ -95,17 +95,17 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return f1 - i2;
                                         case float f2: return f1 - f2;
-                                        default: throw new ArgumentTypeException("-", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("-", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
-                                default: throw new ArgumentTypeException("-", typeof(float), a1, new[] { a1, a2 });
+                                default: throw new ArgumentTypeException("-", typeof(float), a1, new[] { a1, a2 }, output);
                             }
                         })
                 },
                 {
                     "*",
-                    new FunctionalOperator<Func<object?, object?, object?>>("*", 2,
-                        (a1, a2) =>
+                    new FunctionalOperator<Func< object ?, object ?, TextBuffer, object ? >>("*", 2,
+                        (a1, a2, output) =>
                         {
                             switch (a1)
                             {
@@ -114,7 +114,7 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return i1 * i2;
                                         case float f2: return i1 * f2;
-                                        default: throw new ArgumentTypeException("*", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("*", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
                                 case float f1:
@@ -122,17 +122,17 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return f1 * i2;
                                         case float f2: return f1 * f2;
-                                        default: throw new ArgumentTypeException("*", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("*", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
-                                default: throw new ArgumentTypeException("*", typeof(float), a1, new[] { a1, a2 });
+                                default: throw new ArgumentTypeException("*", typeof(float), a1, new[] { a1, a2 }, output);
                             }
                         })
                 },
                 {
                     "/",
-                    new FunctionalOperator<Func<object?, object?, object?>>("/", 2,
-                        (a1, a2) =>
+                    new FunctionalOperator<Func<object?, object?, TextBuffer, object?>>("/", 2,
+                        (a1, a2, output) =>
                         {
                             switch (a1)
                             {
@@ -146,7 +146,7 @@ namespace Step.Interpreter
                                             return i1 / (float) i2;
 
                                         case float f2: return i1 / f2;
-                                        default: throw new ArgumentTypeException("/", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("/", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
                                 case float f1:
@@ -154,10 +154,10 @@ namespace Step.Interpreter
                                     {
                                         case int i2: return f1 / i2;
                                         case float f2: return f1 / f2;
-                                        default: throw new ArgumentTypeException("/", typeof(float), a2, new[] { a1, a2 });
+                                        default: throw new ArgumentTypeException("/", typeof(float), a2, new[] { a1, a2 }, output);
                                     }
 
-                                default: throw new ArgumentTypeException("/", typeof(float), a1, new[] { a1, a2 });
+                                default: throw new ArgumentTypeException("/", typeof(float), a1, new[] { a1, a2 }, output);
                             }
                         })
                 }
