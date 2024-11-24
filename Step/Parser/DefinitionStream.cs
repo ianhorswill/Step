@@ -599,6 +599,10 @@ namespace Step.Parser
                             flags |= CompoundTask.TaskFlags.Suffix;
                             break;
 
+                        case "default":
+                            weight = 0;
+                            break;
+
                         default:
                             if (!float.TryParse(keyword, out weight))
                                 ThrowInvalid(optionKeyword);
