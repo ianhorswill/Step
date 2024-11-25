@@ -493,7 +493,7 @@ namespace Step.Parser
                 return ReadDeclaration(flags);
 
             SwallowNewlines();
-            lineNumber = expressionStream.LineNumber+1;  // lineNumber seems to end up pointing at the previous line here.
+            lineNumber = expressionStream.LineNumber; 
             
             var (taskName, pattern) = groupExpander.ExpandHead(ReadHead(), GetLocal, SourcePath, lineNumber);
 

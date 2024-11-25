@@ -85,19 +85,21 @@ namespace Step.Parser
         /// <returns></returns>
         private char Get(bool ignoreComments = true)
         {
-            var c = (char) Input.Read();
+            var c = (char) ReadCountingNewlines();
             switch (c)
             {
                 case '\n':
-                    LineNumber++;
                     break;
 
                 case '#':
                     if (ignoreComments)
                     {
                         // Swallow line
-                        while (!End && Peek != '\n') Input.Read();
-                        Input.Read();
+                        while (!End && Peek != '\n')
+                        {
+                            ReadCountingNewlines();
+                        }
+                        ReadCountingNewlines();
                         return '\n';
                     }
                     else 
@@ -112,6 +114,14 @@ namespace Step.Parser
                         return LeftDoubleQuote;
             }
 
+            return c;
+        }
+
+        private int ReadCountingNewlines()
+        {
+            var c = Input.Read();
+            if (c == '\n')
+                LineNumber++;
             return c;
         }
 
