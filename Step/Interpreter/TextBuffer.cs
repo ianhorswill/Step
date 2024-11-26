@@ -120,6 +120,8 @@ namespace Step.Interpreter
         /// <returns>New buf state</returns>
         public TextBuffer Append(params string[] tokens)
         {
+            if (tokens.Length == 0)
+                return this;
             if (!WriteMode)
                 throw new InvalidOperationException("Attempt to write to a read mode Text buf");
             CheckSpace(tokens.Length);
