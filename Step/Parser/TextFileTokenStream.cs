@@ -254,7 +254,7 @@ namespace Step.Parser
                         }
 
                         if (End)
-                            throw new SyntaxError("File ends with a backslash escape", FilePath, LineNumber);
+                            throw new SyntaxError("File ends inside a string quoted with |", FilePath, LineNumber);
                         Get(); // Skip |
 
                         yield return ConsumeToken(true);
