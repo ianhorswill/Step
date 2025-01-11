@@ -4,11 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using StepRepl.GraphVisualization;
@@ -103,6 +101,7 @@ public partial class RunnerPage : UserControl
         if (chosen.Count == 0 || !Directory.Exists(chosen[0].Path.LocalPath)) return;
         string path = chosen[0].Path.LocalPath;
         OpenProject(path);
+        ReloadStepCode(sender, e);
     }
 
     private void OpenRecentProject(object? sender, RoutedEventArgs e)
@@ -113,6 +112,7 @@ public partial class RunnerPage : UserControl
         if (Directory.Exists(path))
         {
             OpenProject(path);
+            ReloadStepCode(sender ,e);
         }
     }
 
