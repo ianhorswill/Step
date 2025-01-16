@@ -148,9 +148,19 @@ namespace Step.Parser
         /// <returns></returns>
         private object? Get()
         {
-            var result = Peek;
+            var result = ExplodeImproperLists(Peek);
             MoveNext();
             return result;
+        }
+
+        internal static object? ExplodeImproperLists(object? term)
+        {
+            if (!(term is object?[] a) || a.Length < 3 || !Equals(a[^2], "|"))
+                return term;
+            var rest = a[^1];
+            for (var i = a.Length-3; i >= 0; i--) 
+                rest = new Pair(ExplodeImproperLists(a[i]), rest);
+            return rest;
         }
 
         /// <summary>
@@ -396,6 +406,9 @@ namespace Step.Parser
                     return CanonicalizeArglist(list);
                 case TupleExpression t:
                     return CanonicalizeArglist(t.Elements);
+
+                case Pair p:
+                    return new Pair(Canonicalize(p.First), Canonicalize(p.Rest));
             }
 
             return o;

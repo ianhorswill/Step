@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -99,8 +100,9 @@ namespace Step.Interpreter
             var newFrame = new MethodCallFrame(this, env.Unifications, locals, env.Frame, pre);
             MethodCallFrame.CurrentFrame = newFrame;
             var newEnv = new BindingEnvironment(env, newFrame);
-            if (newEnv.UnifyArrays(args, ArgumentPattern, out BindingEnvironment finalEnv))
+            if (newEnv.UnifyArrays(args, newEnv.ResolveList(ArgumentPattern), out BindingEnvironment finalEnv))
             {
+                Console.WriteLine(Writer.TermToString(args));
                 env.Module.TraceMethod(Module.MethodTraceEvent.Enter, this, args, output, finalEnv);
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
                 var traceK = env.Module.Trace == null

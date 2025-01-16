@@ -47,6 +47,33 @@ namespace Step.Output
                         WriteCompound('[', tuple, ']');
                         break;
 
+                    case Pair pair:
+                        b.Append('[');
+                        object? next = pair;
+                        var firstOne = true;
+                        while (next is Pair p)
+                        {
+                            if (!firstOne)
+                                b.Append(' ');
+                            else 
+                                firstOne = false;
+                            Walk(BindingEnvironment.Deref(p.First, bindings));
+                            next = BindingEnvironment.Deref(p.Rest, bindings);
+                        }
+                        if (next is IList tail)
+                            foreach (var e in tail)
+                            {
+                                b.Append(' ');
+                                Walk(BindingEnvironment.Deref(e, bindings));
+                            }
+                        else
+                        {
+                            b.Append(" | ");
+                            Walk(next);
+                        }
+                        b.Append(']');
+                        break;
+
                     case LogicVariable l:
                         var d = BindingEnvironment.Deref(l, bindings);
                         if (d == l)

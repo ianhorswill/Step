@@ -357,6 +357,8 @@ namespace Step.Interpreter
                 (lastToken, output) = output.Unappend();
                 arglist = new object[] {lastToken};
             }
+
+            arglist = env.ResolveList(arglist);
             
             ArgumentCountException.Check(this, this.ArgCount, arglist, output);
             var successCount = 0;
@@ -415,7 +417,7 @@ namespace Step.Interpreter
                 if (method.Try(arglist, output, env, predecessor,
                     (o, u, s, newPredecessor) =>
                     {
-                        var resultArgs = env.ResolveList(arglist, u);
+                        var resultArgs = env.ResolveList(arglist, u, false);
                         if (ReadCache)
                         {
                             if (Cache.TryGetValue(env.State, resultArgs, out var result))
@@ -440,7 +442,7 @@ namespace Step.Interpreter
                         successCount++;
                         if (WriteCache)
                         {
-                            var final = env.ResolveList(arglist, u);
+                            var final = env.ResolveList(arglist, u, false);
                             if (Term.IsGround(final))
                                 s = StoreResult(s, final, new CachedResult(true,
                                     Function?final[^1]:null,

@@ -69,5 +69,7 @@ namespace Step.Parser
         /// Return the current character, without advancing
         /// </summary>
         protected char Peek => (char)(Input.Peek());
+
+        public bool LookingAt(char c) => Peek == c;
     }
 }

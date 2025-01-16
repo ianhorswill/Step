@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Net.Mail;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
 using Step.Interpreter;
@@ -181,5 +182,7 @@ namespace Tests
             var m = TestUtils.Module("First: A", "First: B", "Test: [DoAll [First]]");
             Assert.AreEqual("A", m.Call("Test"));
         }
+
+        
     }
 }

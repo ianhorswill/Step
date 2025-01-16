@@ -23,6 +23,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using System.Text;
+using Step.Output;
+
 namespace Step.Interpreter
 {
     /// <summary>
@@ -109,5 +112,24 @@ namespace Step.Interpreter
         /// </summary>
         public static BindingList Bind(BindingList? bindings, LogicVariable variable, object? value)
             => new BindingList(variable, value, bindings);
+
+        public override string ToString()
+        {
+            var b = new StringBuilder();
+            b.Append('{');
+            var firstOne = true;
+            for (var bind = this; bind != null; bind = bind.Next)
+            {
+                if (firstOne)
+                    firstOne = false;
+                else
+                    b.Append(' ');
+                b.Append(bind.Variable);
+                b.Append('=');
+                b.Append(Writer.TermToString(bind.Value, this));
+            }
+            b.Append('}');
+            return b.ToString();
+        }
     }
 }

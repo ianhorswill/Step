@@ -511,5 +511,18 @@ Baz: baz");
             var attr = m.CallFunction<object[]>("Attributes", new object[] { new object[] { "foo", 1 } });
             CollectionAssert.AreEqual(new object[] { "bar", 1 }, attr);
         }
+
+        [TestMethod]
+        public void ExplodeImproperListTest()
+        {
+            Assert.AreEqual(1, DefinitionStream.ExplodeImproperLists(1));
+            CollectionAssert.AreEqual(new object[] { 1, 2, 3 }, (object[])DefinitionStream.ExplodeImproperLists(new object[] { 1, 2, 3 }));
+            var shouldBePair = DefinitionStream.ExplodeImproperLists(new object[] { 1, "|", "?a"});
+            Assert.IsInstanceOfType<Pair>(shouldBePair);
+            var pair = shouldBePair as Pair;
+            Assert.AreEqual(1, pair.First);
+            Assert.AreEqual("?a", pair.Rest);
+
+        }
     }
 }

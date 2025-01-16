@@ -95,7 +95,7 @@ namespace Step.Parser
                     if (ignoreComments)
                     {
                         // Swallow line
-                        while (!End && Peek != '\n')
+                        while (!End && !LookingAt('\n'))
                         {
                             ReadCountingNewlines();
                         }
@@ -143,7 +143,7 @@ namespace Step.Parser
         /// <summary>
         /// Current character is non-newline whitespace
         /// </summary>
-        bool IsWhiteSpace => (char.IsWhiteSpace(Peek) && Peek != '\n');
+        bool IsWhiteSpace => (char.IsWhiteSpace(Peek) && !LookingAt('\n'));
 
         /// <summary>
         /// Current character is some punctuation symbol other than '?'
@@ -182,44 +182,44 @@ namespace Step.Parser
                     Debug.Assert(token.Length == 0);
 
                     // SINGLE CHARACTER TOKENS
-                    while (IsPunctuationNotSpecial || Peek == '\n')
+                    while (IsPunctuationNotSpecial || LookingAt('\n'))
                     {
                         var ch = Get();
-                        if (ch == '\n' && (Peek == '\r' || Peek == '\n'))
+                        if (ch == '\n' && (LookingAt('\r') || LookingAt('\n')))
                             yield return TextUtilities.NewParagraphToken;
                         else
                             yield return ch.ToString();
                     }
 
-                    if (Peek == '>')
+                    if (LookingAt('>'))
                     {
                         AddCharToToken();
-                        if (Peek == '=')
+                        if (LookingAt('='))
                             AddCharToToken();
                     }
                     // HTML TAGS
-                    else if (Peek == '<')
+                    else if (LookingAt('<'))
                     {
                         AddCharToToken();
-                        if (Peek == '-' || Peek == '=')
+                        if (LookingAt('-') || LookingAt('='))
                             //  It's a <- or <= operator
                             AddCharToToken();
-                        else if (Peek == '/' || char.IsLetter(Peek))
+                        else if (LookingAt('/') || char.IsLetter(Peek))
                         {
                             // It's an HTML markup token
-                            while (!End && Peek != '>')
+                            while (!End && !LookingAt('>'))
                                 AddCharToToken();
-                            if (Peek == '>')
+                            if (LookingAt('>'))
                                 AddCharToToken();
                         }
                     }
                     // NUMBERS
-                    else if (char.IsDigit(Peek) || Peek == '+' || Peek == '-')
+                    else if (char.IsDigit(Peek) || LookingAt('+') || LookingAt('-'))
                     {
                         AddCharToToken();
                         while (char.IsDigit(Peek)) AddCharToToken();
 
-                        if (Peek == '.')
+                        if (LookingAt('.'))
                         {
                             Get();
                             if (char.IsDigit(Peek))
@@ -236,39 +236,46 @@ namespace Step.Parser
                             }
                         }
                     }
-                    else if (Peek == '|')
+                    else if (LookingAt('|'))
                     {
-                        Get();   // Skip | symbol
-                        if (HaveToken)
-                            ConsumeToken();
-                        // It's a quoted symbol/string, as opposed to text
-                        while (!End && Peek != '|')
+                        Get();   // Swallow | symbol
+                        if (LookingAt(' ') || LookingAt('?'))
+                            yield return "|";
+                        else
                         {
-                            if (Peek == '\\')
+                            if (HaveToken)
+                                yield return ConsumeToken();
+                            // It's a quoted symbol/string, as opposed to text
+                            while (!End && !LookingAt('|'))
                             {
-                                Get();
-                                if (End)
-                                    throw new SyntaxError("File ends with a backslash escape", FilePath, LineNumber);
+                                if (LookingAt('\\'))
+                                {
+                                    Get();
+                                    if (End)
+                                        throw new SyntaxError("File ends with a backslash escape", FilePath,
+                                            LineNumber);
+                                }
+
+                                AddCharToToken(false);
                             }
-                            AddCharToToken(false);
+
+                            if (End)
+                                throw new SyntaxError("File ends inside a string quoted with ||", FilePath, LineNumber);
+                            Get(); // Skip |
+                            
+                            yield return ConsumeToken(true);
                         }
-
-                        if (End)
-                            throw new SyntaxError("File ends inside a string quoted with |", FilePath, LineNumber);
-                        Get(); // Skip |
-
-                        yield return ConsumeToken(true);
                     }
                     // NORMAL TOKENS (word-like tokens and variables
                     else
                     {
                         // Allow ?'s and ^'s at the start of word tokens
-                        if (Peek == '?' || Peek == '^')
+                        if (LookingAt('?') || LookingAt('^'))
                             AddCharToToken();
                         // Now we should be at something like a word or number
                         while (!End && !IsEndOfWord)
                         {
-                            if (Peek == '\\')
+                            if (LookingAt('\\'))
                             {
                                 Get();
                                 if (End)

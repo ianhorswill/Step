@@ -31,13 +31,14 @@ namespace Step.Interpreter
         public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
         {
             var collectionValue = e.Resolve(collectionVariable);
+            var elementVariable = e.Resolve(element);
 
             switch (collectionValue)
             {
                 case Cons list:
                 {
                     return list != Cons.Empty 
-                        && e.Unify(element, list.First, out var bindings)
+                        && e.Unify(elementVariable, list.First, out var bindings)
                         && Continue(output,
                             new BindingEnvironment(e,
                                 bindings,
@@ -49,7 +50,7 @@ namespace Step.Interpreter
                 case ImmutableStack<object> stack:
                 {
                     return !stack.IsEmpty
-                           && e.Unify(element, stack.Peek(), out var bindings)
+                           && e.Unify(elementVariable, stack.Peek(), out var bindings)
                            && Continue(output,
                                new BindingEnvironment(e,
                                    bindings,
@@ -60,7 +61,7 @@ namespace Step.Interpreter
                 case ImmutableQueue<object> queue:
                 {
                     return !queue.IsEmpty
-                           && e.Unify(element, queue.Peek(), out var bindings)
+                           && e.Unify(elementVariable, queue.Peek(), out var bindings)
                            && Continue(output,
                                new BindingEnvironment(e,
                                    bindings,
@@ -71,7 +72,7 @@ namespace Step.Interpreter
                 case ImmutableSortedSet<(object element,float priority)> heap:
                 {
                     return !heap.IsEmpty
-                           && e.Unify(element, heap.Max.element, out var bindings)
+                           && e.Unify(elementVariable, heap.Max.element, out var bindings)
                            && Continue(output,
                                new BindingEnvironment(e,
                                    bindings,

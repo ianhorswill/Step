@@ -126,6 +126,7 @@ namespace Tests
                 "Push ?x: [add ?x X]",
                 "[generator] Pop: [removeNext ?x X] [Write ?x]",
                 "[fallible] FailTest: [set X = Empty] [Pop]");
+        
             Assert.AreEqual("3 2 1", m.Call("Test"));
             Assert.IsFalse(m.CallPredicate(State.Empty, "FailTest"));
         }

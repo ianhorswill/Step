@@ -24,7 +24,9 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Step.Interpreter
 {
@@ -110,7 +112,7 @@ namespace Step.Interpreter
         /// Canonicalize a term, i.e. get its value, or reduce it to a logic variable
         /// if it doesn't have a value yet
         /// </summary>
-        public object? Resolve(object? term, BindingList? unifications)
+        public object? Resolve(object? term, BindingList? unifications, bool compressPairs = false)
         {
             switch (term)
             {
@@ -136,11 +138,42 @@ namespace Step.Interpreter
                     return tokens;
 
                 case object[] sublist:
-                    return ResolveList(sublist, unifications);
+                    return ResolveList(sublist, unifications, compressPairs);
+
+                case Pair p:
+                    if (!compressPairs)
+                        return ResolvePair(p, unifications, compressPairs);
+
+                    // It's a linked list; compress it into an object array if possible.
+                    var length = p.LengthProperOrImproper(unifications);
+                    if (length < 0)
+                        // It's an improper list, so we can't canonicalize it into an object array.
+                        return ResolvePair(p, unifications, compressPairs);
+
+                    var array = new object?[length];
+                    var i = 0;
+                    object? tail = p;
+                    while (tail is Pair next)
+                    {
+                        array[i++] = Deref(next.First, unifications);
+                        tail = BindingEnvironment.Deref(next.Rest, unifications);
+                    }
+                    foreach (var e in (IList)tail!)
+                        array[i++] = e;
+                    return array;
 
                 default:
                     return term;
             }
+        }
+
+        public Pair ResolvePair(Pair p, BindingList? unifications, bool compressPairs)
+        {
+            var f = Resolve(p.First, unifications, compressPairs);
+            var r = Resolve(p.Rest, unifications, compressPairs);
+            if (f != p.First || r != p.Rest)
+                return new Pair(f, r);
+            return p;
         }
 
         /// <summary>
@@ -151,18 +184,20 @@ namespace Step.Interpreter
         /// <summary>
         /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
         /// </summary>
-        public object?[] ResolveList(object?[] arglist, BindingList? unifications)
+        public object?[] ResolveList(object?[] arglist, BindingList? unifications, bool compressPairs)
         {
+            if (arglist.Length == 0)
+                return arglist;
             var result = new object?[arglist.Length];
             for (var i = 0; i < arglist.Length; i++)
-                result[i] = Resolve(arglist[i], unifications);
+                result[i] = Resolve(arglist[i], unifications, compressPairs);
             return result;
         }
 
         /// <summary>
         /// Canonicalize a list of terms, i.e. get their values or reduce them to (unbound) logic variables.
         /// </summary>
-        public object?[] ResolveList(object?[] arglist) => ResolveList(arglist, Unifications);
+        public object?[] ResolveList(object?[] arglist, bool compressPairs = false) => ResolveList(arglist, Unifications, compressPairs);
 
         /// <summary>
         /// Attempt to unify two terms
@@ -174,8 +209,8 @@ namespace Step.Interpreter
         /// <returns>True if the objects are unifiable and outUnification holds their most general unifier</returns>
         public bool Unify(object? a, object? b, BindingList? inUnifications, out BindingList? outUnifications)
         {
-            a = Resolve(a, inUnifications);
-            b = Resolve(b, inUnifications);
+            a = Deref(a, inUnifications);
+            b = Deref(b, inUnifications);
             if (a == null || b == null)
             {
                 if (a is LogicVariable av)
@@ -213,13 +248,84 @@ namespace Step.Interpreter
                 return true;
             }
 
+            if (a is Pair pa)
+            {
+                if (b is Pair pab)
+                {
+                    outUnifications = null;
+                    return Unify(pa.First, pab.First, inUnifications, out var newUnif)
+                        && Unify(pa.Rest, pab.Rest, newUnif, out outUnifications);
+
+                }
+
+                return UnifyPair(pa, b, inUnifications, out outUnifications);
+            }
+
+            if (b is Pair pb)
+                return UnifyPair(pb, a, inUnifications, out outUnifications);
+
             if (a is object[] aa && b is object[] ba && aa.Length == ba.Length)
                 return UnifyArrays(aa, ba, inUnifications, out outUnifications);
 
             outUnifications = inUnifications;
             return false;
         }
-        
+
+        /// <summary>
+        /// Unify a pair with a non-pair
+        /// </summary>
+        /// <param name="p">Pair to unify</param>
+        /// <param name="other"></param>
+        /// <param name="unifications">Binding list to use</param>
+        /// <param name="outUnifications">New binding list</param>
+        /// <returns>True on success</returns>
+        private bool UnifyPair(Pair p, object? other, BindingList? unifications, out BindingList? outUnifications)
+        {
+            switch (Deref(other, unifications))
+            {
+                case LogicVariable v:
+                    return Unify(p, v, unifications, out outUnifications);
+
+                case IList l:
+                    if (l.Count == 0)
+                    {
+                        outUnifications = null;
+                        return false;
+                    }
+                    return UnifyPairChains(p, (Pair)Pair.FromIList(l), unifications, out outUnifications);;
+
+                default:
+                    outUnifications = null;
+                    return false;
+            }
+        }
+
+        private bool UnifyPairChains(Pair a, Pair b, BindingList? unifications, out BindingList? outUnifications)
+        {
+            outUnifications = unifications;
+            object? aRest = a;
+            object? bRest = b;
+            while (aRest is Pair pa && bRest is Pair pb)
+            {
+                if (!Unify(pa.First, pb.First, outUnifications, out outUnifications))
+                    return false;
+                aRest = pa.Rest;
+                bRest = Deref(pb.Rest, unifications);
+            }
+
+            if (ReferenceEquals(aRest, Pair.Empty) && Equals(bRest, Pair.Empty))
+                // Fast path
+                return true;
+            // We're at the end of one of the chains.  Figure out what's happening.
+            if (Unify(aRest, bRest, outUnifications, out outUnifications))
+                return true;
+            if (a is { } ppa)
+                return UnifyPair(ppa, bRest, outUnifications, out outUnifications);
+            if (b is { } ppb)
+                return UnifyPair(ppb, aRest, outUnifications, out outUnifications);
+            return false;
+        }
+
         /// <summary>
         /// Attempt to unify two terms
         /// </summary>
