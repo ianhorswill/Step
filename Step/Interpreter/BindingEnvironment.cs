@@ -26,7 +26,6 @@
 using System;
 using System.Collections;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Step.Interpreter
 {
@@ -188,10 +187,22 @@ namespace Step.Interpreter
         {
             if (arglist.Length == 0)
                 return arglist;
-            var result = new object?[arglist.Length];
+            object?[]? result = null;
             for (var i = 0; i < arglist.Length; i++)
-                result[i] = Resolve(arglist[i], unifications, compressPairs);
-            return result;
+            {
+                var arg = arglist[i];
+                var resolved = Resolve(arglist[i], unifications, compressPairs);
+                if (arg != resolved)
+                {
+                    if (result == null)
+                    {
+                        result = new object?[arglist.Length];
+                        Array.Copy(arglist, result, result.Length);
+                    }
+                    result[i] = resolved;
+                }
+            }
+            return result??arglist;
         }
 
         /// <summary>
@@ -292,7 +303,7 @@ namespace Step.Interpreter
                         outUnifications = null;
                         return false;
                     }
-                    return UnifyPairChains(p, (Pair)Pair.FromIList(l), unifications, out outUnifications);;
+                    return UnifyPairChains(p, (Pair)Pair.FromIList(l), unifications, out outUnifications);
 
                 default:
                     outUnifications = null;
@@ -417,6 +428,9 @@ namespace Step.Interpreter
                 case object[] tuple:
                     return tuple.Select(CopyTerm).ToArray();
 
+                case Pair p:
+                    return new Pair(CopyTerm(p.First), CopyTerm(p.Rest));
+
                 default:
                     return term;
             }
@@ -449,6 +463,13 @@ namespace Step.Interpreter
                     for (var i = 0; i < newTuple.Length; i++)
                         if (!TryCopyGround(tuple[i], out newTuple[i]))
                             return false;
+                    return true;
+
+                case Pair p:
+                    copied = null;
+                    if (!TryCopyGround(p.First, out var first) || !TryCopyGround(p.Rest, out var rest))
+                        return false;
+                    copied = new Pair(first, rest);
                     return true;
 
                 default:
