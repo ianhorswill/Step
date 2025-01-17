@@ -62,7 +62,7 @@ namespace Step.Parser
             try
             {
                 var headTuple = head.pattern.Select(Devariablize).Prepend(head.taskName).ToArray();
-                var newHeadTuple = Module.CallFunction<object?[]>(ExpansionFunction, CurrentDeclarationGroup, headTuple);
+                var newHeadTuple = (object?[])Pair.CompressPairChainsWhenPossible(Module.CallFunction<object?[]>(ExpansionFunction, CurrentDeclarationGroup, headTuple), null)!;
                 if (newHeadTuple.Length < 1 && !(newHeadTuple[0] is string))
                     throw new SyntaxError(
                         $"Expansion of {Writer.TermToString(headTuple)} within declaration group {Writer.TermToString(CurrentDeclarationGroup)} returned invalid expansion {Writer.TermToString(newHeadTuple)}",

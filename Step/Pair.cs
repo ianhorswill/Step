@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using Step.Interpreter;
 
 namespace Step
@@ -98,6 +99,41 @@ namespace Step
                 length = -length;
 
             return length;
+        }
+
+        public static object? CompressPairChainsWhenPossible(object? term, BindingList? bindings)
+        {
+            term = BindingEnvironment.Deref(term, bindings);
+            switch (term)
+            {
+                case Pair p:
+                    var l = p.LengthProperOrImproper(bindings);
+                    if (l < 0)
+                        return new Pair(CompressPairChainsWhenPossible(p.First, bindings),
+                            CompressPairChainsWhenPossible(p.Rest, bindings));
+                    var array = new object?[l];
+                    var i = 0;
+                    object? next = p;
+                    while (next is Pair nextP)
+                    {
+                        array[i++] = CompressPairChainsWhenPossible(p.First, bindings);
+                        next = BindingEnvironment.Deref(nextP.Rest, bindings);
+                    }
+
+                    var tail = (IList)next!;
+                    foreach (var e in tail)
+                        array[i++] = CompressPairChainsWhenPossible(e, bindings);
+                    return array;
+
+                case object?[] a:
+                    var newArray = new object?[a.Length];
+                    for (var j = 0; j < a.Length; j++)
+                        newArray[j] = CompressPairChainsWhenPossible(a[j], bindings);
+                    return newArray;
+
+                default:
+                    return term;
+            }
         }
 
         internal void AssertCanonicalEmptyList()
