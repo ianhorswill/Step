@@ -130,7 +130,8 @@ namespace Step.Interpreter
         /// <summary>
         /// The argument pattern for this method expressed as the course code for a call
         /// </summary>
-        public string HeadString => Writer.TermToString(ArgumentPattern.Prepend(Task.Name).ToArray());
+        public string HeadString => Writer.TermToString(ArgumentPattern
+            .Prepend(Module.RichTextStackTraces?$"<b>{Task.Name}</b>":Task.Name).ToArray());
 
         /// <summary>
         /// An approximate reconstruction of the original course text for this method.

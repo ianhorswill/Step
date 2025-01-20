@@ -35,6 +35,7 @@ public partial class DebuggerPanel : UserControl
     
     private void ContinueButtonPressed(object sender, RoutedEventArgs e)
     {
+        _debugger.SingleStepping = false;
         _debugger?.Continue();
     }
     
@@ -45,25 +46,24 @@ public partial class DebuggerPanel : UserControl
     
     private void SingleStepButtonPressed(object sender, RoutedEventArgs e)
     {
-        if (_debugger == null)
-            return;
-        var button = (ToggleButton)sender;
-        _debugger.SingleStepping = button.IsChecked ?? false;
+        _debugger.SingleStepping = true;
+        _debugger.Continue();
     }
 
     private void UpdateInterface()
     {
         if (_debugger?.IsPaused ?? false)
         {
+            CallField.Inlines.Clear();;
+            CallField.Inlines.Add(HtmlTextFormatter.ParseHtml(MethodCallFrame.CurrentFrame.CallSourceTextWithCurrentBindings));
             OutputArea.IsVisible = true;
             DebugHint.IsVisible = false;
-            
-            MethodInfo.Text = $"{_debugger.LastResult_CalledMethod}";
-            MethodArgs.Text = $"{string.Join(", ", _debugger.LastResult_Args ?? Array.Empty<object>())}";
+            MethodInfo.Inlines.Clear();
+            MethodInfo.Inlines.Add(HtmlTextFormatter.ParseHtml($"{_debugger.LastResult_TraceEvent}: {_debugger.LastResult_Environment.Value.Frame.MethodSource}"));
             Output.Text = _debugger.LastResult_Text;
-            SingleStepButton.IsChecked = _debugger.SingleStepping;
             if (_debugger.LastResult_Environment.HasValue)
             {
+                StackTrace.SelectedItem = null;
                 StackTrace.ItemsSource = _debugger.LastResult_Environment.Value.Frame.CallerChain;
             }
         }

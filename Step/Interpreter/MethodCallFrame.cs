@@ -159,6 +159,13 @@ namespace Step.Interpreter
 
         public string CallSourceTextWithoutFileName => Call.CallSourceText(Method!.Task, Arglist, BindingsAtCallTime);
 
+        public string CallSourceTextWithCurrentBindings => Call.CallSourceText(Method!.Task, Arglist,
+            StepThread.Current == null
+                ? null
+                : StepThread.Current.Environment == null
+                    ? null
+                    : StepThread.Current.Environment.Value.Unifications);
+
 
         public class BindingForDisplay
         {

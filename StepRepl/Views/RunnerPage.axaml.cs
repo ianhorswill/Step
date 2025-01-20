@@ -73,12 +73,18 @@ public partial class RunnerPage : UserControl
 
         if (e.Key != Key.Return || e.Key != Key.Enter) return;
 
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            // Force debug mode
+            ViewModel.EvalWithDebugging = true;
+        }
+
         string command = textBox.Text;
         textBox.Text = "";
         if (string.IsNullOrEmpty(command)) return;
 
         ViewModel.AddCommandHistory(command);
-        await EvalAndShowOutput(command);
+        await EvalAndShowOutput(command, true);
     }
     
     private void SetCommandFieldText(object? sender, RoutedEventArgs e)
@@ -266,10 +272,10 @@ public partial class RunnerPage : UserControl
         }
     }
 
-    Task EvalAndShowOutput(string command)
+    Task EvalAndShowOutput(string command, bool singleStep = false)
     {
-        Task<string> evalTask = ViewModel.EvalWithDebugging ?
-            StepCode.EvalWithDebugger(command, OnDebugPause, DebuggerPanelControl.SingleStepButton.IsChecked ?? true)
+        Task<string> evalTask = (ViewModel.EvalWithDebugging || singleStep) ?
+            StepCode.EvalWithDebugger(command, OnDebugPause, singleStep)
             : StepCode.Eval(command);
         return EvalAndShowOutput(evalTask);
     }

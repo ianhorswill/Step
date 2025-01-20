@@ -12,6 +12,7 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        Step.Module.RichTextStackTraces = true;
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
         

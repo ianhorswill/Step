@@ -13,7 +13,7 @@
     
     <StackPanel>
         <DockPanel x:Name="DebuggerControlButtons" Margin="0,3,0,5" HorizontalAlignment="Center">
-            <ToggleButton x:Name="SingleStepButton" Click="SingleStepButtonPressed">Single Step</ToggleButton>
+            <Button x:Name="SingleStepButton" Click="SingleStepButtonPressed">Single Step</Button>
             <Button Click="ContinueButtonPressed">Continue</Button>
             <Button Click="AbortButtonPressed">Abort</Button>
         </DockPanel>
@@ -23,20 +23,24 @@
         </SelectableTextBlock>
         
         <StackPanel x:Name="OutputArea">
-            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,5">Called Method:</TextBlock>
+          <!--          <TextBlock FontWeight="Bold" FontSize="14" Margin="0,5">Call:</TextBlock>-->
+            <SelectableTextBlock x:Name="CallField" TextWrapping="Wrap"/>
+
+          <!--          <TextBlock FontWeight="Bold" Margin="0,5">Method:</TextBlock> -->
             <SelectableTextBlock x:Name="MethodInfo" TextWrapping="Wrap"/>
-            <TextBlock FontWeight="Bold" FontSize="14" Margin="0,5">Arguments:</TextBlock>
-            <SelectableTextBlock x:Name="MethodArgs" TextWrapping="Wrap"/>
             
-            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Current Output:</TextBlock>
+            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,25,0,5">Output:</TextBlock>
             <SelectableTextBlock x:Name="Output" TextWrapping="Wrap"/>
             
-            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,35,0,5">Call Trace:</TextBlock>
-            <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected">
+            <TextBlock FontWeight="Bold" FontSize="16" Margin="0,25,0,5">Stack:</TextBlock>
+            <ListBox x:Name="StackTrace" SelectionMode="Single" SelectionChanged="StackFrameSelected"
+                     Margin="0" Padding="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="interpreter:MethodCallFrame">
                         <SelectableTextBlock
-                            Inlines="{Binding CallSourceText, Converter={StaticResource htmlTextFormatter}}"
+                            Inlines="{Binding CallSourceTextWithCurrentBindings, Converter={StaticResource htmlTextFormatter}}"
+                            Margin="10,0,0,0"
+                            Padding="0"
                             FontSize="14"
                             TextWrapping="Wrap"
                             ToolTip.Tip="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."

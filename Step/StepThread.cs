@@ -116,8 +116,6 @@ namespace Step
                         var (output, newState) = start();
                         Text = output;
                         State = newState;
-                        if (debugger != null)
-                            debugger.State = newState;
                     }
                     catch (Exception e)
                     {
@@ -192,6 +190,11 @@ namespace Step
         public bool NewSample;
 
         public State? State;
+
+        /// <summary>
+        /// Binding environment of the job, when it was last paused.
+        /// </summary>
+        public BindingEnvironment? Environment { get; private set; }
 
         /// <summary>
         /// Exception thrown by the job, if any
@@ -292,8 +295,8 @@ namespace Step
                         b.AppendLine("Debugger awaiter: null");
                     else
                         b.AppendLine($"Debugger awaiter: {awaiter.DebugState}");
-                    if (Environment.HasValue)
-                        b.AppendLine(Step.Module.StackTrace(Environment.Value.Unifications));
+                    if (StepThread.Environment.HasValue)
+                        b.AppendLine(Step.Module.StackTrace(StepThread.Environment.Value.Unifications));
                     return b.ToString();
                 }
             }
@@ -315,16 +318,6 @@ namespace Step
             }
 
             public void Start() => StepThread.SpawnThreadIfNeeded();
-
-            /// <summary>
-            /// Binding environment of the job, when it was last paused.
-            /// </summary>
-            public BindingEnvironment? Environment { get; private set; }
-
-            /// <summary>
-            /// State of the job when it was last paused or completed
-            /// </summary>
-            public State State { get; set; }
 
             /// <summary>
             /// TraceEvent that paused the job, if any
@@ -372,15 +365,15 @@ namespace Step
                         (e == Module.MethodTraceEvent.Succeed || e == Module.MethodTraceEvent.CallFail)))
                 {
                     StepThread.Text = output.AsString;
-                    State = env.State;
+                    StepThread.State = env.State;
                     CalledMethod = method;
                     MethodArgs = args;
-                    Environment = env;
+                    StepThread.Environment = env;
                     Pause(e, true);
                     TraceEvent = Module.MethodTraceEvent.None;
                     CalledMethod = null;
                     MethodArgs = null;
-                    Environment = null;
+                    StepThread.Environment = null;
                 }
             }
 
@@ -455,7 +448,7 @@ namespace Step
                 {
                     if (Debugger.StepThread.Exception != null)
                         throw Debugger.StepThread.Exception;
-                    return (Debugger.TraceEvent, Debugger.CalledMethod, Debugger.MethodArgs, Debugger.StepThread.Text, Debugger.Environment);
+                    return (Debugger.TraceEvent, Debugger.CalledMethod, Debugger.MethodArgs, Debugger.StepThread.Text, Debugger.StepThread.Environment);
                 }
 
                 internal DebuggerAwaiter(StepThreadDebugger d)

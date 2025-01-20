@@ -84,7 +84,9 @@
             </MenuItem>
         </Menu>
 
-        <SplitView DisplayMode="Inline" CornerRadius="4" IsPaneOpen="{Binding EvalWithDebugging}" PaneBackground="Indigo" PanePlacement="Right" OpenPaneLength="400">
+        <SplitView DisplayMode="Overlay" CornerRadius="4"
+                   IsPaneOpen="{Binding EvalWithDebugging}"
+                   PaneBackground="Indigo" PanePlacement="Right" OpenPaneLength="800">
             <StackPanel>
                 <TextBox x:Name="StepCommandField"
                          KeyDown="StepCommandField_OnKeyDown"
@@ -189,7 +191,7 @@
             <!-- pane for the debugger -->
             <SplitView.Pane>
                 <UserControl>
-                    <views:DebuggerPanel x:Name="DebuggerPanelControl" CornerRadius="4"/>
+                    <views:DebuggerPanel x:Name="DebuggerPanelControl" CornerRadius="4" />
                 </UserControl>
             </SplitView.Pane>
 
