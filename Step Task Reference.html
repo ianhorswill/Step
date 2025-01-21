@@ -96,7 +96,13 @@ Predicates access tuples/lists in particular.  These work with any C# object tha
 <h2>Debugging</h2>
 Tasks used to help debug code.
 <p>
+<code>[<b>Break</b>]</code><br>When running under the Step debugger, puts the Step interpreter in single-step mode
+<p>
 <code>[<b>InterpreterBreak</b>]</code><br>Trigger a C# breakpoint inside the Step interpreter.  Don't use this unless you're debugging C# code.
+<p>
+<code>[<b>Log</b> <i>anything</i> <i>...</i>]</code><br>Adds the specified information to the event log.  This operation is not undone upon backtracking.
+<p>
+<code>[<b>LogBack</b> <i>anything</i> <i>...</i>]</code><br>Adds the specified information to the event log when this call is backtracked.  This operation is not undone upon backtracking.
 <p>
 <h2>Documentation</h2>
 <code>[<b>Apropos</b> <i>topic</i>]</code><br>Print documentation for all tasks that mention topic.
@@ -138,8 +144,6 @@ Predicates that test the binding state of a variable.
 <p>
 <h2>Miscellaneous</h2>
 <code>[<b>AddButton</b> <i>label</i> <i>code</i>]</code><br>Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.
-<p>
-<code>[<b>Break</b>]</code><br>When running under the Step debugger, puts the Step interpreter in single-step mode
 <p>
 <code>[<b>TreeSearch</b> <i>startNode</i> <i>finalNode</i> <i>utility</i> <i>NextNode</i> <i>GoalNode</i> <i>NodeUtility</i>]</code><br>Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.
 <p>

@@ -86,6 +86,6 @@ namespace Step.Interpreter
             }
         }
 
-        public override string Source => "[removeNext ...]";
+        public override string GetSource(bool markup) => "[removeNext ...]";
     }
 }

@@ -117,12 +117,30 @@ namespace Step.Interpreter
                     return true;
                 })
                 .Arguments()
-                .Documentation("When running under the Step debugger, puts the Step interpreter in single-step mode");
+                .Documentation("debugging","When running under the Step debugger, puts the Step interpreter in single-step mode");
 
             g["InterpreterBreak"] = new SimplePredicate("InterpreterBreak", Break)
                 .Arguments()
                 .Documentation("debugging", "Trigger a C# breakpoint inside the Step interpreter.  Don't use this unless you're debugging C# code.");
 
+            g["Log"] = new GeneralPrimitive("Log", (args, o, env, frame, k) =>
+            {
+                LogEvent.Log(args, frame, env);
+                return k(o, env.Unifications, env.State, frame);
+            })
+            .Arguments("anything", "...")
+            .Documentation("debugging", "Adds the specified information to the event log.  This operation is not undone upon backtracking.");
+
+            g["LogBack"] = new GeneralPrimitive("LogBack", (args, o, env, frame, k) =>
+                {
+                    if (k(o, env.Unifications, env.State, frame))
+                        return true;
+                    LogEvent.Log(args, frame, env);
+                    return false;
+                })
+                .Arguments("anything", "...")
+                .Documentation("debugging", "Adds the specified information to the event log when this call is backtracked.  This operation is not undone upon backtracking.");
+            
             g["Listing"] =
                 new DeterministicTextGenerator<CompoundTask>("Listing", t => t.Methods.Select(m => m.MethodCode+"\n"));
 

@@ -39,6 +39,7 @@ public partial class MainWindow : Window
         Loaded += (sender, args) =>
         {
             AddTab("Runner", new RunnerPage{DataContext = new RunnerViewModel()}, true);
+            AddTab("Log", new LogView(){DataContext = LogViewModel.Singleton}, false);
         };
     }
 

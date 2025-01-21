@@ -168,6 +168,8 @@ namespace Step
         public void Abort()
         {
             Module.Cancel();
+            if (debugger is { IsPaused: true })
+                debugger.Continue();
         }
 
         /// <summary>

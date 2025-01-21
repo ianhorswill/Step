@@ -324,7 +324,11 @@ namespace StepRepl
             return Eval(CurrentStepThread);
         }
 
-        public static void AbortCurrentStepThread() => Module.Cancel();
+        public static void AbortCurrentStepThread()
+        {
+            if (StepThread.Current != null)
+                StepThread.Current.Abort();
+        }
 
         public static async Task<string> Eval(StepThread stepThread)
         {

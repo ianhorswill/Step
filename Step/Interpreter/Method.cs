@@ -130,8 +130,13 @@ namespace Step.Interpreter
         /// <summary>
         /// The argument pattern for this method expressed as the course code for a call
         /// </summary>
-        public string HeadString => Writer.TermToString(ArgumentPattern
-            .Prepend(Module.RichTextStackTraces?$"<b>{Task.Name}</b>":Task.Name).ToArray());
+        public string HeadString => GetHeadSource(Module.RichTextStackTraces);
+
+        private string GetHeadSource(bool markup)
+        {
+            return Writer.TermToString(ArgumentPattern
+                .Prepend(markup?$"<b>{Task.Name}</b>":Task.Name).ToArray());
+        }
 
         /// <summary>
         /// An approximate reconstruction of the original course text for this method.
@@ -139,25 +144,27 @@ namespace Step.Interpreter
         // ReSharper disable once UnusedMember.Global
         public string MethodCode
         {
-            get
-            {
-                var b = new StringBuilder();
-                var headWithBrackets = HeadString;
-                b.Append(headWithBrackets.Substring(1, headWithBrackets.Length-2));
-                if (StepChain == null)
-                    b.Append(".");
-                else
-                {
-                    b.Append(':');
-                    for (var step = StepChain; step != null; step = step.Next)
-                    {
-                        b.Append(' ');
-                        b.Append(step.Source);
-                    }
-                }
+            get { return GetSource(Module.RichTextStackTraces); }
+        }
 
-                return b.ToString();
+        public string GetSource(bool markup)
+        {
+            var b = new StringBuilder();
+            var headWithBrackets = GetHeadSource(markup);
+            b.Append(headWithBrackets.Substring(1, headWithBrackets.Length-2));
+            if (StepChain == null)
+                b.Append(".");
+            else
+            {
+                b.Append(':');
+                for (var step = StepChain; step != null; step = step.Next)
+                {
+                    b.Append(' ');
+                    b.Append(step.GetSource(markup));
+                }
             }
+
+            return b.ToString();
         }
 
         /// <summary>

@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:StepRepl.ViewModels"
+        xmlns:step="clr-namespace:Step"
+        xmlns:step1="clr-namespace:Step;assembly=Step"
+        xmlns:stepRepl="clr-namespace:StepRepl"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="StepRepl.Views.LogView"
+        x:DataType="viewModels:LogViewModel">
+    <UserControl.Resources>
+        <stepRepl:HtmlTextFormatter x:Key="htmlTextFormatter"/>
+    </UserControl.Resources>
+  <StackPanel>
+      <ListBox x:Name="EventList" ItemsSource="{Binding Events}">
+          <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="step1:LogEvent">
+                  <SelectableTextBlock
+                      Inlines="{Binding Text, Converter={StaticResource htmlTextFormatter}}"
+                      FontSize="12"
+                      TextWrapping="Wrap">
+                  </SelectableTextBlock>
+              </DataTemplate>
+          </ListBox.ItemTemplate>
+      </ListBox>
+  </StackPanel>
+</UserControl>

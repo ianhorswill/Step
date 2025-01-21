@@ -237,6 +237,8 @@ namespace Step.Interpreter
         /// <summary>
         /// Make an approximation to the source code for this step;
         /// </summary>
-        public abstract string Source { get; }
+        public string Source => GetSource(Module.RichTextStackTraces);
+
+        public abstract string GetSource(bool markup);
     }
 }

@@ -868,7 +868,7 @@ var output = TextBuffer.NewEmpty();
                 {
                     currentBindings ??= MethodCallFrame.CurrentFrame.BindingsAtCallTime;
                     foreach (var frame in MethodCallFrame.CurrentFrame.CallerChain)
-                        b.AppendLine(frame.GetCallSourceText(currentBindings));
+                        b.AppendLine(frame.GetCallSourceText(RichTextStackTraces, currentBindings));
                 }
                 return b.ToString();
         }

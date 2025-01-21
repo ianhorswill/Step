@@ -56,6 +56,6 @@ namespace Step.Interpreter
             return Continue(output, new BindingEnvironment(e, e.Unifications, state), k, predecessor);
         }
 
-        public override string Source => "[now ...]";
+        public override string GetSource(bool markup) => "[now ...]";
     }
 }

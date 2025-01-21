@@ -43,7 +43,7 @@
                             Padding="0"
                             FontSize="14"
                             TextWrapping="Wrap"
-                            ToolTip.Tip="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."
+                            ToolTip.Tip="{Binding MethodSourceNoMarkup}"
                             GotFocus="StackFrameGotFocus">
                             <SelectableTextBlock.ContextMenu>
                                 <ContextMenu>
@@ -51,6 +51,7 @@
                                 </ContextMenu>
                             </SelectableTextBlock.ContextMenu>
                         </SelectableTextBlock>
+                      
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

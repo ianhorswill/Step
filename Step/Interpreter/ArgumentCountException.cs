@@ -32,7 +32,7 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentCountException(object task, int expected, object?[] actual, TextBuffer output) 
-            : base(task,actual, $"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual)}", output)
+            : base(task,actual, $"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual, Module.RichTextStackTraces)}", output)
         { }
 
         /// <summary>

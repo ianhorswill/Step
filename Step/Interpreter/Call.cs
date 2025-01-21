@@ -83,7 +83,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Regenerates an approximation to the source code for this call
         /// </summary>
-        public string SourceText => CallSourceText(Task, Arglist);
+        public string SourceText => CallSourceText(Task, Arglist, Module.RichTextStackTraces);
 
         internal static readonly StateVariableName MentionHook = StateVariableName.Named("Mention");
 
@@ -218,7 +218,7 @@ namespace Step.Interpreter
                     throw new ArgumentException($"Attempt to call an unbound variable {v}");
 
                 case null:
-                    throw new ArgumentException($"Null is not a valid task in call {CallSourceText(originalTarget??"null", arglist)}");
+                    throw new ArgumentException($"Null is not a valid task in call {CallSourceText(originalTarget??"null", arglist, false)}");
 
                 case bool b:
                     if (arglist.Length != 0)
@@ -235,18 +235,18 @@ namespace Step.Interpreter
                         return Continue(output.Append(target.ToString()), env, k, predecessor);
                     }
 
-                    throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget??"null", arglist)}");
+                    throw new ArgumentException($"Unknown task {target} in call {CallSourceText(originalTarget??"null", arglist, false)}");
             }
         }
 
-        internal static string CallSourceText(object task, object?[] arglist, BindingList? unifications = null)
+        internal static string CallSourceText(object task, object?[] arglist, bool markup, BindingList? unifications = null)
         {
             var b = new StringBuilder();
             b.Append("[");
-            if (Module.RichTextStackTraces)
+            if (markup)
                 b.Append("<b>");
             b.Append(task);
-            if (Module.RichTextStackTraces)
+            if (markup)
                 b.Append("</b>");
 
             void WriteAtomicTerm(object? o)
@@ -307,6 +307,6 @@ namespace Step.Interpreter
         }
 
         /// <inheritdoc />
-        public override string Source => SourceText;
+        public override string GetSource(bool markup) => CallSourceText(Task, Arglist, markup);
     }
 }

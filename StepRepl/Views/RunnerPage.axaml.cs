@@ -73,18 +73,15 @@ public partial class RunnerPage : UserControl
 
         if (e.Key != Key.Return || e.Key != Key.Enter) return;
 
-        if (e.KeyModifiers == KeyModifiers.Control)
-        {
-            // Force debug mode
-            ViewModel.EvalWithDebugging = true;
-        }
+        ViewModel.EvalWithDebugging = (e.KeyModifiers == KeyModifiers.Control);
 
         string command = textBox.Text;
         textBox.Text = "";
         if (string.IsNullOrEmpty(command)) return;
 
         ViewModel.AddCommandHistory(command);
-        await EvalAndShowOutput(command, true);
+        LogViewModel.Singleton.Clear();
+        await EvalAndShowOutput(command, ViewModel.EvalWithDebugging);
     }
     
     private void SetCommandFieldText(object? sender, RoutedEventArgs e)

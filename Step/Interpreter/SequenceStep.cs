@@ -28,6 +28,6 @@
                 predecessor);
         }
 
-        public override string Source => "[sequence ...]";
+        public override string GetSource(bool markup) => "[sequence ...]";
     }
 }

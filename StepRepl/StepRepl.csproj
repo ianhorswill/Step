@@ -25,6 +25,9 @@
       <Compile Update="Views\DebuggerPanel.axaml.cs">
         <DependentUpon>DebuggerPage.axaml</DependentUpon>
       </Compile>
+      <Compile Update="Views\LogView.axaml.cs">
+        <DependentUpon>LogView.axaml</DependentUpon>
+      </Compile>
     </ItemGroup>
     
 

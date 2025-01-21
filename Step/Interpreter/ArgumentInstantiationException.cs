@@ -32,12 +32,12 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentInstantiationException(object task, BindingEnvironment e, object?[] args, TextBuffer output) 
-            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}", output)
+            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args), Module.RichTextStackTraces)}", output)
         { }
 
         /// <inheritdoc />
         public ArgumentInstantiationException(object task, BindingEnvironment e, object?[] args, string additionalMessage, TextBuffer output)
-            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args))}.  {additionalMessage}", output)
+            : base(task, args, $"Arguments to {task} incorrectly instantiated: {Call.CallSourceText(task, e.ResolveList(args), Module.RichTextStackTraces)}.  {additionalMessage}", output)
         { }
 
         /// <summary>

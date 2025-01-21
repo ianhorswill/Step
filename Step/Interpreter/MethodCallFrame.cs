@@ -33,6 +33,8 @@ namespace Step.Interpreter
 
         public string MethodSource => Method != null?Method.MethodCode:"No source";
 
+        public string MethodSourceNoMarkup => Method != null?Method.GetSource(false):"No source";
+
         /// <summary>
         /// The task being called in this frame.
         /// </summary>
@@ -145,21 +147,21 @@ namespace Step.Interpreter
         /// Regenerates the textual version of the call in this frame
         /// </summary>
         /// <param name="unifications">Binding list currently in effect.  This will generally be whatever the most recent binding list of the interpreter is.</param>
-        public string GetCallSourceText(BindingList? unifications)
+        public string GetCallSourceText(bool markup, BindingList? unifications)
         {
-            var source = Call.CallSourceText(Method!.Task, Arglist, unifications);
+            var source = Call.CallSourceText(Method!.Task, Arglist, markup, unifications);
             if (Method.FilePath == null)
                 return source;
-            var start = Module.RichTextStackTraces ? "\n     <i>" : "(";
-            var end = Module.RichTextStackTraces ? "</i>" : ")";
+            var start = markup ? "\n     <i>" : "(";
+            var end = markup ? "</i>" : ")";
             return $"{source} {start}at {Path.GetFileName(Method.FilePath)}:{Method.LineNumber}{end}";
         }
 
-        public string CallSourceText => GetCallSourceText(BindingsAtCallTime);
+        public string CallSourceText => GetCallSourceText(Module.RichTextStackTraces, BindingsAtCallTime);
 
-        public string CallSourceTextWithoutFileName => Call.CallSourceText(Method!.Task, Arglist, BindingsAtCallTime);
+        public string CallSourceTextWithoutFileName => Call.CallSourceText(Method!.Task, Arglist, Module.RichTextStackTraces, BindingsAtCallTime);
 
-        public string CallSourceTextWithCurrentBindings => Call.CallSourceText(Method!.Task, Arglist,
+        public string CallSourceTextWithCurrentBindings => Call.CallSourceText(Method!.Task, Arglist, Module.RichTextStackTraces,
             StepThread.Current == null
                 ? null
                 : StepThread.Current.Environment == null

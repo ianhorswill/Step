@@ -37,7 +37,7 @@ namespace Step.Interpreter
             : base(task, arglist, 
                 arglist ==null?
                     $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"}"
-                    : $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"} in {Call.CallSourceText(task, arglist)}",
+                    : $"Wrong argument type in call to {task}, expected {TypeName(expected)}, got {actual??"null"} in {Call.CallSourceText(task, arglist, Module.RichTextStackTraces)}",
                 output)
         { }
 

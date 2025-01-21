@@ -71,6 +71,6 @@ namespace Step.Interpreter
             return false;
         }
 
-        public override string Source => "[cool]";
+        public override string GetSource(bool markup) => "[cool]";
     }
 }

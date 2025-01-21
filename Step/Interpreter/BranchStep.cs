@@ -58,7 +58,7 @@ namespace Step.Interpreter
             return false;
         }
 
-        public override string Source => $"[{Name} ...]";
+        public override string GetSource(bool markup) => $"[{Name} ...]";
 
         public override string ToString() => Name;
     }

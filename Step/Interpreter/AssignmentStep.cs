@@ -121,6 +121,6 @@ namespace Step.Interpreter
                     sourceFile, lineNumber);
         }
 
-        public override string Source => "[set ...]";
+        public override string GetSource(bool markup) => "[set ...]";
     }
 }
