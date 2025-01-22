@@ -9,6 +9,8 @@ using Step.Interpreter;
 using Step.Output;
 using Step.Utilities;
 using System.Collections.Generic;
+using System.Linq;
+using Avalonia.Controls.Converters;
 
 namespace StepRepl
 {
@@ -219,8 +221,6 @@ namespace StepRepl
                     .Arguments("label", "code")
                     .Documentation(
                         "Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.");
-
-            ReloadStepCode();
         }
 
         private static void EnvironmentOption(string option, object[] args)
@@ -268,6 +268,7 @@ namespace StepRepl
                 FormattingOptions = { ParagraphMarker = "\n\n", LineSeparator = "\n" }
             };
 
+            RunnerPage.Singleton.RemoveUserManus();
             State = State.Empty;
             try
             {
@@ -277,10 +278,31 @@ namespace StepRepl
                 if (ProjectDirectory != "")
                 {
                     Console.WriteLine($"Loaded Step project at {ProjectDirectory}");
+                    Dispatcher.UIThread.Post(() => MainWindow.Instance.SetTabDisplayName(RunnerPage.Singleton, $"{StepCode.ProjectName}"));
+                }
+
+                if (Module.Defines("MenuItem"))
+                {
+                    var menuVar = new LogicVariable("?menu", 0);
+                    var itemVar = new LogicVariable("?item", 1);
+                    var callVar = new LogicVariable("?call", 2);
+                    var menus = new List<(string menu, string item, object?[] call)>();
+                    var env = new BindingEnvironment(Module, null, null, State.Empty);
+                    ((CompoundTask)Module["MenuItem"]).Call(new object[] { menuVar, itemVar, callVar },
+                        new TextBuffer(), env, null,
+                        (o, u, s, f) =>
+                        {
+                            var menuName = BindingEnvironment.Deref(menuVar, u) as string;
+                            var itemName = BindingEnvironment.Deref(itemVar, u) as string;
+                            var call = new BindingEnvironment(env, u, s).CopyTerm(callVar) as object?[];
+                            if (menuName != null && itemName != null && call != null)
+                                menus.Add((menuName, itemName, call));
+                            return false;
+                        });
                     Dispatcher.UIThread.Post(() =>
                     {
-                        var runnerPage = MainWindow.Instance.FindTabByContentType<RunnerPage>();
-                        MainWindow.Instance.SetTabDisplayName(runnerPage, $"{StepCode.ProjectName}");
+                        foreach (var m in menus)
+                            RunnerPage.Singleton.AddMenuItem(m.menu, m.item, m.call);
                     });
                 }
             }
@@ -299,6 +321,13 @@ namespace StepRepl
         public static Task<string> Eval(string command)
         {
             CurrentStepThread = new StepThread(Module, NormalizeCommand(command), State);
+            
+            return Eval(CurrentStepThread);
+        }
+
+        public static Task<string> Eval(object?[] call)
+        {
+            CurrentStepThread = new StepThread(Module, State, (Step.Interpreter.Task)call[0]!, call.Skip(1).ToArray());
             
             return Eval(CurrentStepThread);
         }

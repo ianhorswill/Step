@@ -33,7 +33,7 @@
     </Design.DataContext>
 
     <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-        <Menu DockPanel.Dock="Top">
+        <Menu x:Name="MainMenu" DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="Open project..." Click="SelectProjectFolder" HotKey="Ctrl+O" InputGesture="Ctrl+O" />
                 <MenuItem x:Name="OpenRecentDropdown" Header="Open recent" ItemsSource="{Binding RecentProjectPaths}">

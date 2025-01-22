@@ -19,10 +19,14 @@ namespace StepRepl.Views;
 
 public partial class RunnerPage : UserControl
 {
+    public static RunnerPage Singleton;
     
     public RunnerPage()
     {
+        Singleton = this;
         InitializeComponent();
+        
+        StepCode.ReloadStepCode();
         ShowWarningsAndException();
         StepCommandField.AttachedToVisualTree += (s, e) => StepCommandField.Focus();
     }
@@ -327,4 +331,39 @@ public partial class RunnerPage : UserControl
     {
         StepCode.ReloadIfNecessary();
     }
+
+    #region Menu manipulation
+    private Dictionary<string, MenuItem> UserMenus = new();
+
+    private MenuItem UserMenu(string name)
+    {
+        if (!UserMenus.TryGetValue(name, out var menu))
+        {
+            menu = new MenuItem() { Header = name };
+            MainMenu.Items.Add(menu);
+            UserMenus[name] = menu;
+        }
+
+        return menu;
+    }
+
+    public void RemoveUserManus()
+    {
+        foreach (var pair in UserMenus)
+            MainMenu.Items.Remove(pair.Value);
+        UserMenus.Clear();
+    }
+
+    public void AddMenuItem(string menuName, string itemName, object[] call)
+    {
+        var item = new MenuItem()
+        {
+            Header = itemName
+        };
+
+        item.Click += (sender, args) => StepCode.Eval(call);
+
+        UserMenu(menuName).Items.Add(item);
+    }
+    #endregion
 }
