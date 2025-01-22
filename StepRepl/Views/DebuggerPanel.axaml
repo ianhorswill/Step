@@ -43,13 +43,15 @@
                             Padding="0"
                             FontSize="14"
                             TextWrapping="Wrap"
-                            ToolTip.Tip="{Binding MethodSourceNoMarkup}"
                             GotFocus="StackFrameGotFocus">
                             <SelectableTextBlock.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="Show details" Click="ShowStackFrame" />
                                 </ContextMenu>
                             </SelectableTextBlock.ContextMenu>
+                            <ToolTip.Tip>
+                                <TextBlock Inlines="{Binding Summary, Converter={StaticResource htmlTextFormatter}}"/>
+                            </ToolTip.Tip>
                         </SelectableTextBlock>
                       
                     </DataTemplate>

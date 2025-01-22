@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Step.Output;
 
 namespace Step.Interpreter
@@ -161,12 +162,31 @@ namespace Step.Interpreter
 
         public string CallSourceTextWithoutFileName => Call.CallSourceText(Method!.Task, Arglist, Module.RichTextStackTraces, BindingsAtCallTime);
 
-        public string CallSourceTextWithCurrentBindings => Call.CallSourceText(Method!.Task, Arglist, Module.RichTextStackTraces,
-            StepThread.Current == null
-                ? null
-                : StepThread.Current.Environment == null
-                    ? null
-                    : StepThread.Current.Environment.Value.Unifications);
+        public string CallSourceTextWithCurrentBindings =>
+            Call.CallSourceText(Method!.Task, Arglist, Module.RichTextStackTraces, MostRecentBindings);
+
+        public BindingList? MostRecentBindings => StepThread.Current == null
+            ? MethodCallFrame.CurrentFrame.BindingsAtCallTime
+            : StepThread.Current.Environment == null
+                ? MethodCallFrame.CurrentFrame.BindingsAtCallTime
+                : StepThread.Current.Environment.Value.Unifications;
+
+        public string Summary
+        {
+            get
+            {
+                var b = new StringBuilder();
+                b.Append(CallSourceTextWithCurrentBindings);
+                if (Method != null)
+                {
+                    b.Append("\n");
+                    b.Append(Method.MethodCode);
+                    foreach (var v in LocalVariableValuesForDisplay)
+                        b.Append($"\n{v.Variable} = {v.Value}");
+                }
+                return b.ToString();
+            }
+        }
 
 
         public class BindingForDisplay
@@ -177,12 +197,13 @@ namespace Step.Interpreter
             public BindingForDisplay(LogicVariable v, BindingList? b)
             {
                 Variable = v.ToString();
-                Value = Writer.TermToString(v, b);
+                var d = BindingEnvironment.Deref(v, b);
+                Value = v==d?"unbound":Writer.TermToString(d, b);
             }
         }
 
         public IEnumerable<BindingForDisplay> LocalVariableValuesForDisplay =>
-            Locals.Select(l => new BindingForDisplay(l, BindingsAtCallTime));
+            Locals.Select(l => new BindingForDisplay(l, MostRecentBindings));
 
         private object?[]? cachedCallExpression;
         

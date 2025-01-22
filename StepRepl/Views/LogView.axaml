@@ -20,6 +20,9 @@
                       Inlines="{Binding Text, Converter={StaticResource htmlTextFormatter}}"
                       FontSize="12"
                       TextWrapping="Wrap">
+                      <ToolTip.Tip>
+                          <TextBlock Inlines="{Binding StackTrace, Converter={StaticResource htmlTextFormatter}}"/>
+                      </ToolTip.Tip>
                   </SelectableTextBlock>
               </DataTemplate>
           </ListBox.ItemTemplate>
