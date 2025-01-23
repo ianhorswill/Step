@@ -14,6 +14,17 @@ namespace Step.Utilities
     /// </summary>
     public static class Documentation
     {
+        private static readonly Module UserDefinedSystemTasks = new(nameof(UserDefinedSystemTasks), null);
+
+        public static Task UserDefinedSystemTask(string name, params string[] args)
+        {
+            var fakeTaskObject = new CompoundTask(name, args.Length).Arguments(args);
+            UserDefinedSystemTasks[name] = fakeTaskObject;
+            return fakeTaskObject;
+        }
+
+        public static bool IsUserDefinedSystemTask(CompoundTask t) => UserDefinedSystemTasks.Defines(t.Name);
+
         private static string ManualEntryMaybeRichText(Task t)
         {
             var formatter = Module.RichTextStackTraces ? UnityRichTextFormatter : RawTextFormatter;
@@ -71,7 +82,7 @@ namespace Step.Utilities
         {
             var root = new ManualSection();
 
-            foreach (var b in m.AllBindings)
+            foreach (var b in m.AllBindings.Concat(UserDefinedSystemTasks.AllBindings))
                 if (b.Value is Task { HasDocumentation: true } t)
                     root.Add(t, t.ManualSection??"Miscellaneous");
 
@@ -80,9 +91,26 @@ namespace Step.Utilities
 
             using var file = File.CreateText(path);
 
-            void RenderSection(string name, ManualSection s, int level)
+            void RenderSection(string name, ManualSection s, int level, bool renderToc = false)
             {
-                file.WriteLine($"<h{level}>{name.Capitalize()}</h{level}>");
+                file.WriteLine($"<h{level} id=\"{name}\">{name.Capitalize()}</h{level}>");
+
+                if (renderToc)
+                {
+                    RenderToc(s);
+
+                    void RenderToc(ManualSection sec)
+                    {
+                        file.WriteLine("<ul>");
+                        foreach (var sub in sec.Subsections.OrderBy(pair => pair.Key))
+                        {
+                            file.WriteLine($"<li><a href=\"#{sub.Key}\">{sub.Key.Capitalize()}</a></li>");
+                            RenderToc(sub.Value);
+                        }
+                        file.WriteLine("</ul>");
+                    }
+                }
+
                 if (s.Introduction != null)
                 {
                     file.WriteLine(s.Introduction);
@@ -98,7 +126,7 @@ namespace Step.Utilities
                     RenderSection(sub.Key, sub.Value, level+1);
             }
 
-            RenderSection("Task reference", root, 1);
+            RenderSection("Task reference", root, 1, true);
         }
 
         private class ManualSection
@@ -135,6 +163,7 @@ namespace Step.Utilities
             public void Add(Task t, string sectionPath) =>
                 Add(t, sectionPath.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries));
         }
+
 
         private static readonly List<(string, string)> SectionIntroductions = new List<(string, string)>();
 

@@ -10,7 +10,6 @@ using Step.Output;
 using Step.Utilities;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia.Controls.Converters;
 
 namespace StepRepl
 {
@@ -150,6 +149,9 @@ namespace StepRepl
                 "Tasks used to check how often other tasks are run.");
             Documentation.SectionIntroduction("StepRepl//user interaction",
                 "Tasks used to allow user control of Step code.");
+            Documentation.UserDefinedSystemTask("MenuItem", "menu_name", "item_name", "call")
+                .Documentation(
+                    "User-defined.  If defined, specifies additional menus to add to the REPL.  For each solution to [MenuItem ?menu ?item ?call]], it will add an item with the specified name to the specified menu that called the specified code.");
 
             StepGraph.AddPrimitives(ReplUtilities);
             ReplUtilities.AddDefinitions(
@@ -165,7 +167,7 @@ namespace StepRepl
                 "Uncalled ?task ?subTaskPredicate ?count: [IgnoreOutput [Sample ?task ?count ?s]] [ForEach [?subTaskPredicate ?t] [Write ?t] [Not [?s ?t ?value]] [Write ?t] [NewLine]]");
 
             AddDocumentation("TestCase", "StepRepl//testing",
-                "(Defined by you).  Declares that code should be run when testing your program.");
+                "User-defined.  Declares that code should be run when testing your program.");
             AddDocumentation("RunTestCases", "StepRepl//testing", "Runs all test cases defined by TestCase.");
             AddDocumentation("Test", "StepRepl//testing", "Runs ?task ?testCount times, showing its output each time");
             AddDocumentation("Sample", "StepRepl//profiling",
@@ -203,12 +205,12 @@ namespace StepRepl
                 new GeneralPrimitive(addButton, (args, o, e, d, k) =>
                     {
                         ArgumentCountException.Check(addButton, 2, args, o);
-                        var name = args[0].ToTermString();
-                        var action = ArgumentTypeException.Cast<object[]>(addButton, args[1], args, o);
-                        if (!e.TryCopyGround(action, out var finalAction))
+                        var name = Writer.HumanForm(args[0], e.Unifications);
+                        if (!e.TryCopyGround(args[1], out var action))
                             throw new ArgumentInstantiationException(addButton, e, args, o);
-
-                        StepButton button = new(name, (object[])finalAction!, e.State);
+                        var finalAction = ArgumentTypeException.Cast<object[]>(addButton, action, args, o);
+                        
+                        StepButton button = new(name, finalAction, e.State);
                         Dispatcher.UIThread.Post(() =>
                         {
                             var activeTabContent = MainWindow.Instance.GetActiveTabContent();
@@ -292,11 +294,11 @@ namespace StepRepl
                         new TextBuffer(), env, null,
                         (o, u, s, f) =>
                         {
-                            var menuName = BindingEnvironment.Deref(menuVar, u) as string;
-                            var itemName = BindingEnvironment.Deref(itemVar, u) as string;
+                            var menuName = BindingEnvironment.Deref(menuVar, u);
+                            var itemName = BindingEnvironment.Deref(itemVar, u);
                             var call = new BindingEnvironment(env, u, s).CopyTerm(callVar) as object?[];
                             if (menuName != null && itemName != null && call != null)
-                                menus.Add((menuName, itemName, call));
+                                menus.Add((Writer.HumanForm(menuName, u), Writer.HumanForm(itemName, u), call));
                             return false;
                         });
                     Dispatcher.UIThread.Post(() =>

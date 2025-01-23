@@ -160,6 +160,9 @@ namespace Step.Interpreter
                     .Arguments("object", "?string_form")
                     .Documentation("output", "Matches ?string_form with the printed representation of object");
 
+            Documentation.UserDefinedSystemTask("Mention", "objectToPrint")
+                .Documentation("output", "User-defined; Define this task to control the printing of variable values in methods.");
+
             g["WriteVerbatim"] = new DeterministicTextMatcher("WriteVerbatim", (o =>
             {
                 switch (o)
@@ -465,6 +468,14 @@ namespace Step.Interpreter
                 new SimplePredicate<string, string>("Contains", (super, sub) => super.Contains(sub))
                     .Arguments("string", "substring")
                     .Documentation("string processing", "True if substring is a substring of string");
+
+            Documentation.SectionIntroduction("Declaration groups", "These tasks implement a very limited macro processing facility. They allow the heads of a group of methods to be automatically rewritten, usually by automatically adding arguments to their patterns.");
+            Documentation.UserDefinedSystemTask("DeclarationGroup", "[pattern ...]")
+                .Documentation("Declaration groups",
+                    "User-defined.  True when the specified pattern marks the start of a declaration group.");
+            Documentation.UserDefinedSystemTask("DeclarationExpansion", "groupPattern", "original_head", "?expanded_head")
+                .Documentation("Declaration groups",
+                    "User-defined.  True when a method appearing within a declaration group with the specified pattern should have its head rewritten from the original form to the expanded form.");
 
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();

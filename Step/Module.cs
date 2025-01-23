@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 using Step.Interpreter;
 using Step.Output;
 using Step.Parser;
+using Step.Utilities;
 using Task = Step.Interpreter.Task;
 
 [assembly: InternalsVisibleTo("Tests")]
@@ -767,7 +768,7 @@ var output = TextBuffer.NewEmpty();
             }
 
             foreach (var t in DefinedTasks)
-                if ((t.Flags & CompoundTask.TaskFlags.Main) == 0)
+                if ((t.Flags & CompoundTask.TaskFlags.Main) == 0 && !Documentation.IsUserDefinedSystemTask(t))
                 {
                     var called = false;
                     foreach (var potentialCaller in DefinedTasks)

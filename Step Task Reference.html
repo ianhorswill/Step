@@ -1,5 +1,91 @@
-<h1>Task reference</h1>
-<h2>Comparison</h2>
+<h1 id="Task reference">Task reference</h1>
+<ul>
+<li><a href="#comparison">Comparison</a></li>
+<ul>
+</ul>
+<li><a href="#control flow">Control flow</a></li>
+<ul>
+<li><a href="#calling tasks">Calling tasks</a></li>
+<ul>
+</ul>
+<li><a href="#controlling backtracking">Controlling backtracking</a></li>
+<ul>
+</ul>
+<li><a href="#looping">Looping</a></li>
+<ul>
+<li><a href="#all solutions predicates">All solutions predicates</a></li>
+<ul>
+</ul>
+</ul>
+</ul>
+<li><a href="#data structures">Data structures</a></li>
+<ul>
+<li><a href="#lists">Lists</a></li>
+<ul>
+</ul>
+</ul>
+<li><a href="#debugging">Debugging</a></li>
+<ul>
+</ul>
+<li><a href="#Declaration groups">Declaration groups</a></li>
+<ul>
+</ul>
+<li><a href="#documentation">Documentation</a></li>
+<ul>
+</ul>
+<li><a href="#exclusion logic">Exclusion logic</a></li>
+<ul>
+</ul>
+<li><a href="#higher-order predicates">Higher-order predicates</a></li>
+<ul>
+</ul>
+<li><a href="#metalogical">Metalogical</a></li>
+<ul>
+</ul>
+<li><a href="#Miscellaneous">Miscellaneous</a></li>
+<ul>
+</ul>
+<li><a href="#output">Output</a></li>
+<ul>
+</ul>
+<li><a href="#randomization">Randomization</a></li>
+<ul>
+</ul>
+<li><a href="#reflection">Reflection</a></li>
+<ul>
+<li><a href="#dynamic analysis">Dynamic analysis</a></li>
+<ul>
+</ul>
+<li><a href="#static analysis">Static analysis</a></li>
+<ul>
+</ul>
+</ul>
+<li><a href="#StepRepl">StepRepl</a></li>
+<ul>
+<li><a href="#display control">Display control</a></li>
+<ul>
+</ul>
+<li><a href="#internals">Internals</a></li>
+<ul>
+</ul>
+<li><a href="#profiling">Profiling</a></li>
+<ul>
+</ul>
+<li><a href="#testing">Testing</a></li>
+<ul>
+</ul>
+<li><a href="#user interaction">User interaction</a></li>
+<ul>
+</ul>
+</ul>
+<li><a href="#string processing">String processing</a></li>
+<ul>
+</ul>
+<li><a href="#type testing">Type testing</a></li>
+<ul>
+</ul>
+</ul>
+<h2 id="comparison">Comparison</h2>
 Predicates that test whether two values are the same or different.  Many of these use unification, in which case they are testing whether the values can be made identical through binding variables.
 <p>
 <code>[<b>&lt;</b> <i>a</i> <i>b</i>]</code><br>True when a and b are both numbers and a is smaller
@@ -14,7 +100,7 @@ Predicates that test whether two values are the same or different.  Many of thes
 <p>
 <code>[<b>Different</b> <i>a</i> <i>b</i>]</code><br>Attempts to match a and b and succeeds if they *can't* be matched
 <p>
-<h2>Control flow</h2>
+<h2 id="control flow">Control flow</h2>
 Tasks that run or otherwise control the execution of other tasks.
 <p>
 <code>[<b>And</b> <i>calls</i> <i>...</i>]</code><br>Runs each of the calls, in order.
@@ -29,7 +115,7 @@ Tasks that run or otherwise control the execution of other tasks.
 <p>
 <code>[<b>Throw</b> <i>message</i> <i>...</i>]</code><br>Throws an exception (error) containing the specified message.
 <p>
-<h3>Calling tasks</h3>
+<h3 id="calling tasks">Calling tasks</h3>
 Tasks that call another task once.
 <p>
 <code>[<b>Call</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.
@@ -42,7 +128,7 @@ Tasks that call another task once.
 <p>
 <code>[<b>SaveText</b> <i>call</i> <i>?variable</i>]</code><br>Runs call, but places its output in ?variable rather than the output buffer.
 <p>
-<h3>Controlling backtracking</h3>
+<h3 id="controlling backtracking">Controlling backtracking</h3>
 Tasks that control how or whether execution backtracks.
 <p>
 <code>[<b>ExactlyOnce</b> <i>code</i> <i>...</i>]</code><br>Runs code normally.  If the code fails, ExactlyOnce throws an exception.  If it succeeds, ExactlyOnce succeeds.  However, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.
@@ -51,7 +137,7 @@ Tasks that control how or whether execution backtracks.
 <p>
 <code>[<b>Once</b> <i>code</i> <i>...</i>]</code><br>Runs code normally, however, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.
 <p>
-<h3>Looping</h3>
+<h3 id="looping">Looping</h3>
 Tasks that repeatedly call other tasks.
 <p>
 <code>[<b>AccumulateOutput</b> <i>generator</i> <i>printer</i>]</code><br>Runs generator, finding all its solutions by backtracking.  For each solution, runs printer, accumulating their text output and changes to global variables.
@@ -62,7 +148,7 @@ Tasks that repeatedly call other tasks.
 <p>
 <code>[<b>ForEach</b> <i>generator_call</i> <i>other_calls</i> <i>...</i>]</code><br>Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings are undone.  However, all text generated and set commands performed are preserved.
 <p>
-<h4>All solutions predicates</h4>
+<h4 id="all solutions predicates">All solutions predicates</h4>
 Tasks that collect together all the solutions to a given call.
 <p>
 <code>[<b>FindAll</b> <i>?result</i> <i>call</i> <i>?all_results</i>]</code><br>Runs call, backtracking to find every possible solution to it.  For each solution, FindAll records the value of ?result, and returns a list of all ?results in order, in ?all_results.  If backtracking produces duplicate ?results, there will be multiple copies of them in ?all_results; to eliminate duplicate solutions, use FindUnique.  If call never fails, this will run forever.
@@ -77,12 +163,12 @@ Tasks that collect together all the solutions to a given call.
 <p>
 <code>[<b>Min</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable
 <p>
-<h2>Data structures</h2>
+<h2 id="data structures">Data structures</h2>
 Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictionary and and [list ?element] is true when ?element is an element of the list.
 <p>
 <code>[<b>Hashtable</b> <i>?h</i>]</code><br>Creates a new empty hash table and stores it in ?h
 <p>
-<h3>Lists</h3>
+<h3 id="lists">Lists</h3>
 Predicates access tuples/lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).
 <p>
 <code>[<b>Cons</b> <i>firstElement</i> <i>restElements</i> <i>tuple</i>]</code><br>True when tuple starts with firstElement and continues with restElements.
@@ -93,7 +179,7 @@ Predicates access tuples/lists in particular.  These work with any C# object tha
 <p>
 <code>[<b>Nth</b> <i>list</i> <i>index</i> <i>?element</i>]</code><br>True when element of list at index is ?element
 <p>
-<h2>Debugging</h2>
+<h2 id="debugging">Debugging</h2>
 Tasks used to help debug code.
 <p>
 <code>[<b>Break</b>]</code><br>When running under the Step debugger, puts the Step interpreter in single-step mode
@@ -104,12 +190,19 @@ Tasks used to help debug code.
 <p>
 <code>[<b>LogBack</b> <i>anything</i> <i>...</i>]</code><br>Adds the specified information to the event log when this call is backtracked.  This operation is not undone upon backtracking.
 <p>
-<h2>Documentation</h2>
+<h2 id="Declaration groups">Declaration groups</h2>
+These tasks implement a very limited macro processing facility. They allow the heads of a group of methods to be automatically rewritten, usually by automatically adding arguments to their patterns.
+<p>
+<code>[<b>DeclarationExpansion</b> <i>groupPattern</i> <i>original_head</i> <i>?expanded_head</i>]</code><br>User-defined.  True when a method appearing within a declaration group with the specified pattern should have its head rewritten from the original form to the expanded form.
+<p>
+<code>[<b>DeclarationGroup</b> <i>[pattern ...]</i>]</code><br>User-defined.  True when the specified pattern marks the start of a declaration group.
+<p>
+<h2 id="documentation">Documentation</h2>
 <code>[<b>Apropos</b> <i>topic</i>]</code><br>Print documentation for all tasks that mention topic.
 <p>
 <code>[<b>Help</b> <i>task</i>]</code><br>Print documentation for task
 <p>
-<h2>Exclusion logic</h2>
+<h2 id="exclusion logic">Exclusion logic</h2>
 Implementation of Richard Evans' exclusion logic, aka eremic logic.  Not that this implementation follows the syntactic conventions of UnityProlog, meaning that the non-exclusive concatenation operator is / and the exclusive one is !
 <p>
 <code>[<b>/</b> <i>sentence</i>]</code><br>True if sentence unifies with at least one sentence in the KB.
@@ -120,7 +213,7 @@ Implementation of Richard Evans' exclusion logic, aka eremic logic.  Not that th
 <p>
 <code>[<b>ElStore</b> <i>sentence</i>]</code><br>Adds sentence to KB.  If sentence contains ! operators then these will overwrite any existing data.
 <p>
-<h2>Higher-order predicates</h2>
+<h2 id="higher-order predicates">Higher-order predicates</h2>
 Predicates that run other predicates.
 <p>
 <code>[<b>Implies</b> <i>higher-order predicates</i> <i>other_calls</i> <i>...</i>]</code><br>True if for every solution to generator_call, other_calls succeeds.  So this is essentially like ForEach, but whereas ForEach always succeeds, Implies fails if other_calls ever fails.  Text output and sets of global variables are preserved, as with ForEach.
@@ -129,7 +222,7 @@ Predicates that run other predicates.
 <p>
 <code>[<b>NotAny</b> <i>call</i>]</code><br>Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.
 <p>
-<h2>Metalogical</h2>
+<h2 id="metalogical">Metalogical</h2>
 Predicates that test the binding state of a variable.
 <p>
 <code>[<b>CopyTerm</b> <i>in</i> <i>out</i>]</code><br>Sets out to a copy of in with fresh variables, so that unifications to one don't affect the other
@@ -142,17 +235,21 @@ Predicates that test the binding state of a variable.
 <p>
 <code>[<b>Var</b> <i>x</i>]</code><br>Succeeds when its argument is an uninstantiated variable (a variable without a value)
 <p>
-<h2>Miscellaneous</h2>
+<h2 id="Miscellaneous">Miscellaneous</h2>
 <code>[<b>AddButton</b> <i>label</i> <i>code</i>]</code><br>Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.
+<p>
+<code>[<b>MenuItem</b> <i>menu_name</i> <i>item_name</i> <i>call</i>]</code><br>User-defined.  If defined, specifies additional menus to add to the REPL.  For each solution to [MenuItem ?menu ?item ?call]], it will add an item with the specified name to the specified menu that called the specified code.
 <p>
 <code>[<b>TreeSearch</b> <i>startNode</i> <i>finalNode</i> <i>utility</i> <i>NextNode</i> <i>GoalNode</i> <i>NodeUtility</i>]</code><br>Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.
 <p>
-<h2>Output</h2>
+<h2 id="output">Output</h2>
 Tasks that print things.
 <p>
 <code>[<b>ForceSpace</b>]</code><br>Forces a space to be inserted between two tokens that wouldn't normally be separated.  For example, &quot;a .&quot; prints as &quot;a.&quot; but &quot;a [ForceSpace] .&quot; prints as &quot;a .&quot;
 <p>
 <code>[<b>FreshLine</b>]</code><br>Starts a new line, unless we're already at the start of a new line
+<p>
+<code>[<b>Mention</b> <i>objectToPrint</i>]</code><br>User-defined; Define this task to control the printing of variable values in methods.
 <p>
 <code>[<b>NewLine</b>]</code><br>Starts a new line
 <p>
@@ -168,7 +265,7 @@ Tasks that print things.
 <p>
 <code>[<b>WriteVerbatim</b> <i>object</i>]</code><br>Prints object; _'s are printed as themselves rather than changed to spaces,
 <p>
-<h2>Randomization</h2>
+<h2 id="randomization">Randomization</h2>
 Tasks that choose random numbers or list elements.
 <p>
 <code>[<b>RandomElement</b> <i>list</i> <i>?element</i>]</code><br>Sets ?element to a random element of list.  If this is backtracked, it generates a random shuffle of the elements of this list.  However, not all shuffles are possible; it starts with a random element and moves to subsequent elements with a random step size.
@@ -177,10 +274,10 @@ Tasks that choose random numbers or list elements.
 <p>
 <code>[<b>RandomIntegerInclusive</b> <i>min</i> <i>max</i> <i>?random</i>]</code><br>Sets ?random to a random integer such that min &lt;= ?random &lt;= max
 <p>
-<h2>Reflection</h2>
+<h2 id="reflection">Reflection</h2>
 Predicates that can be used by a program to reason about itself.
 <p>
-<h3>Dynamic analysis</h3>
+<h3 id="dynamic analysis">Dynamic analysis</h3>
 Predicates that can be used by a program to check what tasks have been called in this execution path.
 <p>
 <code>[<b>CallerChainAncestor</b> <i>frame</i> <i>?method</i>]</code><br>True if ?method called frame's method or some other method that eventually called this frame's method.
@@ -193,7 +290,7 @@ Predicates that can be used by a program to check what tasks have been called in
 <p>
 <code>[<b>UniqueCall</b> <i>?call_pattern</i>]</code><br>Calls ?call_pattern, finding successive solutions until one is found that can't be unified with a previous successful call.
 <p>
-<h3>Static analysis</h3>
+<h3 id="static analysis">Static analysis</h3>
 Predicates that can be used by a program to check what tasks can call what other tasks.
 <p>
 <code>[<b>TaskCalls</b> <i>?caller</i> <i>?callee</i>]</code><br>True if task ?caller has a method that calls ?callee
@@ -202,24 +299,24 @@ Predicates that can be used by a program to check what tasks can call what other
 <p>
 <code>[<b>TaskSubtask</b> <i>?task</i> <i>?call</i>]</code><br>True if task ?caller has a method that contains the call ?call.
 <p>
-<h2>StepRepl</h2>
+<h2 id="StepRepl">StepRepl</h2>
 These tasks are defined by the StepRepl IDE.  To use them within a game not running inside StepRepl, you would need to copy their source into your game.
 <p>
 <code>[<b>EnvironmentOption</b> <i>argument</i> <i>...</i>]</code><br>Asks StepRepl or whatever other program this Step code is running in to change its handling of step code.
 <p>
-<h3>Display control</h3>
+<h3 id="display control">Display control</h3>
 Tasks that control how and when text is displayed on the screen.
 <p>
 <code>[<b>ClearOutput</b>]</code><br>Throws away any previously generated output
 <p>
 <code>[<b>SampleOutputText</b>]</code><br>Update the screen with a snapshot of the current output, even if the program hasn't finished running yet.  This is used for testing code that is running something over and over again so you can see that it's still running.
 <p>
-<h3>Internals</h3>
+<h3 id="internals">Internals</h3>
 These are internal functions used by StepRepl.
 <p>
 <code>[<b>PrintLocalBindings</b>]</code><br>Prints the values of all local variables.  There probably isn't any reason for you to use this directly, but it's used by StepRepl to print the results of queries.
 <p>
-<h3>Profiling</h3>
+<h3 id="profiling">Profiling</h3>
 Tasks used to check how often other tasks are run.
 <p>
 <code>[<b>CallCounts</b> <i>?task</i> <i>?subTaskPredicate</i> <i>?count</i>]</code><br>Runs ?Task ?count times, then displays the counts of every subtask that satisfies ?subTaskPredicate.
@@ -232,17 +329,17 @@ Tasks used to check how often other tasks are run.
 <p>
 <code>[<b>Uncalled</b> <i>?task</i> <i>?subTaskPredicate</i> <i>?count</i>]</code><br>Runs ?task ?count times, then displays every task satisfying ?subTaskPredicate that is never called.
 <p>
-<h3>Testing</h3>
+<h3 id="testing">Testing</h3>
 <code>[<b>RunTestCases</b>]</code><br>Runs all test cases defined by TestCase.
 <p>
 <code>[<b>Test</b> <i>?task</i> <i>?testCount</i>]</code><br>Runs ?task ?testCount times, showing its output each time
 <p>
-<code>[<b>TestCase</b> <i>?code</i>]</code><br>(Defined by you).  Declares that code should be run when testing your program.
+<code>[<b>TestCase</b> <i>?code</i>]</code><br>User-defined.  Declares that code should be run when testing your program.
 <p>
-<h3>User interaction</h3>
+<h3 id="user interaction">User interaction</h3>
 Tasks used to allow user control of Step code.
 <p>
-<h2>String processing</h2>
+<h2 id="string processing">String processing</h2>
 Predicates that test the spelling of strings.
 <p>
 <code>[<b>Contains</b> <i>string</i> <i>substring</i>]</code><br>True if substring is a substring of string
@@ -261,7 +358,7 @@ Predicates that test the spelling of strings.
 <p>
 <code>[<b>Upcased</b> <i>string, ?upcased</i>]</code><br>True when upcased is the string with all alphabetic characters converted to uppercase.
 <p>
-<h2>Type testing</h2>
+<h2 id="type testing">Type testing</h2>
 Predicates that test what type of data object their argument is.  These fail when the argument is an unbound variable.
 <p>
 <code>[<b>BinaryTask</b> <i>x</i>]</code><br>Succeeds when its argument is 2-argument task

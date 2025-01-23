@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Step.Interpreter;
 
@@ -164,5 +166,22 @@ namespace Step.Output
             
             return b.ToString();
         }
+
+        public static string HumanForm(object? o, BindingList? bindings = null) =>
+            o switch
+            {
+                string s => s,
+                string[] text => text.Untokenize(),
+                _ => TermToString(o, bindings)
+            };
+
+        public static string HumanForm(IEnumerable<object?> items, BindingList? bindings = null) =>
+            items.SelectMany(o => o switch
+            {
+                string s => new[] { s },
+                string[] text => text,
+                _ => new[] { TermToString(o, bindings) }
+            }).Untokenize();
+
     }
 }
