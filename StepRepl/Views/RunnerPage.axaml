@@ -131,7 +131,7 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="interpreter:MethodCallFrame">
                                         <SelectableTextBlock
-                                            Inlines="{Binding CallSourceText, Converter={StaticResource htmlTextFormatter}}"
+                                            Inlines="{Binding CallSourceTextWithCurrentBindings, Converter={StaticResource htmlTextFormatter}}"
                                             Foreground="{DynamicResource ErrorMessageColor}" FontSize="14"
                                             TextWrapping="Wrap"
                                             ToolTip.Tip="This is a task that was running when the error occurred.  You can click on it to view the code for the task in Visual Studio Code."
@@ -149,7 +149,7 @@
                     </Expander>
 
                     <!-- Warning display information -->
-                    <Expander x:Name="WarningLabel" IsExpanded="False" IsVisible="False" Margin="0, 10">
+                    <Expander x:Name="WarningLabel" IsExpanded="True" IsVisible="False" Margin="0, 10">
                         <Expander.Header>
                             <SelectableTextBlock
                                 Text="Possible problems in your code. These may not be errors, but they're worth checking."

@@ -280,7 +280,11 @@ namespace StepRepl
                 if (ProjectDirectory != "")
                 {
                     Console.WriteLine($"Loaded Step project at {ProjectDirectory}");
-                    Dispatcher.UIThread.Post(() => MainWindow.Instance.SetTabDisplayName(RunnerPage.Singleton, $"{StepCode.ProjectName}"));
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        MainWindow.Instance.SetTabDisplayName(RunnerPage.Singleton, $"{StepCode.ProjectName}");
+                        RunnerPage.Singleton.Clear();
+                    });
                 }
 
                 if (Module.Defines("MenuItem"))

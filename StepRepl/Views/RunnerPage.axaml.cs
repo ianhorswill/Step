@@ -153,6 +153,12 @@ public partial class RunnerPage : UserControl
     /// Remove all buttons
     /// </summary>
     private void ClearButtons() => ButtonPanelItems.Items.Clear();
+
+    public void Clear()
+    {
+        ClearButtons();
+        UpdateExceptionInfo();
+    }
     
     #endregion
     
