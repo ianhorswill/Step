@@ -366,6 +366,8 @@ namespace Step.Interpreter
             if (ReadCache)
             {
                 // Check for a hit in the cache.  If we find one, we're done.
+                // This will always fail when arglist isn't ground.  The next branch
+                // handles the non-ground case.
                 if (Cache.TryGetValue(env.State, arglist, out var result))
                 {
                     if (result.Success)
@@ -389,8 +391,9 @@ namespace Step.Interpreter
                         // We have a match on a cached fail result, so force a failure, skipping over the methods.
                         goto failed;
                 }
+                // If there are variables in the arglist, exhaustively try all the cache entries
                 else if (!Term.IsGround(arglist))
-                    foreach (var pair in Cache.Bindings(env.State))
+                    foreach (var pair in Shuffle ? Cache.Bindings(env.State) : Cache.Bindings(env.State).ToArray().ShuffleInPlace())
                     {
                         if (pair.Value.Success
                             && env.UnifyArrays((object[]) pair.Key, arglist,
@@ -410,7 +413,7 @@ namespace Step.Interpreter
                 env = new BindingEnvironment(env, env.Unifications, s);
             }
 
-            var methods = this.EffectiveMethods;
+            var methods = EffectiveMethods;
             for (var index = 0; index < methods.Count && !(this.Deterministic && successCount > 0); index++)
             {
                 var method = methods[index];

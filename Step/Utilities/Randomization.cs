@@ -35,6 +35,22 @@ namespace Step.Utilities
         /// <summary>
         /// Make a randomly permuted copy of sequence
         /// </summary>
+        public static T[] ShuffleInPlace<T>(this T[] array)
+        {
+            for (var i = array.Length - 1; i > 0; i--)
+            {
+                var index = Random.Next(i + 1);
+                var temp = array[i];
+                array[i] = array[index];
+                array[index] = temp;
+            }
+
+            return array;
+        }
+
+        /// <summary>
+        /// Make a randomly permuted copy of sequence
+        /// </summary>
         public static T[] Shuffle<T>(this IList<T> sequence)
         {
             var result = sequence.ToArray();
