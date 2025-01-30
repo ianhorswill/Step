@@ -31,7 +31,7 @@ namespace Tests
         [TestMethod]
         public void Generate()
         {
-            Step.Utilities.Documentation.WriteHtmlReference(StepRepl.StepCode.ReplUtilities, "../../../../Step Task Reference.html");
+            Step.Utilities.Documentation.WriteHtmlReference(StepRepl.StepCode.ReplUtilities, "../../../../Documentation/Step Task Reference.html");
         }
     }
 }
