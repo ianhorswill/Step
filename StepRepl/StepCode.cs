@@ -206,6 +206,10 @@ namespace StepRepl
                     {
                         ArgumentCountException.Check(addButton, 2, args, o);
                         var name = Writer.HumanForm(args[0], e.Unifications);
+                        // Kluge: Avalonia treats the first instance of an _ in a label specially.
+                        // So we have to escape all the _'s by doubling them.
+                        name = name.Replace("_", "__");
+
                         if (!e.TryCopyGround(args[1], out var action))
                             throw new ArgumentInstantiationException(addButton, e, args, o);
                         var finalAction = ArgumentTypeException.Cast<object[]>(addButton, action, args, o);
@@ -287,14 +291,15 @@ namespace StepRepl
                     });
                 }
 
-                if (Module.Defines("MenuItem"))
+                if (Module.Defines("MenuItem") && Module["MenuItem"] is CompoundTask task)
                 {
+                    task.Flags |= CompoundTask.TaskFlags.MultipleSolutions | CompoundTask.TaskFlags.Fallible;
                     var menuVar = new LogicVariable("?menu", 0);
                     var itemVar = new LogicVariable("?item", 1);
                     var callVar = new LogicVariable("?call", 2);
                     var menus = new List<(string menu, string item, object?[] call)>();
                     var env = new BindingEnvironment(Module, null, null, State.Empty);
-                    ((CompoundTask)Module["MenuItem"]).Call(new object[] { menuVar, itemVar, callVar },
+                    task.Call(new object[] { menuVar, itemVar, callVar },
                         new TextBuffer(), env, null,
                         (o, u, s, f) =>
                         {

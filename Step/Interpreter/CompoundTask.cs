@@ -255,7 +255,7 @@ namespace Step.Interpreter
             Function = 256,
         }
 
-        internal TaskFlags Flags;
+        public TaskFlags Flags;
 
         /// <summary>
         /// Programmatic interface for declaring attributes of task

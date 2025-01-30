@@ -367,7 +367,7 @@ public partial class RunnerPage : UserControl
             Header = itemName
         };
 
-        item.Click += (sender, args) => StepCode.Eval(call);
+        item.Click += (sender, args) => EvalAndShowOutput(StepCode.Eval(call));
 
         UserMenu(menuName).Items.Add(item);
     }
