@@ -490,6 +490,13 @@ namespace Step.Interpreter
         }
 
         /// <summary>
+        /// Return a state in which the cache has been flushed
+        /// </summary>
+        /// <param name="s">Old state</param>
+        /// <returns>New state in which the cache is empty.</returns>
+        public State ClearCache(State s) => Cache.Clear(s);
+
+        /// <summary>
         /// All the tasks called by this task
         /// </summary>
         public IEnumerable<object> Callees => Methods.SelectMany(m => m.Callees).Distinct();

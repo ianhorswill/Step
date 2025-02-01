@@ -147,11 +147,11 @@ namespace StepRepl.GraphVisualization
             edges.Call(edgeArgs, o, e, predecessor, (no, u, s, f) =>
             {
                 var env = new BindingEnvironment(e, u, s);
-                var start = env.Resolve(startNodeVar);
-                var end = env.Resolve(endNodeVar);
-                var label = edgeArgCount>2?StringifyStepObject(env.Resolve(labelVar)):null;
+                var start = env.Resolve(startNodeVar, env.Unifications, true);
+                var end = env.Resolve(endNodeVar, env.Unifications, true);
+                var label = edgeArgCount>2?StringifyStepObject(env.Resolve(labelVar, env.Unifications, true)):null;
                 var color = edgeArgCount > 3 ? env.Resolve(colorVar) as string : null;
-                var thisEdgeDirected = edgeArgCount > 4 ? (bool)env.Resolve(directedVar) : directed;
+                var thisEdgeDirected = edgeArgCount > 4 ? (bool)env.Resolve(directedVar, env.Unifications, true) : directed;
                 var edge = new Graph<object>.Edge(
                     start, end, 
                     thisEdgeDirected,
@@ -170,7 +170,7 @@ namespace StepRepl.GraphVisualization
                 nodes.Call(nodesArgs, o, e, predecessor, (no, u, s, f) =>
                 {
                     var env = new BindingEnvironment(e, u, s);
-                    var node = env.Resolve(nodeVar);
+                    var node = env.Resolve(nodeVar, env.Unifications, true);
                     if (!graph.Nodes.Contains(node))
                         graph.AddNode(node);
                     return false;
@@ -198,7 +198,7 @@ namespace StepRepl.GraphVisualization
             if (colorByComponent)
                 graph.RecolorByComponent();
             ShowGraph(windowName, graph);
-            return true;
+            return k(o, e.Unifications, e.State, predecessor);
         }
 
 

@@ -63,6 +63,34 @@ namespace Step
             return Recur(a, b);
         }
 
+        public class Canonicalizer
+        {
+            private readonly Dictionary<object?[], object?[]> tupleTable = new(Comparer.Default);
+
+            public object? this[object? o] => CanonicalForm(o);
+
+            private object? CanonicalForm(object? o, BindingList? bindingList = null)
+            {
+                o = BindingEnvironment.Deref(o, bindingList);
+                switch (o)
+                {
+                    case object?[] tuple:
+                    {
+                        var mapped = new object?[tuple.Length];
+                        for (var i = 0; i < tuple.Length; i++)
+                            mapped[i] = CanonicalForm(tuple[i], bindingList);
+                        if (tupleTable.TryGetValue(mapped, out var canonical))
+                            return canonical;
+                        tupleTable[mapped] = mapped;
+                        return mapped;
+                    }
+
+                    default:
+                        return o;
+                }
+            }
+        }
+
         /// <summary>
         /// IEqualityComparer for terms in the step language.
         /// This does recursive comparison and hashing for object[] values, and the default

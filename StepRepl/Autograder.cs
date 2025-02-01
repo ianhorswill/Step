@@ -24,6 +24,15 @@ namespace StepRepl
             .Arguments("task")
             .Documentation("StepRepl//utilities", "Removes all methods from the task.");
 
+            g["ResetFluent"] = new GeneralPrimitive("ResetFluent", (args, output, env, frame, k) =>
+                {
+                    ArgumentCountException.Check("ResetFluent", 1, args, output);
+                    var fluent = ArgumentTypeException.Cast<CompoundTask>("ResetFluent", args[0], args, output);
+                    return k(output, env.Unifications, fluent.ClearCache(env.State), frame);
+                })
+                .Arguments("task")
+                .Documentation("StepRepl//utilities", "Removes all methods from the task.");
+
         g["MakeModule"] = new SimpleFunction<string, Module>("MakeModule",
             path =>
             {

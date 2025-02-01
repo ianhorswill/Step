@@ -89,6 +89,13 @@ namespace Step
         }
 
         /// <summary>
+        /// Remove all bindings from this dictionary
+        /// </summary>
+        /// <param name="oldState">Current state</param>
+        /// <returns>New state in which the dictionary is empty</returns>
+        public State Clear(State oldState) => oldState.Bind(this, empty);
+
+        /// <summary>
         /// Get all the key/value bindings currently in effect for this dictionary in the specified state.
         /// </summary>
         public IEnumerable<KeyValuePair<TKey, TValue>> Bindings(State s) => Dictionary(s) ?? empty;
