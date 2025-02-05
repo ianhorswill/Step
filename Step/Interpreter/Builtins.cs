@@ -163,7 +163,7 @@ namespace Step.Interpreter
             Documentation.UserDefinedSystemTask("Mention", "objectToPrint")
                 .Documentation("output", "User-defined; Define this task to control the printing of variable values in methods.");
 
-            g["WriteVerbatim"] = new DeterministicTextMatcher("WriteVerbatim", (o =>
+            g["WriteVerbatim"] = new DeterministicTextMatcher("WriteVerbatim", (o, b) =>
             {
                 switch (o)
                 {
@@ -172,13 +172,13 @@ namespace Step.Interpreter
                     case string[] tokens:
                         return tokens;
                     default:
-                        return new[] {Writer.TermToString(o)};
+                        return new[] {Writer.TermToString(o, b)};
                 }
-            }))
+            })
                 .Arguments("object")
                 .Documentation("output", "Prints object; _'s are printed as themselves rather than changed to spaces,");
             
-            WritePrimitive = new DeterministicTextMatcher("Write", (o =>
+            WritePrimitive = new DeterministicTextMatcher("Write", (o,b) =>
             {
                 switch (o)
                 {
@@ -187,15 +187,15 @@ namespace Step.Interpreter
                     case string[] tokens:
                         return tokens.Length == 0? tokens : tokens.Skip(1).Prepend(tokens[0].Capitalize()).ToArray();
                     default:
-                        return new[] {Writer.TermToString(o).Replace('_', ' ')};
+                        return new[] {Writer.TermToString(o,b).Replace('_', ' ')};
                 }
-            }));
+            });
 
             g["Write"] = WritePrimitive
                 .Arguments("object")
                 .Documentation("output", "Prints object, transforming _'s to spaces");
 
-            g["WriteCapitalized"] = new DeterministicTextMatcher("WriteCapitalized", (o =>
+            g["WriteCapitalized"] = new DeterministicTextMatcher("WriteCapitalized", (o,b) =>
             {
                 switch (o)
                 {
@@ -204,9 +204,9 @@ namespace Step.Interpreter
                     case string[] tokens:
                         return tokens.Length == 0 ? tokens : tokens.Skip(1).Prepend(tokens[0].Capitalize()).ToArray();
                     default:
-                        return new[] { Writer.TermToString(o).Replace('_', ' ').Capitalize() };
+                        return new[] { Writer.TermToString(o,b).Replace('_', ' ').Capitalize() };
                 }
-            }))
+            })
                 .Arguments("object")
                 .Documentation("output", "Prints object, transforming _'s to spaces.  If the first character of the output is a lower-case letter, it will capitalize it.");
 
@@ -355,6 +355,16 @@ namespace Step.Interpreter
                 null)
                 .Arguments("list", "?element")
                 .Documentation("randomization","Sets ?element to a random element of list.  If this is backtracked, it generates a random shuffle of the elements of this list.  However, not all shuffles are possible; it starts with a random element and moves to subsequent elements with a random step size.");
+
+            g["Gaussian"] = new SimpleFunction<float, float, float>("Gaussian", (mean, stdev) =>
+                {
+                    double a = 1-Randomization.Random.NextDouble();
+                    double b = 1-Randomization.Random.NextDouble();
+                    var sigma = Math.Sqrt(-2 * Math.Log(a)) * Math.Log(2 * Math.PI * b);
+                    return (float)(mean + sigma * stdev);
+                })
+                .Arguments("mean", "stdev", "random")
+                .Documentation("Generates a random, normally distributed floating-point value with the specified mean and standard deviation.");
 
             Documentation.SectionIntroduction("string processing",
                 "Predicates that test the spelling of strings.");

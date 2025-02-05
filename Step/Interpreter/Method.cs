@@ -102,7 +102,7 @@ namespace Step.Interpreter
             var newEnv = new BindingEnvironment(env, newFrame);
             if (newEnv.UnifyArrays(args, newEnv.ResolveList(ArgumentPattern), out BindingEnvironment finalEnv))
             {
-                Console.WriteLine(Writer.TermToString(args));
+                //Console.WriteLine(Writer.TermToString(args));
                 env.Module.TraceMethod(Module.MethodTraceEvent.Enter, this, args, output, finalEnv);
                 newFrame.BindingsAtCallTime = finalEnv.Unifications;
                 var traceK = env.Module.Trace == null

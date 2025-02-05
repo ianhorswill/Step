@@ -189,7 +189,7 @@ namespace StepRepl
                             output[index++] = v.Name.Name;
                             output[index++] = "=";
                             var value = bindings.CopyTerm(v);
-                            output[index++] = Writer.TermToString(value); //+$":{value.GetType().Name}";
+                            output[index++] = Writer.TermToString(value, bindings.Unifications); //+$":{value.GetType().Name}";
                             output[index++] = TextUtilities.NewLineToken;
                         }
 

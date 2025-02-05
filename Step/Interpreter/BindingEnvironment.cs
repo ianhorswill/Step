@@ -161,6 +161,9 @@ namespace Step.Interpreter
                         array[i++] = e;
                     return array;
 
+                case FeatureStructure s:
+                    return s.Resolve(this, unifications, compressPairs);
+
                 default:
                     return term;
             }
@@ -277,6 +280,9 @@ namespace Step.Interpreter
 
             if (a is object[] aa && b is object[] ba && aa.Length == ba.Length)
                 return UnifyArrays(aa, ba, inUnifications, out outUnifications);
+
+            if (a is FeatureStructure fa && b is FeatureStructure fb)
+                return FeatureStructure.Unify(fa, fb, this, out outUnifications);
 
             outUnifications = inUnifications;
             return false;

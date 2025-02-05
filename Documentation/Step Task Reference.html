@@ -241,6 +241,8 @@ Predicates that test the binding state of a variable.
 <h2 id="Miscellaneous">Miscellaneous</h2>
 <code>[<b>AddButton</b> <i>label</i> <i>code</i>]</code><br>Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.
 <p>
+<code>[<b>Gaussian</b> <i>mean</i> <i>stdev</i> <i>random</i>]</code><br>Generates a random, normally distributed floating-point value with the specified mean and standard deviation.
+<p>
 <code>[<b>MenuItem</b> <i>menu_name</i> <i>item_name</i> <i>call</i>]</code><br>User-defined.  If defined, specifies additional menus to add to the REPL.  For each solution to [MenuItem ?menu ?item ?call]], it will add an item with the specified name to the specified menu that called the specified code.
 <p>
 <code>[<b>TreeSearch</b> <i>startNode</i> <i>finalNode</i> <i>utility</i> <i>NextNode</i> <i>GoalNode</i> <i>NodeUtility</i>]</code><br>Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.

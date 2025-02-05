@@ -24,6 +24,7 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -404,6 +405,10 @@ namespace Step.Parser
                     return text;
                 case object[] list:
                     return CanonicalizeArglist(list);
+
+                case TupleExpression { BracketStyle: "{}" } featureStructure:
+                    return ParseFeatureStructure(featureStructure.Elements);
+                    
                 case TupleExpression t:
                     return CanonicalizeArglist(t.Elements);
 
@@ -412,6 +417,32 @@ namespace Step.Parser
             }
 
             return o;
+        }
+
+        private object? ParseFeatureStructure(IList elementDeclarations)
+        {
+            List<(string, object?)> bindings = new();
+
+            int i;
+            for (i = 0; i <= elementDeclarations.Count-3; i += 3)
+            {
+                var featureSpec = elementDeclarations[i];
+                var feature = featureSpec as string;
+                if (feature == null)
+                    throw new SyntaxError(
+                        Writer.TermToString(featureSpec) + " is not a valid feature name in a { } expression." +
+                        featureSpec.GetType().Name, feature, lineNumber);
+                if (!elementDeclarations[i + 1].Equals(":"))
+                    throw new SyntaxError($"Feature name {feature} should end with a colon.", SourcePath, lineNumber);
+                var value = Canonicalize(elementDeclarations[i + 2]);
+                bindings.Add((feature,value));
+            }
+
+            if (i != elementDeclarations.Count)
+                throw new SyntaxError("{ } expression should be of the form: { feature: value feature: value ...}.",
+                    SourcePath, lineNumber);
+
+            return new FeatureStructure(bindings);
         }
 
         private void IncrementReferenceCount(LocalVariableName v)
@@ -664,6 +695,16 @@ namespace Step.Parser
                             // Skip close quote
                             Get();
                         pattern.Add(strings.ToArray());
+                        break;
+
+                    case string curly when curly == "{":
+                        var featureSpecs = new List<object?>();
+                        while (!Equals(Peek, "}") && !end) featureSpecs.Add(Get());
+                        if (end)
+                            throw new SyntaxError("Method head ended in the middle of a { ... } expression.",
+                                SourcePath, lineNumber);
+                        Get(); // Swallow close-curly
+                        pattern.Add(ParseFeatureStructure(featureSpecs));
                         break;
                     
                     case string paren when paren == "(":
