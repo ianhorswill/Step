@@ -479,6 +479,14 @@ namespace Step.Interpreter
                     .Arguments("string", "substring")
                     .Documentation("string processing", "True if substring is a substring of string");
 
+            Documentation.SectionIntroduction("math",
+                "Predicates that test the spelling of strings.");
+
+            g[nameof(LinearInterpolate)] = new SimpleFunction<float,object[], object[], float>(
+                nameof(LinearInterpolate), LinearInterpolate)
+                .Arguments("argument", "[control_point_arguments ...]", "[control_point_values ...]", "?result")
+                .Documentation("Evaluates a piecewise-linear function defined by the specified control points at the specified argument and returns its value.");
+
             Documentation.SectionIntroduction("Declaration groups", "These tasks implement a very limited macro processing facility. They allow the heads of a group of methods to be automatically rewritten, usually by automatically adding arguments to their patterns.");
             Documentation.UserDefinedSystemTask("DeclarationGroup", "[pattern ...]")
                 .Documentation("Declaration groups",
@@ -591,6 +599,26 @@ namespace Step.Interpreter
 
             public static PriorityQueueComparer Max = new PriorityQueueComparer();
             public static PriorityQueueComparer Min = new PriorityQueueComparer() { sign = -1 };
+        }
+
+        public static float LinearInterpolate(float arg, object[] controlArgs, object[] controlValues)
+            => ((IPiecewiseLinearFunction)new LinearInterpolateWrapper(controlArgs, controlValues)).Evaluate(arg);
+
+        private sealed class LinearInterpolateWrapper : IPiecewiseLinearFunction
+        {
+            private readonly object[] args;
+            private readonly object[] values;
+
+            public LinearInterpolateWrapper(object[] args, object[] values)
+            {
+                this.args = args;
+                this.values = values;
+            }
+
+            public int ControlPointCount => args.Length;
+            public float ControlPointArgument(int cpIndex) => Convert.ToSingle(args[cpIndex]);
+
+            public float ControlPointValue(int cpIndex)  => Convert.ToSingle(values[cpIndex]);
         }
     }
 }

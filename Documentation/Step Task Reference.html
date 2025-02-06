@@ -39,6 +39,9 @@
 <li><a href="#higher-order predicates">Higher-order predicates</a></li>
 <ul>
 </ul>
+<li><a href="#math">Math</a></li>
+<ul>
+</ul>
 <li><a href="#metalogical">Metalogical</a></li>
 <ul>
 </ul>
@@ -225,6 +228,9 @@ Predicates that run other predicates.
 <p>
 <code>[<b>NotAny</b> <i>call</i>]</code><br>Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.
 <p>
+<h2 id="math">Math</h2>
+Predicates that test the spelling of strings.
+<p>
 <h2 id="metalogical">Metalogical</h2>
 Predicates that test the binding state of a variable.
 <p>
@@ -242,6 +248,8 @@ Predicates that test the binding state of a variable.
 <code>[<b>AddButton</b> <i>label</i> <i>code</i>]</code><br>Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.
 <p>
 <code>[<b>Gaussian</b> <i>mean</i> <i>stdev</i> <i>random</i>]</code><br>Generates a random, normally distributed floating-point value with the specified mean and standard deviation.
+<p>
+<code>[<b>LinearInterpolate</b> <i>argument</i> <i>[control_point_arguments ...]</i> <i>[control_point_values ...]</i> <i>?result</i>]</code><br>Evaluates a piecewise-linear function defined by the specified control points at the specified argument and returns its value.
 <p>
 <code>[<b>MenuItem</b> <i>menu_name</i> <i>item_name</i> <i>call</i>]</code><br>User-defined.  If defined, specifies additional menus to add to the REPL.  For each solution to [MenuItem ?menu ?item ?call]], it will add an item with the specified name to the specified menu that called the specified code.
 <p>
