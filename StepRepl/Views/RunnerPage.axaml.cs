@@ -81,9 +81,20 @@ public partial class RunnerPage : UserControl
 
         string command = textBox.Text;
         textBox.Text = "";
-        if (string.IsNullOrEmpty(command)) return;
+        if (string.IsNullOrEmpty(command))
+        {
+            if (ViewModel.CommandHistory.Count == 0)
+                return;
+            command = ViewModel.CommandHistory[0];
+        } else 
+            ViewModel.AddCommandHistory(command);
 
-        ViewModel.AddCommandHistory(command);
+        if (StepThread.Current != null && !StepThread.Current.IsCompleted)
+        {
+            StepThread.Current.Abort();
+            System.Threading.Thread.Sleep(100);
+        }
+        
         LogViewModel.Singleton.Clear();
         await EvalAndShowOutput(command, ViewModel.EvalWithDebugging);
     }

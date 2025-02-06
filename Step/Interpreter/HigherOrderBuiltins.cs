@@ -135,7 +135,7 @@ namespace Step.Interpreter
                 .Documentation("control flow//looping//all solutions predicates", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable");
             g[nameof(SaveText)] = new GeneralPrimitive(nameof(SaveText), SaveText)
                 .Arguments("call", "?variable")
-                .Documentation("control flow//calling tasks", "Runs call, but places its output in ?variable rather than the output buffer.");
+                .Documentation("control flow//calling tasks", "Runs call, but places its output in ?variable rather than the output buffer.  Does not preserve variable bindings, output, or state changes, other than saving the output in the second argument.");
             g[nameof(PreviousCall)] = new GeneralPrimitive(nameof(PreviousCall), PreviousCall)
                 .Arguments("?call_pattern")
                 .Documentation("reflection//dynamic analysis", "Unifies ?call_pattern with the most recent successful call that matches it.  Backtracking will match against previous calls.");

@@ -268,7 +268,7 @@ namespace Step
                 {
                     var task = value as CompoundTask;
                     if (task == null)
-                        throw new ArgumentException($"{v.Name} is not a task.  It is defined as {value}.");
+                        throw new ArgumentException($"{v.Name} is not a compound task.  It is defined as {value}.");
                     return task;
                 }
                 if (m.Parent != null)

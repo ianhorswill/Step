@@ -129,7 +129,7 @@ Tasks that call another task once.
 <p>
 <code>[<b>Parse</b> <i>call</i> <i>text</i>]</code><br>True if call can generate text as its output.  This is done by running call and backtracking whenever its output diverges from text.  Used to determine if a grammar can generate a given string.
 <p>
-<code>[<b>SaveText</b> <i>call</i> <i>?variable</i>]</code><br>Runs call, but places its output in ?variable rather than the output buffer.
+<code>[<b>SaveText</b> <i>call</i> <i>?variable</i>]</code><br>Runs call, but places its output in ?variable rather than the output buffer.  Does not preserve variable bindings, output, or state changes, other than saving the output in the second argument.
 <p>
 <h3 id="controlling backtracking">Controlling backtracking</h3>
 Tasks that control how or whether execution backtracks.
