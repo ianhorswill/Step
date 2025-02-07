@@ -419,6 +419,11 @@ namespace Step.Parser
             return o;
         }
 
+        /// <summary>
+        /// Parse a feature structure that's inside of a call.
+        /// These are represented in the token stream as complex objects, so we don't have to deal with curly braces;
+        /// the front end has already done that.
+        /// </summary>
         private object? ParseFeatureStructure(IList elementDeclarations)
         {
             List<(string, object?)> bindings = new();
@@ -698,13 +703,7 @@ namespace Step.Parser
                         break;
 
                     case string curly when curly == "{":
-                        var featureSpecs = new List<object?>();
-                        while (!Equals(Peek, "}") && !end) featureSpecs.Add(Get());
-                        if (end)
-                            throw new SyntaxError("Method head ended in the middle of a { ... } expression.",
-                                SourcePath, lineNumber);
-                        Get(); // Swallow close-curly
-                        pattern.Add(ParseFeatureStructure(featureSpecs));
+                        pattern.Add(ParseHeadFeatureStructure());
                         break;
                     
                     case string paren when paren == "(":
@@ -770,6 +769,29 @@ namespace Step.Parser
                 Get();  // Swallow the end of line
 
             return (taskName, pattern);
+        }
+
+        /// <summary>
+        /// Parse the token stream of a feature structure in a head of a method.  This has raw curly brace tokens in it.
+        /// On entry, we assume the open curly brace has been swallowed.
+        /// </summary>
+        /// <returns>The feature structure object</returns>
+        /// <exception cref="SyntaxError">If missing a }</exception>
+        private object ParseHeadFeatureStructure()
+        {
+            var featureSpecs = new List<object?> { };
+            var nesting = 1;
+            while (!Peek.Equals("}") && !end)
+            {
+                var token = Get();
+                featureSpecs.Add(token.Equals("{")?ParseHeadFeatureStructure():token);
+            }
+
+            if (end)
+                throw new SyntaxError("Method head ended in the middle of a { ... } expression.",
+                    SourcePath, lineNumber);
+            Get(); // swallow close-curly
+            return ParseFeatureStructure(featureSpecs);
         }
 
         private void ReadBody(Interpreter.Step.ChainBuilder chain, Func<bool> endPredicate)
