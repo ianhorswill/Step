@@ -33,6 +33,14 @@ namespace Step.Utilities
         public static int IntegerExclusive(int low, int high) => Random.Next(low, high);
 
         /// <summary>
+        /// Generate a random float in the range [low, high]
+        /// </summary>
+        /// <param name="low">Smallest number to allow</param>
+        /// <param name="high">Largest number to allow</param>
+        /// <returns></returns>
+        public static float Float(float low, float high) => (float)(Random.NextDouble()*(high-low)+low);
+
+        /// <summary>
         /// Make a randomly permuted copy of sequence
         /// </summary>
         public static T[] ShuffleInPlace<T>(this T[] array)

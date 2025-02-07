@@ -347,6 +347,10 @@ namespace Step.Interpreter
                 .Arguments("min", "max", "?random")
                 .Documentation("randomization","Sets ?random to a random integer such that min <= ?random < max");
 
+            g["RandomFloat"] = new SimpleFunction<float, float, float>("RandomFloat", Randomization.Float)
+                .Arguments("min", "max", "?random")
+                .Documentation("randomization", "Sets ?random to a random float such that min <= ?random <= max");
+
             g["RandomElement"] = new GeneralPredicate<IList, object>(
                 "RandomElement",
                 (list, elt) => list.Contains(elt),

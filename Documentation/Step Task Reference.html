@@ -283,6 +283,8 @@ Tasks that choose random numbers or list elements.
 <p>
 <code>[<b>RandomElement</b> <i>list</i> <i>?element</i>]</code><br>Sets ?element to a random element of list.  If this is backtracked, it generates a random shuffle of the elements of this list.  However, not all shuffles are possible; it starts with a random element and moves to subsequent elements with a random step size.
 <p>
+<code>[<b>RandomFloat</b> <i>min</i> <i>max</i> <i>?random</i>]</code><br>Sets ?random to a random float such that min &lt;= ?random &lt;= max
+<p>
 <code>[<b>RandomIntegerExclusive</b> <i>min</i> <i>max</i> <i>?random</i>]</code><br>Sets ?random to a random integer such that min &lt;= ?random &lt; max
 <p>
 <code>[<b>RandomIntegerInclusive</b> <i>min</i> <i>max</i> <i>?random</i>]</code><br>Sets ?random to a random integer such that min &lt;= ?random &lt;= max

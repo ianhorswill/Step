@@ -28,6 +28,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Step.Output;
 
 namespace Step.Interpreter
 {
@@ -242,6 +243,7 @@ namespace Step.Interpreter
         internal static string CallSourceText(object task, object?[] arglist, bool markup, BindingList? unifications = null)
         {
             var b = new StringBuilder();
+            var w = new Writer(unifications, b);
             b.Append("[");
             if (markup)
                 b.Append("<b>");
@@ -249,56 +251,10 @@ namespace Step.Interpreter
             if (markup)
                 b.Append("</b>");
 
-            void WriteAtomicTerm(object? o)
-            {
-                if (o == null)
-                {
-                    b.Append("null");
-                    return;
-                }
-
-                if (o is string s && s.Contains(" "))
-                {
-                    b.Append("\"");
-                    b.Append(s);
-                    b.Append("\"");
-                }
-                else
-                {
-                    var asString = o.ToString();
-                    if (asString.IndexOf(' ') < 0)
-                        b.Append(o);
-                    else
-                        b.Append($"<{asString}>");
-                }
-            }
-
-            void WriteTerm(object? o)
-            {
-                o = BindingEnvironment.Deref(o, unifications);
-                if (o is object[] tuple)
-                {
-                    b.Append('[');
-                    bool first = true;
-                    foreach (var e in tuple)
-                    {
-                        if (first)
-                            first = false;
-                        else 
-                            b.Append(' ');
-                        WriteTerm(e);
-                    }
-
-                    b.Append("]");
-                }
-                else 
-                    WriteAtomicTerm(o);
-            }
-
             foreach (var arg in arglist)
             {
                 b.Append(' ');
-                WriteTerm(arg);
+                w.Write(arg);
             }
 
             b.Append(']');

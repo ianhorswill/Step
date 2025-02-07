@@ -245,7 +245,8 @@ namespace Step.Parser
             // Now at EOL.
             while (EndOfLineChar) Input.Read();
 
-            rowBuffer.Add(stringBuffer.ToString());
+            if (stringBuffer.Length > 0)
+                rowBuffer.Add(stringBuffer.ToString());
             stringBuffer.Clear();
 
             return rowBuffer.ToArray();

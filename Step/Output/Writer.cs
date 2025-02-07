@@ -11,13 +11,16 @@ namespace Step.Output
     /// </summary>
     public class Writer
     {
-        public readonly StringBuilder Buffer = new StringBuilder();
+        public readonly StringBuilder Buffer;
         public readonly BindingList? Bindings;
 
-        public Writer(BindingList? bindings)
+        public Writer(BindingList? bindings, StringBuilder buffer)
         {
-            this.Bindings = bindings;
+            Bindings = bindings;
+            Buffer = buffer;
         }
+        public Writer(BindingList? bindings) : this(bindings, new StringBuilder())
+        { }
 
         void WriteCompound(char before, IEnumerable objects, char after)
         {
