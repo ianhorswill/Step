@@ -42,6 +42,19 @@ namespace Step.Interpreter
                                 default: throw new ArgumentTypeException("-", typeof(float), o, new[] {o}, output);
                             }
                         })
+                },
+                {
+                    "round",
+                    new FunctionalOperator<Func<object?, TextBuffer, object?>>("round", 10,
+                        (o, output) =>
+                        {
+                            switch (o)
+                            {
+                                case int i: return i;
+                                case float f: return (int)Math.Round(f);
+                                default: throw new ArgumentTypeException("round", typeof(float), o, new[] {o}, output);
+                            }
+                        })
                 }
             };
 
@@ -160,6 +173,64 @@ namespace Step.Interpreter
                                 default: throw new ArgumentTypeException("/", typeof(float), a1, new[] { a1, a2 }, output);
                             }
                         })
+                },
+                {
+                    "//",
+                    new FunctionalOperator<Func<object?, object?, TextBuffer, object?>>("/", 2,
+                        (a1, a2, output) =>
+                        {
+                            switch (a1)
+                            {
+                                case int i1:
+                                    switch (a2)
+                                    {
+                                        case int i2:
+                                            return i1 / i2;
+
+                                        case float f2: return (int)(i1 / f2);
+                                        default: throw new ArgumentTypeException("//", typeof(float), a2, new[] { a1, a2 }, output);
+                                    }
+
+                                case float f1:
+                                    switch (a2)
+                                    {
+                                        case int i2: return (int)(f1 / i2);
+                                        case float f2: return (int)(f1 / f2);
+                                        default: throw new ArgumentTypeException("//", typeof(float), a2, new[] { a1, a2 }, output);
+                                    }
+
+                                default: throw new ArgumentTypeException("//", typeof(float), a1, new[] { a1, a2 }, output);
+                            }
+                        })
+                },
+                {
+                    "%",
+                    new FunctionalOperator<Func<object?, object?, TextBuffer, object?>>("%", 2,
+                        (a1, a2, output) =>
+                        {
+                            switch (a1)
+                            {
+                                case int i1:
+                                    switch (a2)
+                                    {
+                                        case int i2:
+                                            return i1 % i2;
+
+                                        case float f2: return i1 % f2;
+                                        default: throw new ArgumentTypeException("%", typeof(float), a2, new[] { a1, a2 }, output);
+                                    }
+
+                                case float f1:
+                                    switch (a2)
+                                    {
+                                        case int i2: return f1 % i2;
+                                        case float f2: return f1 % f2;
+                                        default: throw new ArgumentTypeException("%", typeof(float), a2, new[] { a1, a2 }, output);
+                                    }
+
+                                default: throw new ArgumentTypeException("%", typeof(float), a1, new[] { a1, a2 }, output);
+                            }
+                        })
                 }
             };
 
@@ -198,6 +269,7 @@ namespace Step.Interpreter
 
             // The next token
             object? Peek() => tokens[position];
+            object? PeekPast() => position + 1 < tokens.Length ? tokens[position + 1] : null;
 
             // Return the next token and advance to the following one/
             object? Get()
@@ -229,9 +301,16 @@ namespace Step.Interpreter
             {
                 if (End())
                     return e;
-                
+
+                var opString = Peek();
+                // Kludge to handle the fact that // is a two token operator name.
+                if (opString.Equals("/") && Equals(PeekPast(), "/"))
+                {
+                    Get();
+                    opString = "//";
+                }
                 // Parse a possibly empty series of operators of binary operators
-                var op = LookupBinary(Peek());
+                var op = LookupBinary(opString);
                 while (op != null && op.Precedence >= surroundingPrec)
                 {
                     Get();
