@@ -274,6 +274,10 @@ namespace Step.Interpreter
                 .Arguments("firstElement", "restElements", "tuple")
                 .Documentation("data structures//lists", "True when tuple starts with firstElement and continues with restElements.");
 
+            g[nameof(HasFeature)] = new GeneralPrimitive(nameof(HasFeature), HasFeature)
+                .Arguments("featureStructure", "feature")
+                .Documentation("data structures", "True when featureStructure contains a feature with the specified name.");
+
             Documentation.SectionIntroduction("metalogical",
                 "Predicates that test the binding state of a variable.");
 
@@ -370,6 +374,10 @@ namespace Step.Interpreter
                 .Arguments("mean", "stdev", "random")
                 .Documentation("Generates a random, normally distributed floating-point value with the specified mean and standard deviation.");
 
+            g[nameof(SampleFeatures)] = new GeneralPrimitive(nameof(SampleFeatures), SampleFeatures)
+                    .Arguments("featureStructure", "?featureName")
+                    .Documentation("Given a feature structure of the form { feature:weight ...}, randomly chooses features with probability proportional to the weights.  If backtracked, it will rechoose randomly without repetition (i.e. it performs a weighted shuffle)");
+                
             Documentation.SectionIntroduction("string processing",
                 "Predicates that test the spelling of strings.");
 
@@ -503,6 +511,33 @@ namespace Step.Interpreter
             ReflectionBuiltins.DefineGlobals();
             Documentation.DefineGlobals(Module.Global);
             ElNode.DefineGlobals();
+        }
+
+        private static bool HasFeature(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(HasFeature), 2, args, o);
+            var structureArg = args[0];
+            if (structureArg is LogicVariable)
+                return false;
+            var fs = ArgumentTypeException.Cast<FeatureStructure>(nameof(HasFeature), structureArg, args, o);
+            var feature = ArgumentTypeException.Cast<string>(nameof(HasFeature), args[1], args, o);
+            return fs.ContainsFeature(feature, e.Unifications) && k(o, e.Unifications, e.State, predecessor);
+        }
+
+        private static bool SampleFeatures(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(SampleFeatures), 2, args, o);
+            var fs = ArgumentTypeException.Cast<FeatureStructure>(nameof(SampleFeatures), args[0], args, o);
+            var features = fs.FeatureValues(e.Unifications).ToArray();
+            var shuffled = features.WeightedShuffle(pair => Convert.ToSingle(pair.Value));
+            foreach (var feature in shuffled)
+            {
+                if (e.Unify(args[1], feature.Key.Name, out var u)
+                    && k(o, u, e.State, predecessor))
+                    return true;
+            }
+
+            return false;
         }
 
         // ReSharper disable once UnusedMember.Global

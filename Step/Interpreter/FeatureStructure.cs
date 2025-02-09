@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using Step.Output;
 
 namespace Step.Interpreter
@@ -35,6 +36,20 @@ namespace Step.Interpreter
             return count;
         }
 
+        /// <summary>
+        /// Enumerate the feature/value 
+        /// </summary>
+        /// <param name="bindings">Binding list currently in effect</param>
+        /// <returns>All the feature/value pairs in the feature structure</returns>
+        public IEnumerable<KeyValuePair<Feature,object?>> FeatureValues(BindingList? bindings)
+        {
+            for (var block = this;
+                 block != null;
+                 block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
+                for (var i = 0; i < block.features.Length; i++)
+                    yield return new KeyValuePair<Feature,object?>(block.features[i], block.values[i]);
+        }
+
         public bool ContainsFeature(Feature f, BindingList? bindings)
         {
             for (var block = this;
@@ -48,6 +63,8 @@ namespace Step.Interpreter
 
             return false;
         }
+
+        public bool ContainsFeature(string f, BindingList? bindings) => ContainsFeature(Feature.Intern(f), bindings);
 
         public FeatureStructure(List<(string feature, object? value)> bindings)
         {

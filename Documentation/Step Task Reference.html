@@ -172,6 +172,8 @@ Tasks that collect together all the solutions to a given call.
 <h2 id="data structures">Data structures</h2>
 Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictionary and and [list ?element] is true when ?element is an element of the list.
 <p>
+<code>[<b>HasFeature</b> <i>featureStructure</i> <i>feature</i>]</code><br>True when featureStructure contains a feature with the specified name.
+<p>
 <code>[<b>Hashtable</b> <i>?h</i>]</code><br>Creates a new empty hash table and stores it in ?h
 <p>
 <h3 id="lists">Lists</h3>
@@ -252,6 +254,8 @@ Predicates that test the binding state of a variable.
 <code>[<b>LinearInterpolate</b> <i>argument</i> <i>[control_point_arguments ...]</i> <i>[control_point_values ...]</i> <i>?result</i>]</code><br>Evaluates a piecewise-linear function defined by the specified control points at the specified argument and returns its value.
 <p>
 <code>[<b>MenuItem</b> <i>menu_name</i> <i>item_name</i> <i>call</i>]</code><br>User-defined.  If defined, specifies additional menus to add to the REPL.  For each solution to [MenuItem ?menu ?item ?call]], it will add an item with the specified name to the specified menu that called the specified code.
+<p>
+<code>[<b>SampleFeatures</b> <i>featureStructure</i> <i>?featureName</i>]</code><br>Given a feature structure of the form { feature:weight ...}, randomly chooses features with probability proportional to the weights.  If backtracked, it will rechoose randomly without repetition (i.e. it performs a weighted shuffle)
 <p>
 <code>[<b>TreeSearch</b> <i>startNode</i> <i>finalNode</i> <i>utility</i> <i>NextNode</i> <i>GoalNode</i> <i>NodeUtility</i>]</code><br>Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.
 <p>
