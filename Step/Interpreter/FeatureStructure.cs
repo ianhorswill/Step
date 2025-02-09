@@ -215,17 +215,17 @@ namespace Step.Interpreter
             var size = Count(bindings);
             var f = new Feature[size];
             var v = new object?[size];
-            var next = 0;
-            LogicVariable lastLink = this.next;
+            var outIndex = 0;
+            var lastLink = this.next;
             for (var block = this;
                  block != null;
                  block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
             {
                 for (var i = 0; i < block.features.Length; i++)
                 {
-                    f[next] = block.features[i];
-                    v[next] = env.Resolve(block.values[i], bindings, compressPairs);
-                    next++;
+                    f[outIndex] = block.features[i];
+                    v[outIndex] = env.Resolve(block.values[i], bindings, compressPairs);
+                    outIndex++;
                 }
 
                 Debug.Assert(block.next != null);

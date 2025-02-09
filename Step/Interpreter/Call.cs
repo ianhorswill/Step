@@ -240,7 +240,7 @@ namespace Step.Interpreter
             }
         }
 
-        internal static string CallSourceText(object task, object?[] arglist, bool markup, BindingList? unifications = null)
+        public static string CallSourceText(object task, object?[] arglist, bool markup, BindingList? unifications = null)
         {
             var b = new StringBuilder();
             var w = new Writer(unifications, b);

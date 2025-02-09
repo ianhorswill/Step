@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Step.Interpreter
@@ -195,6 +196,7 @@ namespace Step.Interpreter
             {
                 var arg = arglist[i];
                 var resolved = Resolve(arglist[i], unifications, compressPairs);
+
                 if (arg != resolved)
                 {
                     if (result == null)

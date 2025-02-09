@@ -520,8 +520,22 @@ namespace Step.Interpreter
             if (structureArg is LogicVariable)
                 return false;
             var fs = ArgumentTypeException.Cast<FeatureStructure>(nameof(HasFeature), structureArg, args, o);
-            var feature = ArgumentTypeException.Cast<string>(nameof(HasFeature), args[1], args, o);
-            return fs.ContainsFeature(feature, e.Unifications) && k(o, e.Unifications, e.State, predecessor);
+
+            var featureArg = args[1];
+            if (featureArg is LogicVariable l)
+            {
+                foreach (var f in fs.FeatureValues(e.Unifications))
+                {
+                    if (k(o, BindingList.Bind(e.Unifications, l, f.Key.Name), e.State, predecessor))
+                        return true;
+                }
+
+                return false;
+            } else
+            {
+                var feature = ArgumentTypeException.Cast<string>(nameof(HasFeature), featureArg, args, o);
+                return fs.ContainsFeature(feature, e.Unifications) && k(o, e.Unifications, e.State, predecessor);
+            }
         }
 
         private static bool SampleFeatures(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)

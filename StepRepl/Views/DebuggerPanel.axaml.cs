@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -54,8 +55,12 @@ public partial class DebuggerPanel : UserControl
     {
         if (_debugger?.IsPaused ?? false)
         {
-            CallField.Inlines.Clear();;
-            CallField.Inlines.Add(HtmlTextFormatter.ParseHtml(MethodCallFrame.CurrentFrame.CallSourceTextWithCurrentBindings));
+            CallField.Inlines!.Clear();;
+            var source = Call.CallSourceText(
+                MethodCallFrame.CurrentFrame.Method!.Task,
+                _debugger.LastResult_Environment!.Value.ResolveList(MethodCallFrame.CurrentFrame.Arglist),
+                Module.RichTextStackTraces, _debugger.LastResult_Environment!.Value.Unifications);
+            CallField.Inlines.Add(HtmlTextFormatter.ParseHtml(source));
             OutputArea.IsVisible = true;
             DebugHint.IsVisible = false;
             MethodInfo.Inlines.Clear();

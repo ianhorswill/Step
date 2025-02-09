@@ -91,6 +91,14 @@ namespace Step.Output
                         Write(d);
                     break;
 
+                case LocalVariableName ln:
+                    //Buffer.Append("LocalVariableName{");
+                    Buffer.Append(ln.Name);
+                    //Buffer.Append(':');
+                    //Buffer.Append(ln.Index);
+                    //Buffer.Append('}');
+                    break;
+
                 case FeatureStructure s:
                     s.Write(this);
                     break;
@@ -101,6 +109,18 @@ namespace Step.Output
 
                 case IList l:
                     WriteList(l);
+                    break;
+
+                case string s:
+                    if (s.StartsWith("?") || s.Contains(' '))
+                    {
+                        Buffer.Append('|');
+                        Buffer.Append(s);
+                        Buffer.Append('|');
+                    }
+                    else
+                        Buffer.Append(s);
+
                     break;
 
                 default:
