@@ -23,13 +23,11 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using Avalonia;
 using Avalonia.Media;
 
@@ -79,7 +77,7 @@ namespace StepRepl.GraphVisualization {
         /// <summary>
         /// Name of the string property of a selected node to be displayed in the ToolTop element.
         /// </summary>
-        public string ToolTipProperty;
+        public string? ToolTipProperty;
 
         /// <summary>
         /// Count of edges from first node to second node, for multigraphs.
@@ -210,7 +208,7 @@ namespace StepRepl.GraphVisualization {
         /// <summary>
         /// The set of pairs of nodes that are siblings, i.e. that share a connection to the same node
         /// </summary>
-        private HashSet<(GraphNode, GraphNode)> siblings;
+        private HashSet<(GraphNode, GraphNode)>? siblings;
 
         private short[,] TopologicalDistance;
 
@@ -267,7 +265,7 @@ namespace StepRepl.GraphVisualization {
         /// Do not use this directly.
         /// Internal field backing the SelectedNode property
         /// </summary>
-        private GraphNode _selected;
+        private GraphNode? _selected;
         /// <summary>
         /// True if SelectedNode has changed since the last frame Update.
         /// </summary>
@@ -275,7 +273,7 @@ namespace StepRepl.GraphVisualization {
         /// <summary>
         /// Node over which the mouse is currently hovering, if any.  Else null.
         /// </summary>
-        private GraphNode SelectedNode {
+        private GraphNode? SelectedNode {
             get => _selected;
             set {
                 if (value == _selected) return;

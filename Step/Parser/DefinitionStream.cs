@@ -424,7 +424,7 @@ namespace Step.Parser
         /// These are represented in the token stream as complex objects, so we don't have to deal with curly braces;
         /// the front end has already done that.
         /// </summary>
-        private object? ParseFeatureStructure(IList elementDeclarations)
+        private FeatureStructure ParseFeatureStructure(IList elementDeclarations)
         {
             List<(string, object?)> bindings = new();
 
@@ -780,11 +780,11 @@ namespace Step.Parser
         private object ParseHeadFeatureStructure()
         {
             var featureSpecs = new List<object?> { };
-            var nesting = 1;
-            while (!Peek.Equals("}") && !end)
+
+            while ((Peek == null || !Peek.Equals("}")) && !end)
             {
                 var token = Get();
-                featureSpecs.Add(token.Equals("{")?ParseHeadFeatureStructure():token);
+                featureSpecs.Add((token != null && token.Equals("{"))?ParseHeadFeatureStructure():token);
             }
 
             if (end)

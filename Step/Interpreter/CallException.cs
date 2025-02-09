@@ -14,7 +14,7 @@ namespace Step.Interpreter
         /// <summary>
         /// The arguments passed to the task
         /// </summary>
-        public readonly object?[] Arguments;
+        public readonly object?[]? Arguments;
 
         /// <summary>
         /// Signal that some problem occurred with the call to a task
@@ -23,7 +23,7 @@ namespace Step.Interpreter
         /// <param name="arguments">Its arguments</param>
         /// <param name="message">Message to print</param>
         /// <param name="output">Output so far</param>
-        public CallException(object task, object?[] arguments, string message, TextBuffer output) : base(message, output)
+        public CallException(object task, object?[]? arguments, string message, TextBuffer output) : base(message, output)
         {
             Task = task;
             Arguments = arguments;

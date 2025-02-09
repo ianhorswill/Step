@@ -1,7 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 
@@ -119,7 +119,7 @@ namespace GraphViz
     /// A graph to be written to a .dot file for visualization using Graph
     /// </summary>
     /// <typeparam name="T">The data type of the nodes in the graph</typeparam>
-    public class Graph<T> : Graph
+    public class Graph<T> : Graph where T : notnull
     {
         /// <summary>
         /// Optional function to compute attributes of a node
@@ -171,11 +171,11 @@ namespace GraphViz
             NodeAttributes;
 
         public override IEnumerable<(object Node, Dictionary<string, object> Attributes, string Label)> NodesUntyped =>
-            nodes.Select(n => ((object)n!, NodeAttributes[n], NodeLabel(n)));
+            nodes.Select(n => ((object)n, NodeAttributes[n], NodeLabel(n)));
 
         public override
             IEnumerable<(object From, object To, Dictionary<string, object>? Attributes, bool IsDirected, string? Label)> EdgesUntyped =>
-            edges.Select(e => ((object)CanonicalizeNode(e.StartNode)!, (object)CanonicalizeNode(e.EndNode)!, e.Attributes, e.Directed, e.Label));
+            edges.Select(e => ((object)CanonicalizeNode(e.StartNode), (object)CanonicalizeNode(e.EndNode), e.Attributes, e.Directed, e.Label));
 
         /// <summary>
         /// Make a graph to be rendered using Graph.
@@ -183,6 +183,7 @@ namespace GraphViz
         public Graph(IEqualityComparer<T>? comparer = null)
         {
             NodeId = (_) => $"v{NextNodeUid++}";
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             NodeLabel = v => (v == null)?"null":v.ToString()!;
             DefaultNodeAttributes = n => EmptyAttributeDictionary;
             DefaultEdgeAttributes = edge => EmptyAttributeDictionary;
@@ -513,7 +514,7 @@ namespace GraphViz
             public override int GetHashCode()
             {
                 // We need the hash to be symmetric in InNode and OutNode in case the edge is undirected.
-                return HashCode.Combine(StartNode!.GetHashCode() + EndNode!.GetHashCode(), Directed, Label);
+                return HashCode.Combine(StartNode.GetHashCode() + EndNode.GetHashCode(), Directed, Label);
             }
         }
         #endregion
@@ -650,46 +651,45 @@ namespace GraphViz
             }
         }
 
-        private int _connectedComponentCount;
-        private Dictionary<T, int>? _connectedComponent;
-        private int[] _nodeComponentNumbers;
+        private int connectedComponentCount;
+        private int[]? nodeComponentNumbers=null;
 
         private void FindConnectedComponents()
         {
-            _nodeComponentNumbers = new int[nodes.Count];
-            Array.Fill(_nodeComponentNumbers, -1);
+            nodeComponentNumbers = new int[nodes.Count];
+            Array.Fill(nodeComponentNumbers, -1);
             for (int i = 0; i < nodes.Count; i++)
             {
-                if (_nodeComponentNumbers[i] < 0)
+                if (nodeComponentNumbers[i] < 0)
                 {
                     // New component
                     for (int j = 0; j < nodes.Count; j++)
                         if (!float.IsPositiveInfinity(NodeDistances[i, j]))
                         {
                             // They're connected
-                            _nodeComponentNumbers[j] = _connectedComponentCount;
+                            nodeComponentNumbers[j] = connectedComponentCount;
                         }
-                    _connectedComponentCount++;
+                    connectedComponentCount++;
                 }
             }
-            Debug.Assert(_nodeComponentNumbers.All(n => n>=0));
+            Debug.Assert(nodeComponentNumbers.All(n => n>=0));
         }
 
         public override int ConnectedComponentCount
         {
             get
             {
-                if (_nodeComponentNumbers == null)
+                if (nodeComponentNumbers == null)
                     FindConnectedComponents();
-                return _connectedComponentCount;
+                return connectedComponentCount;
             }
         }
 
         public int ConnectedComponentNumber(T node)
         {
-            if (_nodeComponentNumbers == null)
+            if (nodeComponentNumbers == null)
                 FindConnectedComponents();
-            return _nodeComponentNumbers[NodeIndex[node]];
+            return nodeComponentNumbers![NodeIndex[node]];
         }
 
         public override int ConnectedComponentNumber(object node) => ConnectedComponentNumber((T)node);
@@ -708,11 +708,11 @@ namespace GraphViz
                 }
 
             foreach (var n in NodeIndex)
-                NodeAttributes[n.Key]["fillcolor"] = palette[_nodeComponentNumbers[n.Value]];
+                NodeAttributes[n.Key]["fillcolor"] = palette[nodeComponentNumbers![n.Value]];
 
             foreach (var e in edges)
             {
-                var component = _nodeComponentNumbers[NodeIndex[e.StartNode]];
+                var component = nodeComponentNumbers![NodeIndex[e.StartNode]];
                 e.Attributes ??= new Dictionary<string, object>();
                 e.Attributes["color"] = palette[component];
             }

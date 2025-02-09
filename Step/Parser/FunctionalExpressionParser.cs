@@ -304,7 +304,7 @@ namespace Step.Interpreter
 
                 var opString = Peek();
                 // Kludge to handle the fact that // is a two token operator name.
-                if (opString.Equals("/") && Equals(PeekPast(), "/"))
+                if ((opString != null && opString.Equals("/")) && Equals(PeekPast(), "/"))
                 {
                     Get();
                     opString = "//";

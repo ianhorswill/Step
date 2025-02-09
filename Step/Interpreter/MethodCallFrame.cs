@@ -165,10 +165,11 @@ namespace Step.Interpreter
         public string CallSourceTextWithCurrentBindings =>
             Call.CallSourceText(Method!.Task, Arglist, Module.RichTextStackTraces, MostRecentBindings);
 
-        public BindingList? MostRecentBindings => StepThread.Current == null
-            ? MethodCallFrame.CurrentFrame.BindingsAtCallTime
+        public static BindingList? CurrentFrameBindings => CurrentFrame?.BindingsAtCallTime;
+        public static BindingList? MostRecentBindings => StepThread.Current == null
+            ? CurrentFrameBindings
             : StepThread.Current.Environment == null
-                ? MethodCallFrame.CurrentFrame.BindingsAtCallTime
+                ? CurrentFrameBindings
                 : StepThread.Current.Environment.Value.Unifications;
 
         public string Summary
