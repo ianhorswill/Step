@@ -713,6 +713,7 @@ var output = TextBuffer.NewEmpty();
         public (string? output, State state) ParseAndExecute(string code, State state)
         {
             Uncancel();
+            MethodCallFrame.CurrentFrame = null;
             if (Defines("TopLevelCall"))
                 ((CompoundTask?) this["TopLevelCall"])?.EraseMethods();
             AddDefinitions($"TopLevelCall: {code}");

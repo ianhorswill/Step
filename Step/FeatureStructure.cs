@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using Step.Interpreter;
 using Step.Output;
 
-namespace Step.Interpreter
+namespace Step
 {
     [DebuggerDisplay($"{{{nameof(BlockContents)}}}")]
     public sealed class FeatureStructure
@@ -15,8 +16,8 @@ namespace Step.Interpreter
 
         public FeatureStructure(Feature[] features, object?[] values)
             : this(features, values, new LogicVariable("_next_", 0))
-        {}
-        
+        { }
+
         public FeatureStructure(Feature[] features, object?[] values, LogicVariable next)
         {
             this.features = features;
@@ -41,13 +42,13 @@ namespace Step.Interpreter
         /// </summary>
         /// <param name="bindings">Binding list currently in effect</param>
         /// <returns>All the feature/value pairs in the feature structure</returns>
-        public IEnumerable<KeyValuePair<Feature,object?>> FeatureValues(BindingList? bindings)
+        public IEnumerable<KeyValuePair<Feature, object?>> FeatureValues(BindingList? bindings)
         {
             for (var block = this;
                  block != null;
                  block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
                 for (var i = 0; i < block.features.Length; i++)
-                    yield return new KeyValuePair<Feature,object?>(block.features[i], block.values[i]);
+                    yield return new KeyValuePair<Feature, object?>(block.features[i], block.values[i]);
         }
 
         public bool ContainsFeature(Feature f, BindingList? bindings)
@@ -56,7 +57,7 @@ namespace Step.Interpreter
                  block != null;
                  block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
             {
-                var index = Array.IndexOf<Feature>(block.features, f);
+                var index = Array.IndexOf(block.features, f);
                 if (index >= 0)
                     return true;
             }
@@ -85,7 +86,7 @@ namespace Step.Interpreter
                  block != null;
                  block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
             {
-                var index = Array.IndexOf<Feature>(block.features, f);
+                var index = Array.IndexOf(block.features, f);
                 if (index >= 0)
                 {
 
@@ -121,10 +122,10 @@ namespace Step.Interpreter
             b.Append(" }");
         }
 
-        public static bool Unify(FeatureStructure a, FeatureStructure b, BindingEnvironment env,
+        internal static bool Unify(FeatureStructure a, FeatureStructure b, BindingEnvironment env, BindingList? inBindings,
             out BindingList? outBindings)
         {
-            outBindings = env.Unifications;
+            outBindings = inBindings;
             var missingInB = 0;
             for (var block = a;
                  block != null;
@@ -166,7 +167,7 @@ namespace Step.Interpreter
                 }
             }
 
-            if (missingInB > 0) 
+            if (missingInB > 0)
                 outBindings = BindingList.Bind(outBindings, b.next, new FeatureStructure(bFeatures, bValues));
 
             // Make new elements we'll add to a
@@ -210,13 +211,13 @@ namespace Step.Interpreter
             return true;
         }
 
-        public FeatureStructure Resolve(BindingEnvironment env, BindingList? bindings, bool compressPairs)
+        internal FeatureStructure Resolve(BindingEnvironment env, BindingList? bindings, bool compressPairs)
         {
             var size = Count(bindings);
             var f = new Feature[size];
             var v = new object?[size];
             var outIndex = 0;
-            var lastLink = this.next;
+            var lastLink = next;
             for (var block = this;
                  block != null;
                  block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)

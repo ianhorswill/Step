@@ -284,7 +284,7 @@ namespace Step.Interpreter
                 return UnifyArrays(aa, ba, inUnifications, out outUnifications);
 
             if (a is FeatureStructure fa && b is FeatureStructure fb)
-                return FeatureStructure.Unify(fa, fb, this, out outUnifications);
+                return FeatureStructure.Unify(fa, fb, this, inUnifications, out outUnifications);
 
             outUnifications = inUnifications;
             return false;

@@ -258,6 +258,7 @@ namespace StepRepl
         public static void ReloadStepCode()
         {
             projectChanged = false;
+            RunnerPage.Singleton.RemoveUserManus();
 
             Module.DefaultSearchLimit = int.MaxValue;
             LastException = null;
@@ -275,7 +276,6 @@ namespace StepRepl
                 FormattingOptions = { ParagraphMarker = "\n\n", LineSeparator = "\n" }
             };
 
-            RunnerPage.Singleton.RemoveUserManus();
             State = State.Empty;
             try
             {
