@@ -61,14 +61,9 @@
                 <MenuItem Header="Paste" />
             </MenuItem>
 
-            <MenuItem Header="_Debug">
-                <MenuItem Header="_Enable Debugger" Click="ToggleEvalWithDebugger" HotKey="Ctrl+D" InputGesture="Ctrl+D">
-                    <MenuItem.Icon>
-                        <CheckBox IsChecked="{Binding EvalWithDebugging}"
-                                  BorderThickness="0" IsHitTestVisible="False">
-                        </CheckBox>
-                    </MenuItem.Icon>
-                </MenuItem>
+            <MenuItem Header="_Execute">
+                <MenuItem Header="_Execute command" Click="ExecuteCommand"/>
+              <MenuItem Header="Execute command with _debugging" Click="ExecuteCommandWithDebugging"/>
                 <MenuItem Header="_Abort" Click="AbortMenuItemClicked" />
             </MenuItem>
 

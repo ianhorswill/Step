@@ -67,7 +67,9 @@ public partial class RunnerPage : UserControl
     {
         if (sender is not TextBox textBox) return;
 
-        if (e.Key == Key.Up && e.KeyModifiers == KeyModifiers.Control && ViewModel.CommandHistory.Count > 0)
+        if (e.Key == Key.Up
+            && (e.KeyModifiers == KeyModifiers.Control || e.KeyModifiers == KeyModifiers.Alt || e.KeyModifiers == KeyModifiers.Shift) 
+            && ViewModel.CommandHistory.Count > 0)
         {
             // User typed Control-Up; select the previous command
             var index = ViewModel.CommandHistory.IndexOf(textBox.Text);
@@ -78,10 +80,15 @@ public partial class RunnerPage : UserControl
 
         if (e.Key != Key.Return || e.Key != Key.Enter) return;
 
-        ViewModel.EvalWithDebugging = (e.KeyModifiers == KeyModifiers.Control);
+        await RunCurrentCommand(e.KeyModifiers == KeyModifiers.Control);
+    }
 
-        string command = textBox.Text!;
-        textBox.Text = "";
+    private async Task RunCurrentCommand(bool useDebugging)
+    {
+        ViewModel.EvalWithDebugging = useDebugging;
+
+        string command = StepCommandField.Text!;
+        StepCommandField.Text = "";
         if (string.IsNullOrEmpty(command))
         {
             if (ViewModel.CommandHistory.Count == 0)
@@ -278,7 +285,7 @@ public partial class RunnerPage : UserControl
         {
             ErrorLabel.IsVisible = true;
             Module.RichTextStackTraces = true;
-            HtmlTextFormatter.SetFormattedText(ExceptionMessage, StepCode.LastException is TaskCanceledException?"Your stopped the step program":StepCode.LastException.Message);
+            HtmlTextFormatter.SetFormattedText(ExceptionMessage, StepCode.LastException is TaskCanceledException?"You stopped the step program":StepCode.LastException.Message);
             StackTrace.ItemsSource = StackFrames;
                 
             CStackTrace.Text = "Internal debugging information for Ian:\n"+StepCode.LastException.StackTrace;
@@ -384,4 +391,14 @@ public partial class RunnerPage : UserControl
         UserMenu(menuName).Items.Add(item);
     }
     #endregion
+
+    private async void ExecuteCommand(object? sender, RoutedEventArgs e)
+    {
+        await RunCurrentCommand(false);
+    }
+
+    private async void ExecuteCommandWithDebugging(object? sender, RoutedEventArgs e)
+    {
+        await RunCurrentCommand(true);
+    }
 }
