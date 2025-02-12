@@ -38,13 +38,13 @@ namespace StepRepl.GraphVisualization {
     /// </summary>
     public class GraphLayout
     {
-        private static Random Random = new Random();
+        private static readonly Random Random = new();
 
         public readonly GraphViz.Graph Graph;
 
         protected static float RandomInRange(float min, float max) => (float)(Random.NextDouble() * (max - min) + min);
 
-        public Rect Bounds = new(0, 0, 1000, 1000);
+        public Rect Bounds;
 
         /// <summary>
         /// The strength of the force that moves adjacent nodes together
@@ -58,18 +58,19 @@ namespace StepRepl.GraphVisualization {
 
         public float ComponentRepulsionGain = 100000;
 
-        /// <summary>
-        /// Degree to which nodes and edges are dimmed when some other node is selected.
-        /// 0 = completely dimmed, 1 = not dimmed.
-        /// </summary>
+        ///// <summary>
+        ///// Degree to which nodes and edges are dimmed when some other node is selected.
+        ///// 0 = completely dimmed, 1 = not dimmed.
+        ///// </summary>
         
-        public float GreyOutFactor = 0.5f;
+        //public float GreyOutFactor = 0.5f;
 
         /// <summary>
         /// How far to keep nodes from the edge of the Rect for this UI element.
         /// </summary>
-        public float[] Border = new float[] { 100, 100, 100, 100 };
+        public float[] Border = [100, 100, 100, 100];
 
+#if tooltips
         /// <summary>
         /// Text object in which to display additional information about a node, or null if no info to be displayed.
         /// </summary>
@@ -78,11 +79,12 @@ namespace StepRepl.GraphVisualization {
         /// Name of the string property of a selected node to be displayed in the ToolTop element.
         /// </summary>
         public string? ToolTipProperty;
+#endif
 
         /// <summary>
-        /// Count of edges from first node to second node, for multigraphs.
+        /// Count of edges from first node to second node, for multi-graphs.
         /// </summary>
-        private Dictionary<(object, object), int> EdgeCount = new Dictionary<(object, object), int>();
+        private readonly Dictionary<(object, object), int> edgeCount = new();
 
         public GraphLayout(GraphViz.Graph g, Rect bounds)
         {
@@ -103,15 +105,15 @@ namespace StepRepl.GraphVisualization {
 
             foreach (var edgeInfo in Graph.EdgesUntyped)
             {
-                AddEdge(GetNode(edgeInfo.From), GetNode(edgeInfo.To), edgeInfo.IsDirected, edgeInfo.Label, edgeInfo.Attributes);
+                AddEdge(GetNode(edgeInfo.From), GetNode(edgeInfo.To), edgeInfo.IsDirected, edgeInfo.Label!, edgeInfo.Attributes);
             }
 
-            TopologicalDistance = new short[Nodes.Count, Nodes.Count];
+            topologicalDistance = new short[Nodes.Count, Nodes.Count];
             foreach (var n1 in Nodes)
             foreach (var n2 in Nodes)
             {
                 var d = g.UndirectedDistance(n1.Key, n2.Key);
-                TopologicalDistance[n1.Index, n2.Index] = float.IsPositiveInfinity(d)?short.MaxValue:(short)d;
+                topologicalDistance[n1.Index, n2.Index] = float.IsPositiveInfinity(d)?short.MaxValue:(short)d;
             }
             PlaceComponents(bounds);
 
@@ -126,11 +128,11 @@ namespace StepRepl.GraphVisualization {
 
         public class GraphNode
         {
-            public object Key;
-            public string Label;
+            public object Key = null!;
+            public string Label = null!;
             public int Component = 0;
             public List<GraphEdge> AdjacentEdges = new();
-            public IBrush Brush;
+            public IBrush Brush = null!;
             public Vector2 Position;
             public Vector2 PreviousPosition;
             public Vector2 NetForce;
@@ -189,14 +191,14 @@ namespace StepRepl.GraphVisualization {
         private void AddEdge(GraphNode start, GraphNode end, bool isDirected, string label, Dictionary<string,object>? attributes)
         {
             Color c = Colors.White;
-            if ((attributes.TryGetValue("color", out var v) || Graph.GlobalEdgeAttributes.TryGetValue("color", out v)) && v is string colorName)
+            if ((attributes!.TryGetValue("color", out var v) || Graph.GlobalEdgeAttributes.TryGetValue("color", out v)) && v is string colorName)
             {
                 c = GetColorByName(colorName);
             }
 
-            EdgeCount.TryGetValue((start, end), out var renderPosition);
+            edgeCount.TryGetValue((start, end), out var renderPosition);
             renderPosition++;
-            EdgeCount[(start, end)] = renderPosition;
+            edgeCount[(start, end)] = renderPosition;
             var e = new GraphEdge(start, end, label, c, isDirected, 1,renderPosition);
             Edges.Add(e);
             start.AdjacentEdges.Add(e);
@@ -205,12 +207,12 @@ namespace StepRepl.GraphVisualization {
 
 
 
-        /// <summary>
-        /// The set of pairs of nodes that are siblings, i.e. that share a connection to the same node
-        /// </summary>
-        private HashSet<(GraphNode, GraphNode)>? siblings;
+        ///// <summary>
+        ///// The set of pairs of nodes that are siblings, i.e. that share a connection to the same node
+        ///// </summary>
+        //private HashSet<(GraphNode, GraphNode)>? siblings;
 
-        private short[,] TopologicalDistance;
+        private readonly short[,] topologicalDistance;
 
         private int ConnectedComponentCount => Graph.ConnectedComponentCount;
         #endregion
@@ -265,31 +267,33 @@ namespace StepRepl.GraphVisualization {
         /// Do not use this directly.
         /// Internal field backing the SelectedNode property
         /// </summary>
-        private GraphNode? _selected;
+        private GraphNode? selected;
         /// <summary>
         /// True if SelectedNode has changed since the last frame Update.
         /// </summary>
-        private bool _selectionChanged;
+#pragma warning disable CS0414 // Field is assigned but its value is never used
+        private bool selectionChanged;
+#pragma warning restore CS0414 // Field is assigned but its value is never used
         /// <summary>
         /// Node over which the mouse is currently hovering, if any.  Else null.
         /// </summary>
         private GraphNode? SelectedNode {
-            get => _selected;
+            get => selected;
             set {
-                if (value == _selected) return;
-                _selected = value;
-                _selectionChanged = true;
+                if (value == selected) return;
+                selected = value;
+                selectionChanged = true;
             }
         }
 
         private static readonly Dictionary<Type, Delegate> DescriptionMethod = new();
 
-        private static Delegate GetDescriptionMethod(object o) {
-            for (var t = o.GetType(); t != null; t = t.BaseType)
-                if (DescriptionMethod.TryGetValue(t, out var d))
-                    return d;
-            return null;
-        }
+        //private static Delegate GetDescriptionMethod(object o) {
+        //    for (var t = o.GetType(); t != null; t = t.BaseType)
+        //        if (DescriptionMethod.TryGetValue(t, out var d))
+        //            return d;
+        //    return null;
+        //}
         #endregion
 
         #region Physics update
@@ -311,7 +315,7 @@ namespace StepRepl.GraphVisualization {
         /// on-screen position is updated once per frame in the Update method.
         /// </summary>
         private void UpdatePhysics() {
-            if (Nodes.Count == 0 || TopologicalDistance == null) return;
+            if (Nodes.Count == 0 || topologicalDistance == null) return;
             foreach (var n in Nodes) n.NetForce = ZeroVector2;
 
             for (var i = 0; i < Nodes.Count; i++)
@@ -345,7 +349,7 @@ namespace StepRepl.GraphVisualization {
         /// </summary>
         /// <param name="e">Edge connecting nodes</param>
         private void ApplySpringForce(int i, int j) {
-            var topologicalDistance = TopologicalDistance[i, j];
+            var topologicalDistance = this.topologicalDistance[i, j];
             var start = Nodes[i];
             var end = Nodes[j];
             var offset = start.Position - end.Position;
@@ -374,6 +378,6 @@ namespace StepRepl.GraphVisualization {
 
         #endregion
 
-        public bool HasReverseEdge(GraphEdge e) => EdgeCount.ContainsKey((e.End, e.Start));
+        public bool HasReverseEdge(GraphEdge e) => edgeCount.ContainsKey((e.End, e.Start));
     }
 }

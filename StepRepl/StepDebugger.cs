@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using Step;
 using Step.Interpreter;
 using Step.Output;
@@ -8,17 +9,17 @@ namespace StepRepl;
 
 public class ReplDebugger
 {
-    private readonly StepThread.StepThreadDebugger _debugger;
+    private readonly StepThread.StepThreadDebugger debugger;
     private (Module.MethodTraceEvent TraceEvent, Method? CalledMethod, object?[]? args, string? Text, BindingEnvironment? Environment) _lastResult;
     public Action<ReplDebugger>? OnDebugPauseCallback;
 
     public bool SingleStepping
     {
-        get => _debugger.SingleStep;
-        set => _debugger.SingleStep = value;
+        get => debugger.SingleStep;
+        set => debugger.SingleStep = value;
     }
     
-    public bool IsPaused => _debugger.IsPaused;
+    public bool IsPaused => debugger.IsPaused;
     
     public Module.MethodTraceEvent LastResult_TraceEvent => _lastResult.TraceEvent;
     public Method? LastResult_CalledMethod => _lastResult.CalledMethod;
@@ -28,8 +29,8 @@ public class ReplDebugger
     
     public ReplDebugger(StepThread.StepThreadDebugger debugger)
     {
-        _debugger = debugger;
-        _debugger.ShowStackRequested = true;
+        this.debugger = debugger;
+        this.debugger.ShowStackRequested = true;
         Task.Run(EstablishAwaiter);
         Console.WriteLine($"Confirming a debug session started for project {StepCode.ProjectName}");
     }
@@ -38,8 +39,8 @@ public class ReplDebugger
     {
         try
         {
-            _debugger.Continue();
-            if (_debugger.SingleStep)
+            debugger.Continue();
+            if (debugger.SingleStep)
                 Task.Run(EstablishAwaiter);
         }
         catch (Exception e)
@@ -53,7 +54,7 @@ public class ReplDebugger
     /// </summary>
     private async Task EstablishAwaiter()
     {
-        var debugResult = await _debugger;
+        var debugResult = await debugger;
         _lastResult = (debugResult.TraceEvent, debugResult.CalledMethod, debugResult.args, debugResult.Text, debugResult.Environment);
         OnDebugPauseCallback?.Invoke(this);
     }
@@ -66,12 +67,12 @@ public class ReplDebugger
         // keeps the thread from getting stuck
         try
         {
-            _debugger.SingleStep = false;
-            _debugger?.Continue();
+            debugger.SingleStep = false;
+            debugger?.Continue();
 
-            _debugger?.Dispose();
+            debugger?.Dispose();
         }
-        catch (Exception e) // oh well...
+        catch (Exception) // oh well...
         {
             // ignored
         }

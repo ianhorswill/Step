@@ -30,7 +30,7 @@ public class TabInfo : INotifyPropertyChanged
 
 public partial class MainWindow : Window
 {
-    private static MainWindow? _instance;
+    private static MainWindow _instance;
 
     public MainWindow()
     {
@@ -46,7 +46,7 @@ public partial class MainWindow : Window
     public static MainWindow Instance => _instance ?? new MainWindow();
     public TabViewModel ViewModel => (TabViewModel)Instance.DataContext;
     
-    public object? GetActiveTabContent()
+    public object GetActiveTabContent()
     {
         return TabView.SelectedContent;
     }
@@ -63,7 +63,7 @@ public partial class MainWindow : Window
         if (select) TabView.SelectedItem = tab;
     }
     
-    public T? FindTabByContentType<T>() where T : class
+    public T FindTabByContentType<T>() where T : class
     {
         foreach (TabInfo item in ViewModel.Tabs)
         {
@@ -75,7 +75,7 @@ public partial class MainWindow : Window
         return null;
     }
     
-    public TabInfo? FindTabByContent(object tab)
+    public TabInfo FindTabByContent(object tab)
     {
         foreach (TabInfo item in ViewModel.Tabs)
         {
@@ -87,7 +87,7 @@ public partial class MainWindow : Window
         return null;
     }
     
-    public TabInfo? FindTabByHeader(string header)
+    public TabInfo FindTabByHeader(string header)
     {
         foreach (TabInfo item in ViewModel.Tabs)
         {
@@ -108,7 +108,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CloseTabClicked(object? sender, RoutedEventArgs e)
+    private void CloseTabClicked(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button) return;
         if (button.DataContext is not TabInfo tab) return;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Avalonia;
@@ -53,7 +54,7 @@ namespace StepRepl.GraphVisualization
                     default:
                         if (callee == null)
                             continue;
-                        g.AddEdge(new Graph<string>.Edge(t.Name, callee.ToString(), true), true);
+                        g.AddEdge(new Graph<string>.Edge(t.Name, callee.ToString()!, true), true);
                         break;
                 }
             }
@@ -67,9 +68,9 @@ namespace StepRepl.GraphVisualization
         {
             ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args, o);
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
-            Task nodes = null;
-            Task nodeColor = null;
-            Task nodeLabel = null;
+            Task nodes = null!;
+            Task nodeColor = null!;
+            Task nodeLabel = null!;
             var directed = false;
             var windowName = "Graph";
             var colorByComponent = false;
@@ -151,9 +152,9 @@ namespace StepRepl.GraphVisualization
                 var end = env.Resolve(endNodeVar, env.Unifications, true);
                 var label = edgeArgCount>2?StringifyStepObject(env.Resolve(labelVar, env.Unifications, true)):null;
                 var color = edgeArgCount > 3 ? env.Resolve(colorVar) as string : null;
-                var thisEdgeDirected = edgeArgCount > 4 ? (bool)env.Resolve(directedVar, env.Unifications, true) : directed;
+                var thisEdgeDirected = edgeArgCount > 4 ? (bool)env.Resolve(directedVar, env.Unifications, true)! : directed;
                 var edge = new Graph<object>.Edge(
-                    start, end, 
+                    start!, end!, 
                     thisEdgeDirected,
                     label,
                     color != null?new Dictionary<string, object>() { { "color", color } }:null);
@@ -170,7 +171,7 @@ namespace StepRepl.GraphVisualization
                 nodes.Call(nodesArgs, o, e, predecessor, (no, u, s, f) =>
                 {
                     var env = new BindingEnvironment(e, u, s);
-                    var node = env.Resolve(nodeVar, env.Unifications, true);
+                    var node = env.Resolve(nodeVar, env.Unifications, true)!;
                     if (!graph.Nodes.Contains(node))
                         graph.AddNode(node);
                     return false;
@@ -187,7 +188,7 @@ namespace StepRepl.GraphVisualization
                     nodeColor.Call(colorArgs, o, e, predecessor, (no, u, s, f) =>
                     {
                         var env = new BindingEnvironment(e, u, s);
-                        var color = env.Resolve(colorVar);
+                        var color = env.Resolve(colorVar)!;
                         graph.NodeAttributes[node]["fillcolor"] = color;
                         return true;
                     });
@@ -206,19 +207,20 @@ namespace StepRepl.GraphVisualization
         {
             // Generate nodes
             if (state == null) state = State.Empty;
-            var g = new Graph<object?>(Term.Comparer.Default);
-            g.NodeLabel = StringifyStepObject;
-
+            var g = new Graph<object>(Term.Comparer.Default)
+            {
+                NodeLabel = StringifyStepObject
+            };
 
             var nodes = new List<object>();
             var answer = new LogicVariable("?answer", 0);
-            var env = new BindingEnvironment(StepCode.Module, null, null, state.Value);
+            var env = new BindingEnvironment(StepCode.Module, null!, null, state.Value);
             var textBuffer = new TextBuffer(0);
             nodeGenerator.Call(new[] { answer }, textBuffer,
                 env, null,
                 (t,u,s,p ) =>
                 {
-                    nodes.Add(new BindingEnvironment(env, u, s).CopyTerm(answer));
+                    nodes.Add(new BindingEnvironment(env, u, s).CopyTerm(answer)!);
                     return false;
                 });
 
@@ -233,7 +235,7 @@ namespace StepRepl.GraphVisualization
                     (t,u,s,p ) =>
                     {
                         var neighbor = new BindingEnvironment(env, u, s).CopyTerm(answer);
-                        g.AddEdge(new Graph<object>.Edge(n, neighbor, true));
+                        g.AddEdge(new Graph<object>.Edge(n, neighbor!, true));
                         return false;
                     });
             }
@@ -248,7 +250,7 @@ namespace StepRepl.GraphVisualization
                 null => "null",
                 string[] text => text.Untokenize(),
                 object?[] tuple => Writer.TermToString(tuple),
-                _ => o.ToString()
+                _ => o.ToString()!
             };
         }
     }

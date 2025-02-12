@@ -114,7 +114,7 @@ namespace StepRepl
             return topLevelSpan;
         }
 
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var str = value as string;
             if (str == null || targetType != typeof(InlineCollection))
@@ -122,7 +122,7 @@ namespace StepRepl
             return new InlineCollection() { ParseHtml(str) };
         }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

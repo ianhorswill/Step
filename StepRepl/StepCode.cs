@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Threading;
@@ -37,12 +38,11 @@ namespace StepRepl
 
         private static bool projectChanged;
 
-        private static FileSystemWatcher watcher;
+        private static FileSystemWatcher? watcher;
 
         public static void UpdateWatcher(bool watch)
         {
-            if (watcher != null)
-                watcher.Dispose();
+            watcher?.Dispose();
             if (watch)
             {
                 watcher = new FileSystemWatcher(StepCode.ProjectDirectory)
@@ -75,7 +75,7 @@ namespace StepRepl
         public static Step.Interpreter.Task? CommandProcessor;
 
         private static void AddDocumentation(string taskName, string section, string docstring) =>
-            ((Step.Interpreter.Task) ReplUtilities[taskName]).Documentation(section, docstring);
+            (((Step.Interpreter.Task) ReplUtilities[taskName]!)!).Documentation(section, docstring);
 
         static StepCode()
         {
@@ -97,7 +97,7 @@ namespace StepRepl
                             ArgumentCountException.Check("SampleOutputText", 0, args, o);
                             var t = StepThread.Current;
                             // Don't generate another sample if the last one hasn't been displayed yet.
-                            if (!t.NewSample)
+                            if (!t!.NewSample)
                             {
                                 t.Text = o.AsString;
                                 t.State = bindings.State;
@@ -127,7 +127,7 @@ namespace StepRepl
                                     args, output);
                             foreach (var frame in MethodCallFrame.GoalChain(predecessor))
                             {
-                                var task = frame.Method.Task;
+                                var task = frame.Method!.Task;
                                 callSummary.TryGetValue(task, out var previousCount);
                                 callSummary[task] = previousCount + 1;
                             }
@@ -230,7 +230,7 @@ namespace StepRepl
             Autograder.AddBuiltins();
         }
 
-        private static void EnvironmentOption(string option, object[] args)
+        private static void EnvironmentOption(string option, object?[] args)
         {
             switch (option)
             {
@@ -244,7 +244,7 @@ namespace StepRepl
                     break;
 
                 case "commandProcessor":
-                    CommandProcessor = (Step.Interpreter.Task)args[0];
+                    CommandProcessor = ((Step.Interpreter.Task)args[0]!)!;
                     break;
             }
         }
@@ -299,7 +299,7 @@ namespace StepRepl
                     var itemVar = new LogicVariable("?item", 1);
                     var callVar = new LogicVariable("?call", 2);
                     var menus = new List<(string menu, string item, object?[] call)>();
-                    var env = new BindingEnvironment(Module, null, null, State.Empty);
+                    var env = new BindingEnvironment(Module, null!, null, State.Empty);
                     task.Call(new object[] { menuVar, itemVar, callVar },
                         new TextBuffer(), env, null,
                         (o, u, s, f) =>
@@ -388,7 +388,7 @@ namespace StepRepl
                 LastException = e is StepException?e.InnerException:e;
                 if (LastException is StepExecutionException { SuppressStackTrace: true })
                     LastException = null;
-                output = stepThread.Text;
+                output = stepThread.Text??"";
                 newState = State;
             }
             if (newState != null && RetainState)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using StepRepl.ViewModels;

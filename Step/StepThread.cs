@@ -46,7 +46,7 @@ namespace Step
         /// <param name="state">Initial State in which to run the code.  Use State.Empty if there's no prior state.</param>
         /// <param name="taskName">Name of the task</param>
         /// <param name="args">Arguments to the task</param>
-        public StepThread(Module m, State state, string taskName, params object[] args)
+        public StepThread(Module m, State state, string taskName, params object?[] args)
             : this(m, () => m.Call(state, taskName, args))
         {
         }
@@ -58,7 +58,7 @@ namespace Step
         /// <param name="state">Initial State in which to run the code.  Use State.Empty if there's no prior state.</param>
         /// <param name="task">Task to call</param>
         /// <param name="args">Arguments to the task</param>
-        public StepThread(Module m, State state, Task task, params object[] args)
+        public StepThread(Module m, State state, Task task, params object?[] args)
             : this(m, () => m.Call(state, task, args))
         {
         }

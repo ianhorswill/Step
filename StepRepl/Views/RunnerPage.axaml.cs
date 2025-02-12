@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace StepRepl.Views;
 
 public partial class RunnerPage : UserControl
 {
-    public static RunnerPage Singleton;
+    public static RunnerPage Singleton=null!;
     
     public RunnerPage()
     {
@@ -31,7 +32,7 @@ public partial class RunnerPage : UserControl
         StepCommandField.AttachedToVisualTree += (s, e) => StepCommandField.Focus();
     }
     
-    private RunnerViewModel ViewModel => (RunnerViewModel)DataContext;
+    private RunnerViewModel ViewModel => (RunnerViewModel)DataContext!;
 
     #region Page Controls
     
@@ -79,7 +80,7 @@ public partial class RunnerPage : UserControl
 
         ViewModel.EvalWithDebugging = (e.KeyModifiers == KeyModifiers.Control);
 
-        string command = textBox.Text;
+        string command = textBox.Text!;
         textBox.Text = "";
         if (string.IsNullOrEmpty(command))
         {
@@ -239,7 +240,7 @@ public partial class RunnerPage : UserControl
 
     private void WarningGotFocus(object? sender, GotFocusEventArgs e)
     {
-        var t = (SelectableTextBlock)sender;
+        var t = (SelectableTextBlock)sender!;
         WarningText.SelectedItem = t.DataContext;
     }
     #endregion
@@ -332,14 +333,14 @@ public partial class RunnerPage : UserControl
 
     private void StackFrameGotFocus(object? sender, GotFocusEventArgs e)
     {
-        var t = (SelectableTextBlock)sender;
+        var t = (SelectableTextBlock)sender!;
         StackTrace.SelectedItem = t.DataContext;
     }
     
     private void ShowStackFrame(object? sender, RoutedEventArgs e)
     {
-        var item = (MenuItem)sender;
-        var frame = (MethodCallFrame)item.DataContext;
+        var item = (MenuItem)sender!;
+        var frame = (MethodCallFrame)item.DataContext!;
         var window = new MethodCallFrameViewer() { DataContext = frame };
         window.Show();
     }
@@ -371,14 +372,14 @@ public partial class RunnerPage : UserControl
         UserMenus.Clear();
     }
 
-    public void AddMenuItem(string menuName, string itemName, object[] call)
+    public void AddMenuItem(string menuName, string itemName, object?[] call)
     {
         var item = new MenuItem()
         {
             Header = itemName
         };
 
-        item.Click += (sender, args) => EvalAndShowOutput(StepCode.Eval(call));
+        item.Click += async (sender, args) => await EvalAndShowOutput(StepCode.Eval(call));
 
         UserMenu(menuName).Items.Add(item);
     }

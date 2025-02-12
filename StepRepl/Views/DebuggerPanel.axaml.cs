@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Avalonia;
@@ -6,16 +7,18 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Step;
 using Step.Interpreter;
 using Step.Output;
+using Module = Step.Module;
 
 namespace StepRepl.Views;
 
 public partial class DebuggerPanel : UserControl
 {
-    private ReplDebugger _debugger;
+    private ReplDebugger debugger;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public DebuggerPanel()
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     {
         InitializeComponent();
         this.Loaded += (s, e) =>
@@ -24,20 +27,20 @@ public partial class DebuggerPanel : UserControl
         };
         this.DetachedFromVisualTree += (s, e) =>
         {
-            _debugger?.End();
+            debugger?.End();
         };
     }
     
     public void SetDebugger(ReplDebugger debugger)
     {
-        _debugger = debugger;
+        this.debugger = debugger;
         UpdateInterface();
     }
     
     private void ContinueButtonPressed(object sender, RoutedEventArgs e)
     {
-        _debugger.SingleStepping = false;
-        _debugger?.Continue();
+        debugger.SingleStepping = false;
+        debugger?.Continue();
     }
     
     private void AbortButtonPressed(object? sender, RoutedEventArgs e)
@@ -47,29 +50,29 @@ public partial class DebuggerPanel : UserControl
     
     private void SingleStepButtonPressed(object sender, RoutedEventArgs e)
     {
-        _debugger.SingleStepping = true;
-        _debugger.Continue();
+        debugger.SingleStepping = true;
+        debugger.Continue();
     }
 
     private void UpdateInterface()
     {
-        if (_debugger?.IsPaused ?? false)
+        if (debugger?.IsPaused ?? false)
         {
             CallField.Inlines!.Clear();;
             var source = Call.CallSourceText(
-                MethodCallFrame.CurrentFrame.Method!.Task,
-                _debugger.LastResult_Environment!.Value.ResolveList(MethodCallFrame.CurrentFrame.Arglist),
-                Module.RichTextStackTraces, _debugger.LastResult_Environment!.Value.Unifications);
+                MethodCallFrame.CurrentFrame!.Method!.Task,
+                debugger.LastResult_Environment!.Value.ResolveList(MethodCallFrame.CurrentFrame.Arglist),
+                Module.RichTextStackTraces, debugger.LastResult_Environment!.Value.Unifications);
             CallField.Inlines.Add(HtmlTextFormatter.ParseHtml(source));
             OutputArea.IsVisible = true;
             DebugHint.IsVisible = false;
-            MethodInfo.Inlines.Clear();
-            MethodInfo.Inlines.Add(HtmlTextFormatter.ParseHtml($"{_debugger.LastResult_TraceEvent}: {_debugger.LastResult_Environment.Value.Frame.MethodSource}"));
-            Output.Text = _debugger.LastResult_Text;
-            if (_debugger.LastResult_Environment.HasValue)
+            MethodInfo.Inlines!.Clear();
+            MethodInfo.Inlines!.Add(HtmlTextFormatter.ParseHtml($"{debugger.LastResult_TraceEvent}: {debugger.LastResult_Environment.Value.Frame.MethodSource}"));
+            Output.Text = debugger.LastResult_Text;
+            if (debugger.LastResult_Environment.HasValue)
             {
                 StackTrace.SelectedItem = null;
-                StackTrace.ItemsSource = _debugger.LastResult_Environment.Value.Frame.CallerChain;
+                StackTrace.ItemsSource = debugger.LastResult_Environment.Value.Frame.CallerChain;
             }
         }
         else
@@ -81,14 +84,14 @@ public partial class DebuggerPanel : UserControl
     
     private void StackFrameGotFocus(object? sender, GotFocusEventArgs e)
     {
-        var t = (SelectableTextBlock)sender;
+        var t = (SelectableTextBlock)sender!;
         StackTrace.SelectedItem = t.DataContext;
     }
     
     private void ShowStackFrame(object? sender, RoutedEventArgs e)
     {
-        var item = (MenuItem)sender;
-        var frame = (MethodCallFrame)item.DataContext;
+        var item = (MenuItem)sender!;
+        var frame = (MethodCallFrame)item.DataContext!;
         var window = new MethodCallFrameViewer() { DataContext = frame };
         window.Show();
     }

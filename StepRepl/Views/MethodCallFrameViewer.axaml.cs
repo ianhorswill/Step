@@ -11,7 +11,7 @@ namespace StepRepl.Views
             InitializeComponent();
         }
 
-        private void KeyDown(object? sender, KeyEventArgs e)
+        private void KeyDownHandler(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {

@@ -10,7 +10,7 @@
              x:Class="StepRepl.Views.RunnerPage"
              x:DataType="vm:RunnerViewModel">
 
-    <UserControl.Resources>
+    <UserControl.Resources >
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key='Light'>

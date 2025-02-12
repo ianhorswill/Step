@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -28,7 +29,7 @@ namespace StepRepl.GraphVisualization
             if (Graph != null)
             {
                 Layout = new GraphLayout(Graph, layoutBounds);
-                NodeLabels = Layout.Nodes.Select(n => new FormattedText(n.Label ?? n.ToString(),
+                NodeLabels = Layout.Nodes.Select(n => new FormattedText(n.Label ?? n.ToString()!,
                     CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight, Typeface.Default, 14, n.Brush)).ToArray();
                 foreach (var e in Layout.Edges)
@@ -43,7 +44,7 @@ namespace StepRepl.GraphVisualization
         }
 
 
-        private Graph Graph => DataContext as Graph;
+        private Graph? Graph => DataContext as Graph;
         private GraphLayout? Layout;
 
         private FormattedText[]? NodeLabels;
@@ -68,7 +69,7 @@ namespace StepRepl.GraphVisualization
 
         private void Update()
         {
-            Layout.FixedUpdate();
+            Layout!.FixedUpdate();
             //InvalidateVisual();
             //DispatcherTimer.RunOnce(Update, new TimeSpan(0, 0, 0, 0, 30));
             DispatcherTimer.RunOnce(InvalidateVisual, new TimeSpan(0, 0, 0, 0, 30));
@@ -108,7 +109,7 @@ namespace StepRepl.GraphVisualization
                 if (e.Label != null)
                 {
                     var edgeLabel = EdgeLabels[e];
-                    var textPosition = ToPoint(perpOffset + (float)edgeLabel.Height * perp + 0.5f * (e.Start.Position + e.End.Position - unit * (float)edgeLabel.Width));
+                    var textPosition = ToPoint(perpOffset + (float)edgeLabel!.Height * perp + 0.5f * (e.Start.Position + e.End.Position - unit * (float)edgeLabel.Width));
                     var t = context.PushTransform(Matrix.CreateRotation(Math.Atan2(unit.Y, unit.X)) * Matrix.CreateTranslation(textPosition));
                     context.DrawText(edgeLabel, new Point(0, 0));
                     t.Dispose();
@@ -121,7 +122,7 @@ namespace StepRepl.GraphVisualization
                 if (n == Selected)
                     continue;
                 context.DrawEllipse(n.Brush, null, p, NodeSize, NodeSize);
-                var nodeLabel = NodeLabels[n.Index];
+                var nodeLabel = NodeLabels![n.Index];
                 context.DrawText(nodeLabel, p + TextOffset - new Point(0.5 * nodeLabel.Width, 0));
             }
 
@@ -129,7 +130,7 @@ namespace StepRepl.GraphVisualization
             {
                 var p = ToPoint(Selected.Position);
                 context.DrawEllipse(Brushes.Yellow, null, p, NodeSize, NodeSize);
-                var nodeLabel = NodeLabels[Selected.Index];
+                var nodeLabel = NodeLabels![Selected.Index];
                 var backgroundText = new FormattedText(Selected.Label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Black);
                 var center = p + 1.2*TextOffset - new Point(0.5 * backgroundText.Width, 0);
                 for (var i = -2; i < 3; i++)
@@ -147,7 +148,7 @@ namespace StepRepl.GraphVisualization
 
         private float EdgeOffset(GraphLayout.GraphEdge e)
         {
-            var initialSpacing = Layout.HasReverseEdge(e) ? -0.75f: -1;
+            var initialSpacing = Layout!.HasReverseEdge(e) ? -0.75f: -1;
             return edgeSpacing*(initialSpacing+e.RenderPosition);
         }
 
@@ -175,7 +176,7 @@ namespace StepRepl.GraphVisualization
             base.OnPointerMoved(e);
             var position = ToVector2(e.GetPosition(this));
             if (!isDragging)
-                Selected = Layout.FindNode(position, (float)NodeSize);
+                Selected = Layout!.FindNode(position, (float)NodeSize);
             if (Selected != null && isDragging)
                 Selected.SnapTo(position);
         }
