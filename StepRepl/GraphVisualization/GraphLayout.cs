@@ -117,7 +117,7 @@ namespace StepRepl.GraphVisualization {
             }
             PlaceComponents(bounds);
 
-            targetEdgeLength = 0.7f*(float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
+            TargetEdgeLength = 0.7f*(float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
         }
 
         private IBrush GetColorBrushByName(string colorName) => new SolidColorBrush(GetColorByName(colorName));
@@ -129,7 +129,7 @@ namespace StepRepl.GraphVisualization {
         public class GraphNode
         {
             public object Key = null!;
-            public string Label = null!;
+            public string? Label;
             public int Component = 0;
             public List<GraphEdge> AdjacentEdges = new();
             public IBrush Brush = null!;
@@ -262,6 +262,7 @@ namespace StepRepl.GraphVisualization {
             UpdatePhysics();
         }
 
+        #if ToolTips
         #region Highlighting and tooltip handling
         /// <summary>
         /// Do not use this directly.
@@ -288,20 +289,22 @@ namespace StepRepl.GraphVisualization {
 
         private static readonly Dictionary<Type, Delegate> DescriptionMethod = new();
 
-        //private static Delegate GetDescriptionMethod(object o) {
-        //    for (var t = o.GetType(); t != null; t = t.BaseType)
-        //        if (DescriptionMethod.TryGetValue(t, out var d))
-        //            return d;
-        //    return null;
-        //}
+        private static Delegate GetDescriptionMethod(object o)
+        {
+            for (var t = o.GetType(); t != null; t = t.BaseType)
+                if (DescriptionMethod.TryGetValue(t, out var d))
+                    return d;
+            return null;
+        }
         #endregion
+#endif
 
         #region Physics update
         /// <summary>
         /// The "ideal" length for edges.
         /// This is the length we'd have if all the nodes were arrayed in a regular grid.
         /// </summary>
-        public float targetEdgeLength;
+        public float TargetEdgeLength;
 
         public float TopBorder => (float)Bounds.Top + Border[0];
         public float RightBorder => (float)Bounds.Right - Border[0];
@@ -315,6 +318,7 @@ namespace StepRepl.GraphVisualization {
         /// on-screen position is updated once per frame in the Update method.
         /// </summary>
         private void UpdatePhysics() {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (Nodes.Count == 0 || topologicalDistance == null) return;
             foreach (var n in Nodes) n.NetForce = ZeroVector2;
 
@@ -347,21 +351,20 @@ namespace StepRepl.GraphVisualization {
         /// <summary>
         /// Apply a spring force to two adjacent nodes to move them closer to targetEdgeLength.
         /// </summary>
-        /// <param name="e">Edge connecting nodes</param>
         private void ApplySpringForce(int i, int j) {
-            var topologicalDistance = this.topologicalDistance[i, j];
+            var td = this.topologicalDistance[i, j];
             var start = Nodes[i];
             var end = Nodes[j];
             var offset = start.Position - end.Position;
             var realDist = offset.Length();
             var force = Vector2.Zero;
             if (realDist > 0.001f) {
-                if (topologicalDistance == short.MaxValue) {
-                    if (realDist < 2 * targetEdgeLength)
+                if (td == short.MaxValue) {
+                    if (realDist < 2 * TargetEdgeLength)
                         force = offset * (ComponentRepulsionGain / (realDist * realDist * realDist));
                 } else
                 {
-                    var targetLength = targetEdgeLength * topologicalDistance;
+                    var targetLength = TargetEdgeLength * td;
                     var lengthError = targetLength - realDist;
                     force = SpringStiffness * (lengthError / realDist) * offset;
                 }

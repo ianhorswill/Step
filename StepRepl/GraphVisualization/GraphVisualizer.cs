@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -10,32 +9,25 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
-using StepRepl.Views;
 using GraphViz;
-using Step;
-using Task = Step.Interpreter.Task;
 
 namespace StepRepl.GraphVisualization
 {
     public class GraphVisualizer : Control
     {
-        public GraphVisualizer()
-        {
-        }
-
         private void MakeLayout()
         {
             var layoutBounds = new Rect(Bounds.Size);
             if (Graph != null)
             {
-                Layout = new GraphLayout(Graph, layoutBounds);
-                NodeLabels = Layout.Nodes.Select(n => new FormattedText(n.Label ?? n.ToString()!,
+                layout = new GraphLayout(Graph, layoutBounds);
+                nodeLabels = layout.Nodes.Select(n => new FormattedText(n.Label ?? n.ToString()!,
                     CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight, Typeface.Default, 14, n.Brush)).ToArray();
-                foreach (var e in Layout.Edges)
+                foreach (var e in layout.Edges)
                     if (e.Label != null)
                     {
-                        EdgeLabels[e] = new FormattedText(e.Label, CultureInfo.CurrentCulture,
+                        edgeLabels[e] = new FormattedText(e.Label, CultureInfo.CurrentCulture,
                             FlowDirection.LeftToRight, Typeface.Default, 14, e.Pen.Brush);
                     }
 
@@ -45,13 +37,13 @@ namespace StepRepl.GraphVisualization
 
 
         private Graph? Graph => DataContext as Graph;
-        private GraphLayout? Layout;
+        private GraphLayout? layout;
 
-        private FormattedText[]? NodeLabels;
-        private Dictionary<object, FormattedText?> EdgeLabels = new Dictionary<object, FormattedText?>();
-        private Pen redPen = new(new SolidColorBrush(Colors.Red), 3);
-        private Pen greenPen = new(new SolidColorBrush(Colors.GreenYellow), 3);
-        private Brush greenBrush = new SolidColorBrush(Colors.GreenYellow);
+        private FormattedText[]? nodeLabels;
+        private readonly Dictionary<object, FormattedText?> edgeLabels = new Dictionary<object, FormattedText?>();
+        //private readonly Pen redPen = new(new SolidColorBrush(Colors.Red), 3);
+        private readonly Pen greenPen = new(new SolidColorBrush(Colors.GreenYellow), 3);
+        //private readonly Brush greenBrush = new SolidColorBrush(Colors.GreenYellow);
 
         public double NodeSize = 7;
         public Point TextOffset = new(0, -30);
@@ -61,15 +53,15 @@ namespace StepRepl.GraphVisualization
         protected override void OnSizeChanged(SizeChangedEventArgs e)
         {
             base.OnSizeChanged(e);
-            if (Layout == null)
+            if (layout == null)
                 MakeLayout();
-            if (Layout != null)
-                Layout.Bounds = new Rect(e.NewSize);
+            if (layout != null)
+                layout.Bounds = new Rect(e.NewSize);
         }
 
         private void Update()
         {
-            Layout!.FixedUpdate();
+            layout!.FixedUpdate();
             //InvalidateVisual();
             //DispatcherTimer.RunOnce(Update, new TimeSpan(0, 0, 0, 0, 30));
             DispatcherTimer.RunOnce(InvalidateVisual, new TimeSpan(0, 0, 0, 0, 30));
@@ -77,10 +69,10 @@ namespace StepRepl.GraphVisualization
 
         public override void Render(DrawingContext context)
         {
-            if (Layout == null)
+            if (layout == null)
                 return;
 
-            foreach (var e in Layout.Edges)
+            foreach (var e in layout.Edges)
             {
                 var pen = e.Start == Selected || e.End == Selected ? greenPen : e.Pen;
                 var startEndOffset = e.End.Position - e.Start.Position;
@@ -108,7 +100,7 @@ namespace StepRepl.GraphVisualization
                 }
                 if (e.Label != null)
                 {
-                    var edgeLabel = EdgeLabels[e];
+                    var edgeLabel = edgeLabels[e];
                     var textPosition = ToPoint(perpOffset + (float)edgeLabel!.Height * perp + 0.5f * (e.Start.Position + e.End.Position - unit * (float)edgeLabel.Width));
                     var t = context.PushTransform(Matrix.CreateRotation(Math.Atan2(unit.Y, unit.X)) * Matrix.CreateTranslation(textPosition));
                     context.DrawText(edgeLabel, new Point(0, 0));
@@ -116,13 +108,13 @@ namespace StepRepl.GraphVisualization
                 }
             }
 
-            foreach (var n in Layout.Nodes)
+            foreach (var n in layout.Nodes)
             {
                 var p = ToPoint(n.Position);
                 if (n == Selected)
                     continue;
                 context.DrawEllipse(n.Brush, null, p, NodeSize, NodeSize);
-                var nodeLabel = NodeLabels![n.Index];
+                var nodeLabel = nodeLabels![n.Index];
                 context.DrawText(nodeLabel, p + TextOffset - new Point(0.5 * nodeLabel.Width, 0));
             }
 
@@ -130,13 +122,13 @@ namespace StepRepl.GraphVisualization
             {
                 var p = ToPoint(Selected.Position);
                 context.DrawEllipse(Brushes.Yellow, null, p, NodeSize, NodeSize);
-                var nodeLabel = NodeLabels![Selected.Index];
-                var backgroundText = new FormattedText(Selected.Label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Black);
+                //var nodeLabel = nodeLabels![Selected.Index];
+                var backgroundText = new FormattedText(Selected.Label??"", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Black);
                 var center = p + 1.2*TextOffset - new Point(0.5 * backgroundText.Width, 0);
                 for (var i = -2; i < 3; i++)
                 for (var j = -2; j < 3; j++)
                     context.DrawText(backgroundText, center+new Point(i,j));
-                var foregroundText = new FormattedText(Selected.Label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Yellow);
+                var foregroundText = new FormattedText(Selected.Label??"", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, 24, Brushes.Yellow);
                 context.DrawText(foregroundText, center);
             }
 
@@ -144,12 +136,12 @@ namespace StepRepl.GraphVisualization
             Update();
         }
 
-        private const float edgeSpacing = 16;
+        private const float EdgeSpacing = 16;
 
         private float EdgeOffset(GraphLayout.GraphEdge e)
         {
-            var initialSpacing = Layout!.HasReverseEdge(e) ? -0.75f: -1;
-            return edgeSpacing*(initialSpacing+e.RenderPosition);
+            var initialSpacing = layout!.HasReverseEdge(e) ? -0.75f: -1;
+            return EdgeSpacing*(initialSpacing+e.RenderPosition);
         }
 
         Point ToPoint(Vector2 v) => new Point(v.X, v.Y);
@@ -176,7 +168,7 @@ namespace StepRepl.GraphVisualization
             base.OnPointerMoved(e);
             var position = ToVector2(e.GetPosition(this));
             if (!isDragging)
-                Selected = Layout!.FindNode(position, (float)NodeSize);
+                Selected = layout!.FindNode(position, (float)NodeSize);
             if (Selected != null && isDragging)
                 Selected.SnapTo(position);
         }

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
+// ReSharper disable once CheckNamespace
 namespace GraphViz
 {
     /// <summary>
@@ -159,6 +160,8 @@ namespace GraphViz
 
         public readonly Dictionary<T, int> NodeIndex;
 
+        public readonly Dictionary<T, int?> Rank = new();
+
         /// <summary>
         /// The set of all nodes in the graph
         /// </summary>
@@ -169,6 +172,8 @@ namespace GraphViz
         /// </summary>
         public Dictionary<T, Dictionary<string, object>>
             NodeAttributes;
+
+        public bool Hierarchical;
 
         public override IEnumerable<(object Node, Dictionary<string, object> Attributes, string Label)> NodesUntyped =>
             nodes.Select(n => ((object)n, NodeAttributes[n], NodeLabel(n)));
@@ -185,8 +190,8 @@ namespace GraphViz
             NodeId = (_) => $"v{NextNodeUid++}";
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             NodeLabel = v => (v == null)?"null":v.ToString()!;
-            DefaultNodeAttributes = n => EmptyAttributeDictionary;
-            DefaultEdgeAttributes = edge => EmptyAttributeDictionary;
+            DefaultNodeAttributes = _ => EmptyAttributeDictionary;
+            DefaultEdgeAttributes = _ => EmptyAttributeDictionary;
             IdOf = new Dictionary<T, string>(comparer);
             NodeIndex = new Dictionary<T, int>(comparer);
             nodes = new HashSet<T>(comparer);
@@ -514,7 +519,9 @@ namespace GraphViz
             public override int GetHashCode()
             {
                 // We need the hash to be symmetric in InNode and OutNode in case the edge is undirected.
+                // ReSharper disable NonReadonlyMemberInGetHashCode
                 return HashCode.Combine(StartNode.GetHashCode() + EndNode.GetHashCode(), Directed, Label);
+                // ReSharper restore NonReadonlyMemberInGetHashCode
             }
         }
         #endregion
@@ -652,7 +659,7 @@ namespace GraphViz
         }
 
         private int connectedComponentCount;
-        private int[]? nodeComponentNumbers=null;
+        private int[]? nodeComponentNumbers;
 
         private void FindConnectedComponents()
         {

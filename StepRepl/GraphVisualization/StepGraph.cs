@@ -1,8 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using Avalonia;
 using Avalonia.Threading;
 using StepRepl.Views;
 using GraphViz;
@@ -15,7 +13,7 @@ namespace StepRepl.GraphVisualization
 {
     internal static class StepGraph
     {
-        public static GeneralPrimitive VisualizeGraph = new GeneralPrimitive(nameof(VisualizeGraph), VisualizeGraphImplementation);
+        public static GeneralPrimitive VisualizeGraph = new(nameof(VisualizeGraph), VisualizeGraphImplementation);
 
         public static void AddPrimitives(Module m)
         {
@@ -31,30 +29,31 @@ namespace StepRepl.GraphVisualization
             Dispatcher.UIThread.Post(() =>
             {
                 var visualization = new Views.GraphVisualization() { DataContext = graph };
-                MainWindow.Instance.AddTab(name, visualization, true);
+                MainWindow.Instance.AddTab(name, visualization);
             });
         }
 
         private static Graph<string> CallGraph()
         {
-            var g = new GraphViz.Graph<string>();
+            var g = new Graph<string>();
             foreach (var t in StepCode.Module.DefinedTasks)
             foreach (var callee in t.Callees)
             {
                 switch (callee)
                 {
                     case Task t2:
-                        g.AddEdge(new Graph<string>.Edge(t.Name, t2.Name, true), true);
+                        g.AddEdge(new Graph<string>.Edge(t.Name, t2.Name), true);
                         break;
 
                     case StateVariableName v:
-                        g.AddEdge(new Graph<string>.Edge(t.Name, v.Name, true), true);
+                        g.AddEdge(new Graph<string>.Edge(t.Name, v.Name), true);
                         break;
 
                     default:
+                        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                         if (callee == null)
                             continue;
-                        g.AddEdge(new Graph<string>.Edge(t.Name, callee.ToString()!, true), true);
+                        g.AddEdge(new Graph<string>.Edge(t.Name, callee.ToString()!), true);
                         break;
                 }
             }
@@ -70,7 +69,6 @@ namespace StepRepl.GraphVisualization
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
             Task nodes = null!;
             Task nodeColor = null!;
-            Task nodeLabel = null!;
             var directed = false;
             var windowName = "Graph";
             var colorByComponent = false;
@@ -78,7 +76,7 @@ namespace StepRepl.GraphVisualization
             var labelVar = new LogicVariable("?label", 2);
 
             var graph = new Graph<object>(Term.Comparer.Default);
-            graph.NodeLabel = x => Writer.TermToString(x, null);
+            graph.NodeLabel = x => Writer.TermToString(x);
 
             for (var i = 1; i < args.Length; i += 2)
             {
@@ -98,11 +96,12 @@ namespace StepRepl.GraphVisualization
                         break;
 
                     case "node_label":
-                        nodeLabel = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
+                    {
+                        var nodeLabel = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
                         graph.NodeLabel = node =>
                         {
                             var label = "unknown label";
-                            nodeLabel.Call(new object?[] { node, labelVar }, o, e, predecessor, (no, u, s, f) =>
+                            nodeLabel.Call(new object?[] { node, labelVar }, o, e, predecessor, (_, u, s, _) =>
                             {
                                 var env = new BindingEnvironment(e, u, s);
                                 label = StringifyStepObject(env.Resolve(labelVar));
@@ -110,6 +109,7 @@ namespace StepRepl.GraphVisualization
                             });
                             return label;
                         };
+                    }
                         break;
 
                     case "directed":
@@ -137,15 +137,15 @@ namespace StepRepl.GraphVisualization
             var edgeArgCount = edges.ArgumentCount??2;
             var edgeArgs = edgeArgCount switch
             {
-                2 => new object[] { startNodeVar, endNodeVar },
-                3 => new object[] { startNodeVar, endNodeVar, labelVar },
-                4 => new object[] { startNodeVar, endNodeVar, labelVar, colorVar },
+                2 => [startNodeVar, endNodeVar],
+                3 => [startNodeVar, endNodeVar, labelVar],
+                4 => [startNodeVar, endNodeVar, labelVar, colorVar],
                 5 => new object[] { startNodeVar, endNodeVar, labelVar, colorVar, directedVar },
                 _ => throw new ArgumentException($"First argument to {nameof(VisualizeGraph)}, {Writer.TermToString(edges)}, must be a task that accepts 2-5 arguments.")
             };
             
             // Add all the edges
-            edges.Call(edgeArgs, o, e, predecessor, (no, u, s, f) =>
+            edges.Call(edgeArgs, o, e, predecessor, (_, u, s, _) =>
             {
                 var env = new BindingEnvironment(e, u, s);
                 var start = env.Resolve(startNodeVar, env.Unifications, true);
@@ -164,11 +164,12 @@ namespace StepRepl.GraphVisualization
             });
 
             // Add any nodes not added as part of the edges
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (nodes != null)
             {
                 var nodeVar = new LogicVariable("?node", 0);
                 var nodesArgs = new object?[] { nodeVar };
-                nodes.Call(nodesArgs, o, e, predecessor, (no, u, s, f) =>
+                nodes.Call(nodesArgs, o, e, predecessor, (_, u, s, _) =>
                 {
                     var env = new BindingEnvironment(e, u, s);
                     var node = env.Resolve(nodeVar, env.Unifications, true)!;
@@ -179,13 +180,14 @@ namespace StepRepl.GraphVisualization
             }
 
             // Assign colors for nodes
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (nodeColor != null)
             {
                 var colorArgs = new object?[] { null, colorVar };
                 foreach (var node in graph.Nodes )
                 {
                     colorArgs[0] = node;
-                    nodeColor.Call(colorArgs, o, e, predecessor, (no, u, s, f) =>
+                    nodeColor.Call(colorArgs, o, e, predecessor, (_, u, s, _) =>
                     {
                         var env = new BindingEnvironment(e, u, s);
                         var color = env.Resolve(colorVar)!;
@@ -216,9 +218,9 @@ namespace StepRepl.GraphVisualization
             var answer = new LogicVariable("?answer", 0);
             var env = new BindingEnvironment(StepCode.Module, null!, null, state.Value);
             var textBuffer = new TextBuffer(0);
-            nodeGenerator.Call(new[] { answer }, textBuffer,
+            nodeGenerator.Call(new object?[] { answer }, textBuffer,
                 env, null,
-                (t,u,s,p ) =>
+                (_,u,s,_ ) =>
                 {
                     nodes.Add(new BindingEnvironment(env, u, s).CopyTerm(answer)!);
                     return false;
@@ -232,10 +234,10 @@ namespace StepRepl.GraphVisualization
             foreach (var n in nodes)
             {
                 edgeGenerator.Call(new [] { n, answer }, textBuffer, env, null,
-                    (t,u,s,p ) =>
+                    (_,u,s,_ ) =>
                     {
                         var neighbor = new BindingEnvironment(env, u, s).CopyTerm(answer);
-                        g.AddEdge(new Graph<object>.Edge(n, neighbor!, true));
+                        g.AddEdge(new Graph<object>.Edge(n, neighbor!));
                         return false;
                     });
             }
