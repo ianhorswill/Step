@@ -114,6 +114,8 @@ namespace GraphViz
         /// Change colors in graph so that each connected component has its own color
         /// </summary>
         public abstract void RecolorByComponent();
+
+        public abstract int? NodeRank(object node);
     }
 
     /// <summary>
@@ -161,6 +163,8 @@ namespace GraphViz
         public readonly Dictionary<T, int> NodeIndex;
 
         public readonly Dictionary<T, int?> Rank = new();
+
+        public override int? NodeRank(object node) => Rank.GetValueOrDefault((T)node);
 
         /// <summary>
         /// The set of all nodes in the graph

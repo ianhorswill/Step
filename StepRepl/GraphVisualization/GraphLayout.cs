@@ -86,10 +86,15 @@ namespace StepRepl.GraphVisualization {
         /// </summary>
         private readonly Dictionary<(object, object), int> edgeCount = new();
 
+        public readonly int Depth;
+        public readonly float RankSpacing;
+
         public GraphLayout(GraphViz.Graph g, Rect bounds)
         {
             Graph = g;
             Bounds = bounds;
+            Depth = 0;
+
             foreach (var nodeInfo in Graph.NodesUntyped)
             {
                 var n = GetNode(nodeInfo.Node);
@@ -101,7 +106,12 @@ namespace StepRepl.GraphVisualization {
 
                 n.Brush = b;
                 n.Label = nodeInfo.Label;
+                n.Rank = g.NodeRank(nodeInfo.Node);
+                if (n.Rank != null)
+                    Depth = Math.Max(Depth, n.Rank.Value + 1);
             }
+
+            RankSpacing = (float)bounds.Height / (Depth + 1);
 
             foreach (var edgeInfo in Graph.EdgesUntyped)
             {
@@ -138,6 +148,7 @@ namespace StepRepl.GraphVisualization {
             public Vector2 NetForce;
             public int Index;
             public bool IsBeingDragged;
+            public int? Rank;
 
             public void SnapTo(Vector2 position)
             {
@@ -346,6 +357,10 @@ namespace StepRepl.GraphVisualization {
                          (1 - NodeDamping) * n.PreviousPosition +
                          FixedDeltaTime * FixedDeltaTime * n.NetForce;
             n.PreviousPosition = saved;
+            if (n.Rank != null)
+            {
+                n.Position.Y = n.PreviousPosition.Y = RankSpacing * (n.Rank.Value + 1);
+            }
         }
 
         /// <summary>

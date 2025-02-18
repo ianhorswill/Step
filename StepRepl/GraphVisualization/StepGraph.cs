@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Threading;
 using StepRepl.Views;
 using GraphViz;
@@ -67,16 +68,19 @@ namespace StepRepl.GraphVisualization
         {
             ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args, o);
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
-            Task nodes = null!;
-            Task nodeColor = null!;
+            Task? nodes = null;
+            Task? nodeColor = null;
             var directed = false;
             var windowName = "Graph";
             var colorByComponent = false;
+            var hierarchical = false;
 
             var labelVar = new LogicVariable("?label", 2);
 
-            var graph = new Graph<object>(Term.Comparer.Default);
-            graph.NodeLabel = x => Writer.TermToString(x);
+            var graph = new Graph<object>(Term.Comparer.Default)
+            {
+                NodeLabel = x => Writer.TermToString(x)
+            };
 
             for (var i = 1; i < args.Length; i += 2)
             {
@@ -88,6 +92,7 @@ namespace StepRepl.GraphVisualization
                 switch (keyword)
                 {
                     case "nodes":
+                    case "roots":
                         nodes = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
                         break;
 
@@ -124,6 +129,11 @@ namespace StepRepl.GraphVisualization
                         colorByComponent = true;
                         break;
 
+                    case "hierarchical":
+                        hierarchical = ArgumentTypeException.Cast<bool>(VisualizeGraph, value, args, o);
+                        graph.Hierarchical = hierarchical;
+                        break;
+
                     default:
                         throw new ArgumentException($"Unknown keyword {keyword} in call to {VisualizeGraph.Name}");
                 }
@@ -143,40 +153,108 @@ namespace StepRepl.GraphVisualization
                 5 => new object[] { startNodeVar, endNodeVar, labelVar, colorVar, directedVar },
                 _ => throw new ArgumentException($"First argument to {nameof(VisualizeGraph)}, {Writer.TermToString(edges)}, must be a task that accepts 2-5 arguments.")
             };
-            
-            // Add all the edges
-            edges.Call(edgeArgs, o, e, predecessor, (_, u, s, _) =>
-            {
-                var env = new BindingEnvironment(e, u, s);
-                var start = env.Resolve(startNodeVar, env.Unifications, true);
-                var end = env.Resolve(endNodeVar, env.Unifications, true);
-                var label = edgeArgCount>2?StringifyStepObject(env.Resolve(labelVar, env.Unifications, true)):null;
-                var color = edgeArgCount > 3 ? env.Resolve(colorVar) as string : null;
-                var thisEdgeDirected = edgeArgCount > 4 ? (bool)env.Resolve(directedVar, env.Unifications, true)! : directed;
-                var edge = new Graph<object>.Edge(
-                    start!, end!, 
-                    thisEdgeDirected,
-                    label,
-                    color != null?new Dictionary<string, object>() { { "color", color } }:null);
-                graph.AddEdge(edge, 
-                    true);
-                return false; // backtrack
-            });
 
-            // Add any nodes not added as part of the edges
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (nodes != null)
+            if (hierarchical)
             {
+                if (nodes == null)
+                    throw new ArgumentException(
+                        $"{nameof(VisualizeGraph)}: must specify a roots argument when in hierarchical mode.");
+                var q = new Queue<object>();
                 var nodeVar = new LogicVariable("?node", 0);
                 var nodesArgs = new object?[] { nodeVar };
-                nodes.Call(nodesArgs, o, e, predecessor, (_, u, s, _) =>
+                nodes.Call(nodesArgs, o, e, predecessor, (_, nu, s, _) =>
                 {
-                    var env = new BindingEnvironment(e, u, s);
-                    var node = env.Resolve(nodeVar, env.Unifications, true)!;
-                    if (!graph.Nodes.Contains(node))
-                        graph.AddNode(node);
+                    var nenv = new BindingEnvironment(e, nu, s);
+                    var root = nenv.Resolve(nodeVar, nenv.Unifications, true)!;
+                    if (!graph.Nodes.Contains(root))
+                    {
+                        graph.Rank[root] = 0;
+                        graph.AddNode(root);
+                        q.Enqueue(root);
+                        while (q.Count > 0)
+                        {
+                            var node = q.Dequeue();
+                            var rank = graph.Rank[node];
+
+                            var childArgs = edgeArgs.ToArray();
+                            childArgs[0] = node;
+
+                            // Follow edges of node
+                            edges.Call(childArgs, o, nenv, predecessor, (_, u, s, _) =>
+                            {
+                                var env = new BindingEnvironment(nenv, u, nenv.State);
+                                var start = node;
+                                var end = env.Resolve(endNodeVar, env.Unifications, true);
+
+                                if (!graph.Nodes.Contains(end))
+                                {
+                                    graph.Rank[end] = rank + 1;
+                                    graph.AddNode(end);
+                                    q.Enqueue(end);
+                                }
+
+                                var label = edgeArgCount > 2
+                                    ? StringifyStepObject(env.Resolve(labelVar, env.Unifications, true))
+                                    : null;
+                                var color = edgeArgCount > 3 ? env.Resolve(colorVar) as string : null;
+                                var thisEdgeDirected = edgeArgCount > 4
+                                    ? (bool)env.Resolve(directedVar, env.Unifications, true)!
+                                    : directed;
+                                var edge = new Graph<object>.Edge(
+                                    start!, end!,
+                                    thisEdgeDirected,
+                                    label,
+                                    color != null ? new Dictionary<string, object>() { { "color", color } } : null);
+                                graph.AddEdge(edge,
+                                    true);
+                                return false; // backtrack
+                            });
+                        }
+                    }
+
                     return false;
                 });
+            } 
+            else
+            {
+                // Add all the edges
+                edges.Call(edgeArgs, o, e, predecessor, (_, u, s, _) =>
+                {
+                    var env = new BindingEnvironment(e, u, s);
+                    var start = env.Resolve(startNodeVar, env.Unifications, true);
+                    var end = env.Resolve(endNodeVar, env.Unifications, true);
+                    var label = edgeArgCount > 2
+                        ? StringifyStepObject(env.Resolve(labelVar, env.Unifications, true))
+                        : null;
+                    var color = edgeArgCount > 3 ? env.Resolve(colorVar) as string : null;
+                    var thisEdgeDirected = edgeArgCount > 4
+                        ? (bool)env.Resolve(directedVar, env.Unifications, true)!
+                        : directed;
+                    var edge = new Graph<object>.Edge(
+                        start!, end!,
+                        thisEdgeDirected,
+                        label,
+                        color != null ? new Dictionary<string, object>() { { "color", color } } : null);
+                    graph.AddEdge(edge,
+                        true);
+                    return false; // backtrack
+                });
+
+                // Add any nodes not added as part of the edges
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+                if (nodes != null)
+                {
+                    var nodeVar = new LogicVariable("?node", 0);
+                    var nodesArgs = new object?[] { nodeVar };
+                    nodes.Call(nodesArgs, o, e, predecessor, (_, u, s, _) =>
+                    {
+                        var env = new BindingEnvironment(e, u, s);
+                        var node = env.Resolve(nodeVar, env.Unifications, true)!;
+                        if (!graph.Nodes.Contains(node))
+                            graph.AddNode(node);
+                        return false;
+                    });
+                }
             }
 
             // Assign colors for nodes
