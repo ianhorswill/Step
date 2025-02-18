@@ -86,8 +86,14 @@ namespace StepRepl.GraphVisualization {
         /// </summary>
         private readonly Dictionary<(object, object), int> edgeCount = new();
 
+        #region Hierarchical layout data
         public readonly int Depth;
         public readonly float RankSpacing;
+
+        public List<GraphNode>[] Ranks;
+        
+        public bool IsHierarchical => Depth > 0;
+        #endregion
 
         public GraphLayout(GraphViz.Graph g, Rect bounds)
         {
@@ -111,13 +117,52 @@ namespace StepRepl.GraphVisualization {
                     Depth = Math.Max(Depth, n.Rank.Value + 1);
             }
 
-            RankSpacing = (float)bounds.Height / (Depth + 1);
+            if (IsHierarchical)
+            {
+                RankSpacing = (float)bounds.Height / (Depth + 1);
+                Ranks = new List<GraphNode>[Depth];
+                for (var i = 0; i < Depth; i++)
+                    Ranks[i] = new();
+
+                foreach (var n in Nodes)
+                    if (n.Rank != null)
+                        Ranks[n.Rank.Value].Add(n);
+            }
 
             foreach (var edgeInfo in Graph.EdgesUntyped)
             {
                 AddEdge(GetNode(edgeInfo.From), GetNode(edgeInfo.To), edgeInfo.IsDirected, edgeInfo.Label!, edgeInfo.Attributes);
             }
 
+            if (IsHierarchical)
+            {
+                RankSpacing = (float)bounds.Height / (Depth + 1);
+                Ranks = new List<GraphNode>[Depth];
+                for (var i = 0; i < Depth; i++)
+                    Ranks[i] = new();
+
+                foreach (var n in Nodes)
+                {
+                    n.Parents = new();
+                    n.Children = new();
+
+                    if (n.Rank != null)
+                        Ranks[n.Rank.Value].Add(n);
+                }
+
+                foreach (var edge in Edges)
+                {
+                    var s = edge.Start;
+                    var e = edge.End;
+
+                    if (s.Rank.HasValue && e.Rank.HasValue && e.Rank.Value == s.Rank.Value + 1)
+                    {
+                        s.Children.Add(e);
+                        e.Parents.Add(s);
+                    }
+                }
+            }
+            
             topologicalDistance = new short[Nodes.Count, Nodes.Count];
             foreach (var n1 in Nodes)
             foreach (var n2 in Nodes)
@@ -149,6 +194,32 @@ namespace StepRepl.GraphVisualization {
             public int Index;
             public bool IsBeingDragged;
             public int? Rank;
+
+            public List<GraphNode> Parents;
+            public List<GraphNode> Children;
+
+            public float ParentAverageX()
+            {
+                var x = 0f;
+                foreach (var p in Parents)
+                    x += p.Position.X;
+                return x / Parents.Count;
+            }
+
+            public float ChildAverageX()
+            {
+                var x = 0f;
+                foreach (var c in Children)
+                    x += c.Position.X;
+                return x / Children.Count;
+            }
+
+            private static float Square(float x) => x * x;
+            public float UpwardEnergy() => Parents.Select(n => Square(n.Position.X - Position.X)).Sum();
+
+            public float DownwardEnergy() => Children.Select(n => Square(n.Position.X - Position.X)).Sum();
+
+            public float TotalEnergy() => UpwardEnergy() + DownwardEnergy();
 
             public void SnapTo(Vector2 position)
             {
@@ -228,6 +299,7 @@ namespace StepRepl.GraphVisualization {
         private int ConnectedComponentCount => Graph.ConnectedComponentCount;
         #endregion
 
+        #region Initial placement
         protected void PlaceComponents(Rect r) {
             void PlaceSingleComponent(int component, Rect rect) {
                 foreach (var n in Nodes)
@@ -262,14 +334,72 @@ namespace StepRepl.GraphVisualization {
                 }
             }
 
-            Place(0, ConnectedComponentCount - 1, r);
+            foreach (var n in Nodes)
+            {
+                if (n.Rank != null) 
+                    n.Position.Y = n.PreviousPosition.Y = RankSpacing * (n.Rank.Value + 1);
+            }
+
+            if (IsHierarchical)
+            {
+                foreach (var rank in Ranks) 
+                    DistributeNodesInRank(rank);
+
+                for (var iter=0; iter<100; iter++)
+                    foreach (var rank in Ranks)
+                    {
+                        foreach (var node in rank)
+                        {
+                            if (node.Children.Count > 0)
+                                node.Position.X = node.ChildAverageX();
+                            //else if (node.Parents.Count > 0)
+                            //    node.Position.X = node.ParentAverageX();
+                        }
+
+                        DistributeNodesInRank(rank);
+
+                        if (rank.Count > 1)
+                        {
+                            for (var attempt = 0; attempt < 100; attempt++)
+                            {
+                                var a = Step.Utilities.Randomization.IntegerExclusive(0, rank.Count);
+                                var b = Step.Utilities.Randomization.IntegerExclusive(0, rank.Count - 1);
+                                if (a == b)
+                                    b = rank.Count - 1;
+                                var an = rank[a];
+                                var bn = rank[b];
+                                var totalBefore = an.TotalEnergy() + bn.TotalEnergy();
+                                // Swap elements
+                                (an.Position.X, bn.Position.X) = (bn.Position.X, an.Position.X);
+                                if (an.TotalEnergy() + bn.TotalEnergy() > totalBefore)
+                                    // Swap back
+                                    (an.Position.X, bn.Position.X) = (bn.Position.X, an.Position.X);
+                            }
+                        }
+                    }
+            }
+            else
+                Place(0, ConnectedComponentCount - 1, r);
         }
+
+        private void DistributeNodesInRank(List<GraphNode> rank)
+        {
+            rank.Sort((a,b) => a.Position.X.CompareTo(b.Position.X));
+            var spacing = (float)Bounds.Width / (rank.Count + 1);
+            for (var i = 0; i < rank.Count; i++)
+            {
+                var n = rank[i];
+                n.Position.X = spacing * (i + 1);
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Update physics simulation of nodes
         /// </summary>
         public void FixedUpdate() {
-            if (Nodes.Count == 0) return;
+            if (Nodes.Count == 0 || IsHierarchical) return;
             UpdatePhysics();
         }
 
@@ -368,6 +498,10 @@ namespace StepRepl.GraphVisualization {
         /// </summary>
         private void ApplySpringForce(int i, int j) {
             var td = this.topologicalDistance[i, j];
+            if (td > 3 && Depth > 0)
+                // In we're in hierarchical mode, so we don't apply forces to distant pairs of nodes
+                return;
+
             var start = Nodes[i];
             var end = Nodes[j];
             var offset = start.Position - end.Position;
@@ -387,6 +521,18 @@ namespace StepRepl.GraphVisualization {
             start.NetForce += force;
             end.NetForce -= force;
         }
+        #endregion
+
+        #region Hierarchical placement
+        /// <summary>
+        /// For each rank, sort its nodes left to right
+        /// </summary>
+        private void SortRanks()
+        {
+            foreach (var rank in Ranks)
+                rank.Sort((a,b) => a.Position.X.CompareTo(b.Position.X));
+        }
+
         #endregion
 
         #region MouseInteraction
