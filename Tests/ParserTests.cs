@@ -326,6 +326,16 @@ GenericIncompatibility snoring.");
         }
 
         [TestMethod]
+        public void EmptyStringTest()
+        {
+            var m = Module.FromDefinitions(
+                "Test: [Predicate \"\"]",
+                "Predicate \"\".");
+            Assert.AreEqual(1, ((CompoundTask)m["Predicate"]).ArgCount);
+            Assert.AreEqual("", m.Call("Test"));
+        }
+
+        [TestMethod]
         public void LoadModuleTest()
         {
             var m = Module.FromDefinitions("Test: this is a test");

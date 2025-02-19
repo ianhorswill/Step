@@ -682,9 +682,9 @@ namespace Step.Parser
                 var argPattern = Get();
                 switch (argPattern)
                 {
-                    case string quote when quote == "“":
+                    case string quote when TokenStream.IsQuoteToken(quote):
                         var strings = new List<string>();
-                        while (!Equals(Peek, "”") && !end)
+                        while (!TokenStream.IsQuoteToken(Peek) && !end)
                         {
                             var next = Get();
                             if (next is string s)

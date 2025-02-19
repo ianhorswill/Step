@@ -108,7 +108,7 @@ namespace Step.Parser
                 case '"':
                     var nextCode = Input.Peek();
                     var next = (char) nextCode;
-                    if (nextCode < 0 || char.IsWhiteSpace(next) || char.IsPunctuation(next))
+                    if (nextCode < 0 || char.IsWhiteSpace(next) || (char.IsPunctuation(next) && next != '"'))
                         return RightDoubleQuote;
                     else
                         return LeftDoubleQuote;

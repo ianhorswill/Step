@@ -50,6 +50,12 @@ namespace Step.Parser
         /// </summary>
         public const char RightDoubleQuote = '\u201D';
 
+        public static readonly char[] QuoteChars = new[] { '"', LeftDoubleQuote, RightDoubleQuote };
+
+        public static bool IsQuoteChar(char c) => Array.IndexOf(QuoteChars, c) >= 0;
+
+        public static bool IsQuoteToken(object? t) => t is string { Length: 1 } s && IsQuoteChar(s[0]);
+
         /// <summary>
         /// Line number of file being read from
         /// </summary>
