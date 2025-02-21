@@ -90,7 +90,7 @@ namespace StepRepl.GraphVisualization {
         public readonly int Depth;
         public readonly float RankSpacing;
 
-        public List<GraphNode>[] Ranks;
+        public List<List<GraphNode>> Ranks;
         
         public bool IsHierarchical => Depth > 0;
         #endregion
@@ -117,18 +117,6 @@ namespace StepRepl.GraphVisualization {
                     Depth = Math.Max(Depth, n.Rank.Value + 1);
             }
 
-            if (IsHierarchical)
-            {
-                RankSpacing = (float)bounds.Height / (Depth + 1);
-                Ranks = new List<GraphNode>[Depth];
-                for (var i = 0; i < Depth; i++)
-                    Ranks[i] = new();
-
-                foreach (var n in Nodes)
-                    if (n.Rank != null)
-                        Ranks[n.Rank.Value].Add(n);
-            }
-
             foreach (var edgeInfo in Graph.EdgesUntyped)
             {
                 AddEdge(GetNode(edgeInfo.From), GetNode(edgeInfo.To), edgeInfo.IsDirected, edgeInfo.Label!, edgeInfo.Attributes);
@@ -136,18 +124,10 @@ namespace StepRepl.GraphVisualization {
 
             if (IsHierarchical)
             {
-                RankSpacing = (float)bounds.Height / (Depth + 1);
-                Ranks = new List<GraphNode>[Depth];
-                for (var i = 0; i < Depth; i++)
-                    Ranks[i] = new();
-
                 foreach (var n in Nodes)
                 {
                     n.Parents = new();
                     n.Children = new();
-
-                    if (n.Rank != null)
-                        Ranks[n.Rank.Value].Add(n);
                 }
 
                 foreach (var edge in Edges)
@@ -155,12 +135,49 @@ namespace StepRepl.GraphVisualization {
                     var s = edge.Start;
                     var e = edge.End;
 
-                    if (s.Rank.HasValue && e.Rank.HasValue && e.Rank.Value == s.Rank.Value + 1)
+                    if (s == e)
+                        continue;
+
+                    if (s.Rank.HasValue && e.Rank.HasValue && e.Rank.Value > s.Rank.Value)
                     {
                         s.Children.Add(e);
                         e.Parents.Add(s);
                     }
+                    else
+                    {
+                        // Back edge
+                        e.Children.Add(s);
+                        s.Parents.Add(e);
+                    }
                 }
+
+                // Reassign ranks
+                Ranks = new();
+                var rankNodes = new List<GraphNode>();
+                var remainingNodes = new List<GraphNode>(Nodes);
+                while (remainingNodes.Count > 0)
+                {
+                    // Make a new rank
+                    rankNodes.Clear();
+                    var currentRank = Ranks.Count;
+                    // Sort nodes in decreasing order of unplaced parents
+                    remainingNodes.Sort((a,b) => b.UnplacedParentCount().CompareTo(a.UnplacedParentCount()));
+                    // Place all nodes we can into the rank
+                    for (var i = remainingNodes.Count - 1; i >= 0 && remainingNodes[i].UnplacedParentCount() == 0; i--)
+                    {
+                        // ith node has all its parents placed, and so can be placed in the current rank
+                        rankNodes.Add(remainingNodes[i]);
+                        remainingNodes[i].Rank = currentRank;
+                        remainingNodes.RemoveAt(i);
+                    }
+                    // Any remaining nodes can't be placed in this rank
+                    foreach (var n in rankNodes)
+                        n.PlacedInRank = true;
+                    Ranks.Add(new List<GraphNode>(rankNodes));
+                }
+
+                Depth = Ranks.Count;
+                RankSpacing = (float)bounds.Height / (Depth + 1);
             }
             
             topologicalDistance = new short[Nodes.Count, Nodes.Count];
@@ -194,6 +211,7 @@ namespace StepRepl.GraphVisualization {
             public int Index;
             public bool IsBeingDragged;
             public int? Rank;
+            public bool PlacedInRank;
 
             public List<GraphNode> Parents;
             public List<GraphNode> Children;
@@ -212,6 +230,15 @@ namespace StepRepl.GraphVisualization {
                 foreach (var c in Children)
                     x += c.Position.X;
                 return x / Children.Count;
+            }
+
+            public int UnplacedParentCount()
+            {
+                var count = 0;
+                foreach (var n in Parents)
+                    if (!n.PlacedInRank)
+                        count++;
+                return count;
             }
 
             private static float Square(float x) => x * x;

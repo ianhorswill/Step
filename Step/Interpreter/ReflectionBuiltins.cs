@@ -109,7 +109,7 @@ namespace Step.Interpreter
                 {
                     // in out
                     foreach (var c in m.Callees(callerTask!))
-                        if (k(o, BindingList.Bind(e.Unifications, calleeVar, c), e.State, predecessor))
+                        if (c is Task && k(o, BindingList.Bind(e.Unifications, calleeVar, c), e.State, predecessor))
                             return true;
                 }
             }

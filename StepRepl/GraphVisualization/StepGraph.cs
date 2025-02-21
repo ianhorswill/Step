@@ -192,6 +192,8 @@ namespace StepRepl.GraphVisualization
                                     graph.AddNode(end);
                                     q.Enqueue(end);
                                 }
+                                //else if (graph.Rank[end] <= rank)
+                                //    graph.Rank[end] = rank + 1;
 
                                 var label = edgeArgCount > 2
                                     ? StringifyStepObject(env.Resolve(labelVar, env.Unifications, true))
