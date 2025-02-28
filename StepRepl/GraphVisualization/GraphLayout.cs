@@ -93,6 +93,8 @@ namespace StepRepl.GraphVisualization {
         public List<List<GraphNode>> Ranks;
         
         public bool IsHierarchical => Depth > 0;
+
+        public static float MinSpacing = 100;
         #endregion
 
         public GraphLayout(GraphViz.Graph g, Rect bounds)
@@ -155,6 +157,7 @@ namespace StepRepl.GraphVisualization {
                 Ranks = new();
                 var rankNodes = new List<GraphNode>();
                 var remainingNodes = new List<GraphNode>(Nodes);
+                var maxNodesPerRank = (int)(bounds.Width / MinSpacing);
                 while (remainingNodes.Count > 0)
                 {
                     // Make a new rank
@@ -163,7 +166,9 @@ namespace StepRepl.GraphVisualization {
                     // Sort nodes in decreasing order of unplaced parents
                     remainingNodes.Sort((a,b) => b.UnplacedParentCount().CompareTo(a.UnplacedParentCount()));
                     // Place all nodes we can into the rank
-                    for (var i = remainingNodes.Count - 1; i >= 0 && remainingNodes[i].UnplacedParentCount() == 0; i--)
+                    for (var i = remainingNodes.Count - 1;
+                         i >= 0 && remainingNodes[i].UnplacedParentCount() == 0 && rankNodes.Count < maxNodesPerRank;
+                         i--)
                     {
                         // ith node has all its parents placed, and so can be placed in the current rank
                         rankNodes.Add(remainingNodes[i]);
@@ -379,9 +384,14 @@ namespace StepRepl.GraphVisualization {
                         {
                             if (node.Children.Count > 0)
                                 node.Position.X = node.ChildAverageX();
-                            //else if (node.Parents.Count > 0)
-                            //    node.Position.X = node.ParentAverageX();
+                            else if (node.Parents.Count > 0)
+                                node.Position.X = node.ParentAverageX();
                         }
+
+                        // Put only child leaves with a single parent under their parent)
+                        foreach (var n in rank)
+                            if (n.Children.Count == 0 && n.Parents.Count == 1 && n.Parents[0].Children.Count == 1)
+                                n.Position.X = n.Parents[0].Position.X;
 
                         DistributeNodesInRank(rank);
 
@@ -411,12 +421,25 @@ namespace StepRepl.GraphVisualization {
 
         private void DistributeNodesInRank(List<GraphNode> rank)
         {
+            // Sort left-to-right
             rank.Sort((a,b) => a.Position.X.CompareTo(b.Position.X));
-            var spacing = (float)Bounds.Width / (rank.Count + 1);
-            for (var i = 0; i < rank.Count; i++)
+
+            var wellSeparated = true;
+            for (var i = 0; i < rank.Count-1; i++)
+                if (rank[i + 1].Position.X - rank[i].Position.X < MinSpacing)
+                {
+                    wellSeparated = false;
+                    break;
+                }
+
+            if (!wellSeparated)
             {
-                var n = rank[i];
-                n.Position.X = spacing * (i + 1);
+                var spacing = (float)Bounds.Width / (rank.Count + 1);
+                for (var i = 0; i < rank.Count; i++)
+                {
+                    var n = rank[i];
+                    n.Position.X = spacing * (i + 1);
+                }
             }
         }
 
