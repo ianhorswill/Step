@@ -93,7 +93,14 @@ namespace StepRepl.GraphVisualization
                 {
                     case "nodes":
                     case "roots":
-                        nodes = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
+                        if (value is object[] list)
+                            nodes = new GeneralPredicate<object>("anonymous",
+                                // ReSharper disable once AccessToModifiedClosure
+                                n => list.Contains(n),
+                                // ReSharper disable once AccessToModifiedClosure
+                                () => list);
+                        else
+                            nodes = ArgumentTypeException.Cast<Task>(VisualizeGraph, value, args, o);
                         break;
 
                     case "node_color":
