@@ -708,7 +708,10 @@ namespace Step.Parser
                     
                     case string paren when paren == "(":
                         var guardElements = new List<object?>();
-                        while (!Equals(Peek, ")") && !end) guardElements.Add(Get());
+                        while (!Equals(Peek, ")") && !end)
+                        {
+                            guardElements.Add(Equals(Peek, "{") ? ParseHeadFeatureStructure(true) : Get());
+                        }
                         if (end)
                             throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
                                 SourcePath, lineNumber);
@@ -777,8 +780,11 @@ namespace Step.Parser
         /// </summary>
         /// <returns>The feature structure object</returns>
         /// <exception cref="SyntaxError">If missing a }</exception>
-        private object ParseHeadFeatureStructure()
+        private object ParseHeadFeatureStructure(bool ignoreCurrentToken = false)
         {
+            if (ignoreCurrentToken)
+                Get();
+
             var featureSpecs = new List<object?> { };
 
             while ((Peek == null || !Peek.Equals("}")) && !end)
