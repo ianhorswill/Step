@@ -566,6 +566,7 @@ var output = TextBuffer.NewEmpty();
         /// <param name="recursive">If true, load files from all directories in the subtree under path</param>
         public void LoadDirectory(string path, bool recursive = true)
         {
+            MethodCallFrame.CurrentFrame = null;
             foreach (var file in Directory.GetFiles(path))
                 // Load file if the filename ends with .step or .csv and doesn't start with .
                 if (!Path.GetFileName(file).StartsWith(".") && (Path.GetExtension(file) == SourceExtension || Path.GetExtension(file) == CsvExtension))
