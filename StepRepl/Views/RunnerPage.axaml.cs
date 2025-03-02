@@ -14,6 +14,7 @@ using StepRepl.GraphVisualization;
 using StepRepl.ViewModels;
 using Step;
 using Step.Interpreter;
+using Step.Parser;
 using Task = System.Threading.Tasks.Task;
 
 namespace StepRepl.Views;
@@ -189,9 +190,9 @@ public partial class RunnerPage : UserControl
     /// </summary>
     private void ExceptionMessageClicked(object? obj, PointerReleasedEventArgs e)
     {
-        if (ExceptionMessage.Text == null)
+        if (StepCode.LastException == null)
             return;
-        var m = Regex.Match(ExceptionMessage.Text, "^([^.]+.step):([0-9]+) ");
+        var m = Regex.Match(StepCode.LastException.Message, "^([^.]+.step):([0-9]+) ");
         if (m.Success)
         {
             var file = m.Groups[1].Value;
@@ -285,7 +286,13 @@ public partial class RunnerPage : UserControl
         {
             ErrorLabel.IsVisible = true;
             Module.RichTextStackTraces = true;
-            HtmlTextFormatter.SetFormattedText(ExceptionMessage, StepCode.LastException is TaskCanceledException?"You stopped the step program":StepCode.LastException.Message);
+            var message = StepCode.LastException switch
+            {
+                TaskCanceledException => "You stopped the step program",
+                SyntaxError => StepCode.LastException.Message.Split('\n')[0],
+                _ => StepCode.LastException.Message
+            };
+            HtmlTextFormatter.SetFormattedText(ExceptionMessage, message);
             StackTrace.ItemsSource = StackFrames;
                 
             CStackTrace.Text = "Internal debugging information for Ian:\n"+StepCode.LastException.StackTrace;

@@ -321,7 +321,7 @@ namespace StepRepl
             catch (Exception e)
             {
                 LastException = e;
-                Console.WriteLine($"Error loading project at {ProjectDirectory}: {e.Message}");
+                //Console.WriteLine($"Error loading project at {ProjectDirectory}: {e.Message}");
             }
 
         }
