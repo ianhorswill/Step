@@ -228,6 +228,7 @@ namespace StepRepl
                     .Documentation(
                         "Adds a button with the specified label text that when pressed will run the specified code in the current dynamic state.");
             Autograder.AddBuiltins();
+            Importers.SExpressionReader.AddBuiltins(ReplUtilities);
         }
 
         private static void EnvironmentOption(string option, object?[] args)

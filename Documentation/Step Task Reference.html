@@ -63,6 +63,9 @@
 <ul>
 </ul>
 </ul>
+<li><a href="#S-Expressions">S-Expressions</a></li>
+<ul>
+</ul>
 <li><a href="#StepRepl">StepRepl</a></li>
 <ul>
 <li><a href="#display control">Display control</a></li>
@@ -317,6 +320,13 @@ Predicates that can be used by a program to check what tasks can call what other
 <code>[<b>TaskMethod</b> <i>?task</i> <i>?method</i>]</code><br>True when ?method is a method of ?task
 <p>
 <code>[<b>TaskSubtask</b> <i>?task</i> <i>?call</i>]</code><br>True if task ?caller has a method that contains the call ?call.
+<p>
+<h2 id="S-Expressions">S-Expressions</h2>
+Tasks for manipulating s-expression files.
+<p>
+<code>[<b>ReadLisp</b> <i>filename</i> <i>?object</i>]</code><br>Reads filename.lisp and places the decoded data in ?object.
+<p>
+<code>[<b>ReadPddl</b> <i>filename</i> <i>?object</i>]</code><br>Reads filename.pddl and places the decoded data in ?object.
 <p>
 <h2 id="StepRepl">StepRepl</h2>
 These tasks are defined by the StepRepl IDE.  To use them within a game not running inside StepRepl, you would need to copy their source into your game.

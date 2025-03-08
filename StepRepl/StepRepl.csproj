@@ -49,4 +49,9 @@
     <ItemGroup>
       <ProjectReference Include="..\Step\Step.csproj" />
     </ItemGroup>
+
+
+    <ItemGroup>
+      <Folder Include="Importers\" />
+    </ItemGroup>
 </Project>
