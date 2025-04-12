@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StepRepl", "StepRepl\StepRepl.csproj", "{835D169B-F82A-47C1-8EFF-441DA3EBFC5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StepWasmStandalone", "StepWasmStandalone\StepWasmStandalone.csproj", "{89DDC04A-3837-497F-9B78-03FE0CCE1DED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{835D169B-F82A-47C1-8EFF-441DA3EBFC5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{835D169B-F82A-47C1-8EFF-441DA3EBFC5E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{835D169B-F82A-47C1-8EFF-441DA3EBFC5E}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{89DDC04A-3837-497F-9B78-03FE0CCE1DED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89DDC04A-3837-497F-9B78-03FE0CCE1DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89DDC04A-3837-497F-9B78-03FE0CCE1DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89DDC04A-3837-497F-9B78-03FE0CCE1DED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

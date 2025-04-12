@@ -1,0 +1,140 @@
+﻿@page "/"
+@using Step
+@using Step.Interpreter
+@using Step.Output
+
+<PageTitle>Step</PageTitle>
+
+<h1>Interactive Step interpreter</h1>
+
+<h3>Program</h3>
+
+<textarea @bind="@source" id="sourceCode" style="width: 600px; height: 400px;" spellcheck="false"/>
+
+private static 
+
+<h3>Command(s) to execute</h3>
+
+<input @bind="@command" style="width:400px;" spellcheck="false" />
+
+
+<button class="btn btn-primary" @onclick="Run">Click me</button>
+
+<script>
+    console.log(window);
+    console.log(window.opener);
+    window.opener.postMessage("_ready_", "*");
+    window.addEventListener('message', function(event) {
+        console.log(event.data);
+        if (event.source == window.opener)
+        {
+            console.log("calling");
+            DotNet.invokeMethod('StepWasmStandalone', 'SetSource', event.data);
+            console.log("called");
+            console.log(DotNet.invokeMethod('StepWasmStandalone', 'GetSource'));
+        } else 
+            console.log("wrong message sender");
+    } );
+</script>
+
+@code {
+    private static Module ReplUtilities = MakeReplUtilities();
+    private static string source ="";
+    private string command ="";
+
+    private string outputHeading = "";
+    private MarkupString output;
+
+    private void Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter")
+            Run();
+    }
+
+    [JSInvokable]
+    public static void SetSource(string sourceCode)
+    {
+        source = sourceCode;
+        
+        singleton?.StateHasChanged();
+    }
+
+    [JSInvokable]
+    public static string GetSource() => source;
+
+    private void Run()
+    {
+        try
+        {
+            Module.RichTextStackTraces = true;
+            var m = new Module("User", ReplUtilities);
+            m.AddDefinitions(source);
+            var topLevelSource = command;
+            if (!topLevelSource.Trim().StartsWith('['))
+                topLevelSource = $"[{topLevelSource}]";
+            topLevelSource = $"{topLevelSource} [PrintLocalBindings]";
+            var rawOutput = m.ParseAndExecute(topLevelSource).Replace("\n", "<br>");
+            if (rawOutput == "")
+            {
+                outputHeading = "Yes";
+                output = (MarkupString)"<i>The command executed, but did not print anything</i>";
+            }
+            else
+            {
+                output = (MarkupString)rawOutput;
+                outputHeading = "Output";
+            }
+
+        }
+        catch (CallFailedException e) when (IsTopLevelCallFailure(e))
+        {
+            outputHeading = "No";
+            output = (MarkupString)"<i>The command did not generate an error, but it was not successful; the answer to your query is \"no\".</i>";
+        }
+        catch (Exception e)
+        {
+            outputHeading = "Error";
+            output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
+        }
+    }
+
+    private static bool IsTopLevelCallFailure(CallFailedException e) => e.Task is CompoundTask { Name: "TopLevelCall" };
+
+    private static Module MakeReplUtilities()
+    {
+        var m = new Module("ReplUtilities");
+        m["PrintLocalBindings"] = new GeneralPrimitive("PrintLocalBindings",
+                (args, o, bindings, p, k) =>
+                {
+                    ArgumentCountException.Check("PrintLocalBindings", 0, args, o);
+                    var locals = bindings.Frame.Locals;
+                    var output = new string[locals.Length * 4];
+                    var index = 0;
+                    foreach (var v in locals)
+                    {
+                        output[index++] = v.Name.Name;
+                        output[index++] = "=";
+                        var value = bindings.CopyTerm(v);
+                        output[index++] = Writer.TermToString(value, bindings.Unifications); //+$":{value.GetType().Name}";
+                        output[index++] = TextUtilities.NewLineToken;
+                    }
+
+                    return k(o.Append(TextUtilities.FreshLineToken).Append(output), bindings.Unifications,
+                        bindings.State, p);
+                })
+            .Arguments()
+            .Documentation("StepRepl//internals",
+                "Prints the values of all local variables.  There probably isn't any reason for you to use this directly, but it's used by StepRepl to print the results of queries.");
+        return m;
+    }
+
+    private static Home? singleton;
+    protected override void OnInitialized()
+    {
+        singleton = this;
+    }
+}
+<p></p>
+<h3>@outputHeading</h3>
+
+<p role="status">@output</p>
