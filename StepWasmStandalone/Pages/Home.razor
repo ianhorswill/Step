@@ -15,7 +15,7 @@ private static
 
 <h3>Command(s) to execute</h3>
 
-<input @bind="@command" style="width:400px;" spellcheck="false" />
+<input @bind="@command" style="width:400px;" spellcheck="false" @onkeydown="@Enter"/>
 
 
 <button class="btn btn-primary" @onclick="Run">Click me</button>
