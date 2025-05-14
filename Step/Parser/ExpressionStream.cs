@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Step.Parser
 {
@@ -182,14 +183,17 @@ namespace Step.Parser
             }
         }
 
+        private static readonly string[] OpenBrackets = ["[", "(", "{"];
+        private static readonly string[] CloseBrackets = ["]", ")", "}"];
+
         private object ReadSubExpression(string openBracket)
         {
             var buffer = new List<object>();
 
-            while (!end && Peek != "]" && Peek != "}")
+            while (!end && !CloseBrackets.Contains(Peek))
             {
                 var token = Get();
-                if (token == "[" || token == "{")
+                if (OpenBrackets.Contains(token))
                     buffer.Add(ReadSubExpression(token));
                 else
                     buffer.Add(token);

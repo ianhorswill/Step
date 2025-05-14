@@ -33,12 +33,23 @@ namespace Step.Parser
     /// </summary>
     public class SyntaxError : Exception
     {
+        /// <summary>
+        /// Path to the file with the syntax error
+        /// </summary>
+        public readonly string? Path;
+
+        /// <summary>
+        /// Line number of the syntax error within the file.
+        /// </summary>
+        public readonly int LineNumber;
+
         /// <inheritdoc />
         public SyntaxError(string message, string? path, int lineNo) : base(path != null
-            ? $"{Path.GetFileName(path)}:{lineNo} {message}\nFile: {path}"
+            ? $"{System.IO.Path.GetFileName(path)}:{lineNo} {message}\nFile: {path}"
             : $"Line {lineNo}: {message}")
-
         {
+            Path = path;
+            LineNumber = lineNo;
         }
     }
 }

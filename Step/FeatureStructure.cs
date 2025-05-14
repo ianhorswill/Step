@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using Step.Interpreter;
 using Step.Output;
 
@@ -237,5 +238,7 @@ namespace Step
         }
 
         public string BlockContents => Writer.TermToString(this, null);
+
+        public FeatureStructure Map(Func<object?, object?> map) => new(features, values.Select(map).ToArray());
     }
 }

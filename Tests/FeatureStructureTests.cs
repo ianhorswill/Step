@@ -13,5 +13,16 @@ namespace Step.Tests
                 "Match default {feature: 1}.");
             Assert.AreEqual("Default 1", m.Call("Test"));
         }
+
+        [TestMethod]
+        public void HeadLiftingTest()
+        {
+            var m = Module.FromDefinitions(
+                "[predicate] Test1: [Match {feature: ?b}]",
+                "[predicate] Test2: [Match {feature: 1}]",
+                "[predicate] Match {feature: (+?x)}.");
+            Assert.IsFalse(m.CallPredicate("Test1"));
+            Assert.IsTrue(m.CallPredicate("Test2"));
+        }
     }
 }

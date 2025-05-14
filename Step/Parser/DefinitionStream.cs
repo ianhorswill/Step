@@ -408,6 +408,9 @@ namespace Step.Parser
 
                 case TupleExpression { BracketStyle: "{}" } featureStructure:
                     return ParseFeatureStructure(featureStructure.Elements);
+
+                case TupleExpression { BracketStyle: "()" } guard:
+                    return new TupleExpression(guard.BracketStyle, CanonicalizeArglist(guard.Elements));
                     
                 case TupleExpression t:
                     return CanonicalizeArglist(t.Elements);
@@ -439,6 +442,7 @@ namespace Step.Parser
                         featureSpec.GetType().Name, feature, lineNumber);
                 if (!elementDeclarations[i + 1].Equals(":"))
                     throw new SyntaxError($"Feature name {feature} should end with a colon.", SourcePath, lineNumber);
+
                 var value = Canonicalize(elementDeclarations[i + 2]);
                 bindings.Add((feature,value));
             }
@@ -746,8 +750,9 @@ namespace Step.Parser
                             throw new SyntaxError($"Invalid guard expression {new TupleExpression("()", guardElements.ToArray())} contains no new variables",
                                 SourceFile, lineNumber);
                         // It has an embedded predicate
-                        pattern.Add(argument);
+                        
                         chainBuilder.AddStep(new Call(Canonicalize(callCopy[0])!, callCopy.Skip(1).Select(Canonicalize).ToArray(), null));
+                        pattern.Add(argument);
                         break;
                     
                     default:
@@ -771,7 +776,69 @@ namespace Step.Parser
             if (multiLine && !EndOfParagraphToken)
                 Get();  // Swallow the end of line
 
+            for (var i = 0; i < pattern.Count; i++)
+                switch (pattern[i])
+                {
+                    case string[]:
+                        break;
+
+                    case object[] tuple:
+                        pattern[i] = HoistTupleGuards(tuple);
+                        break;
+
+                    case FeatureStructure s:
+                        pattern[i] = HoistFeatureStructureGuards(s);
+                        break;
+                }
+
             return (taskName, pattern);
+        }
+
+        private FeatureStructure HoistFeatureStructureGuards(FeatureStructure s) => s.Map(HoistGuards);
+
+        private object?[] HoistTupleGuards(object?[] tuple) => tuple.Select(HoistGuards).ToArray();
+
+        private object? HoistGuards(object? exp)
+        {
+            switch (exp)
+            {
+                case string[]:
+                    return exp;
+
+                case object?[] tuple:
+                    return HoistTupleGuards(tuple);
+
+                case FeatureStructure s:
+                    return HoistFeatureStructureGuards(s);
+
+                case TupleExpression { BracketStyle: "()"} guard:
+                    var guardCall = guard.Elements;
+                    switch (guardCall[0])
+                    {
+                        case "!":
+                            guardCall[0] = Module["Ground"];
+                            break;
+
+                        case "+":
+                            guardCall[0] = Module["NonVar"];
+                            break;
+
+                        case "-":
+                            guardCall[0] = Module["Var"];
+                            break;
+                        default:
+                            break;
+                    }
+                    var local = guardCall.FirstOrDefault(arg => arg is LocalVariableName);
+                    if (local == null)
+                        throw new SyntaxError($"Invalid guard expression {new TupleExpression("()", guardCall)} contains no variables",
+                            SourceFile, lineNumber);
+                    chainBuilder.AddStep(new Call(guardCall[0]!, guardCall.Skip(1).ToArray(), null));
+                    return local;
+
+                default:
+                    return exp;
+            }
         }
 
         /// <summary>
@@ -790,7 +857,30 @@ namespace Step.Parser
             while ((Peek == null || !Peek.Equals("}")) && !end)
             {
                 var token = Get();
-                featureSpecs.Add((token != null && token.Equals("{"))?ParseHeadFeatureStructure():token);
+                switch (token)
+                {
+                    case "(":
+                        var guardElements = new List<object?>();
+                        while (!Equals(Peek, ")") && !end)
+                        {
+                            guardElements.Add(Equals(Peek, "{") ? ParseHeadFeatureStructure(true) : Get());
+                        }
+                        if (end)
+                            throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
+                                SourcePath, lineNumber);
+                        else 
+                            Get();  // swallow )
+                        featureSpecs.Add(new TupleExpression("()", guardElements.ToArray()));
+                        break;
+
+                    case "{":
+                        featureSpecs.Add(ParseHeadFeatureStructure());
+                        break;
+
+                    default:
+                        featureSpecs.Add((token != null && token.Equals("{"))?ParseHeadFeatureStructure():token);
+                        break;
+                }
             }
 
             if (end)

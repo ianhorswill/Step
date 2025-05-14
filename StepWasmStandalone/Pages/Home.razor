@@ -2,6 +2,8 @@
 @using Step
 @using Step.Interpreter
 @using Step.Output
+@using Step.Parser
+@using Task = System.Threading.Tasks.Task
 
 <PageTitle>Step</PageTitle>
 
@@ -11,27 +13,25 @@
 
 <textarea @bind="@source" id="sourceCode" style="width: 600px; height: 400px;" spellcheck="false"/>
 
-private static 
-
 <h3>Command(s) to execute</h3>
 
 <input @bind="@command" style="width:400px;" spellcheck="false" @onkeydown="@Enter"/>
 
 
-<button class="btn btn-primary" @onclick="Run">Click me</button>
+<button class="btn btn-primary" @onclick="Run">Run</button>
 
 <script>
-    console.log(window);
-    console.log(window.opener);
+    //console.log(window);
+    //console.log(window.opener);
     window.opener.postMessage("_ready_", "*");
     window.addEventListener('message', function(event) {
-        console.log(event.data);
+        //console.log(event.data);
         if (event.source == window.opener)
         {
-            console.log("calling");
+            //console.log("calling");
             DotNet.invokeMethod('StepWasmStandalone', 'SetSource', event.data);
-            console.log("called");
-            console.log(DotNet.invokeMethod('StepWasmStandalone', 'GetSource'));
+            //console.log("called");
+            //console.log(DotNet.invokeMethod('StepWasmStandalone', 'GetSource'));
         } else 
             console.log("wrong message sender");
     } );
@@ -39,63 +39,82 @@ private static
 
 @code {
     private static Module ReplUtilities = MakeReplUtilities();
-    private static string source ="";
+    private string source ="";
     private string command ="";
-
+    
     private string outputHeading = "";
     private MarkupString output;
 
-    private void Enter(KeyboardEventArgs e)
+    private async void Enter(KeyboardEventArgs e)
     {
         if (e.Code == "Enter")
+        {
+            StateHasChanged();
+            await Task.Delay(1);
             Run();
+        }
     }
 
+    const string commandCommentPrefix = "# Try:";
     [JSInvokable]
     public static void SetSource(string sourceCode)
     {
-        source = sourceCode;
-        
-        singleton?.StateHasChanged();
+        if (sourceCode.StartsWith(commandCommentPrefix))
+        {
+            var commandStart = commandCommentPrefix.Length;
+            var commandEnd = sourceCode.IndexOf('\n');
+            singleton.command = sourceCode.Substring(commandStart, commandEnd-commandStart).Trim();
+            sourceCode = sourceCode.Substring(commandEnd+1);
+        }
+        singleton.source = sourceCode;
+        singleton.StateHasChanged();
     }
-
-    [JSInvokable]
-    public static string GetSource() => source;
 
     private void Run()
     {
-        try
+        if (command.Trim() == "")
         {
-            Module.RichTextStackTraces = true;
-            var m = new Module("User", ReplUtilities);
-            m.AddDefinitions(source);
-            var topLevelSource = command;
-            if (!topLevelSource.Trim().StartsWith('['))
-                topLevelSource = $"[{topLevelSource}]";
-            topLevelSource = $"{topLevelSource} [PrintLocalBindings]";
-            var rawOutput = m.ParseAndExecute(topLevelSource).Replace("\n", "<br>");
-            if (rawOutput == "")
+            output = (MarkupString)"";
+            outputHeading = "Please enter a call in the command box";
+        }
+        else
+        {
+            try
             {
-                outputHeading = "Yes";
-                output = (MarkupString)"<i>The command executed, but did not print anything</i>";
-            }
-            else
-            {
-                output = (MarkupString)rawOutput;
-                outputHeading = "Output";
-            }
+                Module.RichTextStackTraces = true;
+                var m = new Module("User", ReplUtilities);
+                m.AddDefinitions(source);
 
+                var topLevelSource = command;
+                if (!topLevelSource.Trim().StartsWith('['))
+                    topLevelSource = $"[{topLevelSource}]";
+                topLevelSource = $"{topLevelSource} [PrintLocalBindings]";
+                var rawOutput = m.ParseAndExecute(topLevelSource).Replace("\n", "<br>");
+                if (rawOutput == "")
+                {
+                    outputHeading = "Yes";
+                    output = (MarkupString)"<i>The command executed, but did not print anything</i>";
+                }
+                else
+                {
+                    output = (MarkupString)rawOutput;
+                    outputHeading = "Output";
+                }
+
+            }
+            catch (CallFailedException e) when (IsTopLevelCallFailure(e))
+            {
+                outputHeading = "No";
+                output = (MarkupString)"<i>The command did not generate an error, but it was not successful; the answer to your query is \"no\".</i>";
+            }
+            catch (Exception e)
+            {
+                outputHeading = "Error";
+                output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
+            }
         }
-        catch (CallFailedException e) when (IsTopLevelCallFailure(e))
-        {
-            outputHeading = "No";
-            output = (MarkupString)"<i>The command did not generate an error, but it was not successful; the answer to your query is \"no\".</i>";
-        }
-        catch (Exception e)
-        {
-            outputHeading = "Error";
-            output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
-        }
+
+        StateHasChanged();
     }
 
     private static bool IsTopLevelCallFailure(CallFailedException e) => e.Task is CompoundTask { Name: "TopLevelCall" };
@@ -128,7 +147,7 @@ private static
         return m;
     }
 
-    private static Home? singleton;
+    private static Home singleton=null!;
     protected override void OnInitialized()
     {
         singleton = this;
