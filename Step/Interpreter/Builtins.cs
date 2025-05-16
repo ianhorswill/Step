@@ -317,6 +317,9 @@ namespace Step.Interpreter
             g["Tuple"] = new SimplePredicate<object>("Tuple", o => o is object[])
                 .Arguments("x")
                 .Documentation("type testing", "Succeeds when its argument is a tuple");
+            g["FeatureStructure"] = new SimplePredicate<object>("FeatureStructure", o => o is FeatureStructure)
+                .Arguments("x")
+                .Documentation("type testing", "Succeeds when its argument is a feature structure, i.e. { feature: value feature: value ...}.");
             g["BinaryTask"] = new SimplePredicate<object>("BinaryTask",
                 o => o is Task { ArgumentCount: 2 })
                 .Arguments("x")

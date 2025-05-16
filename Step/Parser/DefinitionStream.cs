@@ -683,82 +683,7 @@ namespace Step.Parser
             var pattern = new List<object?>();
             while (!Equals(Peek, ":") && !Equals(Peek, ".") && !end)
             {
-                var argPattern = Get();
-                switch (argPattern)
-                {
-                    case string quote when TokenStream.IsQuoteToken(quote):
-                        var strings = new List<string>();
-                        while (!TokenStream.IsQuoteToken(Peek) && !end)
-                        {
-                            var next = Get();
-                            if (next is string s)
-                                strings.Add(s);
-                            else 
-                                throw new SyntaxError("Bracketed expressions are not allowed inside string constants", SourceFile, lineNumber);
-                        }
-
-                        if (end)
-                            throw new SyntaxError("Unexpected end of file inside a quoted string", SourceFile,
-                                lineNumber);
-                        else
-                            // Skip close quote
-                            Get();
-                        pattern.Add(strings.ToArray());
-                        break;
-
-                    case string curly when curly == "{":
-                        pattern.Add(ParseHeadFeatureStructure());
-                        break;
-                    
-                    case string paren when paren == "(":
-                        var guardElements = new List<object?>();
-                        while (!Equals(Peek, ")") && !end)
-                        {
-                            guardElements.Add(Equals(Peek, "{") ? ParseHeadFeatureStructure(true) : Get());
-                        }
-                        if (end)
-                            throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
-                                SourcePath, lineNumber);
-                        else 
-                            Get();  // swallow )
-
-                        LocalVariableName? argument = null;
-                        var callCopy = guardElements.ToArray();
-                        for (int i = 0; i < callCopy.Length; i++)
-                        {
-                            var element = callCopy[i];
-                            if (IsLocalVariableName(element) && !pattern.Any(arg => arg is LocalVariableName n && n.Name.Equals(element)))
-                            {
-                                var local = GetLocal((string) element!);
-                                
-                                // Found a new local variable name
-                                if (argument != null)
-                                {
-                                    throw new SyntaxError(
-                                        $"Ambiguous guard expression: can't tell if {argument} or {local} is the argument in () expression",
-                                        SourceFile, lineNumber);
-                                }
-
-                                argument = local;
-                                // We do this in case the local variable name is "?"
-                                callCopy[i] = local;
-                                IncrementReferenceCount(local);   // Ugly...
-                            }
-                        }
-
-                        if (argument == null)
-                            throw new SyntaxError($"Invalid guard expression {new TupleExpression("()", guardElements.ToArray())} contains no new variables",
-                                SourceFile, lineNumber);
-                        // It has an embedded predicate
-                        
-                        chainBuilder.AddStep(new Call(Canonicalize(callCopy[0])!, callCopy.Skip(1).Select(Canonicalize).ToArray(), null));
-                        pattern.Add(argument);
-                        break;
-                    
-                    default:
-                        pattern.Add(argPattern);
-                        break;
-                }
+                pattern.Add(ReadHeadArgument(pattern));
             }
 
             if (end)
@@ -794,6 +719,102 @@ namespace Step.Parser
             return (taskName, pattern);
         }
 
+        private object? ReadHeadArgument(List<object?> pattern)
+        {
+            var argPattern = Get();
+            switch (argPattern)
+            {
+                case string quote when TokenStream.IsQuoteToken(quote):
+                    var strings = new List<string>();
+                    while (!TokenStream.IsQuoteToken(Peek) && !end)
+                    {
+                        var next = Get();
+                        if (next is string s)
+                            strings.Add(s);
+                        else 
+                            throw new SyntaxError("Bracketed expressions are not allowed inside string constants", SourceFile, lineNumber);
+                    }
+
+                    if (end)
+                        throw new SyntaxError("Unexpected end of file inside a quoted string", SourceFile,
+                            lineNumber);
+                    else
+                        // Skip close quote
+                        Get();
+                    return strings.ToArray();
+                    break;
+
+                case string curly when curly == "{":
+                    return ParseHeadFeatureStructure(pattern);
+                    
+                case string paren when paren == "(":
+                    var guardElements = new List<object?>();
+                    while (!Equals(Peek, ")") && !end)
+                    {
+                        guardElements.Add(Equals(Peek, "{") ? ParseHeadFeatureStructure(pattern, true) : Get());
+                    }
+                    if (end)
+                        throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
+                            SourcePath, lineNumber);
+                    else 
+                        Get();  // swallow )
+
+                    LocalVariableName? argument = null;
+                    var callCopy = guardElements.ToArray();
+                    for (int i = 0; i < callCopy.Length; i++)
+                    {
+                        var element = callCopy[i];
+                        if (IsLocalVariableName(element) && !pattern.Any(arg => arg is LocalVariableName n && n.Name.Equals(element)))
+                        {
+                            var local = GetLocal((string) element!);
+                                
+                            // Found a new local variable name
+                            if (argument != null)
+                            {
+                                throw new SyntaxError(
+                                    $"Ambiguous guard expression: can't tell if {argument} or {local} is the argument in () expression",
+                                    SourceFile, lineNumber);
+                            }
+
+                            argument = local;
+                            // We do this in case the local variable name is "?"
+                            callCopy[i] = local;
+                            IncrementReferenceCount(local);   // Ugly...
+                        }
+                    }
+
+                    if (argument == null)
+                        throw new SyntaxError($"Invalid guard expression {new TupleExpression("()", guardElements.ToArray())} contains no new variables",
+                            SourceFile, lineNumber);
+                    // It has an embedded predicate
+                        
+                    chainBuilder.AddStep(new Call(Canonicalize(SubstituteGuardTask(callCopy[0]))!, callCopy.Skip(1).Select(Canonicalize).ToArray(), null));
+                    return argument;
+                    
+                default:
+                    return argPattern;
+            }
+        }
+
+        private object ParseHeadFeatureStructure(List<object?> pattern, bool ignoreCurrentToken = false)
+        {
+            if (ignoreCurrentToken)
+                Get();
+
+            var featureSpecs = new List<object?> { };
+
+            while ((Peek == null || !Peek.Equals("}")) && !end)
+            {
+                featureSpecs.Add(ReadHeadArgument(pattern));
+            }
+
+            if (end)
+                throw new SyntaxError("Method head ended in the middle of a { ... } expression.",
+                    SourcePath, lineNumber);
+            Get(); // swallow close-curly
+            return ParseFeatureStructure(featureSpecs);
+        }
+
         private FeatureStructure HoistFeatureStructureGuards(FeatureStructure s) => s.Map(HoistGuards);
 
         private object?[] HoistTupleGuards(object?[] tuple) => tuple.Select(HoistGuards).ToArray();
@@ -813,27 +834,13 @@ namespace Step.Parser
 
                 case TupleExpression { BracketStyle: "()"} guard:
                     var guardCall = guard.Elements;
-                    switch (guardCall[0])
-                    {
-                        case "!":
-                            guardCall[0] = Module["Ground"];
-                            break;
-
-                        case "+":
-                            guardCall[0] = Module["NonVar"];
-                            break;
-
-                        case "-":
-                            guardCall[0] = Module["Var"];
-                            break;
-                        default:
-                            break;
-                    }
+                    
                     var local = guardCall.FirstOrDefault(arg => arg is LocalVariableName);
                     if (local == null)
                         throw new SyntaxError($"Invalid guard expression {new TupleExpression("()", guardCall)} contains no variables",
                             SourceFile, lineNumber);
-                    chainBuilder.AddStep(new Call(guardCall[0]!, guardCall.Skip(1).ToArray(), null));
+
+                    chainBuilder.AddStep(new Call(SubstituteGuardTask(guardCall[0])!, guardCall.Skip(1).ToArray(), null));
                     return local;
 
                 default:
@@ -841,54 +848,13 @@ namespace Step.Parser
             }
         }
 
-        /// <summary>
-        /// Parse the token stream of a feature structure in a head of a method.  This has raw curly brace tokens in it.
-        /// On entry, we assume the open curly brace has been swallowed.
-        /// </summary>
-        /// <returns>The feature structure object</returns>
-        /// <exception cref="SyntaxError">If missing a }</exception>
-        private object ParseHeadFeatureStructure(bool ignoreCurrentToken = false)
-        {
-            if (ignoreCurrentToken)
-                Get();
-
-            var featureSpecs = new List<object?> { };
-
-            while ((Peek == null || !Peek.Equals("}")) && !end)
-            {
-                var token = Get();
-                switch (token)
-                {
-                    case "(":
-                        var guardElements = new List<object?>();
-                        while (!Equals(Peek, ")") && !end)
-                        {
-                            guardElements.Add(Equals(Peek, "{") ? ParseHeadFeatureStructure(true) : Get());
-                        }
-                        if (end)
-                            throw new SyntaxError("Method head ended in the middle of a ( ... ) expression.",
-                                SourcePath, lineNumber);
-                        else 
-                            Get();  // swallow )
-                        featureSpecs.Add(new TupleExpression("()", guardElements.ToArray()));
-                        break;
-
-                    case "{":
-                        featureSpecs.Add(ParseHeadFeatureStructure());
-                        break;
-
-                    default:
-                        featureSpecs.Add((token != null && token.Equals("{"))?ParseHeadFeatureStructure():token);
-                        break;
-                }
-            }
-
-            if (end)
-                throw new SyntaxError("Method head ended in the middle of a { ... } expression.",
-                    SourcePath, lineNumber);
-            Get(); // swallow close-curly
-            return ParseFeatureStructure(featureSpecs);
-        }
+        private object? SubstituteGuardTask(object? task) =>
+            task switch {
+                "!" => Module["Ground"],
+                "+" => Module["NonVar"],
+                "-" =>Module["Var"],
+                _ => task
+            };
 
         private void ReadBody(Interpreter.Step.ChainBuilder chain, Func<bool> endPredicate)
         {

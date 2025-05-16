@@ -24,5 +24,13 @@ namespace Step.Tests
             Assert.IsFalse(m.CallPredicate("Test1"));
             Assert.IsTrue(m.CallPredicate("Test2"));
         }
+
+        [TestMethod]
+        public void ParsingTest()
+        {
+            var m = Module.FromDefinitions(
+                "Character { givenName: \"Diana\" familyName: \"Ratfliffe\" age: 34 occupation: \"tital of industry\" }.",
+                "Recursive { foo: { givenName: \"Diana\" familyName: \"Ratfliffe\" age: 34 occupation: \"tital of industry\"} bar: 1}.");
+        }
     }
 }
