@@ -49,6 +49,21 @@ namespace Step.Output
                         WriteCompound('(', list, ')');
                     break;
 
+                case string[] text:
+                    Buffer.Append('"');
+                    var firstWord = true;
+                    foreach (var word in text)
+                    {
+                        if (firstWord)
+                            firstWord = false;
+                        else 
+                            Buffer.Append(' ');
+                        Buffer.Append(word);
+                    }
+
+                    Buffer.Append('"');
+                    break;
+
                 case object[] tuple:
                     WriteCompound('[', tuple, ']');
                     break;
