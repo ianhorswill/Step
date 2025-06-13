@@ -2,48 +2,94 @@
 @using Step
 @using Step.Interpreter
 @using Step.Output
-@using Step.Parser
 @using Task = System.Threading.Tasks.Task
+@inject IJSRuntime JS
 
 <PageTitle>Step</PageTitle>
 
-<h1>Interactive Step interpreter</h1>
 
 <h3>Program</h3>
 
-<textarea @bind="@source" id="sourceCode" style="width: 600px; height: 400px;" spellcheck="false"/>
+<div id="codeEditor" class="language-step"># Enter code here</div>
 
-<h3>Command(s) to execute</h3>
+<script type="module">
+    import {CodeJar} from './codejar.js';
+
+    const highlight = editor => {
+      // highlight.js does not trims old tags,
+      // let's do it by this hack.
+      editor.textContent = editor.textContent;
+      delete editor.dataset.highlighted;
+      hljs.highlightElement(editor);
+    };
+    
+    const editor = document.querySelector(".language-step");
+    const jar = CodeJar(editor, highlight);
+
+    // Put jar someplace the non-module scripts can find it.
+    window.jar = jar;
+    
+    let dirty = false;
+
+    window.addEventListener('message', function(event) {
+        if (event.source == window.opener)
+        {
+            jar.updateCode(DotNet.invokeMethod('StepWasmStandalone', 'SetSource', event.data));
+            //jar.updateCode(event.data);
+            dirty = false;
+        } else
+            console.log("wrong message sender");
+    } );
+
+    window.addEventListener("beforeunload", function (event) {
+        if (dirty) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    });
+
+    document.getElementById('downloadButton').addEventListener('click', function() {
+        // Create a Blob object with the content
+        const blob = new Blob([jar.toString()], { type: "text/plain" });
+
+        // Create a temporary anchor element
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "Saved.step"; // Set the file name
+
+        // Append the anchor to the document, trigger the download, and remove it
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+
+    if (window.opener != null)
+        window.opener.postMessage("_ready_", "*");
+</script>
+
+<script>
+    function GetUserCode() {
+        return jar.toString();
+    }
+</script>
+
+@* <textarea @bind="@source" id="sourceCode" style="width: 800px; height: 400px;" spellcheck="false"/> *@
+<br>
+<button class="btn btn-primary" id="downloadButton">Download program</button>
+
+<h3 style="padding-top: 2rem;">Command(s) to execute</h3>
 
 <input @bind="@command" style="width:400px;" spellcheck="false" @onkeydown="@Enter"/>
 
-
 <button class="btn btn-primary" @onclick="Run">Run</button>
-
-<script>
-    //console.log(window);
-    //console.log(window.opener);
-    window.opener.postMessage("_ready_", "*");
-    window.addEventListener('message', function(event) {
-        //console.log(event.data);
-        if (event.source == window.opener)
-        {
-            //console.log("calling");
-            DotNet.invokeMethod('StepWasmStandalone', 'SetSource', event.data);
-            //console.log("called");
-            //console.log(DotNet.invokeMethod('StepWasmStandalone', 'GetSource'));
-        } else 
-            console.log("wrong message sender");
-    } );
-</script>
 
 @code {
     private static Module ReplUtilities = MakeReplUtilities();
-    private string source ="";
+
     private string command ="";
     
-    private string outputHeading = "";
-    private MarkupString output;
+    private string outputHeading = "No output";
+    private MarkupString output = new MarkupString("no output");
 
     private async void Enter(KeyboardEventArgs e)
     {
@@ -57,7 +103,7 @@
 
     const string commandCommentPrefix = "# Try:";
     [JSInvokable]
-    public static void SetSource(string sourceCode)
+    public static string SetSource(string sourceCode)
     {
         if (sourceCode.StartsWith(commandCommentPrefix))
         {
@@ -66,11 +112,13 @@
             singleton.command = sourceCode.Substring(commandStart, commandEnd-commandStart).Trim();
             sourceCode = sourceCode.Substring(commandEnd+1);
         }
-        singleton.source = sourceCode;
+        
         singleton.StateHasChanged();
+
+        return sourceCode;
     }
 
-    private void Run()
+    private async void Run()
     {
         if (command.Trim() == "")
         {
@@ -83,6 +131,7 @@
             {
                 Module.RichTextStackTraces = true;
                 var m = new Module("User", ReplUtilities);
+                var source = await JS.InvokeAsync<string>("GetUserCode");
                 m.AddDefinitions(source);
 
                 var topLevelSource = command;
@@ -116,6 +165,8 @@
 
         StateHasChanged();
     }
+
+
 
     private static bool IsTopLevelCallFailure(CallFailedException e) => e.Task is CompoundTask { Name: "TopLevelCall" };
 
