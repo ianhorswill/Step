@@ -37,7 +37,10 @@ namespace StepRepl
             path =>
             {
                 var m = new Module(Path.GetFileName(path), g);
-                m.LoadDirectory(path);
+                if (File.Exists(path))
+                    m.LoadDefinitions(path);
+                else
+                    m.LoadDirectory(path);
                 return m;
             })
             .Arguments("path", "?module")
@@ -64,6 +67,9 @@ namespace StepRepl
         g["PathFileName"] = new SimpleFunction<string, string>("PathFileName", Path.GetFileName)
             .Arguments("path", "?name")
             .Documentation("StepRepl//utilities", "True when the filename of path is ?name");
+        g["PathExtension"] = new SimpleFunction<string, string>("PathExtension", Path.GetExtension)
+            .Arguments("path", "?name")
+            .Documentation("StepRepl//utilities", "True when the extension of path is ?name");
         g["DirectoryFilePath"] = new SimpleFunction<string, string, string>("DirectoryFilePath", Path.Combine)
             .Arguments("directoryPath", "filename", "?combined")
             .Documentation("StepRepl//utilities", "True when ?combined is a path to the file filename in the directory directoryPath.");
