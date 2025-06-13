@@ -119,7 +119,7 @@ namespace StepRepl
                 var id = elements[1];
                 if (id == "LATE")
                     id = elements[2];
-                return env.UnifyArrays(args, [new object[] {path, student, id}], out BindingList? bindings)
+                return env.UnifyArrays(args, new object[] {path, student, id}, out BindingList? bindings)
                     && k(output, bindings, env.State, frame);
             })
             .Arguments("path", "?student", "?id")
