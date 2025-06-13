@@ -358,7 +358,11 @@ namespace Step.Interpreter
         private bool UnifyArrays(object?[] a, object?[] b, BindingList? inUnifications, out BindingList? outUnifications)
         {
             if (a.Length != b.Length)
-                throw new ArgumentException("Argument arrays to UnifyArrays are of different lengths!");
+            {
+                //throw new ArgumentException("Argument arrays to UnifyArrays are of different lengths!");
+                outUnifications = null;
+                return false;
+            } 
             outUnifications = inUnifications;
             for (var i = 0; i < a.Length; i++)
                 if (!Unify(a[i], b[i], outUnifications, out outUnifications))
