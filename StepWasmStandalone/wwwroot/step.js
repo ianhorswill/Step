@@ -39,6 +39,23 @@ const OPERATOR = {
 };
 
 const GLOBAL_VARIABLE = {
+    keywords: {
+        built_in: ['Call', "Succeeds", "CallDiscardingStateChanges", "IgnoreOutput", "Begin", "And", "Or",
+            "Not", "Fails", "NotAny", "FindAll", "FindUnique", "FindFirstNUnique", "FindAtMostNUnique",
+            "DoAll", "AccumulateOutput", "AccumulateOutputWithSeparators", "ForEach", "Implies", "Once",
+            "ExactlyOnce", "Max", "Min", "SaveText", "PreviousCall", "UniqueCall", "Parse", "TreeSearch",
+            "=", "Different", ">", "<", ">=", "<=", "Paragraph", "NewLine", "FreshLine", "ForceSpace",
+            "Fail", "Break", "InterpreterBreak", "Log", "LogBack", "Listing", "Throw", "BailOut", "StringForm",
+            "WriteVerbatim", "Write", "WriteCapitalized", "WriteConcatenated", "Member", "Length", "Nth",
+            "Cons", "Var", "NonVar", "Ground", "Nonground", "CopyTerm", "String", "Tuple", "FeatureStructure",
+            "BinaryTask", "Empty", "EmptyMaxQueue", "EmptyMinQueue", "CountAttempts", "RandomIntegerInclusive",
+            "RandomIntegerExclusive", "RandomFloat", "RandomElement", "Gaussian", "SampleFeatures",
+            "Format", "Downcase", "Downcased", "Upcased", "Capitalized", "StartsWithVowel",
+            "NounSingularPlural", "EnvironmentOption", "Hashtable", "Contains", "LinearInterpolate",
+            "CompoundTask", "TaskMethod", "LastMethodCallFrame", "CallerChainAncestor", "GoalChainAncestor",
+            "TaskCalls", "TaskSubtask", "Help", "Apropos", "ElStore", "ElDelete", "ElDump",
+        ]
+    },
   scope: 'variable',
   begin: '[A-Z]\\w*'
 };

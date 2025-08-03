@@ -10,10 +10,13 @@
 
 <h3>Program</h3>
 
-<div id="codeEditor" class="language-step"># Enter code here</div>
+<div id="codeEditor" class="language-step"># Enter code here
+
+</div>
 
 <script type="module">
-    import {CodeJar} from './codejar.js';
+    import { CodeJar } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/codejar.min.js';
+    import { withLineNumbers } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/linenumbers.min.js';
 
     const highlight = editor => {
       // highlight.js does not trims old tags,
@@ -24,7 +27,7 @@
     };
     
     const editor = document.querySelector(".language-step");
-    const jar = CodeJar(editor, highlight);
+    const jar = CodeJar(editor, withLineNumbers(highlight));
 
     // Put jar someplace the non-module scripts can find it.
     window.jar = jar;

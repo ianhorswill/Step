@@ -76,7 +76,7 @@ namespace Step.Interpreter
             Documentation.SectionIntroduction("higher-order predicates",
                 "Predicates that run other predicates.");
 
-            g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call)
+            g["Succeeds"] = g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call)
                 .Arguments("call", "extra_arguments", "...")
                 .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
             g[nameof(CallDiscardingStateChanges)] = new GeneralPrimitive(nameof(CallDiscardingStateChanges), CallDiscardingStateChanges)
@@ -91,7 +91,7 @@ namespace Step.Interpreter
             g[nameof(And)] = And;
             g[nameof(Or)] = Or;
                 g[nameof(Not)] = Not;
-            g[nameof(NotAny)] = new GeneralPrimitive(nameof(NotAny), NotAny)
+            g["Fails"] = g[nameof(NotAny)] = new GeneralPrimitive(nameof(NotAny), NotAny)
                 .Arguments("call")
                 .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.");
             g[nameof(FindAll)] = new GeneralPrimitive(nameof(FindAll), FindAll)
