@@ -105,11 +105,11 @@ const FEATURE_STRUCTURE = {
 GENERAL_VALUE.push(FEATURE_STRUCTURE)
 
 const CALL = {
-  begin: ' \\[ *',
+  begin: ' \\[ *(?!randomly|or|end|firstOf|case|cool|once)',
   scope: 'variable',
   end: '\\]',
   endsWithParent: true,
-  contains: [
+    contains: [
     TUPLE,
     QUOTED_STRING,
     SMARTY_PANTS_QUOTED_STRING,
@@ -117,7 +117,7 @@ const CALL = {
     SYMBOL_STRING,
     OPERATOR,
     GLOBAL_VARIABLE,
-    LOCAL_VARIABLE
+      LOCAL_VARIABLE
   ]
 };
 
@@ -144,24 +144,28 @@ const VARIABLE_INTERPOLATION = {
   scope: "variable"
 };
 
+const INLINE_KEYWORD = {
+  scope: 'keyword',
+  begin: '\\[(randomly|or|end|firstOf|case|cool|once)\\]'
+}
 const SINGLE_LINE_BODY = {
   scope: 'string',
   begin: ':',
   beginScope: 'string',
   end: '$',
-  contains: [ CALL, VARIABLE_INTERPOLATION ]
+  contains: [ INLINE_KEYWORD, CALL, VARIABLE_INTERPOLATION  ]
 }
 
 const METHOD_NAME = {
   scope: 'title.function',
-  begin: '[A-Z][a-zA-Z0-9_]*',
+  match: '[A-Z][a-zA-Z0-9_]*'
 }
 
 const TASK_DECLARATION = {
   beginKeywords: 'fluent task predicate',
   beginScope: 'keyword',
   end: '$',
-  contains: [ METHOD_NAME, LOCAL_VARIABLE ]
+  contains: [ METHOD_NAME, LOCAL_VARIABLE  ]
 }
 
 const MULTILINE_BODY = {
@@ -176,7 +180,7 @@ const MULTILINE_BODY = {
 const METHOD_DECLARATION = {
   scope: 'title.function',
   begin: '[A-Z][a-zA-Z0-9_]*',
-  contains: [
+    contains: [
     SINGLE_LINE_BODY,
     MULTILINE_BODY
   ]

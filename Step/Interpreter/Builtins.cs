@@ -80,6 +80,9 @@ namespace Step.Interpreter
             g["<="] = new SimplePredicate<float, float>("<=", (a, b) => a <= b)
                 .Arguments("a", "b")
                 .Documentation("comparison", "True when a and b are both numbers and a is no larger than b");
+            g["BitSetsIntersect"] = new SimplePredicate<int, int>("BitSetsIntersect", (a, b) => (a&b) != 0)
+                .Arguments("a", "b")
+                .Documentation("comparison", "True when bitsets a and b are not disjoint, that is, when (a&b) != 0.");
 
             Documentation.SectionIntroduction("output",
                 "Tasks that print things.");

@@ -216,7 +216,11 @@ namespace Step.Parser
                     // NUMBERS
                     else if (char.IsDigit(Peek) || LookingAt('+') || LookingAt('-'))
                     {
+                        var leadingZero = LookingAt('0');
                         AddCharToToken();
+                        if (leadingZero && (LookingAt('b') || LookingAt('x')))
+                            AddCharToToken();
+
                         while (char.IsDigit(Peek)) AddCharToToken();
 
                         if (LookingAt('.'))

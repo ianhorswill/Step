@@ -26,6 +26,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Step.Interpreter;
@@ -394,6 +395,12 @@ namespace Step.Parser
                             return StateVariableName.Named("<=");
                     }
 
+                    if (s.StartsWith("0x") &&
+                        int.TryParse(s.Substring(2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var hResult))
+                        return hResult;
+                    if (s.StartsWith("0b") &&
+                        TryParseBinary(s.Substring(2), out var bResult))
+                        return bResult;
                     if (int.TryParse(s, out var result))
                         return result;
                     if (float.TryParse(s, out var fResult))
@@ -420,6 +427,27 @@ namespace Step.Parser
             }
 
             return o;
+        }
+
+        private bool TryParseBinary(string digits, out int number)
+        {
+            number = 0;
+            foreach (var d in digits)
+                switch (d)
+                {
+                    case '0':
+                        number = number << 1;
+                        break;
+
+                    case '1':
+                        number = 1 + (number << 1);
+                        break;
+
+                    default:
+                        return false;
+                }
+
+            return true;
         }
 
         /// <summary>
@@ -742,7 +770,6 @@ namespace Step.Parser
                         // Skip close quote
                         Get();
                     return strings.ToArray();
-                    break;
 
                 case string curly when curly == "{":
                     return ParseHeadFeatureStructure(pattern);
