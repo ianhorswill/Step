@@ -116,4 +116,5 @@ code {
 .language-step {
     height: 66vh;
     font-size: .9em;
+    caret-color: white;
 }
