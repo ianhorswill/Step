@@ -91,6 +91,10 @@ namespace Step
         /// </summary>
         private readonly Dictionary<StateVariableName, object?> dictionary = new Dictionary<StateVariableName, object?>();
         /// <summary>
+        /// Same, but includes cached values looked up through binding hooks.
+        /// </summary>
+        private readonly Dictionary<StateVariableName, object?> cache = new Dictionary<StateVariableName, object?>();
+        /// <summary>
         /// Parent module to try if a variable can't be found in this module;
         /// </summary>
         public readonly Module? Parent;
@@ -195,7 +199,7 @@ namespace Step
         public object? this[StateVariableName v]
         {
             get => Lookup(v);
-            set => dictionary[v] = value;
+            set => cache[v] = dictionary[v] = value;
         }
 
         /// <summary>
@@ -212,7 +216,7 @@ namespace Step
         {
 // First see if it's stored in this or some ancestor module
             for (var module = this; module != null; module = module.Parent)
-                if (module.dictionary.TryGetValue(v, out var value))
+                if (module.cache.TryGetValue(v, out var value))
                     return value;
 
             // Not found in this or any ancestor module; try bind hooks
@@ -220,7 +224,7 @@ namespace Step
                 if (module.bindHooks != null)
                     foreach (var hook in module.bindHooks)
                         if (hook(v, out var result))
-                            return module.dictionary[v] = result;
+                            return module.cache[v] = result;
 
             if (v.Name == "Mention")
                 // if the user hasn't defined a Mention implementation, just use Write.
@@ -235,7 +239,7 @@ namespace Step
         /// <summary>
         /// All the variable bindings in this module.
         /// </summary>
-        public IEnumerable<KeyValuePair<StateVariableName, object?>> Bindings => dictionary;
+        public IEnumerable<KeyValuePair<StateVariableName, object?>> Bindings => cache;
 
         /// <summary>
         /// All the variable bindings in this module and its parent.
@@ -248,7 +252,7 @@ namespace Step
         /// All CompoundTasks defined in this Module
         /// </summary>
         public IEnumerable<CompoundTask> DefinedTasks =>
-            dictionary.Values.Where(x => x is CompoundTask).Cast<CompoundTask>();
+            cache.Values.Where(x => x is CompoundTask).Cast<CompoundTask>();
 
         /// <summary>
         /// Find the CompoundTask named by the specified variable, creating one if necessary.
@@ -264,7 +268,7 @@ namespace Step
         {
             CompoundTask? Recur(Module m)
             {
-                if (m.dictionary.TryGetValue(v, out var value))
+                if (m.cache.TryGetValue(v, out var value))
                 {
                     var task = value as CompoundTask;
                     if (task == null)
@@ -758,7 +762,7 @@ var output = TextBuffer.NewEmpty();
 
         private IEnumerable<WarningInfo> Lint()
         {
-            foreach (var pair in dictionary.ToArray())  // Copy the dictionary because it might get modified by TaskDefined
+            foreach (var pair in cache.ToArray())  // Copy the cache because it might get modified by TaskDefined
             {
                 var variable = pair.Key;
                 if (pair.Value is CompoundTask task)
@@ -817,7 +821,7 @@ var output = TextBuffer.NewEmpty();
         {
             switch (o)
             {
-                case StateVariableName v when dictionary.TryGetValue(v, out var result):
+                case StateVariableName v when cache.TryGetValue(v, out var result):
                     return result;
                 case LocalVariableName l:
                     return new LogicVariable(l);
