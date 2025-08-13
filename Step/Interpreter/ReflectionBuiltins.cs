@@ -129,11 +129,12 @@ namespace Step.Interpreter
                 {
                     // out out
                     foreach (var caller in m.DefinedTasks)
-                        foreach (var c in m.Callees(caller))
-                            if (k(o,
-                                BindingList.Bind(e.Unifications, callerVar, caller).Bind(calleeVar, c),
-                                e.State, predecessor))
-                                return true;
+                        if (caller.Name != "TopLevelCall")
+                            foreach (var c in m.Callees(caller))
+                                if (k(o,
+                                        BindingList.Bind(e.Unifications, callerVar, caller).Bind(calleeVar, c),
+                                        e.State, predecessor))
+                                    return true;
                 }
             }
 
