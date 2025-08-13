@@ -2,6 +2,7 @@
 @using Step
 @using Step.Interpreter
 @using Step.Output
+@using StepRepl.GraphVisualization
 @using Task = System.Threading.Tasks.Task
 @inject IJSRuntime JS
 
@@ -14,6 +15,12 @@
 
 </div>
 <p>Control-click on a task/predicate name to navigate to its definition (only works for your own tasks, not built-in tasks)</p>
+
+<script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+        window.mermaid = mermaid
+    </script>
 
 <script type="module">
     import { CodeJar } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/codejar.min.js';
@@ -123,6 +130,10 @@
     function GetUserCode() {
         return jar.toString();
     }
+
+    function ScheduleMermaidRender() {
+        window.requestAnimationFrame(function() { mermaid.run();});
+    }
 </script>
 
 @* <textarea @bind="@source" id="sourceCode" style="width: 800px; height: 400px;" spellcheck="false"/> *@
@@ -183,6 +194,8 @@
             {
                 Module.RichTextStackTraces = true;
                 var m = new Module("User", ReplUtilities);
+                m.FormattingOptions.LineSeparator = " <br> ";
+                m.FormattingOptions.ParagraphMarker = " <p> ";
                 var source = await JS.InvokeAsync<string>("GetUserCode");
                 m.AddDefinitions(source);
 
@@ -190,7 +203,7 @@
                 if (!topLevelSource.Trim().StartsWith('['))
                     topLevelSource = $"[{topLevelSource}]";
                 topLevelSource = $"{topLevelSource} [PrintLocalBindings]";
-                var rawOutput = m.ParseAndExecute(topLevelSource).Replace("\n", "<br>");
+                var rawOutput = m.ParseAndExecute(topLevelSource);
                 if (rawOutput == "")
                 {
                     outputHeading = "Yes";
@@ -198,8 +211,9 @@
                 }
                 else
                 {
-                    output = (MarkupString)rawOutput;
+                    output = (MarkupString)("<p>"+rawOutput);
                     outputHeading = "Output";
+                    await JS.InvokeVoidAsync("ScheduleMermaidRender");
                 }
 
             }
@@ -247,6 +261,7 @@
             .Arguments()
             .Documentation("StepRepl//internals",
                 "Prints the values of all local variables.  There probably isn't any reason for you to use this directly, but it's used by StepRepl to print the results of queries.");
+        StepGraph.AddPrimitives(m);
         return m;
     }
 
