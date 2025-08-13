@@ -36,11 +36,23 @@ namespace StepRepl.GraphVisualization
             var b = new StringBuilder();
             if (includeDiv)
                 b.AppendLine("<div class=\"mermaid\">");
-            b.AppendLine(" graph TD");
+            b.AppendLine($" {graph.Attributes["style"]}");
             foreach (var e in graph.Edges)
             {
-                b.AppendLine($"{RenderNodeName(e.StartNode)} --> {RenderNodeName(e.EndNode)}");
+                var connector = e.Directed ? "-->" : "---";
+                if (e.Label != null)
+                    b.AppendLine($"{RenderNodeName(e.StartNode)} -- {e.Label} {connector} {RenderNodeName(e.EndNode)}");
+                else
+                    b.AppendLine($"{RenderNodeName(e.StartNode)} {connector} {RenderNodeName(e.EndNode)}");
             }
+
+            foreach (var n in graph.Nodes)
+                if (graph.NodeAttributes[n] != null
+                    && graph.NodeAttributes.TryGetValue(n, out var attrs)
+                    && attrs.TryGetValue("fillcolor", out var color))
+                {
+                    b.AppendLine($"style {nodeNames[n]} fill: {StringifyStepObject(color)};");
+                }
             if (includeDiv)
                 b.AppendLine("</div>");
             return b.ToString();
@@ -55,10 +67,11 @@ namespace StepRepl.GraphVisualization
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
             Task? nodes = null;
             Task? nodeColor = null;
-            var directed = false;
+            var directed = true;
             var windowName = "Graph";
             var colorByComponent = false;
             var hierarchical = false;
+            var style = "graph TD";
 
             var labelVar = new LogicVariable("?label", 2);
 
@@ -117,6 +130,10 @@ namespace StepRepl.GraphVisualization
                         windowName = StringifyStepObject(value);
                         break;
 
+                    case "style":
+                        style = StringifyStepObject(value);
+                        break;
+
                     case "color_components":
                         colorByComponent = true;
                         break;
@@ -130,6 +147,8 @@ namespace StepRepl.GraphVisualization
                         throw new ArgumentException($"Unknown keyword {keyword} in call to {VisualizeGraph.Name}");
                 }
             }
+
+            graph.Attributes["style"] = style;
 
             var startNodeVar = new LogicVariable("?startNode", 0);
             var endNodeVar = new LogicVariable("?endNode", 1);
@@ -317,12 +336,13 @@ namespace StepRepl.GraphVisualization
             return g;
         }
 
+        public static readonly FormattingOptions FormatForStringify = new FormattingOptions() { Capitalize = false };
         public static string StringifyStepObject(object? o)
         {
             return o switch
             {
                 null => "null",
-                string[] text => text.Untokenize(),
+                string[] text => text.Untokenize(FormatForStringify),
                 object?[] tuple => Writer.TermToString(tuple),
                 _ => o.ToString()!
             };
