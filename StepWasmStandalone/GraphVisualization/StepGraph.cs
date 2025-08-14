@@ -34,9 +34,8 @@ namespace StepRepl.GraphVisualization
             }
 
             var b = new StringBuilder();
-            if (includeDiv)
-                b.AppendLine("<div class=\"mermaid\">");
-            b.AppendLine($" {graph.Attributes["style"]}");
+            b.AppendLine(includeDiv?"<div class=\"mermaid\">":"<pre>");
+            b.AppendLine($"{graph.Attributes["style"]}");
             foreach (var e in graph.Edges)
             {
                 var connector = e.Directed ? "-->" : "---";
@@ -53,8 +52,7 @@ namespace StepRepl.GraphVisualization
                 {
                     b.AppendLine($"style {nodeNames[n]} fill: {StringifyStepObject(color)};");
                 }
-            if (includeDiv)
-                b.AppendLine("</div>");
+            b.AppendLine(includeDiv?"</div>":"</pre>");
             return b.ToString();
         }
 
