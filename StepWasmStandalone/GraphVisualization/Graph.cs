@@ -710,12 +710,12 @@ namespace GraphViz
         {
             var palette = new string[ConnectedComponentCount];
             if (ConnectedComponentCount == 1)
-                palette[0] = "#00FF00";
+                palette[0] = "#FF0000";
             else
                 for (var i = 0; i < ConnectedComponentCount; i++)
                 {
-                    var green = (int)((255.0  * i)/(ConnectedComponentCount-1));
-                    palette[i] = $"#00{green:X2}{255 - green:X2}";
+                    var red = (int)((255.0  * i)/(ConnectedComponentCount-1));
+                    palette[i] = $"#{red:X2}00{255 - red:X2}";
                 }
 
             foreach (var n in NodeIndex)

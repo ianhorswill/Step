@@ -50,7 +50,7 @@ namespace StepRepl.GraphVisualization
                     && graph.NodeAttributes.TryGetValue(n, out var attrs)
                     && attrs.TryGetValue("fillcolor", out var color))
                 {
-                    b.AppendLine($"style {nodeNames[n]} fill: {StringifyStepObject(color)};");
+                    b.AppendLine($"style {nodeNames[n]} fill:{StringifyStepObject(color)};");
                 }
             b.AppendLine(includeDiv?"</div>":"</pre>");
             return b.ToString();
