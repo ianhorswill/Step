@@ -131,8 +131,11 @@
         return jar.toString();
     }
 
-    function ScheduleMermaidRender() {
-        window.requestAnimationFrame(function() { mermaid.run();});
+    function ScheduleMermaidRenderAndScollToEnd() {
+        window.requestAnimationFrame(function() {
+            mermaid.run();
+            window.requestAnimationFrame(function() { window.scrollTo(0, document.body.scrollHeight); });
+        });
     }
 </script>
 
@@ -213,7 +216,6 @@
                 {
                     output = (MarkupString)("<p>"+rawOutput);
                     outputHeading = "Output";
-                    await JS.InvokeVoidAsync("ScheduleMermaidRender");
                 }
 
             }
@@ -227,6 +229,7 @@
                 outputHeading = "Error";
                 output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
             }
+            await JS.InvokeVoidAsync("ScheduleMermaidRenderAndScollToEnd");
         }
 
         StateHasChanged();
