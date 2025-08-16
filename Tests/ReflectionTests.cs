@@ -114,5 +114,28 @@ namespace Tests
             Assert.IsFalse(m.CallPredicate("TestFail"));
             Assert.IsFalse(m.CallPredicate("TestFail2"));
         }
+
+        [TestMethod]
+        public void MethodTests()
+        {
+            var m = Module.FromDefinitions(
+                "[predicate] Foo a.",
+                "Foo b.",
+                "[predicate] TestFoo ?y: [Method [Foo ?y] ?x] ?x",
+                "[predicate] Bar ?x: [Foo ?x]",
+                "[predicate] TestBar ?x: [Method [Bar ?x] ?y] ?y",
+                "[predicate] Baz ?x ?y: [Foo ?x] [Foo ?y]",
+                "[predicate] TestBaz ?x ?y: [Method [Baz ?x ?y] ?z] ?z",
+                "[predicate] TestLess ?x ?y: [Method [< ?x ?y] ?z] ?z",
+                "Emit: this is a test",
+                "TestEmit: [Method [Emit] ?x] ?x");
+            Assert.AreEqual("[]", m.Call("TestFoo", "a"));
+            Assert.IsFalse(m.CallPredicate("TestFoo", "zzz"));
+            Assert.AreEqual("[[Foo a]]", m.Call("TestBar", "a"));
+            Assert.AreEqual("[[Foo a] [Foo b]]", m.Call("TestBaz", "a", "b"));
+            Assert.AreEqual("[]", m.Call("TestLess", 1,2));
+            Assert.IsFalse(m.CallPredicate("TestLess", 100, 0));
+            Assert.AreEqual("[[Write \"this is a test\"]]", m.Call("TestEmit"));
+        }
     }
 }

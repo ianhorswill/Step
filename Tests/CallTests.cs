@@ -76,8 +76,8 @@ namespace Tests
         {
             var m = new Module("test");
             m.AddDefinitions("Inline ?x: inline",
-                "Method ?x: ?x/Inline",
-                "Test: [Method 1]");
+                "MyMethod ?x: ?x/Inline",
+                "Test: [MyMethod 1]");
             Assert.AreEqual("Inline",m.Call("Test"));
         }
 
@@ -87,8 +87,8 @@ namespace Tests
             var m = new Module("test");
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
-                "Method ?x: ?x/Map/Write",
-                "Test: [Method 1]");
+                "MyMethod ?x: ?x/Map/Write",
+                "Test: [MyMethod 1]");
             Assert.AreEqual("2",m.Call("Test"));
         }
 
@@ -98,9 +98,9 @@ namespace Tests
             var m = new Module("test");
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
-                "Method ?x: ?x/Map",
+                "MyMethod ?x: ?x/Map",
                 "Mention ?x: [Write ?x]",
-                "Test: [Method 1]");
+                "Test: [MyMethod 1]");
             Assert.AreEqual("2", m.Call("Test"));
         }
 
@@ -111,8 +111,8 @@ namespace Tests
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
                 "Foo ?x: foo",
-                "Method ?x: ?x/Map/Write+Foo",
-                "Test: [Method 1]");
+                "MyMethod ?x: ?x/Map/Write+Foo",
+                "Test: [MyMethod 1]");
             Assert.AreEqual("2 foo",m.Call("Test"));
         }
 
@@ -123,10 +123,10 @@ namespace Tests
             m.AddDefinitions("Map 1 2:",
                 "Map 2 3:",
                 "Foo ?x: foo",
-                "Method ?x: ?x/Map/Write+Foo",
-                "Test: [Method 1]");
+                "MyMethod ?x: ?x/Map/Write+Foo",
+                "Test: [MyMethod 1]");
             m.Call("Test");
-            Assert.AreEqual("[Foo 2][Method 1][Test]",
+            Assert.AreEqual("[Foo 2][MyMethod 1][Test]",
                 Module.StackTrace().Replace("\n", "").Replace("\r", ""));
         }
 

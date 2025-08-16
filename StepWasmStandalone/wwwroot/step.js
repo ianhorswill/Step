@@ -53,7 +53,7 @@ const GLOBAL_VARIABLE = {
             "Format", "Downcase", "Downcased", "Upcased", "Capitalized", "StartsWithVowel",
             "NounSingularPlural", "EnvironmentOption", "Hashtable", "Contains", "LinearInterpolate",
             "CompoundTask", "TaskMethod", "LastMethodCallFrame", "CallerChainAncestor", "GoalChainAncestor",
-            "TaskCalls", "TaskSubtask", "Help", "Apropos", "ElStore", "ElDelete", "ElDump", "Mention",
+            "TaskCalls", "TaskSubtask", "Method", "Help", "Apropos", "ElStore", "ElDelete", "ElDump", "Mention",
             "VisualizeGraph", "VisualizeGraphNoRender"
         ]
     },

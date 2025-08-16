@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Step.Utilities;
 
@@ -59,10 +60,13 @@ namespace Step.Interpreter
                 .Arguments("?caller", "?callee")
                 .Documentation("reflection//static analysis", "True if task ?caller has a method that calls ?callee");
 
-            // Second argument is a call expression for a call in some method of first argument.
             g["TaskSubtask"] = new GeneralPrimitive(nameof(TaskSubtask), TaskSubtask)
                 .Arguments("?task", "?call")
                 .Documentation("reflection//static analysis", "True if task ?caller has a method that contains the call ?call.");
+
+            g["Method"] = new GeneralPrimitive(nameof(Method), Method)
+                .Arguments("?call", "?methodBody")
+                .Documentation("reflection//static analysis", "True if ?methodBody is a call equivalent to the body of a rule that matches ?call.");
         }
 
         private static bool LastMethodCallFrame(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
@@ -150,6 +154,59 @@ namespace Step.Interpreter
                     if (k(o, unifications, e.State, predecessor))
                         return true;
             return false;
+        }
+        private static bool Method(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(Method), 2, args, o);
+            var call = ArgumentTypeException.Cast<object?[]>(nameof(Method), args[0], args, o);
+            if (call.Length == 0)
+                throw new ArgumentTypeException(nameof(Method), typeof(object?[]), call, args, o);
+            var task = ArgumentTypeException.Cast<Task>(nameof(Method), call[0], args, o);
+            var taskArgs = call.Skip(1).ToArray();
+            if (task is PrimitiveTask)
+            {
+                // Call the task, then report the method is either "true" or "false".
+                return task.Call(taskArgs, o, e, predecessor,
+                    (newOutput, newUnif, newState, newPred) =>
+                        e.Unify(args[1], Array.Empty<object?>(), newUnif, out var finalUniv)
+                        && k(newOutput, finalUniv, newState, newPred));
+            } else if (task is CompoundTask t)
+            {
+                var buffer = new List<object?>();
+                foreach (var m in t.Methods)
+                {
+                    var head = m.ArgumentPattern;
+                    var env = m.TryMatch(taskArgs, e, predecessor);
+                    if (env != null)
+                    {
+
+                        buffer.Clear();
+                        for (var step = m.StepChain; step != null; step = step.Next)
+                            switch (step)
+                            {
+                                case Call c:
+                                    buffer.Add(env.Value.ResolveList(c.Arglist.Prepend(c.Task).ToArray()));
+                                    break;
+
+                                case EmitStep emit:
+                                    buffer.Add(new object?[] { Builtins.WritePrimitive, emit.Text });
+                                    break;
+
+                                default:
+                                    throw new InvalidOperationException($"Cannot translate {step} into a call");
+                            }
+
+                        if (env.Value.Unify(args[1], buffer.ToArray(), env.Value.Unifications, out var final)
+                            && k(o, final, env.Value.State, env.Value.Frame))
+                            return true;
+                    }
+                }
+                // No remaining methods match
+                return false;
+            }
+            else 
+                throw new InvalidOperationException($"Task in call to Method is neither primitive nor compound.");
         }
     }
 }

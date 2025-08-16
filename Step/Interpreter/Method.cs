@@ -124,6 +124,24 @@ namespace Step.Interpreter
             return false;
         }
 
+        /// <summary>
+        /// Matches the method to arguments without actually running it.
+        /// </summary>
+        public BindingEnvironment? TryMatch(object?[] args, BindingEnvironment env, MethodCallFrame? pre)
+        {
+            // Make stack frame for locals
+            var locals = new LogicVariable[LocalVariableNames.Length];
+            for (var i = 0; i < LocalVariableNames.Length; i++)
+                locals[i] = new LogicVariable(LocalVariableNames[i]);
+            var newFrame = new MethodCallFrame(this, env.Unifications, locals, env.Frame, pre);
+            MethodCallFrame.CurrentFrame = newFrame;
+            var newEnv = new BindingEnvironment(env, newFrame);
+            if (newEnv.UnifyArrays(args, newEnv.ResolveList(ArgumentPattern), out BindingEnvironment finalEnv))
+                return finalEnv;
+            else 
+                return null;
+        }
+
         /// <inheritdoc />
         public override string ToString() => $"Method {HeadString}";
 
