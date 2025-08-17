@@ -267,6 +267,18 @@ namespace Tests
             Assert.IsTrue(true);
         }
 
+        [TestMethod]
+        public void MemberTest()
+        {
+            var m = Module.FromDefinitions("Test: [Member [a ?x] [b [a [b 7]] [a 8]]] ?x",
+                "[predicate] Test2 ?x: [Member ?x [a b c]]",
+                "Test3: [ForEach [Member [a ?x] [b [a 7] [c 8] [a 9] d]] [Write ?x]]");
+            Assert.AreEqual("[b 7]", m.Call("Test"));
+            Assert.IsTrue(m.CallPredicate("Test2", "b"));
+            Assert.IsFalse(m.CallPredicate("Test2", "z"));
+            Assert.AreEqual("7 9", m.Call("Test3"));
+        }
+
     //    [TestMethod]
     //    public void AproposTest()
     //    {

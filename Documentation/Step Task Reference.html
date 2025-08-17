@@ -188,6 +188,8 @@ Predicates access tuples/lists in particular.  These work with any C# object tha
 <p>
 <code>[<b>Cons</b> <i>firstElement</i> <i>restElements</i> <i>tuple</i>]</code><br>True when tuple starts with firstElement and continues with restElements.
 <p>
+<code>[<b>FastMember</b> <i>element</i> <i>collection</i>]</code><br>True when element is an element of collection.  Does not pattern match.  It succeeds only if the same literal object appears in the list.
+<p>
 <code>[<b>Length</b> <i>list</i> <i>?length</i>]</code><br>True when list has exactly ?length elements
 <p>
 <code>[<b>Member</b> <i>element</i> <i>collection</i>]</code><br>True when element is an element of collection.

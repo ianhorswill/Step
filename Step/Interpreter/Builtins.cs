@@ -224,11 +224,15 @@ namespace Step.Interpreter
             Documentation.SectionIntroduction("data structures//lists",
                 "Predicates access tuples/lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).");
 
-            g["Member"] = new GeneralPredicate<object, IEnumerable<object>>("Member",
+            g["FastMember"] = new GeneralPredicate<object, IEnumerable<object>>("FastMember",
                     (member, collection) => collection != null && collection.Contains(member),
                     null,
                     collection => collection ?? EmptyArray,
                     null)
+                .Arguments("element", "collection")
+                .Documentation("data structures//lists", "True when element is an element of collection.  Does not pattern match.  It succeeds only if the same literal object appears in the list.");
+
+            g["Member"] = new GeneralPrimitive("Member", Member)
                 .Arguments("element", "collection")
                 .Documentation("data structures//lists", "True when element is an element of collection.");
 
@@ -517,6 +521,16 @@ namespace Step.Interpreter
             ReflectionBuiltins.DefineGlobals();
             Documentation.DefineGlobals(Module.Global);
             ElNode.DefineGlobals();
+        }
+
+        private static bool Member(object?[] args, TextBuffer o, BindingEnvironment env, MethodCallFrame? f, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(Member), 2, args, o);
+            var collection = ArgumentTypeException.Cast<IEnumerable>(nameof(Member), args[1], args, o);
+            foreach (var e in collection)
+                if (env.Unify(args[0], e, out var bindings) && k(o, bindings, env.State, f))
+                    return true;
+            return false;
         }
 
         private static bool HasFeature(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
