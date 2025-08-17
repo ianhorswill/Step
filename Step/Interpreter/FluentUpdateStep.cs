@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using Step.Parser;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Step.Interpreter
 {
@@ -12,9 +14,9 @@ namespace Step.Interpreter
         /// <summary>
         /// The updates made by this step
         /// </summary>
-        public readonly (CompoundTask task, object?[] args, bool polarity)[] Updates;
+        public readonly object?[] Updates;
 
-        private FluentUpdateStep((CompoundTask task, object?[] args, bool polarity)[] updates) : base(null)
+        private FluentUpdateStep(object?[] updates) : base(null)
         {
             Updates = updates;
         }
@@ -22,13 +24,23 @@ namespace Step.Interpreter
         public static void FromExpression(ChainBuilder chain, object?[] expression, Module module, string? sourceFile, int lineNumber)
         {
             var updates = new List<(CompoundTask task, object?[] args, bool polarity)>();
-            foreach (var fluent in expression.Skip(1))
+            
+            chain.AddStep(new FluentUpdateStep(expression.Skip(1).ToArray()));
+        }
+
+        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
+        {
+            
+            var state = e.State;
+            foreach (var fluent in Updates)
             {
-                void ThrowInvalidFluentSyntax() => throw new SyntaxError($"Invalid fluent expression: {fluent}", sourceFile, lineNumber);
-                var polarity = true;
-                if (!(fluent is object?[] fluentExp) || fluentExp.Length == 0)
+                void ThrowInvalidFluentSyntax() => throw new ArgumentException($"Invalid fluent expression: {fluent}");
+
+                var fluentExp = e.Resolve(fluent) as object?[];
+                if (fluentExp == null || fluentExp.Length == 0)
                     ThrowInvalidFluentSyntax();
-                if (Equals(fluentExp[0], "Not"))
+                var polarity = true;
+                if (Equals(fluentExp[0], HigherOrderBuiltins.Not))
                 {
                     polarity = false;
                     if (fluentExp.Length != 2) ThrowInvalidFluentSyntax();
@@ -36,23 +48,13 @@ namespace Step.Interpreter
                     if (fluentExp.Length > 1 && fluentExp[1] == null) ThrowInvalidFluentSyntax();
                 }
                 // ReSharper disable once PossibleNullReferenceException
-                if (!(fluentExp?[0] is string fluentName) || !DefinitionStream.IsGlobalVariableName(fluentName))
+                if (!(fluentExp?[0] is CompoundTask task))
                     ThrowInvalidFluentSyntax();
 
                 // ReSharper disable once RedundantArgumentDefaultValue
-                var task = module.FindTask(StateVariableName.Named(fluentName), fluentExp!.Length - 1, true)!;
                 task.Flags |= CompoundTask.TaskFlags.ReadCache | CompoundTask.TaskFlags.Fallible | CompoundTask.TaskFlags.MultipleSolutions;
-                updates.Add((task, chain.CanonicalizeArglist(fluentExp.Skip(1).ToArray()), polarity));
+                state = task.SetFluent(state, fluentExp.Skip(1).ToArray(), polarity, output);
             }
-
-            chain.AddStep(new FluentUpdateStep(updates.ToArray()));
-        }
-
-        public override bool Try(TextBuffer output, BindingEnvironment e, Continuation k, MethodCallFrame? predecessor)
-        {
-            var state = e.State;
-            foreach (var (task, args, polarity) in Updates) 
-                state = task.SetFluent(state, e.ResolveList(args), polarity, output);
             return Continue(output, new BindingEnvironment(e, e.Unifications, state), k, predecessor);
         }
 

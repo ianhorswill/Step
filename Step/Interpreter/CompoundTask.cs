@@ -510,13 +510,13 @@ namespace Step.Interpreter
         /// All the fluent updates of the methods of this task.
         /// </summary>
         // ReSharper disable once UnusedMember.Global
-        public IEnumerable<(CompoundTask task, object?[] args, bool polarity)> FluentUpdates()
-        {
-            foreach (var m in Methods)
-                foreach (var s in Step.ChainSteps(m.StepChain))
-                    if (s is FluentUpdateStep u)
-                        foreach (var f in u.Updates)
-                            yield return f;
-        }
+        //public IEnumerable<(CompoundTask task, object?[] args, bool polarity)> FluentUpdates()
+        //{
+        //    foreach (var m in Methods)
+        //        foreach (var s in Step.ChainSteps(m.StepChain))
+        //            if (s is FluentUpdateStep u)
+        //                foreach (var f in u.Updates)
+        //                    yield return f;
+        //}
     }
 }

@@ -75,5 +75,18 @@ namespace Step.Interpreter
                 return (TExpected)(object)Convert.ToSingle(actual);
             return (TExpected) actual!;
         }
+
+        public static object?[] CastArrayTuple(object task, object? actual, object?[]? arglist, BindingList? bindings, TextBuffer output)
+        {
+            if (actual is Pair p)
+            {
+                var a = Pair.CompressPairChainsWhenPossible(p, bindings) as object?[];
+                if (a != null)
+                    return a;
+                throw new ArgumentTypeException(task, typeof(object?[]), actual, arglist, output);
+            }
+
+            return Cast<object?[]>(task, actual, arglist, output);
+        }
     }
 }

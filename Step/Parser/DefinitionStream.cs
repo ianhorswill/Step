@@ -950,7 +950,7 @@ namespace Step.Parser
                     if (expression.Length >= 3 && expression[2].Equals("="))
                         AssignmentStep.FromExpression(chain, expression, SourceFile, lineNumber);
                     else
-                        FluentUpdateStep.FromExpression(chain, expression, Module, SourceFile, lineNumber);
+                        FluentUpdateStep.FromExpression(chain, CanonicalizeArglist(expression), Module, SourceFile, lineNumber);
                     break;
 
                 case "once":

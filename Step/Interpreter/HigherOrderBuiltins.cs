@@ -155,7 +155,7 @@ namespace Step.Interpreter
             MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.CheckAtLeast(nameof(Call), 1, args, output);
-            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args, output);
+            var call = ArgumentTypeException.CastArrayTuple(nameof(Call), args[0], args, env.Unifications, output);
 
             if (!(call[0] is Task task))
                 throw new InvalidOperationException(

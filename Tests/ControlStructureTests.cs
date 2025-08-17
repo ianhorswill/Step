@@ -62,6 +62,8 @@ namespace Tests
             var m = Module.FromDefinitions(
                 "TestF: [F 1] true",
                 "TestF: false",
+                "fluent F ?.",
+                "fluent Mentioned ?.",
                 "Test: [TestF] [now [F 0]] [TestF] [now [Not [F 0]] [F 1]] [TestF]",
                 "Mention ?x: [now [Mentioned ?x]]",
                 "MentionTest: [Mention x] [Mentioned x]");
@@ -93,6 +95,7 @@ namespace Tests
         {
             var m = Module.FromDefinitions("fluent B.",
                 "TestF: [F] true",
+                "fluent F.",
                 "TestF: false",
                 "Test: [TestF] [now [F]] [TestF] [now [Not [F]]] [TestF]");
             Assert.AreEqual("False true false", m.Call("Test"));
