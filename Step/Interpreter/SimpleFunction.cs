@@ -28,7 +28,7 @@ namespace Step.Interpreter
             ArgumentCountException.Check(Name, 2, args, output);
             var input = ArgumentTypeException.Cast<TIn>(Name, env.Resolve(args[0]), args, output);
             var result = implementation(input);
-            if (env.Unify(args[1], result, out var bindings))
+            if (env.Unify(args[1], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }
@@ -61,7 +61,7 @@ namespace Step.Interpreter
             var input1 = ArgumentTypeException.Cast<TIn1>(Name, env.Resolve(args[0]), args, output);
             var input2 = ArgumentTypeException.Cast<TIn2>(Name, env.Resolve(args[1]), args, output);
             var result = implementation(input1, input2);
-            if (env.Unify(args[2], result, out var bindings))
+            if (env.Unify(args[2], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }
@@ -97,7 +97,7 @@ namespace Step.Interpreter
             var input2 = ArgumentTypeException.Cast<TIn2>(Name, args[1], args, output);
             var input3 = ArgumentTypeException.Cast<TIn3>(Name, args[2], args, output);
             var result = implementation(input1, input2, input3);
-            if (env.Unify(args[3], result, out var bindings))
+            if (env.Unify(args[3], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }
@@ -135,7 +135,7 @@ namespace Step.Interpreter
             var input3 = ArgumentTypeException.Cast<TIn3>(Name, args[2], args, output);
             var input4 = ArgumentTypeException.Cast<TIn4>(Name, args[3], args, output);
             var result = implementation(input1, input2, input3, input4);
-            if (env.Unify(args[4], result, out var bindings))
+            if (env.Unify(args[4], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }
@@ -175,7 +175,7 @@ namespace Step.Interpreter
             var input4 = ArgumentTypeException.Cast<TIn4>(Name, args[3], args, output);
             var input5 = ArgumentTypeException.Cast<TIn5>(Name, args[4], args, output);
             var result = implementation(input1, input2, input3, input4, input5);
-            if (env.Unify(args[5], result, out var bindings))
+            if (env.Unify(args[5], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }
@@ -217,7 +217,7 @@ namespace Step.Interpreter
             var input5 = ArgumentTypeException.Cast<TIn5>(Name, args[4], args, output);
             var input6 = ArgumentTypeException.Cast<TIn6>(Name, args[5], args, output);
             var result = implementation(input1, input2, input3, input4, input5, input6);
-            if (env.Unify(args[6], result, out var bindings))
+            if (env.Unify(args[6], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }
@@ -243,7 +243,7 @@ namespace Step.Interpreter
             var fArgs = new object[args.Length - 1];
             Array.Copy(args, fArgs, args.Length-1);
             var result = implementation(fArgs);
-            if (env.Unify(args[^1], result, out var bindings))
+            if (env.Unify(args[^1], result, out BindingList? bindings))
                 return new[] { bindings };
             return EmptyBindingListArray;
         }

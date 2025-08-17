@@ -38,7 +38,7 @@ namespace Step.Interpreter
                 case Cons list:
                 {
                     return list != Cons.Empty 
-                        && e.Unify(elementVariable, list.First, out var bindings)
+                        && e.Unify(elementVariable, list.First, out BindingList? bindings)
                         && Continue(output,
                             new BindingEnvironment(e,
                                 bindings,
@@ -50,7 +50,7 @@ namespace Step.Interpreter
                 case ImmutableStack<object> stack:
                 {
                     return !stack.IsEmpty
-                           && e.Unify(elementVariable, stack.Peek(), out var bindings)
+                           && e.Unify(elementVariable, stack.Peek(), out BindingList? bindings)
                            && Continue(output,
                                new BindingEnvironment(e,
                                    bindings,
@@ -61,7 +61,7 @@ namespace Step.Interpreter
                 case ImmutableQueue<object> queue:
                 {
                     return !queue.IsEmpty
-                           && e.Unify(elementVariable, queue.Peek(), out var bindings)
+                           && e.Unify(elementVariable, queue.Peek(), out BindingList? bindings)
                            && Continue(output,
                                new BindingEnvironment(e,
                                    bindings,
@@ -72,7 +72,7 @@ namespace Step.Interpreter
                 case ImmutableSortedSet<(object element,float priority)> heap:
                 {
                     return !heap.IsEmpty
-                           && e.Unify(elementVariable, heap.Max.element, out var bindings)
+                           && e.Unify(elementVariable, heap.Max.element, out BindingList? bindings)
                            && Continue(output,
                                new BindingEnvironment(e,
                                    bindings,

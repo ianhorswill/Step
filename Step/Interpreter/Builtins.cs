@@ -306,7 +306,7 @@ namespace Step.Interpreter
                 (args, t, b, f, k) =>
                 {
                     ArgumentCountException.Check("CopyTerm", 2, args, t);
-                    return b.Unify(args[1], b.CopyTerm(args[0]), out var u) && k(t, u, b.State, f);
+                    return b.Unify(args[1], b.CopyTerm(args[0]), out BindingList? u) && k(t, u, b.State, f);
                 })
                 .Arguments("in", "out")
                 .Documentation("metalogical",
@@ -528,7 +528,7 @@ namespace Step.Interpreter
             ArgumentCountException.Check(nameof(Member), 2, args, o);
             var collection = ArgumentTypeException.Cast<IEnumerable>(nameof(Member), args[1], args, o);
             foreach (var e in collection)
-                if (env.Unify(args[0], e, out var bindings) && k(o, bindings, env.State, f))
+                if (env.Unify(args[0], e, out BindingList? bindings) && k(o, bindings, env.State, f))
                     return true;
             return false;
         }
@@ -566,7 +566,7 @@ namespace Step.Interpreter
             var shuffled = features.WeightedShuffle(pair => Convert.ToSingle(pair.Value));
             foreach (var feature in shuffled)
             {
-                if (e.Unify(args[1], feature.Key.Name, out var u)
+                if (e.Unify(args[1], feature.Key.Name, out BindingList? u)
                     && k(o, u, e.State, predecessor))
                     return true;
             }

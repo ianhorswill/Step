@@ -41,10 +41,8 @@ namespace Step.Interpreter
                         e.State.Bind(GlobalVariable!, expValue)),
                     k, predecessor); 
 
-            if (e.Unify(e.Resolve(LocalVariable), expValue, out var result))
-                return Continue(output,
-                    new BindingEnvironment(e, result, e.State),
-                    k, predecessor);
+            if (e.Unify(e.Resolve(LocalVariable), expValue, out BindingEnvironment result))
+                return Continue(output, result, k, predecessor);
             
             return false;
         }

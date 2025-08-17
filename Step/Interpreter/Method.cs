@@ -23,7 +23,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -127,7 +126,7 @@ namespace Step.Interpreter
         /// <summary>
         /// Matches the method to arguments without actually running it.
         /// </summary>
-        public BindingEnvironment? TryMatch(object?[] args, BindingEnvironment env, MethodCallFrame? pre)
+        public BindingEnvironment? TryMatch(object? args, BindingEnvironment env, MethodCallFrame? pre)
         {
             // Make stack frame for locals
             var locals = new LogicVariable[LocalVariableNames.Length];
@@ -136,7 +135,7 @@ namespace Step.Interpreter
             var newFrame = new MethodCallFrame(this, env.Unifications, locals, env.Frame, pre);
             MethodCallFrame.CurrentFrame = newFrame;
             var newEnv = new BindingEnvironment(env, newFrame);
-            if (newEnv.UnifyArrays(args, newEnv.ResolveList(ArgumentPattern), out BindingEnvironment finalEnv))
+            if (newEnv.Unify(args, newEnv.ResolveList(ArgumentPattern), out BindingEnvironment finalEnv))
                 return finalEnv;
             else 
                 return null;

@@ -178,15 +178,14 @@ namespace Step.Interpreter
                     if (v0 == null)
                     {
                         return d.Contains(arg0!)
-                               && env.Unify(arg1, d[arg0!], out var u)
-                               && Continue(output,
-                                   new BindingEnvironment(env, u, env.State), k, predecessor);
+                               && env.Unify(arg1, d[arg0!], out BindingEnvironment e2)
+                               && Continue(output, e2, k, predecessor);
                     }
                     else
                     {
                         // Arg 0 is out
                         foreach (DictionaryEntry e in d)
-                            if (env.Unify(arg0, e.Key, out var unif1)
+                            if (env.Unify(arg0, e.Key, out BindingList? unif1)
                                 && env.Unify(arg1, e.Value, unif1, out var unif2)
                                 && Continue(output, new BindingEnvironment(env, unif2, env.State), k, predecessor))
                                 return true;

@@ -399,6 +399,18 @@ namespace Step.Interpreter
             return false;
         }
 
+        public bool Unify(object? a, object? b, out BindingEnvironment e)
+        {
+            if (Unify(a, b, out BindingList? outUnifications))
+            {
+                e = new BindingEnvironment(Module, Frame, outUnifications, State);
+                return true;
+            }
+
+            e = this;
+            return false;
+        }
+
         /// <summary>
         /// If value is a LogicVariable, follow the chain of substitutions in Unifications to reduce it to its normal form.
         /// If it's not a logic variable, just returns the value.

@@ -315,7 +315,7 @@ namespace Step.Interpreter
                 resultList.Add(e.Resolve(solution, u));
                 return false;
             });
-            return e.Unify(result, resultList.ToArray(), out var final)
+            return e.Unify(result, resultList.ToArray(), out BindingList? final)
                    && k(o, final, e.State, predecessor);
         }
 
@@ -385,7 +385,7 @@ namespace Step.Interpreter
                 return solutionCount.HasValue && resultSet.Count == solutionCount.Value;
             });
             return (!failIfInsufficient || !solutionCount.HasValue || solutionCount.Value == resultSet.Count)
-                   && e.Unify(result, resultSet.ToArray(), out var final)
+                   && e.Unify(result, resultSet.ToArray(), out BindingList? final)
                    && k(o, final, e.State, predecessor);
         }
 

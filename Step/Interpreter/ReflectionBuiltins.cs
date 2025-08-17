@@ -72,7 +72,7 @@ namespace Step.Interpreter
         private static bool LastMethodCallFrame(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.Check("LastMethodCallFrame", 1, args, o);
-            return e.Unify(args[0], predecessor, out var u)
+            return e.Unify(args[0], predecessor, out BindingList? u)
                    && k(o, u, e.State, predecessor);
         }
 
@@ -150,7 +150,7 @@ namespace Step.Interpreter
             ArgumentCountException.Check("TaskSubtask", 2, args, o);
             var task = ArgumentTypeException.Cast<CompoundTask>("TaskSubtask", args[0], args, o);
             foreach (var callExpression in e.Module.Subtasks(task))
-                if (e.Unify(args[1], callExpression, out var unifications))
+                if (e.Unify(args[1], callExpression, out BindingList? unifications))
                     if (k(o, unifications, e.State, predecessor))
                         return true;
             return false;
