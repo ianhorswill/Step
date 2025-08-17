@@ -159,15 +159,34 @@ namespace Step.Interpreter
             Step.Continuation k)
         {
             ArgumentCountException.Check(nameof(Method), 2, args, o);
-            var call = ArgumentTypeException.Cast<object?[]>(nameof(Method), args[0], args, o);
-            if (call.Length == 0)
-                throw new ArgumentTypeException(nameof(Method), typeof(object?[]), call, args, o);
-            var task = ArgumentTypeException.Cast<Task>(nameof(Method), call[0], args, o);
-            var taskArgs = call.Skip(1).ToArray();
+            Task task;
+            object? taskArgs;
+            var call = args[0];
+            if (call is Pair cell)
+            {
+                task = ArgumentTypeException.Cast<Task>(nameof(Method), cell.First, args, o);
+                taskArgs = cell.Rest;
+            }
+            else
+            {
+                var array = ArgumentTypeException.Cast<object?[]>(nameof(Method), args[0], args, o);
+                if (array.Length == 0)
+                    throw new ArgumentTypeException(nameof(Method), typeof(object?[]), call, args, o);
+                task = ArgumentTypeException.Cast<Task>(nameof(Method), array[0], args, o);
+                taskArgs = array.Skip(1).ToArray();
+            }
+            
             if (task is PrimitiveTask)
             {
+                object?[] argArray = taskArgs switch
+                {
+                    object?[] a => a,
+                    Pair cell1 when Pair.CompressPairChainsWhenPossible(cell1, e.Unifications) is object?[] array => array,
+                    _ => throw new ArgumentException($"Task arguments in call to Method are not a proper list: {taskArgs}")
+                };
+
                 // Call the task, then report the method is either "true" or "false".
-                return task.Call(taskArgs, o, e, predecessor,
+                return task.Call(argArray, o, e, predecessor,
                     (newOutput, newUnif, newState, newPred) =>
                         e.Unify(args[1], Array.Empty<object?>(), newUnif, out var finalUniv)
                         && k(newOutput, finalUniv, newState, newPred));

@@ -127,7 +127,7 @@ namespace Step.Parser
         /// <summary>
         /// Current expression
         /// </summary>
-        private object? Peek => expressions.Current;
+        private object? Peek => ExplodeImproperLists(expressions.Current);
 
         /// <summary>
         /// Peek, but apply substitution
@@ -157,8 +157,10 @@ namespace Step.Parser
 
         internal static object? ExplodeImproperLists(object? term)
         {
-            if (!(term is object?[] a) || a.Length < 3 || !Equals(a[^2], "|"))
-                return term;
+            if (!(term is object?[] a))
+                return term; 
+            if (a.Length < 3 || !Equals(a[^2], "|"))
+                return a.Select(ExplodeImproperLists).ToArray();
             var rest = a[^1];
             for (var i = a.Length-3; i >= 0; i--) 
                 rest = new Pair(ExplodeImproperLists(a[i]), rest);

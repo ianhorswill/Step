@@ -46,7 +46,7 @@ const GLOBAL_VARIABLE = {
             "ExactlyOnce", "Max", "Min", "SaveText", "PreviousCall", "UniqueCall", "Parse", "TreeSearch",
             "=", "Different", ">", "<", ">=", "<=", "Paragraph", "NewLine", "FreshLine", "ForceSpace",
             "Fail", "Break", "InterpreterBreak", "Log", "LogBack", "Listing", "Throw", "BailOut", "StringForm",
-            "WriteVerbatim", "Write", "WriteCapitalized", "WriteConcatenated", "Member", "Length", "Nth",
+            "WriteVerbatim", "Write", "WriteCapitalized", "WriteConcatenated", "Member", "FastMember", "Length", "Nth",
             "Cons", "Var", "NonVar", "Ground", "Nonground", "CopyTerm", "String", "Tuple", "FeatureStructure",
             "BinaryTask", "Empty", "EmptyMaxQueue", "EmptyMinQueue", "CountAttempts", "RandomIntegerInclusive",
             "RandomIntegerExclusive", "RandomFloat", "RandomElement", "Gaussian", "SampleFeatures",
