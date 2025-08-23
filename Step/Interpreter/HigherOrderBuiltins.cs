@@ -23,11 +23,12 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using Step.Output;
+using Step.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Step.Output;
-using Step.Utilities;
+using System.Threading.Tasks;
 
 namespace Step.Interpreter
 {
@@ -88,6 +89,9 @@ namespace Step.Interpreter
             g[nameof(Begin)] = new GeneralPrimitive(nameof(Begin), Begin)
                 .Arguments("task", "...")
                 .Documentation("control flow", "Runs each of the tasks, in order.");
+            g[nameof(Sample)] = new GeneralPrimitive(nameof(Sample), Sample)
+                .Arguments("calls", "...")
+                .Documentation("control flow", "Runs each of the calls, in order, without backtracking between them.  Succeeds only if each calls succeeds on the first try.  Use in conjunction with CountAttempts to implement rejection sampling.");
             g[nameof(And)] = And;
             g[nameof(Or)] = Or;
                 g[nameof(Not)] = Not;
@@ -118,9 +122,9 @@ namespace Step.Interpreter
             g[nameof(ForEach)] = new GeneralPrimitive(nameof(ForEach), ForEach)
                 .Arguments("generator_call", "other_calls", "...")
                 .Documentation("control flow//looping", "Runs generator_call, finding all its solutions by backtracking.  For each solution, runs the other tasks, collecting all their text output.  Since the results are backtracked, any variable bindings are undone.  However, all text generated and set commands performed are preserved.");
-            g[nameof(Implies)] = new GeneralPrimitive(nameof(Implies), Implies)
+            g["Implies"] = g[nameof(Every)] = new GeneralPrimitive(nameof(Every), Every)
                 .Arguments("higher-order predicates", "other_calls", "...")
-                .Documentation("higher-order predicates", "True if for every solution to generator_call, other_calls succeeds.  So this is essentially like ForEach, but whereas ForEach always succeeds, Implies fails if other_calls ever fails.  Text output and sets of global variables are preserved, as with ForEach.");
+                .Documentation("higher-order predicates", "True if for every solution to generator_call, other_calls succeeds.  So this is essentially like ForEach, but whereas ForEach always succeeds, EVery/Implies fails if other_calls ever fails.  Text output and sets of global variables are preserved, as with ForEach.");
             g[nameof(Once)] = new GeneralPrimitive(nameof(Once), Once)
                 .Arguments("code", "...")
                 .Documentation("control flow//controlling backtracking", "Runs code normally, however, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.");
@@ -209,14 +213,36 @@ namespace Step.Interpreter
             => Step.Try(Step.ChainFromBody("Begin", args), o, e, k, predecessor);
 
         private static bool AndImplementation(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
-            => Step.Try(Step.ChainFromBody("AndImplementation", args), o, e, k, predecessor);
+            => Step.Try(Step.ChainFromBody("And", args), o, e, k, predecessor);
 
         private static bool OrImplementation(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
             => args.Any(call =>
             {
-                var tuple = ArgumentTypeException.Cast<object[]>("OrImplementation", call, args, o);
-                return Eval(tuple, o, e, predecessor, k, "OrImplementation");
+                var tuple = ArgumentTypeException.Cast<object[]>("Or", call, args, o);
+                return Eval(tuple, o, e, predecessor, k, "Or");
             });
+
+        private static bool Sample(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            var output = o;
+            var env = e;
+            var frame = predecessor;
+            foreach (var call in args)
+            {
+                var tuple = ArgumentTypeException.Cast<object[]>(nameof(Sample), call, args, o);
+                if (!Eval(tuple, output, env, frame,
+                        (newO, unif, state, fr) =>
+                        {
+                            output = newO;
+                            env = new BindingEnvironment(env, unif, state);
+                            frame = fr;
+                            return true;
+                        },
+                        nameof(Sample)))
+                    return false;
+            }
+            return k(o, env.Unifications, env.State, frame);
+        }
 
         private static bool IgnoreOutput(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
         {
@@ -427,15 +453,15 @@ namespace Step.Interpreter
             return k(resultOutput, env.Unifications, dynamicState, predecessor);
         }
 
-        private static bool Implies(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? predecessor, Step.Continuation k)
+        private static bool Every(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? predecessor, Step.Continuation k)
         {
             if (args.Length < 2)
-                throw new ArgumentCountException(nameof(Implies), 2, args, output);
+                throw new ArgumentCountException(nameof(Every), 2, args, output);
 
             var producer = args[0];
-            var producerChain = Step.ChainFromBody(nameof(Implies), producer);
+            var producerChain = Step.ChainFromBody(nameof(Every), producer);
             var consumer = args.Skip(1).ToArray();
-            var consumerChain = Step.ChainFromBody(nameof(Implies), consumer);
+            var consumerChain = Step.ChainFromBody(nameof(Every), consumer);
 
             var dynamicState = env.State;
             var resultOutput = output;

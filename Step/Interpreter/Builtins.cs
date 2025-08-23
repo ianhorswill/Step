@@ -336,19 +336,26 @@ namespace Step.Interpreter
             g["EmptyMinQueue"] = ImmutableSortedSet.Create<(object element, float priority)>(PriorityQueueComparer.Min);
 
             g["CountAttempts"] = new GeneralPrimitive("CountAttempts", (args, o, bindings, p, k) =>
-            {
-                ArgumentCountException.Check("CountAttempts", 1, args, o);
-                ArgumentInstantiationException.Check("CountAttempts", args[0], false, bindings, args, o);
-                int count = 0;
-                while (true)
-                    if (k(o,
-                        BindingList.Bind(bindings.Unifications, (LogicVariable) args[0]!, count++),
-                        bindings.State,
-                        p))
-                        return true;
-                // ReSharper disable once FunctionNeverReturns
-            }).Arguments("?count")
-                .Documentation("control flow", "Binds ?count to 0, then to increasing numbers each time the system backtracks to the call.  Used in a loop to run something repeatedly: [CountAttempts ?count] [DoSomething] [= ?count 100] will run DoSomething until ?count is 100.");
+                {
+                    var max = int.MaxValue;
+                    if (args.Length != 1)
+                    {
+                        ArgumentCountException.Check("CountAttempts", 2, args, o);
+                        max = ArgumentTypeException.Cast<int>("CountAttempts", args[1], args, o);
+                    }
+
+                    ArgumentInstantiationException.Check("CountAttempts", args[0], false, bindings, args, o);
+                    int count = 0;
+                    while (count < max)
+                        if (k(o,
+                                BindingList.Bind(bindings.Unifications, (LogicVariable)args[0]!, count++),
+                                bindings.State,
+                                p))
+                            return true;
+                    // ReSharper disable once FunctionNeverReturns
+                    return false;
+                }).Arguments("?count", "[maxCount]")
+                .Documentation("control flow", "Binds ?count to 0, then to increasing numbers each time the system backtracks to the call.  Used in a loop to run something repeatedly: [CountAttempts ?count] [DoSomething] [= ?count 100] will run DoSomething until ?count is 100.  If optional maxCount parameter is included, will fail if that count is exceeded.");
 
             Documentation.SectionIntroduction("randomization",
                 "Tasks that choose random numbers or list elements.");
