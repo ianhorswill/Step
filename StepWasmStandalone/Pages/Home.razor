@@ -1,10 +1,15 @@
 ﻿@page "/"
+@using System.Runtime.InteropServices.JavaScript
 @using Step
 @using Step.Interpreter
 @using Step.Output
 @using StepRepl.GraphVisualization
 @using Task = System.Threading.Tasks.Task
+@using System.Numerics
+@using System.Text.Json
 @inject IJSRuntime JS
+
+
 
 <PageTitle>Step</PageTitle>
 
@@ -21,7 +26,7 @@
         mermaid.initialize({ startOnLoad: true, theme: 'dark' });
         window.mermaid = mermaid
     </script>
-
+    
 <script type="module">
     import { CodeJar } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/codejar.min.js';
     import { withLineNumbers } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/linenumbers.min.js';
@@ -131,13 +136,18 @@
         return jar.toString();
     }
 
+    function LogIt(s) {
+        console.log(s);
+    }
+
     function ScheduleMermaidRenderAndScollToEnd() {
         window.requestAnimationFrame(function() {
             mermaid.run();
             window.requestAnimationFrame(function() { window.scrollTo(0, document.body.scrollHeight); });
         });
-    }
+    }    
 </script>
+<script src="./GameDriver.js"></script>
 
 @* <textarea @bind="@source" id="sourceCode" style="width: 800px; height: 400px;" spellcheck="false"/> *@
 <br>
@@ -151,6 +161,8 @@
 
 @code {
     private static Module ReplUtilities = MakeReplUtilities();
+    private static Module UserModule;
+    internal static State State;
 
     private string command ="";
     
@@ -184,6 +196,22 @@
         return sourceCode;
     }
 
+    private static readonly Dictionary<string, Vector2> GameState = new();
+
+    [JSInvokable]
+    public static void ProcessGameNotifications(object[] notification, JsonElement[][] gameState)
+    {
+        foreach (var tuple in gameState)
+        {
+            var name = tuple[0].GetString();
+            var x = tuple[1].GetSingle();
+            var y = tuple[2].GetSingle();
+            GameState[name] = new Vector2(x, y);
+        }
+    }
+
+    string lastModuleSource="";
+
     private async void Run()
     {
         if (command.Trim() == "")
@@ -196,17 +224,23 @@
             try
             {
                 Module.RichTextStackTraces = true;
-                var m = new Module("User", ReplUtilities);
-                m.FormattingOptions.LineSeparator = " <br> ";
-                m.FormattingOptions.ParagraphMarker = " <p> ";
                 var source = await JS.InvokeAsync<string>("GetUserCode");
-                m.AddDefinitions(source);
+                if (UserModule == null || source != lastModuleSource)
+                {
+                    var m = new Module("User", ReplUtilities);
+                    m.FormattingOptions.LineSeparator = " <br> ";
+                    m.FormattingOptions.ParagraphMarker = " <p> ";
+                    m.AddDefinitions(source);
+                    lastModuleSource = source;
+                    UserModule = m;
+                    State = State.Empty;
+                }
 
                 var topLevelSource = command;
                 if (!topLevelSource.Trim().StartsWith('['))
                     topLevelSource = $"[{topLevelSource}]";
                 topLevelSource = $"{topLevelSource} [PrintLocalBindings]";
-                var rawOutput = m.ParseAndExecute(topLevelSource);
+                var (rawOutput, newState) = UserModule.ParseAndExecute(topLevelSource, State);
                 if (rawOutput == "")
                 {
                     outputHeading = "Yes";
@@ -218,6 +252,7 @@
                     outputHeading = "Output";
                 }
 
+                State = newState;
             }
             catch (CallFailedException e) when (IsTopLevelCallFailure(e))
             {
@@ -234,8 +269,6 @@
 
         StateHasChanged();
     }
-
-
 
     private static bool IsTopLevelCallFailure(CallFailedException e) => e.Task is CompoundTask { Name: "TopLevelCall" };
 
@@ -265,8 +298,22 @@
             .Documentation("StepRepl//internals",
                 "Prints the values of all local variables.  There probably isn't any reason for you to use this directly, but it's used by StepRepl to print the results of queries.");
         StepGraph.AddPrimitives(m);
+        m["JSLog"] = new SimplePredicate<string>("JSLog", s =>
+        {
+            singleton.JS.InvokeAsync<string>("LogIt", s);
+            return true;
+        });
+
+        m["StartGame"] = new SimplePredicate("StartGame", () =>
+        {
+            singleton.JS.InvokeAsync<string>("startGame");
+            return true;
+        });
         return m;
     }
+
+    public static bool RetainState = true;
+    public static Task? CommandProcessor;
 
     private static Home singleton=null!;
     protected override void OnInitialized()
@@ -278,3 +325,4 @@
 <h3>@outputHeading</h3>
 
 <p role="status">@output</p>
+
