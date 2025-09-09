@@ -70,6 +70,8 @@ namespace Step.Interpreter
         /// <exception cref="ArgumentTypeException">When value isn't of the expected type</exception>
         public static TExpected Cast<TExpected>(object task, object? actual, object?[]? arglist, TextBuffer output)
         {
+            if (typeof(TExpected) == typeof(object))
+                return (TExpected)actual!;
             Check(task, typeof(TExpected), actual, arglist, output);
             if (typeof(TExpected) == typeof(float))
                 return (TExpected)(object)Convert.ToSingle(actual);

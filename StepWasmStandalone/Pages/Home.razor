@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using System.Runtime.InteropServices.JavaScript
 @using Step
 @using Step.Interpreter
 @using Step.Output
@@ -9,16 +8,13 @@
 @using System.Text.Json
 @inject IJSRuntime JS
 
-
-
 <PageTitle>Step</PageTitle>
-
 
 <h3>Program</h3>
 
 <div id="codeEditor" class="language-step"># Enter code here
-
 </div>
+
 <p>Control-click on a task/predicate name to navigate to its definition (only works for your own tasks, not built-in tasks)</p>
 
 <script type="module">
@@ -165,7 +161,7 @@
     internal static State State;
 
     private string command ="";
-    
+
     private string outputHeading = "No output";
     private MarkupString output = new MarkupString("no output");
 
@@ -179,18 +175,19 @@
         }
     }
 
-    const string commandCommentPrefix = "# Try:";
+    const string CommandCommentPrefix = "# Try:";
+
     [JSInvokable]
     public static string SetSource(string sourceCode)
     {
-        if (sourceCode.StartsWith(commandCommentPrefix))
+        if (sourceCode.StartsWith(CommandCommentPrefix))
         {
-            var commandStart = commandCommentPrefix.Length;
+            var commandStart = CommandCommentPrefix.Length;
             var commandEnd = sourceCode.IndexOf('\n');
             singleton.command = sourceCode.Substring(commandStart, commandEnd-commandStart).Trim();
             sourceCode = sourceCode.Substring(commandEnd+1);
         }
-        
+
         singleton.StateHasChanged();
 
         return sourceCode;
@@ -199,16 +196,51 @@
     private static readonly Dictionary<string, Vector2> GameState = new();
 
     [JSInvokable]
-    public static void ProcessGameNotifications(object[] notification, JsonElement[][] gameState)
+    public static void ProcessGameNotifications(object[] notifications, JsonElement[][] gameState)
+    {
+        singleton.ReallyProcessGameNotifications(notifications, gameState);
+    }
+
+    public void ReallyProcessGameNotifications(object[] notifications, JsonElement[][] gameState)
     {
         foreach (var tuple in gameState)
         {
-            var name = tuple[0].GetString();
+            var name = tuple[0].GetString()!;
             var x = tuple[1].GetSingle();
             var y = tuple[2].GetSingle();
             GameState[name] = new Vector2(x, y);
         }
+
+        object? current = null;
+        try
+        {
+            foreach (var n in notifications)
+            {
+                current = n is JsonElement e?DecodeJsonElement(e):n;
+                var (text, newState) = UserModule.Call(State, "GameEvent", current);
+                State = newState;
+                output = (MarkupString)(output.Value + text);
+            }
+        }
+        catch (Exception e)
+        {
+            outputHeading = $"Error processing game event: {Writer.TermToString(current)}";
+            output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
+            StateHasChanged();
+        }
     }
+
+    object? DecodeJsonElement(JsonElement e) =>
+        e.ValueKind switch
+        {
+            JsonValueKind.Array => e.EnumerateArray().Select(DecodeJsonElement).ToArray(),
+            JsonValueKind.String => e.GetString(),
+            JsonValueKind.Number => e.GetSingle(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => "unknownObject"
+        };
 
     string lastModuleSource="";
 
@@ -304,11 +336,56 @@
             return true;
         });
 
-        m["StartGame"] = new SimplePredicate("StartGame", () =>
+        m["StartGame"] = new SimplePredicate<object[],object[]>("StartGame", (animated, stat) =>
         {
-            singleton.JS.InvokeAsync<string>("startGame");
+            singleton.JS.InvokeAsync<string>("startGame", animated, stat);
             return true;
         });
+
+        m["AddStaticSprite"] = new SimplePredicate<string, string, float, float, bool, bool, bool>("AddStaticSprite", (name, textureFile, x, y, destroyOffScreen, explosive, immovable) =>
+        {
+            singleton.JS.InvokeAsync<string>("addStaticSprite", name, textureFile, x, y, destroyOffScreen, explosive, immovable);
+            return true;
+        });
+
+        m["AddAnimatedSprite"] = new SimplePredicate<string, string, float, float, bool, bool, bool>("AddAnimatedSprite", (name, textureFile, x, y, destroyOffScreen, explosive, immovable) =>
+        {
+            if (!textureFile.EndsWith(".png") && !textureFile.StartsWith("http"))
+                textureFile = $"spritesheets/{textureFile}.png";
+            singleton.JS.InvokeAsync<string>("addAnimatedSprite", name, textureFile, x, y, destroyOffScreen, explosive, immovable);
+            return true;
+        });
+
+        m["SetConstantVelocity"] = new SimplePredicate<string, float, float>("SetConstantVelocity", (name, x, y) =>
+        {
+            singleton.JS.InvokeAsync<string>("setConstantVelocity", name, x, y);
+            return true;
+        });
+
+        m["Stop"] = new SimplePredicate<string>("Stop", (name) =>
+        {
+            singleton.JS.InvokeAsync<string>("stop", name);
+            return true;
+        });
+
+        m["GotoXY"] = new SimplePredicate<string, float, float, float>("GotoXY", (name, x, y, speed) =>
+        {
+            singleton.JS.InvokeAsync<string>("gotoXY", name, x, y, speed);
+            return true;
+        });
+
+        m["GotoGameObject"] = new SimplePredicate<string, string, float>("GotoGameObject", (name, dest, speed) =>
+        {
+            singleton.JS.InvokeAsync<string>("gotoGameObject", name, dest, speed);
+            return true;
+        });
+
+        m["SetText"] = new SimplePredicate<string, object?>("SetText", (name, text) =>
+        {
+            singleton.JS.InvokeAsync<string>("setText", name, text==null?"":Writer.HumanForm(text));
+            return true;
+        });
+
         return m;
     }
 
@@ -324,5 +401,4 @@
 <p></p>
 <h3>@outputHeading</h3>
 
-<p role="status">@output</p>
-
+<p id="codeOutput" role="status">@output</p>

@@ -5,26 +5,38 @@ let gameObjectArray = [];
 /// Initialization
 ///
 
-async function startGame() {
+async function startGame(animatedSprites, staticSprites) {
     console.log("startGame called");
     try {
         if (typeof game === 'undefined' || game === null) {
             game = new PIXI.Application();
-            await game.init({ background: '#363', resizeTo: window });
+            await game.init({ background: '#363' });
 
-            window.requestAnimationFrame(function () { document.body.appendChild(game.canvas); console.log("canvas added") });
-            await addAnimatedSprite('bunny', 'spritesheets/steampunk_m10.png', 500, 500, false, false, false);
-            gotoXY('bunny', 50, 50, 3);
+            const page = document.getElementById('codeOutput').parentElement;
+            window.requestAnimationFrame(function () { page.appendChild(game.canvas); console.log("canvas added") });
+            //await addAnimatedSprite('bunny', 'spritesheets/steampunk_m10.png', 500, 500, false, false, false);
+            //gotoXY('bunny', 50, 50, 3);
             game.ticker.add(updateGameObjects);
             console.log("started ticker");
         }
         else {
             destroyAllGameObjects();
         }
+
+        var characters = Promise.all(animatedSprites.map(
+            args => addAnimatedSprite(args[0], args[1], args[2], args[3], args[4], args[5], args[6])));
+        var other = Promise.all(staticSprites.map(
+            args => addStaticSprite(args[0], args[1], args[2], args[3], args[4], args[5], args[6])));
+
+        await characters;
+        await other;
     } catch (e) {
         console.log('error in startGame');
         console.log(e);
+        return false;
     }
+    postNotifications();
+    return true;
 }
 
 ///
@@ -33,6 +45,9 @@ async function startGame() {
 
 async function addStaticSprite(name, textureFile, x, y, destroyOffScreen, explosive, immovable) {
     try {
+        if (!textureFile.endsWith('.png') && !textureFile.startsWith('http'))
+            textureFile = 'sprites/' + textureFile + '.png';
+
         const container = new PIXI.Container();
         container.x = x;
         container.y = y;
@@ -48,19 +63,29 @@ async function addStaticSprite(name, textureFile, x, y, destroyOffScreen, explos
         };
         stop(o);
 
+        const text = new PIXI.HTMLText({ text: name, style: { align: 'center' } });
+        o.text = text;
+        text.y = -40;
+        container.addChild(text);
+
         gameObjects[name] = o;
         gameObjectArray = Object.values(gameObjects);
         const texture = await PIXI.Assets.load(textureFile);
-        container.addChild(new PIXI.Sprite(texture));
+        o.bboxObject = new PIXI.Sprite(texture);
+        container.addChild(o.bboxObject);
         console.log("added "+name)
     } catch (e) {
         console.log('error in addStaticSprite');
         console.log(e);
+        return false;
     }
+    return true;
 }
 
 async function addAnimatedSprite(name, textureFile, x, y, destroyOffScreen, explosive, immovable) {
     try {
+        if (!textureFile.endsWith('.png') && !textureFile.startsWith('http'))
+            textureFile = 'spritesheets/' + textureFile + '.png';
         const container = new PIXI.Container();
         container.x = x;
         container.y = y;
@@ -149,6 +174,7 @@ async function addAnimatedSprite(name, textureFile, x, y, destroyOffScreen, expl
         const o = {
             name: name,
             container: container,
+            bboxObject: anim,
             destroyWhenOffScreen: destroyOffScreen,
             explosive: explosive,
             immovable: immovable,
@@ -195,17 +221,21 @@ async function addAnimatedSprite(name, textureFile, x, y, destroyOffScreen, expl
         };
         stop(o);
 
+        const text = new PIXI.HTMLText({ text: name, style: { align: 'center' } });
+        o.text = text;
+        text.y = -40;
+        container.addChild(text);
+
         gameObjects[name] = o;
         gameObjectArray = Object.values(gameObjects);
-
-
-        // play the animation on a loop
-        anim.play();
         console.log("added " + name)
     } catch (e) {
         console.log('error in addAnimatedSprite');
         console.log(e);
+        return false;
     }
+    notify('spawn', name);
+    return true;
 }
 
 function destroyGameObject(o) {
@@ -234,7 +264,6 @@ function updateGameObjects(time) {
 
         notifications = [];
 
-
         for (let i = 0; i < gameObjectArray.length; i++) {
             const o = gameObjectArray[i];
             const c = o.container;
@@ -243,7 +272,7 @@ function updateGameObjects(time) {
             o.controller();
             c.x += o.xVelocity * time.deltaTime;
             c.y += o.yVelocity * time.deltaTime;
-            const b = c.getBounds();
+            const b = o.bboxObject.getBounds();
             if (b.minX < 0 || b.minY < 0 || b.maxX > w || b.maxY > h) {
                 if (o.destroyWhenOffScreen)
                     destroyGameObject(o);
@@ -254,14 +283,15 @@ function updateGameObjects(time) {
                 }
             }
         }
+
         let toDestroy = [];
         for (let i = 0; i < gameObjectArray.length; i++) {
             const io = gameObjectArray[i];
-            const ib = io.container.getBounds();
+            const ib = io.bboxObject.getBounds();
             for (let j = i + 1; j < gameObjectArray.length; j++) {
                 const jo = gameObjectArray[j];
-                const jb = jo.container.getBounds();
-                if (overlap(io, jo))
+                const jb = jo.bboxObject.getBounds();
+                if (overlap(ib, jb))
                 {
                     if (io.explosive || jo.explosive) {
                         if (toDestroy.indexOf(io) < 0)
@@ -269,10 +299,12 @@ function updateGameObjects(time) {
                         if (toDestroy.indexOf(jo) < 0)
                             toDestroy.push(jo);
                     }
+
                     if (io.stopAt == jo || jo.immovable) {
                         stop(io);
                         notifyArrived(io, jo);
                     }
+
                     if (jo.stopAt == io || io.immovable) {
                         stop(jo);
                         notifyArrived(jo, io);
@@ -280,6 +312,7 @@ function updateGameObjects(time) {
                 }
             }
         }
+
         // Destroy anything we need to destroy
         for (let i = 0; i < toDestroy.length; i++)
             destroyGameObject(toDestroy[i]);
@@ -298,8 +331,12 @@ function overlap(b1, b2) {
 
 function notifyArrived(o, destination) {
     if (destination != null)
-        destionation = destination.name;
-    notifications.push(['arrived', o.name, destination]);
+        destination = destination.name;
+    notify('arrived', o.name, destination);
+}
+
+function notify(...notification) {
+    notifications.push(notification);
 }
 
 function postNotifications() {
@@ -326,12 +363,15 @@ function setConstantVelocity(gameObject, vx, vy) {
 }
 
 function stop(gameObject) {
+    console.log(gameObject.name + " stop");
     setConstantVelocity(gameObject, 0, 0);
+    gameObject.stopAt = null;
 }
 
 function gotoXY(agent, x, y, speed) {
     if (typeof agent == 'string')
         agent = gameObjects[agent];
+    console.log(agent.name + "->" + x + ',' + y + ' ' + speed);
 
     agent.controller = function () {
         const dx = x - agent.container.x;
@@ -356,6 +396,11 @@ function gotoGameObject(agent, dest, speed) {
     if (typeof agent == 'string')
         agent = gameObjects[agent];
 
+    if (typeof dest == 'string')
+        dest = gameObjects[dest];
+
+    agent.stopAt = dest;
+
     agent.controller = function () {
         const dx = dest.container.x - agent.container.x;
         const dy = dest.container.y - agent.container.y;
@@ -369,3 +414,13 @@ function gotoGameObject(agent, dest, speed) {
 
 // Used as the controller for static velocities
 function nop() { }
+
+///
+/// Other actions
+///
+
+function setText(gameObject, text) {
+    if (typeof gameObject == 'string')
+        gameObject = gameObjects[gameObject];
+    gameObject.text.text = text;
+}
