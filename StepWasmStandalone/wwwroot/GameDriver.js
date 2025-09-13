@@ -6,7 +6,6 @@ let gameObjectArray = [];
 ///
 
 async function startGame(animatedSprites, staticSprites) {
-    console.log("startGame called");
     try {
         if (typeof game === 'undefined' || game === null) {
             game = new PIXI.Application();
@@ -14,10 +13,6 @@ async function startGame(animatedSprites, staticSprites) {
 
             const page = document.getElementById('codeOutput').parentElement;
             window.requestAnimationFrame(function () { page.appendChild(game.canvas); console.log("canvas added") });
-            //await addAnimatedSprite('bunny', 'spritesheets/steampunk_m10.png', 500, 500, false, false, false);
-            //gotoXY('bunny', 50, 50, 3);
-            game.ticker.add(updateGameObjects);
-            console.log("started ticker");
         }
         else {
             destroyAllGameObjects();
@@ -30,6 +25,8 @@ async function startGame(animatedSprites, staticSprites) {
 
         await characters;
         await other;
+
+        game.ticker.add(updateGameObjects);
     } catch (e) {
         console.log('error in startGame');
         console.log(e);
@@ -52,9 +49,20 @@ async function addStaticSprite(name, textureFile, x, y, destroyOffScreen, explos
         container.x = x;
         container.y = y;
         game.stage.addChild(container);
+
+        const text = new PIXI.HTMLText({ text: name, style: { align: 'center' } });
+        text.y = -40;
+        container.addChild(text);
+
+        const texture = await PIXI.Assets.load(textureFile);
+        const sprite = new PIXI.Sprite(texture);
+        container.addChild(sprite);
+
         const o = {
             name: name,
             container: container,
+            bboxObject: sprite,
+            text: text,
             destroyWhenOffScreen: destroyOffScreen,
             explosive: explosive,
             immovable: immovable,
@@ -63,16 +71,9 @@ async function addStaticSprite(name, textureFile, x, y, destroyOffScreen, explos
         };
         stop(o);
 
-        const text = new PIXI.HTMLText({ text: name, style: { align: 'center' } });
-        o.text = text;
-        text.y = -40;
-        container.addChild(text);
-
         gameObjects[name] = o;
         gameObjectArray = Object.values(gameObjects);
-        const texture = await PIXI.Assets.load(textureFile);
-        o.bboxObject = new PIXI.Sprite(texture);
-        container.addChild(o.bboxObject);
+
         console.log("added "+name)
     } catch (e) {
         console.log('error in addStaticSprite');

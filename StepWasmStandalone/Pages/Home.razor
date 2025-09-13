@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Diagnostics.CodeAnalysis
 @using Step
 @using Step.Interpreter
 @using Step.Output
@@ -386,6 +387,30 @@
             return true;
         });
 
+        m["Distance"] = new SimpleFunction<string, string, float>("Distance", 
+            (a, b) => (GameState[a] - GameState[b]).Length());
+
+        m["NeedState"] = new SimpleFunction<string, string, float>("NeedState", (who, what) =>
+        {
+            if (needStates.TryGetValue((who, what), out var state))
+                return state.Value;
+            return 0;
+        });
+
+        m["SetNeedState"] = new SimplePredicate<string, string, float, float>("NeedState", (who, what, growthRate, value) =>
+        {
+            needStates[(who, what)] = new NeedState(value, growthRate);
+            return true;
+        });
+
+        m["DecrementNeedState"] = new SimplePredicate<string, string, float, float>("NeedState", (who, what, growthRate, value) =>
+        {
+            if (!needStates.TryGetValue((who, what), out var state))
+                state = NeedState.Empty;
+            needStates[(who, what)] = new NeedState(Math.Max(0, Math.Min(100, state.Value-value)), growthRate);
+            return true;
+        });
+
         return m;
     }
 
@@ -397,8 +422,36 @@
     {
         singleton = this;
     }
+
+    public readonly struct NeedState
+    {
+        private readonly float Snapshot;
+        private readonly int Timestamp;
+        public readonly float GrowthRate;
+
+        public static readonly NeedState Empty = new NeedState(0, 0, 0);
+
+        private NeedState(float snapshot, int timestamp, float growthRate)
+        {
+            Snapshot = snapshot;
+            Timestamp = timestamp;
+            GrowthRate = growthRate;
+        }
+
+        public NeedState(float value, float growthRate) : this(value, Environment.TickCount, growthRate)
+        { }
+
+        public int TicksSinceReading => Environment.TickCount - Timestamp;
+        public float SecondsSinceReading => TicksSinceReading / 1000f;
+
+        public float Value => Math.Min(100, Snapshot + SecondsSinceReading * GrowthRate);
+    }
+
+    private static readonly Dictionary<(string, string), NeedState> needStates = new ();
 }
 <p></p>
 <h3>@outputHeading</h3>
 
 <p id="codeOutput" role="status">@output</p>
+
+
