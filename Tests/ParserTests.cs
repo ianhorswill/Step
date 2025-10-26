@@ -162,7 +162,7 @@ namespace Tests
             Test("");
         }
 
-        [TestMethod, ExpectedException(typeof(SyntaxError))]
+        [TestMethod]
         public void PrematureEofErrorTest()
         {
             void Test(string input, params object[] expectedResult)
@@ -187,13 +187,13 @@ namespace Tests
                 }
             }
 
-            Test("a [a b c d", new object[] {"a"}, "b", new object[] {"c"}, "d");
+            Assert.ThrowsExactly<SyntaxError>( () => Test("a [a b c d", new object[] {"a"}, "b", new object[] {"c"}, "d"));
         }
 
-        [TestMethod, ExpectedException(typeof(SyntaxError))]
+        [TestMethod]
         public void IncompleteDefinitionTest()
         {
-            Module.FromDefinitions("Test ?a [foo ?a]");
+            Assert.ThrowsExactly<SyntaxError>( () => Module.FromDefinitions("Test ?a [foo ?a]"));
         }
 
         [TestMethod]
@@ -225,10 +225,10 @@ GenericIncompatibility toiletPaper.
 GenericIncompatibility snoring.");
         }
 
-        [TestMethod, ExpectedException(typeof(SyntaxError))]
+        [TestMethod]
         public void ParseBadFactTest()
         {
-            Module.FromDefinitions(
+            Assert.ThrowsExactly<SyntaxError>( () => Module.FromDefinitions(
                 @"[randomly] 
 Compatibility ? ? [sharedInterest lolcats]:
 Compatibility ? ? [sharedInterest [love dearLeader]]:
@@ -251,10 +251,10 @@ MentionTuple [incompatibleTraits ?a ?b ?ta ?tb]: ?a being ?ta
 [randomly]
 GenericIncompatibility toothpaste.
 GenericIncompatibility toiletPaper.
-GenericIncompatibility snoring.");
+GenericIncompatibility snoring."));
         }
 
-        [TestMethod, ExpectedException(typeof(SyntaxError))]
+        [TestMethod]
         public void NestingErrorTest()
         {
             void Test(string input, params object[] expectedResult)
@@ -279,10 +279,10 @@ GenericIncompatibility snoring.");
                 }
             }
 
-            Test("a [a [b] c d", new object[] {"a"}, "b", new object[] {"c"}, "d");
+            Assert.ThrowsExactly<SyntaxError>( () => Test("a [a [b] c d", new object[] {"a"}, "b", new object[] {"c"}, "d"));
         }
 
-        [TestMethod, ExpectedException(typeof(SyntaxError))]
+        [TestMethod]
         public void StrayCloseBracketErrorTest()
         {
             void Test(string input, params object[] expectedResult)
@@ -307,7 +307,7 @@ GenericIncompatibility snoring.");
                 }
             }
 
-            Test("a a b] c d", new object[] {"a"}, "b", new object[] {"c"}, "d");
+            Assert.ThrowsExactly<SyntaxError>( () => Test("a a b] c d", new object[] {"a"}, "b", new object[] {"c"}, "d"));
         }
 
         [TestMethod]

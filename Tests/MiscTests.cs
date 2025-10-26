@@ -57,45 +57,51 @@ namespace Tests
             //m.Call("Run");
         }
 
-        [TestMethod, ExpectedException(typeof(StepTaskTimeoutException))]
+        [TestMethod]
         public void TimeoutException()
         {
             var m = Module.FromDefinitions("Test: [Test]");
             Module.DefaultSearchLimit = 50;
-            try
+            Assert.ThrowsExactly<StepTaskTimeoutException>(() =>
             {
-                m.Call("Test");
-            }
-            finally
-            {
-                // Let the other tests run normally.
-                Module.DefaultSearchLimit = 0;
-            }
+                try
+                {
+                    m.Call("Test");
+                }
+                finally
+                {
+                    // Let the other tests run normally.
+                    Module.DefaultSearchLimit = 0;
+                }
+            });
         }
 
-        [TestMethod,ExpectedException(typeof(TaskCanceledException))]
+        [TestMethod]
         public void Cancellation()
         {
             var s = new CancellationTokenSource();
             var tok = s.Token;
             var m = Module.FromDefinitions("Test: [Test]");
-            var t = Task.Factory.StartNew(
-                () =>
-                {
-                    tok.Register(Module.Cancel);
-                    return m.Call("Test");
-                },
-                tok
+            Assert.ThrowsExactly<TaskCanceledException>(() =>
+            {
+                var t = Task.Factory.StartNew(
+                    () =>
+                    {
+                        tok.Register(Module.Cancel);
+                        return m.Call("Test");
+                    },
+                    tok
                 );
-            s.Cancel();
-            try
-            {
-                t.Wait();
-            }
-            catch (AggregateException e)
-            {
-                throw e.Flatten().InnerExceptions[0];
-            }
+                s.Cancel();
+                try
+                {
+                    t.Wait();
+                }
+                catch (AggregateException e)
+                {
+                    throw e.Flatten().InnerExceptions[0];
+                }
+            });
         }
     }
 }

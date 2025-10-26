@@ -101,13 +101,13 @@ namespace Tests
             Assert.AreEqual("False true false", m.Call("Test"));
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentInstantiationException))]
+        [TestMethod]
         public void NowInstantiationExceptionTest()
         {
             var m = Module.FromDefinitions(
                 "Test: [now [F ?]]",
                 "fluent F ?foo.");
-            m.Call("Test");
+            Assert.ThrowsExactly<ArgumentInstantiationException>(() => m.Call("Test"));
         }
 
         [TestMethod]

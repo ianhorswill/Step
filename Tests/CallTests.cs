@@ -130,12 +130,12 @@ namespace Tests
                 Module.StackTrace().Replace("\n", "").Replace("\r", ""));
         }
 
-        [TestMethod, ExpectedException(typeof(StackOverflowException))]
+        [TestMethod]
         public void StackOverflowTest()
         {
             var m = Module.FromDefinitions("Test: [Test]");
             MethodCallFrame.MaxStackDepth = 100;
-            m.Call("Test");
+            Assert.ThrowsExactly<StackOverflowException>(() => m.Call("Test"));
         }
 
         [TestMethod]

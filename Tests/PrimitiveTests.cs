@@ -35,12 +35,12 @@ namespace Tests
     [TestClass]
     public class PrimitiveTests
     {
-        [TestMethod, ExpectedException(typeof(StepExecutionException))]
+        [TestMethod]
         public void ThrowTest()
         {
             var m = new Module("test");
             m.AddDefinitions("Test: [Throw a b c]");
-            m.Call("Test");
+            Assert.Throws<StepExecutionException>(() => m.Call("Test"));
         }
 
         //[TestMethod]

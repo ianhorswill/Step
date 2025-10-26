@@ -170,10 +170,10 @@ namespace Tests
             Assert.IsTrue(gotA > 99);
         }
 
-        [TestMethod, ExpectedException(typeof(CallFailedException))]
+        [TestMethod]
         public void MustWorkTest()
         {
-            TestUtils.Module("FailTest: [Fail]", "Test: [FailTest]", "Test: succeeded").Call("Test");
+            Assert.ThrowsExactly<CallFailedException>(() => TestUtils.Module("FailTest: [Fail]", "Test: [FailTest]", "Test: succeeded").Call("Test"));
         }
 
         [TestMethod]

@@ -19,22 +19,22 @@ namespace Tests
                 new object[] {"c", "c"}
             });
         
-        [TestMethod, ExpectedException(typeof(ArgumentCountException))]
+        [TestMethod]
         public void ArgumentCountExceptionTest()
         {
             Module.Global["TP"] = Predicate;
             var m = Module.FromDefinitions("Test: [TP a]");
 
-            m.CallPredicate("Test");
+            Assert.ThrowsExactly<ArgumentCountException>(() => m.CallPredicate("Test"));
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentTypeException))]
+        [TestMethod]
         public void ArgumentTypeExceptionTest()
         {
             Module.Global["TP"] = Predicate;
             var m = Module.FromDefinitions("Test: [TP a 1]");
 
-            m.CallPredicate("Test");
+            Assert.ThrowsExactly<ArgumentTypeException>(() => m.CallPredicate("Test"));
         }
 
         [TestMethod]

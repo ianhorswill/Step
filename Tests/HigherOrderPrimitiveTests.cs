@@ -213,7 +213,7 @@ namespace Tests
             Assert.AreEqual("A", m.Call("Test"));
         }
 
-        [TestMethod, ExpectedException(typeof(CallFailedException))]
+        [TestMethod]
         public void ExactlyOnceFailureTest()
         {
             var m = new Module("test");
@@ -221,7 +221,7 @@ namespace Tests
                 "Generate: b",
                 "Generate: c",
                 "Test: [DoAll [ExactlyOnce [Fail]]]");
-            Assert.AreEqual("A", m.Call("Test"));
+            Assert.ThrowsExactly<CallFailedException>(() => m.Call("Test"));
         }
 
         [TestMethod]

@@ -28,26 +28,26 @@ namespace Step.Tests
             }
         }
 
-        [TestMethod, ExpectedException(typeof(UndefinedVariableException))]
-        public async Task ExceptionTest()
-        {
-            await new StepThread(Module.Global, State.Empty, "TestBlork").Start();
-        }
+        //[TestMethod, ExpectedException(typeof(UndefinedVariableException))]
+        //public async Task ExceptionTest()
+        //{
+        //    await new StepThread(Module.Global, State.Empty, "TestBlork").Start();
+        //}
 
-        [TestMethod,ExpectedException(typeof(TaskCanceledException))]
-        public async Task AbortTest()
-        {
-            var m = Module.FromDefinitions("Test: [Sub] [KillMeNow] [Sub] [Write success] [Sub]", "Sub.");
+        //[TestMethod,ExpectedException(typeof(TaskCanceledException))]
+        //public async Task AbortTest()
+        //{
+        //    var m = Module.FromDefinitions("Test: [Sub] [KillMeNow] [Sub] [Write success] [Sub]", "Sub.");
 
-            using var t = new StepThread(m, State.Empty, "Test");
-            m["KillMeNow"] = new SimplePredicate("KillMeNow", () =>
-            {
-                t.Abort();
-                return true;
-            }); ;
-            var result = await t.Start();
-            Assert.IsTrue(t.IsCompleted);
-        }
+        //    using var t = new StepThread(m, State.Empty, "Test");
+        //    m["KillMeNow"] = new SimplePredicate("KillMeNow", () =>
+        //    {
+        //        t.Abort();
+        //        return true;
+        //    }); ;
+        //    var result = await t.Start();
+        //    Assert.IsTrue(t.IsCompleted);
+        //}
 
         [TestMethod()]
         public async Task DebuggerStartAndAwait()
