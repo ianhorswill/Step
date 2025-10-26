@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Step.Interpreter;
 
 namespace Step
@@ -9,7 +9,7 @@ namespace Step
     /// <summary>
     /// A pair used to represent LISP/Prolog-style lists
     /// </summary>
-    public class Pair
+    public class Pair : IEnumerable<object?>
     {
         public readonly object? First;
         public readonly object? Rest;
@@ -139,6 +139,32 @@ namespace Step
         internal void AssertCanonicalEmptyList()
         {
             Debug.Assert(!(Rest is IList l) || l.Count > 0 || ReferenceEquals(Rest, Empty));
+        }
+
+        IEnumerator<object?> IEnumerable<object?>.GetEnumerator()
+        {
+            object? next = this;
+            while (next is Pair p)
+            {
+                yield return p.First;
+                next = p.Rest;
+            }
+            if  (next is IEnumerable e)
+                foreach (var item in e)
+                    yield return item;
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            object? next = this;
+            while (next is Pair p)
+            {
+                yield return p.First;
+                next = p.Rest;
+            }
+            if  (next is IEnumerable e)
+                foreach (var item in e)
+                    yield return item;
         }
     }
 }
