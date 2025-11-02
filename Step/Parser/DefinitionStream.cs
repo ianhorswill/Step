@@ -891,9 +891,15 @@ namespace Step.Parser
             {
                 if (end)
                     throw new SyntaxError("File ended unexpectedly inside method", SourceFile, lineNumber);
+                var lastStep = chain.LastStep;
                 TryProcessTextBlock(chain);
                 TryProcessMentionExpression(chain);
                 TryProcessMethodCall(chain);
+                if (chain.LastStep == lastStep)
+                {
+                    // None of the TryProcessX methods could do anything with the current next token.
+                    throw new SyntaxError($"Unknown operation in method body: {Writer.TermToString(Peek)} is neither a method call nor text to print.", SourceFile, lineNumber);
+                }
             }
         }
 

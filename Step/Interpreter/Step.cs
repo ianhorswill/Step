@@ -142,38 +142,32 @@ namespace Step.Interpreter
         /// <param name="chain"></param>
         public static IEnumerable<Call> CallsOfChain(Step? chain) => ChainSteps(chain).SelectMany(s => s.Calls);
 
-        internal class ChainBuilder
+        internal class ChainBuilder(
+            Func<string, LocalVariableName>? getLocal,
+            Func<object?, object?> canonicalize,
+            Func<object?[], object?[]> canonicalizeArglist)
         {
-            public readonly Func<string, LocalVariableName>? GetLocal;
-            public readonly Func<object?, object?> Canonicalize;
-            public readonly Func<object?[], object?[]> CanonicalizeArglist;
+            public readonly Func<string, LocalVariableName>? GetLocal = getLocal;
+            public readonly Func<object?, object?> Canonicalize = canonicalize;
+            public readonly Func<object?[], object?[]> CanonicalizeArglist = canonicalizeArglist;
             
             public Step? FirstStep;
-            private Step? previousStep;
-
-            public ChainBuilder(Func<string, LocalVariableName>? getLocal, 
-                Func<object?, object?> canonicalize, 
-                Func<object?[], object?[]> canonicalizeArglist)
-            {
-                GetLocal = getLocal;
-                CanonicalizeArglist = canonicalizeArglist;
-                Canonicalize = canonicalize;
-            }
+            public Step? LastStep { get; private set; }
 
             public void AddStep(Step s)
             {
                 if (FirstStep == null)
-                    FirstStep = previousStep = s;
+                    FirstStep = LastStep = s;
                 else
                 {
-                    previousStep!.Next = s;
-                    previousStep = s;
+                    LastStep!.Next = s;
+                    LastStep = s;
                 }
             }
 
             public void Clear()
             {
-                FirstStep = previousStep = null;
+                FirstStep = LastStep = null;
             }
         }
 
