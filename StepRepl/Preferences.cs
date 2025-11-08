@@ -6,7 +6,7 @@ using Avalonia;
 
 namespace StepRepl;
 
-public sealed class Preferences
+public static class Preferences
 {
     public static readonly string ApplicationName = "Step Repl";
     public static string PreferencesPath =
@@ -16,7 +16,14 @@ public sealed class Preferences
     
     public static string Get(string key, string defaultValue)
     {
-        return _prefs.GetValueOrDefault(key, defaultValue);
+        try
+        {
+            return _prefs.GetValueOrDefault(key, defaultValue);
+        }
+        catch
+        {
+            return defaultValue;
+        }
     }
     
     public static void Set(string key, string value)
@@ -31,6 +38,8 @@ public sealed class Preferences
         try
         {
             json = File.ReadAllText(PreferencesPath);
+            var deserialized = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            return deserialized ?? new Dictionary<string, string>();
         }
         catch (FileNotFoundException)
         {
@@ -42,9 +51,6 @@ public sealed class Preferences
             Console.WriteLine(e.Message);
             return new Dictionary<string, string>();
         }
-
-        var deserialized = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-        return deserialized ?? new Dictionary<string, string>();
     }
     
     public static async void SaveToDisk()
