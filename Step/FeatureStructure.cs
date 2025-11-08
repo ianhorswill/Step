@@ -100,6 +100,11 @@ namespace Step
             return false;
         }
 
+        public BindingList? AddFeature(Feature f, object? value, BindingList? bindings) =>
+            BindingList.Bind(bindings, next,
+                new FeatureStructure(new [] { f }, new [] { value })
+            );
+
         public void Write(Writer w)
         {
             var b = w.Buffer;

@@ -284,6 +284,9 @@ namespace Step.Interpreter
             g[nameof(HasFeature)] = new GeneralPrimitive(nameof(HasFeature), HasFeature)
                 .Arguments("featureStructure", "feature")
                 .Documentation("data structures", "True when featureStructure contains a feature with the specified name.");
+            g[nameof(FeatureValue)] = new GeneralPrimitive(nameof(FeatureValue), FeatureValue)
+                .Arguments("featureStructure", "feature", "value")
+                .Documentation("data structures", "True when featureStructure contains a feature with the specified name and value.");
 
             Documentation.SectionIntroduction("metalogical",
                 "Predicates that test the binding state of a variable.");
@@ -562,6 +565,49 @@ namespace Step.Interpreter
             {
                 var feature = ArgumentTypeException.Cast<string>(nameof(HasFeature), featureArg, args, o);
                 return fs.ContainsFeature(feature, e.Unifications) && k(o, e.Unifications, e.State, predecessor);
+            }
+        }
+
+        private static bool FeatureValue(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(FeatureValue), 3, args, o);
+            var structureArg = args[0];
+            var featureArg = args[1];
+            var valueArg = args[2];
+
+            if (structureArg is LogicVariable sv)
+            {
+                var feature =
+                    Feature.Intern(ArgumentTypeException.Cast<string>(nameof(FeatureValue), featureArg, args, o));
+                return k(o, BindingList.Bind(e.Unifications, sv,
+                    new FeatureStructure(new[] { feature },
+                        new[] { valueArg })),
+                    e.State, predecessor);
+            }
+            var fs = ArgumentTypeException.Cast<FeatureStructure>(nameof(FeatureValue), structureArg, args, o);
+
+
+            if (featureArg is LogicVariable l)
+            {
+                // Enumerating features
+                foreach (var f in fs.FeatureValues(e.Unifications))
+                {
+                    if (e.Unify(valueArg, f.Value, out BindingList? bindings) 
+                        && k(o, BindingList.Bind(bindings, l, f.Key.Name), e.State, predecessor))
+                        return true;
+                }
+
+                return false;
+            } else
+            {
+                // Reading or writing a specific feature
+                var feature = Feature.Intern(ArgumentTypeException.Cast<string>(nameof(FeatureValue), featureArg, args, o));
+                if (fs.TryGetValue(feature, e.Unifications, out var value))
+                    // Read mode
+                    return e.Unify(valueArg, value, out BindingList? bindings)
+                           && k(o, bindings, e.State, predecessor);
+                // Else write mode
+                return k(o, fs.AddFeature(feature, valueArg, e.Unifications), e.State, predecessor);
             }
         }
 
