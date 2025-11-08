@@ -149,6 +149,9 @@ namespace Step.Interpreter
             g[nameof(Parse)] = new GeneralPrimitive(nameof(Parse), Parse)
                 .Arguments("call", "text")
                 .Documentation("control flow//calling tasks", "True if call can generate text as its output.  This is done by running call and backtracking whenever its output diverges from text.  Used to determine if a grammar can generate a given string.");
+            g[nameof(ParseMode)] = new GeneralPrimitive(nameof(ParseMode), ParseMode)
+                .Arguments()
+                .Documentation("control flow//calling tasks", "True if we are inside a call to Parse.");
 
             g[nameof(TreeSearch)] = new GeneralPrimitive(nameof(TreeSearch), TreeSearch)
                 .Arguments("startNode", "finalNode", "utility", "NextNode", "GoalNode", "NodeUtility")
@@ -671,6 +674,13 @@ namespace Step.Interpreter
             var parseBuffer = TextBuffer.MakeReadModeTextBuffer(text);
             return task.Call(taskArgs, parseBuffer, env, predecessor,
                 (buffer, u, s, p) => buffer.ReadCompleted && k(output, u, s, p));
+        }
+
+        private static bool ParseMode(object?[] args, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(ParseMode), 0, args, output);
+            return !output.WriteMode && k(output, env.Unifications, env.State, predecessor);
         }
 
         private static bool TreeSearch(object?[] args, TextBuffer o, BindingEnvironment e,
