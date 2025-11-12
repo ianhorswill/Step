@@ -195,7 +195,7 @@ namespace Step.Interpreter
                 case IList l:
                     // If it's a list in the operator position, pretend it's a call to member
                     if (arglist.Length != 1)
-                        throw new ArgumentCountException("<list member>", 1, arglist, output);
+                        throw new ArgumentCountException("{list member}", 1, arglist, output);
 
                     if (arglist[0] is LogicVariable l0)
                     {

@@ -125,6 +125,9 @@ namespace Step
                         array[i++] = CompressPairChainsWhenPossible(e, bindings);
                     return array;
 
+                case string[] text:
+                    return text;
+
                 case object?[] a:
                     var newArray = new object?[a.Length];
                     for (var j = 0; j < a.Length; j++)

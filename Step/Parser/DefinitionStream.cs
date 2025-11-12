@@ -26,6 +26,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -457,8 +458,9 @@ namespace Step.Parser
         /// These are represented in the token stream as complex objects, so we don't have to deal with curly braces;
         /// the front end has already done that.
         /// </summary>
-        private FeatureStructure ParseFeatureStructure(IList elementDeclarations)
+        private FeatureStructure ParseFeatureStructure(IList<object> elementDeclarations)
         {
+            elementDeclarations = elementDeclarations.Where(e => !e.Equals("\n")).ToArray();
             List<(string, object?)> bindings = new();
 
             int i;

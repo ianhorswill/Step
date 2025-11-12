@@ -23,6 +23,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
+using Step.Output;
+
 namespace Step.Interpreter
 {
     /// <summary>
@@ -32,7 +34,7 @@ namespace Step.Interpreter
     {
         /// <inheritdoc />
         public ArgumentCountException(object task, int expected, object?[] actual, TextBuffer output) 
-            : base(task,actual, $"Wrong number of arguments for {task}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual, Module.RichTextStackTraces)}", output)
+            : base(task,actual, $"Wrong number of arguments for {Writer.TermToString(task)}, expected {expected}, got {actual.Length}: {Call.CallSourceText(task, actual, Module.RichTextStackTraces)}", output)
         { }
 
         /// <summary>

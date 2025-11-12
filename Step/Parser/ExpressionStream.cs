@@ -139,7 +139,7 @@ namespace Step.Parser
                             var token = Get();
                             if (token == "[" || token == "{" || token == "(")
                                 buffer.Add(ReadSubExpression(token));
-                            else
+                            else if (token != "\n")
                                 buffer.Add(token);
                         }
                         if (end)
@@ -195,7 +195,7 @@ namespace Step.Parser
                 var token = Get();
                 if (OpenBrackets.Contains(token))
                     buffer.Add(ReadSubExpression(token));
-                else
+                else if (token != "\n")
                     buffer.Add(token);
             }
 

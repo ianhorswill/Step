@@ -28,7 +28,6 @@ using Step.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Step.Interpreter
 {
@@ -282,6 +281,9 @@ namespace Step.Interpreter
         {
             // Whether the call to args below succeeded
             var success = false;
+            for (var i = 0; i <  args.Length; i++)
+                if (args[i] is Pair p)
+                    args[i] = Pair.CompressPairChainsWhenPossible(p, e.Unifications);
 
             // This always fails, since its continuation fails too
             Step.Try(Step.ChainFromBody("NotAny", args),
