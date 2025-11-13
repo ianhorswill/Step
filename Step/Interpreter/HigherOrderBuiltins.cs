@@ -57,6 +57,10 @@ namespace Step.Interpreter
         .Arguments("call")
             .Documentation("higher-order predicates", "Runs call.  If the call succeeds, it Not, fails, undoing any effects of the call.  If the call fails, then Not succeeds.  This requires the call to be ground (not contain any uninstantiated variables), since [Not [P ?x]] means \"not [P ?x] for any ?x\".  Use NotAny if you mean to have unbound variables in the goal.");
 
+        public static readonly Task Call = new GeneralPrimitive(nameof(CallImplementation), CallImplementation)
+            .Arguments("call", "extra_arguments", "...")
+            .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
+
         internal static void DefineGlobals()
         {
             var g = Module.Global;
@@ -76,9 +80,7 @@ namespace Step.Interpreter
             Documentation.SectionIntroduction("higher-order predicates",
                 "Predicates that run other predicates.");
 
-            g["Succeeds"] = g[nameof(Call)] = new GeneralPrimitive(nameof(Call), Call)
-                .Arguments("call", "extra_arguments", "...")
-                .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.");
+            g["Succeeds"] = g[nameof(Call)] = Call;
             g[nameof(CallDiscardingStateChanges)] = new GeneralPrimitive(nameof(CallDiscardingStateChanges), CallDiscardingStateChanges)
                 .Arguments("call", "extra_arguments", "...")
                 .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call', but discards any changes to global variables or fluents it makes. If extra_arguments are included, they will be added to the end of the call tuple.");
@@ -157,11 +159,11 @@ namespace Step.Interpreter
                 .Documentation("Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.");
         }
 
-        private static bool Call(object?[] args, TextBuffer output, BindingEnvironment env,
+        private static bool CallImplementation(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            ArgumentCountException.CheckAtLeast(nameof(Call), 1, args, output);
-            var call = ArgumentTypeException.CastArrayTuple(nameof(Call), args[0], args, env.Unifications, output);
+            ArgumentCountException.CheckAtLeast(nameof(CallImplementation), 1, args, output);
+            var call = ArgumentTypeException.CastArrayTuple(nameof(CallImplementation), args[0], args, env.Unifications, output);
 
             if (!(call[0] is Task task))
                 throw new InvalidOperationException(
@@ -182,7 +184,7 @@ namespace Step.Interpreter
             MethodCallFrame? predecessor, Step.Continuation k)
         {
             ArgumentCountException.CheckAtLeast(nameof(CallDiscardingStateChanges), 1, args, output);
-            var call = ArgumentTypeException.Cast<object[]>(nameof(Call), args[0], args, output);
+            var call = ArgumentTypeException.Cast<object[]>(nameof(CallImplementation), args[0], args, output);
 
             if (!(call[0] is Task task))
                 throw new InvalidOperationException(

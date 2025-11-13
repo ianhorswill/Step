@@ -131,15 +131,17 @@ Tasks that run or otherwise control the execution of other tasks.
 <h3 id="calling tasks">Calling tasks</h3>
 Tasks that call another task once.
 <p>
-<code>[<b>Call</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.
-<p>
-<code>[<b>Call</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.
-<p>
 <code>[<b>CallDiscardingStateChanges</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call', but discards any changes to global variables or fluents it makes. If extra_arguments are included, they will be added to the end of the call tuple.
+<p>
+<code>[<b>CallImplementation</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.
+<p>
+<code>[<b>CallImplementation</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.
 <p>
 <code>[<b>IgnoreOutput</b> <i>calls</i> <i>...</i>]</code><br>Runs each of the calls, in order, but throws away their output text.
 <p>
 <code>[<b>Parse</b> <i>call</i> <i>text</i>]</code><br>True if call can generate text as its output.  This is done by running call and backtracking whenever its output diverges from text.  Used to determine if a grammar can generate a given string.
+<p>
+<code>[<b>ParseMode</b>]</code><br>True if we are inside a call to Parse.
 <p>
 <code>[<b>SaveText</b> <i>call</i> <i>?variable</i>]</code><br>Runs call, but places its output in ?variable rather than the output buffer.  Does not preserve variable bindings, output, or state changes, other than saving the output in the second argument.
 <p>
@@ -180,6 +182,8 @@ Tasks that collect together all the solutions to a given call.
 <p>
 <h2 id="data structures">Data structures</h2>
 Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictionary and and [list ?element] is true when ?element is an element of the list.
+<p>
+<code>[<b>FeatureValue</b> <i>featureStructure</i> <i>feature</i> <i>value</i>]</code><br>True when featureStructure contains a feature with the specified name and value.
 <p>
 <code>[<b>HasFeature</b> <i>featureStructure</i> <i>feature</i>]</code><br>True when featureStructure contains a feature with the specified name.
 <p>

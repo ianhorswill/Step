@@ -910,7 +910,18 @@ namespace Step.Parser
         /// </summary>
         private void TryProcessMethodCall(Interpreter.Step.ChainBuilder chain)
         {
-            if (AtKeywordMarker || !(Peek is object[] expression))
+            if (AtKeywordMarker)
+                // Not a call
+                return;
+
+            var expression = Peek as object?[];
+            if (expression == null && Peek is Pair p)
+            {
+                expression = [HigherOrderBuiltins.Call, p];
+            }
+
+            if (expression == null)
+                // Not a call
                 return;
 
             if (expression.Length == 0)
