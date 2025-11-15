@@ -41,6 +41,12 @@ namespace Step.Interpreter
                 output)
         { }
 
+        public ArgumentTypeException(object task, string message, object?[] arglist, TextBuffer output) 
+            : base(task, arglist, 
+                $"{message} in {Call.CallSourceText(task, arglist, Module.RichTextStackTraces)}",
+                output)
+        { }
+
         private static string TypeName(Type t) => t == typeof(object[]) ? "tuple" : t.Name;
 
         /// <summary>

@@ -17,6 +17,12 @@
 <ul>
 </ul>
 </ul>
+<li><a href="#metatasks">Metatasks</a></li>
+<ul>
+</ul>
+</ul>
+<li><a href="#control flow/metatasks">Control flow/metatasks</a></li>
+<ul>
 </ul>
 <li><a href="#data structures">Data structures</a></li>
 <ul>
@@ -131,6 +137,8 @@ Tasks that run or otherwise control the execution of other tasks.
 <h3 id="calling tasks">Calling tasks</h3>
 Tasks that call another task once.
 <p>
+<code>[<b>CallDirectImplementation</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call', but bypasses any meta-predicate it might have. If extra_arguments are included, they will be added to the end of the call tuple.
+<p>
 <code>[<b>CallDiscardingStateChanges</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call', but discards any changes to global variables or fluents it makes. If extra_arguments are included, they will be added to the end of the call tuple.
 <p>
 <code>[<b>CallImplementation</b> <i>call</i> <i>extra_arguments</i> <i>...</i>]</code><br>Runs the call to the task represented in the tuple 'call'. If extra_arguments are included, they will be added to the end of the call tuple.
@@ -179,6 +187,12 @@ Tasks that collect together all the solutions to a given call.
 <code>[<b>Max</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the largest value of ?scoreVariable
 <p>
 <code>[<b>Min</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable
+<p>
+<h3 id="metatasks">Metatasks</h3>
+<code>[<b>Symmetric</b> <i>call</i>]</code><br>Used as a metatask for a two-argument predicate to make it symmetric, i.e. the order of its arguments doesn't matter..
+<p>
+<h2 id="control flow/metatasks">Control flow/metatasks</h2>
+Tasks used to manage the execution of other tasks.  These are used by tagging the task to be managed with the annotation: [meta MetaTaskName]
 <p>
 <h2 id="data structures">Data structures</h2>
 Predicates that create or access complex data objects.  Note that dictionaries and lists can also be used as predicates.  So [dictionary ?key ?value] is true when ?key has ?value in the dictionary and and [list ?element] is true when ?element is an element of the list.

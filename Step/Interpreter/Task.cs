@@ -111,6 +111,20 @@ namespace Step.Interpreter
         public abstract bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k);
 
+        /// <summary>
+        /// Call this task with the specified arguments, bypass any metatask if it has one.
+        /// </summary>
+        /// <param name="arglist">Task arguments</param>
+        /// <param name="output">Output accumulated so far</param>
+        /// <param name="env">Binding environment</param>
+        /// <param name="predecessor">Most recently succeeded MethodCallFrame</param>
+        /// <param name="k">Continuation</param>
+        /// <returns>True if task succeeded and continuation succeeded</returns>
+        /// <exception cref="CallFailedException">If the task fails</exception>
+        public virtual bool CallDirect(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k) =>
+            Call(arglist, output, env, predecessor, k);
+
         /// <inheritdoc />
         public override string ToString() => Name;
 

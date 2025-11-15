@@ -81,6 +81,10 @@ namespace Step.Interpreter
                 "Predicates that run other predicates.");
 
             g["Succeeds"] = g[nameof(Call)] = Call;
+            g["CallDirect"] = new GeneralPrimitive(nameof(CallDirectImplementation), CallDirectImplementation)
+                .Arguments("call", "extra_arguments", "...")
+                .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call', but bypasses any meta-predicate it might have. If extra_arguments are included, they will be added to the end of the call tuple.");
+
             g[nameof(CallDiscardingStateChanges)] = new GeneralPrimitive(nameof(CallDiscardingStateChanges), CallDiscardingStateChanges)
                 .Arguments("call", "extra_arguments", "...")
                 .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call', but discards any changes to global variables or fluents it makes. If extra_arguments are included, they will be added to the end of the call tuple.");
@@ -178,6 +182,27 @@ namespace Step.Interpreter
                 taskArgs[i++] = args[argsIndex];
 
             return task.Call(taskArgs, output, env, predecessor, k);
+        }
+
+        private static bool CallDirectImplementation(object?[] args, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            ArgumentCountException.CheckAtLeast(nameof(CallDirectImplementation), 1, args, output);
+            var call = ArgumentTypeException.CastArrayTuple(nameof(CallDirectImplementation), args[0], args, env.Unifications, output);
+
+            if (!(call[0] is Task task))
+                throw new InvalidOperationException(
+                    "Task argument to CallDirect must be a task");
+
+            var taskArgs = new object?[call.Length - 1 + args.Length - 1];
+
+            var i = 0;
+            for (var callIndex = 1; callIndex < call.Length; callIndex++)
+                taskArgs[i++] = call[callIndex];
+            for (var argsIndex = 1; argsIndex < args.Length; argsIndex++)
+                taskArgs[i++] = args[argsIndex];
+
+            return task.CallDirect(taskArgs, output, env, predecessor, k);
         }
 
         private static bool CallDiscardingStateChanges(object?[] args, TextBuffer output, BindingEnvironment env,

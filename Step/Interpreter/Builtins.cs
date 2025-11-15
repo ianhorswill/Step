@@ -529,6 +529,7 @@ namespace Step.Interpreter
 
             HigherOrderBuiltins.DefineGlobals();
             ReflectionBuiltins.DefineGlobals();
+            MetaTasks.DefineGlobals();
             Documentation.DefineGlobals(Module.Global);
             ElNode.DefineGlobals();
         }

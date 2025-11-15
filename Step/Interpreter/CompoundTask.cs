@@ -36,7 +36,7 @@ namespace Step.Interpreter
     /// Task implemented as a set of methods, each composed of a series of Steps (sub-tasks)
     /// Tasks defined by user code are CompoundTasks
     /// </summary>
-    public class CompoundTask : Task
+    public sealed class CompoundTask : Task
     {
 
         /// <summary>
@@ -258,6 +258,11 @@ namespace Step.Interpreter
         public TaskFlags Flags;
 
         /// <summary>
+        /// The meta-task to forward calls to, if any.
+        /// </summary>
+        public Task? MetaTask;
+
+        /// <summary>
         /// Programmatic interface for declaring attributes of task
         /// </summary>
         // ReSharper disable once UnusedMember.Global
@@ -349,6 +354,21 @@ namespace Step.Interpreter
         /// <returns>True if task succeeded and continuation succeeded</returns>
         /// <exception cref="CallFailedException">If the task fails</exception>
         public override bool Call(object?[] arglist, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? predecessor, Step.Continuation k)
+        {
+            if (MetaTask != null)
+            {
+                var args = new object[arglist.Length + 1];
+                args[0] = this;
+                Array.Copy(arglist, 0, args, 1, arglist.Length);
+                return MetaTask.Call([args], output, env, predecessor, k);
+            }
+
+            return CallDirect(arglist, output, env, predecessor, k);
+        }
+
+
+        public override bool CallDirect(object?[] arglist, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
             string? lastToken = null;
