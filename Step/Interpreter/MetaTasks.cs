@@ -16,6 +16,10 @@ namespace Step.Interpreter
             g[nameof(Symmetric)] = new GeneralPrimitive(nameof(Symmetric), Symmetric)
                 .Arguments("call")
                 .Documentation("control flow//metatasks", "Used as a metatask for a two-argument predicate to make it symmetric, i.e. the order of its arguments doesn't matter..");
+            g[nameof(PartialOrder)] = new GeneralPrimitive(nameof(PartialOrder), PartialOrder)
+                .Arguments("call")
+                .Documentation("control flow//metatasks",
+                    "Used as a metatask for a two-argument predicate to make it a partial order.  Predicate must be anti-reflexive.");
         }
 
         private static (Task task, object?[] args) CheckBinaryRelation(string name, object?[] args, TextBuffer output, BindingEnvironment env)
@@ -44,6 +48,30 @@ namespace Step.Interpreter
 
             return task.CallDirect(tArgs, output, env, predecessor, k)
                    || task.CallDirect([tArgs[1], tArgs[0]], output, env, predecessor, k);
+        }
+
+        private static LocalVariableName Temp = new LocalVariableName("?temp", -1);
+        private static bool PartialOrder(object?[] args, TextBuffer output, BindingEnvironment env,
+            MethodCallFrame? p, Step.Continuation k)
+        {
+            var (task, tArgs) = CheckBinaryRelation(nameof(PartialOrder), args, output, env);
+
+            bool Recur(object? a, object? b, TextBuffer output, BindingEnvironment e)
+            {
+                // Reflexive case
+                if (env.Unify(a, b, e.Unifications, out var bindings)
+                    && k(output, bindings, env.State, p))
+                    return true;
+                // Base case
+                if (task.CallDirect([a, b], output, e, p, k))
+                    return true;
+                // Recursive case
+                var c = new LogicVariable(Temp);
+                return task.CallDirect([a, c], output, e, p,
+                    (o, bindings2, s, _) => Recur(c, b, o, new BindingEnvironment(e, bindings2, s)));
+            }
+
+            return Recur(tArgs[0], tArgs[1], output, env);
         }
     }
 }

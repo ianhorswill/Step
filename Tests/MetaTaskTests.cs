@@ -40,5 +40,18 @@ namespace Tests
             Assert.IsTrue(m.CallPredicate("Test", "b", "a"));
             Assert.IsFalse(m.CallPredicate("Test", "b", "b"));
         }
+
+        [TestMethod]
+        public void PartialOrder()
+        {
+            var m = Module.FromDefinitions("[predicate] [meta PartialOrder] Test a b.",
+                "Test b c.",
+                "Test a d.",
+                "Test d e.",
+                "Test d f.");
+            Assert.IsTrue(m.CallPredicate("Test", "a", "b"));
+            Assert.IsTrue(m.CallPredicate("Test", "a", "e"));
+            Assert.IsFalse(m.CallPredicate("Test", "b", "e"));
+        }
     }
 }

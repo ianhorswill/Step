@@ -189,6 +189,8 @@ Tasks that collect together all the solutions to a given call.
 <code>[<b>Min</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable
 <p>
 <h3 id="metatasks">Metatasks</h3>
+<code>[<b>PartialOrder</b> <i>call</i>]</code><br>Used as a metatask for a two-argument predicate to make it a partial order.  Predicate must be anti-reflexive.
+<p>
 <code>[<b>Symmetric</b> <i>call</i>]</code><br>Used as a metatask for a two-argument predicate to make it symmetric, i.e. the order of its arguments doesn't matter..
 <p>
 <h2 id="control flow/metatasks">Control flow/metatasks</h2>
