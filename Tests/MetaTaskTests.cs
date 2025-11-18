@@ -23,9 +23,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
-using Step.Interpreter;
 
 namespace Tests
 {

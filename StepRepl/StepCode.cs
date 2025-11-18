@@ -155,10 +155,7 @@ namespace StepRepl
 
             StepGraph.AddPrimitives(ReplUtilities);
             ReplUtilities.AddDefinitions(
-                "predicate TestCase ?code.",
                 "predicate Button ?label ?code.",
-                "RunTestCases: [ForEach [TestCase ?call] [RunTestCase ?call]] All tests passed!",
-                "RunTestCase ?call: Running ?call ... [Paragraph] [SampleOutputText] [Call ?call] [SampleOutputText]",
                 "Test ?task ?testCount: [CountAttempts ?attempt] Test: ?attempt/Write [Paragraph] [Once ?task] [SampleOutputText] [= ?attempt ?testCount]",
                 "SampleStack ?task ?testCount ?sampling: [EmptyCallSummary ?sampling] [CountAttempts ?attempt] Test: ?attempt [Paragraph] [Once ?task] [NoteCalledTasks ?sampling] [SampleOutputText] [= ?attempt ?testCount]",
                 "Debug ?task: [Break \"Press F10 to run one step, F5 to finish execution without stopping.\"] [begin ?task]",
@@ -166,9 +163,6 @@ namespace StepRepl
                 "DisplayCallCount ?s ?t ?count: [?s ?t ?value] [set ?average = ?value/?count] [Write ?average]",
                 "Uncalled ?task ?subTaskPredicate ?count: [IgnoreOutput [Sample ?task ?count ?s]] [ForEach [?subTaskPredicate ?t] [Write ?t] [Not [?s ?t ?value]] [Write ?t] [NewLine]]");
 
-            AddDocumentation("TestCase", "StepRepl//testing",
-                "User-defined.  Declares that code should be run when testing your program.");
-            AddDocumentation("RunTestCases", "StepRepl//testing", "Runs all test cases defined by TestCase.");
             AddDocumentation("Test", "StepRepl//testing", "Runs ?task ?testCount times, showing its output each time");
             AddDocumentation("SampleStack", "StepRepl//profiling",
                 "Runs ?task ?testCount times, and returns a sampling of the call stack in ?sampling.");

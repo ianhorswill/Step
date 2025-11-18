@@ -38,7 +38,7 @@ namespace Step.Interpreter
     /// </summary>
     public sealed class CompoundTask : Task
     {
-
+        #region Instance variables
         /// <summary>
         /// Number of arguments expected by the task
         /// </summary>
@@ -49,6 +49,31 @@ namespace Step.Interpreter
         /// Methods for accomplishing the task
         /// </summary>
         public List<Method> Methods = new List<Method>();
+
+        public TaskFlags Flags;
+
+        /// <summary>
+        /// The meta-task to forward calls to, if any.
+        /// </summary>
+        public Task? MetaTask;
+
+        private Dictionary<object, object?>? _propertyList;
+
+        private Dictionary<object, object?> propertyList
+        {
+            get
+            {
+                if (_propertyList == null)
+                    _propertyList = new();
+                return _propertyList;
+            }
+        }
+        #endregion
+
+        public T GetPropertyOrDefault<T>(object key) =>
+            propertyList.TryGetValue(key, out var value) ? (T)value! : default(T)!;
+
+        public void SetPropertyValue(object key, object value) => propertyList[key] = value;
 
         /// <summary>
         /// Dictionary of how many successful or pending calls to this task are on this execution path.
@@ -62,7 +87,6 @@ namespace Step.Interpreter
         public int CallCount(State s) => CallCounts.GetValueOrDefault(s, this);
 
         #region Result cache
-
         internal class ResultCache : DictionaryStateElement<IStructuralEquatable, CachedResult>, ISerializable
         {
             static ResultCache()
@@ -254,13 +278,6 @@ namespace Step.Interpreter
             /// </summary>
             Function = 256,
         }
-
-        public TaskFlags Flags;
-
-        /// <summary>
-        /// The meta-task to forward calls to, if any.
-        /// </summary>
-        public Task? MetaTask;
 
         /// <summary>
         /// Programmatic interface for declaring attributes of task
