@@ -46,10 +46,32 @@ namespace Tests
                 "Test b c.",
                 "Test a d.",
                 "Test d e.",
-                "Test d f.");
+                "Test d f.",
+                "Test2: [ForEach [Test ?l ?r] [Write [?l ?r]]]");
             Assert.IsTrue(m.CallPredicate("Test", "a", "b"));
             Assert.IsTrue(m.CallPredicate("Test", "a", "e"));
             Assert.IsFalse(m.CallPredicate("Test", "b", "e"));
+            var all = m.Call("Test2");
+            Console.WriteLine(all);
+            Assert.AreEqual("[a b] [a a] [b b] [b c] [b b] [c c] [a d] [a a] [d d] [d e] [d d] [e e] [d f] [d d] [f f] [a b] [b c] [a d] [d e] [d f] [a c] [a e] [a f]", all);
+        }
+
+        [TestMethod]
+        public void FastPartialOrder()
+        {
+            var m = Module.FromDefinitions(
+                "[predicate] [meta FastPartialOrder] Test a b.",
+                "Test b c.",
+                "Test a d.",
+                "Test d e.",
+                "Test d f.",
+                "Test2: [ForEach [Test ?l ?r] [Write [?l ?r]]]");
+            Assert.IsTrue(m.CallPredicate("Test", "a", "b"));
+            Assert.IsTrue(m.CallPredicate("Test", "a", "e"));
+            Assert.IsFalse(m.CallPredicate("Test", "b", "e"));
+            var all = m.Call("Test2");
+            Console.WriteLine(all);
+            Assert.AreEqual("[a b] [a a] [a d] [a c] [a e] [a f] [b b] [b c] [c c] [d d] [d e] [d f] [e e] [f f]", all);
         }
     }
 }
