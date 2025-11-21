@@ -791,7 +791,7 @@ var output = TextBuffer.NewEmpty();
                 {
                     var called = false;
                     foreach (var potentialCaller in DefinedTasks)
-                        if (Callees(potentialCaller).Contains(t))
+                        if (Callees(potentialCaller).Contains(t) || potentialCaller.MetaTask == t)
                         {
                             called = true;
                             break;
