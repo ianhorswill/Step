@@ -323,7 +323,7 @@ public partial class RunnerPage : UserControl
         HtmlTextFormatter.SetFormattedText(OutputText, "<i>Running...</i>");
         var output = await evalTask;
         if (string.IsNullOrEmpty(output))
-            output = StepCode.LastException==null?"<i>Execution succeeded</i>":"";
+            output = StepCode.LastException==null? "<b>Yes</b> (<i>execution succeeded</i>)" : "";
         HtmlTextFormatter.SetFormattedText(OutputText, output);
 
         // Update exception info

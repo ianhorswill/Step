@@ -378,7 +378,11 @@ namespace StepRepl
                 (output, newState) = await stepThread.Start();
 #pragma warning restore CS8600
             }
-            catch (Exception e)
+            catch (StepException w) when (w.InnerException is CallFailedException f && IsTopLevelCallFailure(f))
+            {
+                return "<b>No</b> (<i>top-level call failed</i>)";
+            }
+            catch (Exception e) 
             {
                 LastException = e is StepException?e.InnerException:e;
                 if (LastException is StepExecutionException { SuppressStackTrace: true })
@@ -390,5 +394,7 @@ namespace StepRepl
                 State = newState.Value;
             return output!;
         }
+
+        private static bool IsTopLevelCallFailure(CallFailedException e) => e.Task is CompoundTask { Name: "TopLevelCall" };
     }
 }
