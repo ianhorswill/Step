@@ -63,6 +63,15 @@ namespace StepRepl.GraphVisualization
             return g;
         }
 
+        private delegate bool CallMethod(Task t, object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k);
+
+        private static bool Call(Task t, object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k) => t.Call(args, o, e, predecessor, k);
+
+        private static bool CallDirect(Task t, object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k) => t.CallDirect(args, o, e, predecessor, k);
+
         private static bool VisualizeGraphImplementation(object?[] args, TextBuffer o, BindingEnvironment e,
             MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k)
         {
@@ -74,6 +83,7 @@ namespace StepRepl.GraphVisualization
             var windowName = "Graph";
             var colorByComponent = false;
             var hierarchical = false;
+            CallMethod call = Call;
 
             var labelVar = new LogicVariable("?label", 2);
 
@@ -82,13 +92,8 @@ namespace StepRepl.GraphVisualization
                 NodeLabel = x => Writer.TermToString(x)
             };
 
-            for (var i = 1; i < args.Length; i += 2)
+            void ProcessKeywordArgument(string keyword, object value)
             {
-                var keyword = ArgumentTypeException.Cast<string>(VisualizeGraph, args[i], args, o);
-                if (args.Length == i + 1)
-                    throw new ArgumentCountException(VisualizeGraph, args.Length + 1, args, o);
-                var value = args[i + 1];
-
                 switch (keyword)
                 {
                     case "nodes":
@@ -128,6 +133,11 @@ namespace StepRepl.GraphVisualization
                         directed = ArgumentTypeException.Cast<bool>(VisualizeGraph, value, args, o);
                         break;
 
+                    case "callDirect":
+                        if (value.Equals(true))
+                            call = CallDirect;
+                        break;
+
                     case "name":
                         windowName = StringifyStepObject(value);
                         break;
@@ -145,6 +155,19 @@ namespace StepRepl.GraphVisualization
                         throw new ArgumentException($"Unknown keyword {keyword} in call to {VisualizeGraph.Name}");
                 }
             }
+
+            if (args.Length == 2 && args[1] is FeatureStructure s)
+                foreach (var f in s.FeatureValues(e.Unifications))
+                    ProcessKeywordArgument(f.Key.Name, f.Value!);
+            else
+                for (var i = 1; i < args.Length; i += 2)
+                {
+                    var keyword = ArgumentTypeException.Cast<string>(VisualizeGraph, args[i], args, o);
+                    if (args.Length == i + 1)
+                        throw new ArgumentCountException(VisualizeGraph, args.Length + 1, args, o);
+
+                    ProcessKeywordArgument(keyword, args[i + 1]!);
+                }
 
             var startNodeVar = new LogicVariable("?startNode", 0);
             var endNodeVar = new LogicVariable("?endNode", 1);
@@ -187,7 +210,7 @@ namespace StepRepl.GraphVisualization
                             childArgs[0] = node;
 
                             // Follow edges of node
-                            edges.Call(childArgs, o, nenv, predecessor, (_, u, s, _) =>
+                            call(edges, childArgs, o, nenv, predecessor, (_, u, s, _) =>
                             {
                                 var env = new BindingEnvironment(nenv, u, nenv.State);
                                 var start = node;
@@ -227,7 +250,7 @@ namespace StepRepl.GraphVisualization
             else
             {
                 // Add all the edges
-                edges.Call(edgeArgs, o, e, predecessor, (_, u, s, _) =>
+                call(edges, edgeArgs, o, e, predecessor, (_, u, s, _) =>
                 {
                     var env = new BindingEnvironment(e, u, s);
                     var start = env.Resolve(startNodeVar, env.Unifications, true);
