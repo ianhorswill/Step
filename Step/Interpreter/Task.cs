@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Data.SqlTypes;
 using System.Diagnostics;
+using Step.Output;
 using Step.Serialization;
 
 namespace Step.Interpreter
@@ -20,13 +24,31 @@ namespace Step.Interpreter
         /// </summary>
         public readonly string Name;
 
-        private Dictionary<string, object>? propertyDictionary;
+        private Dictionary<object, object>? propertyDictionary;
 
         /// <summary>
         /// Dictionary of additional user-defined metadata
         /// </summary>
         // ReSharper disable once UnusedMember.Global
-        public IDictionary<string, object> Properties => propertyDictionary ?? (propertyDictionary = new Dictionary<string, object>());
+        public IDictionary<object, object> Properties => propertyDictionary ??= new Dictionary<object, object>();
+
+        private object? DereferencePropertyValue(object o, Module m) => o switch { StateVariableName n => m[n], _ => o };
+
+        public T GetProperty<T>(object key, Module m) =>
+            Properties.TryGetValue(key, out var value) ? DereferencePropertyValue(value, m) switch
+            {
+                T real => real,
+                _ => throw new Exception($"Property {Writer.TermToString(key)} of task {Name} was expected to be of type {typeof(T).Name} but was {Writer.TermToString(value)}"),
+            } : throw new KeyNotFoundException($"No property {Writer.TermToString(key)} defined for task {Name}");
+
+        public T GetPropertyOrDefault<T>(object key, Module m) =>
+            Properties.TryGetValue(key, out var value) ? DereferencePropertyValue(value, m) switch
+            {
+                T real => real,
+                _ => throw new Exception($"Property {Writer.TermToString(key)} of task {Name} was expected to be of type {typeof(T).Name} but was {Writer.TermToString(value)}"),
+            } : default!;
+
+        public void SetPropertyValue(object key, object value) => Properties[key] = value;
 
         /// <summary>
         /// Number of arguments required by this task, if fixed.

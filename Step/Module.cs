@@ -606,7 +606,10 @@ var output = TextBuffer.NewEmpty();
         private void LoadDefinitions(DefinitionStream defs)
         {
             Uncancel();  // Just to be paranoid
-            foreach (var (task, weight, pattern, locals, chain, flags, metaTask, declaration, path, line) 
+            foreach (var (task, weight, pattern, locals, chain,
+                         flags, metaTask, propertyList, 
+                         declaration,
+                         path, line) 
                 in defs.Definitions)
             {
                 if (task.Name == "initially")
@@ -625,6 +628,14 @@ var output = TextBuffer.NewEmpty();
                                 throw new SyntaxError($"Metatask {metaTask} is not a task", path, line);
                         } else
                             compoundTask.MetaTask = FindTask(metaTask, 1, true, path, line);
+                    }
+
+                    if (propertyList != null)
+                    {
+                        foreach (var prop in propertyList)
+                            compoundTask.SetPropertyValue(
+                                prop.Key,
+                                prop.Value!);
                     }
                     if (locals == null)
                         // Declaration

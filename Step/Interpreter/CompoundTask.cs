@@ -56,24 +56,7 @@ namespace Step.Interpreter
         /// The meta-task to forward calls to, if any.
         /// </summary>
         public Task? MetaTask;
-
-        private Dictionary<object, object?>? _propertyList;
-
-        private Dictionary<object, object?> propertyList
-        {
-            get
-            {
-                if (_propertyList == null)
-                    _propertyList = new();
-                return _propertyList;
-            }
-        }
         #endregion
-
-        public T GetPropertyOrDefault<T>(object key) =>
-            propertyList.TryGetValue(key, out var value) ? (T)value! : default(T)!;
-
-        public void SetPropertyValue(object key, object value) => propertyList[key] = value;
 
         /// <summary>
         /// Dictionary of how many successful or pending calls to this task are on this execution path.

@@ -502,6 +502,7 @@ namespace Step.Parser
                 Interpreter.Step? chain, 
                 CompoundTask.TaskFlags flags,
                 StateVariableName? metaTask,
+                List<KeyValuePair<string, object?>>? propertyList,
                 string? declaration,
                 string? path, int lineNumber)>
             Definitions
@@ -538,7 +539,7 @@ namespace Step.Parser
 
                         var assertion = groupExpander.Assertions.Dequeue();
                         var pattern = VariablizeTuple(assertion.pattern);
-                        yield return (assertion.task, 1, pattern, assertionLocals.ToArray(), null, CompoundTask.TaskFlags.None, null,
+                        yield return (assertion.task, 1, pattern, assertionLocals.ToArray(), null, CompoundTask.TaskFlags.None, null, null,
                             null, SourcePath, lineNumber);
                     }
                 }
@@ -565,6 +566,7 @@ namespace Step.Parser
             Interpreter.Step? chain, 
             CompoundTask.TaskFlags flags,
             StateVariableName? metaTask,
+            List<KeyValuePair<string, object?>>? propertyList,
             string? declaration,
                 string? path, int lineNumber)
             ReadDefinition()
@@ -574,13 +576,13 @@ namespace Step.Parser
             SwallowNewlines();
             lineNumber = expressionStream.LineNumber;
 
-            var (flags, weight, metaTask) = ReadOptions();
+            var (flags, weight, metaTask, propertyList) = ReadOptions();
 
             SwallowNewlines();
             lineNumber = expressionStream.LineNumber;
                 
             if (DeclarationKeywords.Contains(Peek))
-                return ReadDeclaration(flags, metaTask);
+                return ReadDeclaration(flags, metaTask, propertyList);
 
             SwallowNewlines();
             lineNumber = expressionStream.LineNumber; 
@@ -596,7 +598,7 @@ namespace Step.Parser
                 Get(); // Skip over the delimiter
             SwallowNewlines();
 
-            return (StateVariableName.Named(taskName), weight, pattern, locals.ToArray(), chainBuilder.FirstStep, flags, metaTask, null, expressionStream.FilePath, lineNumber);
+            return (StateVariableName.Named(taskName), weight, pattern, locals.ToArray(), chainBuilder.FirstStep, flags, metaTask, propertyList, null, expressionStream.FilePath, lineNumber);
         }
 
         private (StateVariableName task, float weight, object?[] pattern, 
@@ -604,9 +606,10 @@ namespace Step.Parser
             Interpreter.Step? chain,
             CompoundTask.TaskFlags flags,
             StateVariableName? metaTask,
+            List<KeyValuePair<string, object?>>? propertyList, 
             string? declaration,
             string? path, int lineNumber)
-            ReadDeclaration(CompoundTask.TaskFlags flags, StateVariableName? metaTask)
+            ReadDeclaration(CompoundTask.TaskFlags flags, StateVariableName? metaTask, List<KeyValuePair<string, object?>>? propertyList)
         {
             var declType = (string?)Get(); // swallow "task" or "predicate
 
@@ -624,13 +627,14 @@ namespace Step.Parser
             
             SwallowNewlines();
             
-            return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, metaTask, declType, SourceFile, lineNumber);
+            return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, metaTask, propertyList, declType, SourceFile, lineNumber);
         }
 
-        private (CompoundTask.TaskFlags, float weight, StateVariableName? metaTask) ReadOptions()
+        private (CompoundTask.TaskFlags, float weight, StateVariableName? metaTask, List<KeyValuePair<string, object?>> propertyList) ReadOptions()
         {
             var weight = 1f;
             StateVariableName? metaTask = null;
+            List<KeyValuePair<string, object?>> propertyList = null;
             void ThrowInvalid(object[] attr)
             {
                 throw new SyntaxError($"Invalid task attribute {Writer.TermToString(attr)}", SourceFile, expressionStream.LineNumber);
@@ -650,6 +654,22 @@ namespace Step.Parser
                     {
                         keyword = "meta";
                         metaTask = StateVariableName.Named(metaTaskArg);
+                    }
+                    else if (optionKeyword is ["property", string propName, _])
+                    {
+                        keyword = "property";
+                        var propValue = optionKeyword[2];
+                        propertyList ??= new();
+                        propertyList.Add(
+                            new(propName,
+                                propValue switch
+                                {
+                                    "null" => null,
+                                    "true" => true,
+                                    "false" => false,
+                                    string { Length: > 0 } s when char.IsUpper(s[0]) => StateVariableName.Named(s),
+                                    _ => propValue
+                                }));
                     }
                     else
                         ThrowInvalid(optionKeyword);
@@ -693,6 +713,7 @@ namespace Step.Parser
                             break;
 
                         case "meta":
+                        case "property":
                             // handled in the else if, above
                             break;
 
@@ -714,7 +735,7 @@ namespace Step.Parser
                 SwallowNewlines();
             }
 
-            return (flags, weight, metaTask);
+            return (flags, weight, metaTask, propertyList);
         }
 
         /// <summary>

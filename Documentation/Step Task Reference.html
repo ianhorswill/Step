@@ -193,6 +193,8 @@ Tasks that collect together all the solutions to a given call.
 <p>
 <code>[<b>PartialOrder</b> <i>call</i>]</code><br>Used as a metatask for a two-argument predicate to make it a partial order.  Predicate must be anti-reflexive.
 <p>
+<code>[<b>RightClosed</b> <i>call</i>]</code><br>Used as a metatask for a two-argument predicate to make it right-closed under whatever task is in property closeOver, meaning if the underlying rules imply [Task ?a ?b] then [Task ?a ?c] if [closureOperator ?b ?c].  The canonicl case of this is IsA, where the closure operator is KindOf.
+<p>
 <code>[<b>Symmetric</b> <i>call</i>]</code><br>Used as a metatask for a two-argument predicate to make it symmetric, i.e. the order of its arguments doesn't matter..
 <p>
 <h2 id="control flow/metatasks">Control flow/metatasks</h2>
