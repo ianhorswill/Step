@@ -478,7 +478,21 @@ namespace Step.Parser
                 if (!elementDeclarations[i + 1].Equals(":"))
                     throw new SyntaxError($"Feature name {feature} should end with a colon.", SourcePath, lineNumber);
 
-                var value = Canonicalize(elementDeclarations[i + 2]);
+                var valueExp = elementDeclarations[i + 2];
+                if (valueExp.Equals("\"") || valueExp.Equals("“"))
+                {
+                    var text = new List<string>();
+                    for (var j = i + 3; j < elementDeclarations.Count && !elementDeclarations[j].Equals("\"") && !elementDeclarations[j].Equals("”"); j++)
+                    {
+                        text.Add(elementDeclarations[j].ToString()!);
+                        i++;
+                    }
+
+                    i++;  // To account for the closing quote
+
+                    valueExp = text.ToArray();
+                }
+                var value = Canonicalize(valueExp);
                 bindings.Add((feature,value));
             }
 
