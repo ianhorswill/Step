@@ -27,6 +27,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Step.Output;
 
@@ -89,47 +90,31 @@ namespace Step.Interpreter
         internal static readonly StateVariableName MentionHook = StateVariableName.Named("Mention");
 
         /// <inheritdoc />
-        public override IEnumerable<object> Callees
+        public override IEnumerable<object> Callees => TaskReferencesWithin(Arglist).Prepend(Task);
+
+        public static IEnumerable<object> TaskReferencesWithin(object? o)
         {
-            get
+            switch (o)
             {
-                yield return Task;
-                foreach (var a in Arglist)
-                    switch (a)
-                    {
-                        case StateVariableName _:
-                            yield return a;
-                            break;
-                        
-                        case object[] tuple:
-                        {
-                            foreach (var e in TupleCallees(tuple))
-                                yield return e;
-                            break;
-                        }
-                    }
-            }
-        }
+                case StateVariableName _:
+                    yield return o;
+                    break;
 
-        internal static IEnumerable TupleCallees(object[] tuple)
-        {
-            foreach (var e in tuple)
-                switch (e)
-                {
-                    case CompoundTask t:
-                        yield return t;
-                        break;
+                case Task t:
+                    yield return t;
+                    break;
 
-                    case StateVariableName _:
+                case object[] tuple:
+                    foreach (var e in tuple.SelectMany(TaskReferencesWithin))
                         yield return e;
-                        break;
-                    case object[] tuple2:
-                    {
-                        foreach (var e2 in TupleCallees(tuple2))
-                            yield return e2;
-                        break;
-                    }
-                }
+                    break;
+
+                case FeatureStructure s:
+                    foreach (var f in s.FeatureValues(null))
+                        foreach (var c in TaskReferencesWithin(f.Value))
+                            yield return c;
+                    break;
+            }
         }
 
         internal override IEnumerable<Call> Calls => new[] {this};

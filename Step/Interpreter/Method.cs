@@ -199,12 +199,8 @@ namespace Step.Interpreter
         {
             get
             {
-                foreach (var a in ArgumentPattern)
-                    if (a is object[] tuple)
-                    {
-                        foreach (var c in Call.TupleCallees(tuple))
-                            yield return c;
-                    }
+                foreach (var a in Call.TaskReferencesWithin(ArgumentPattern))
+                    yield return a;
 
                 if (StepChain != null)
                     foreach (var c in Step.CalleesOfChain(StepChain))
