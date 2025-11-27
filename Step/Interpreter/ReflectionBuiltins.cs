@@ -67,6 +67,10 @@ namespace Step.Interpreter
             g["Method"] = new GeneralPrimitive(nameof(Method), Method)
                 .Arguments("?call", "?methodBody")
                 .Documentation("reflection//static analysis", "True if ?methodBody is a call equivalent to the body of a rule that matches ?call.");
+
+            g[nameof(TaskProperty)] = new GeneralPrimitive(nameof(TaskProperty), TaskProperty)
+                .Arguments("?task", "?property", "?value")
+                .Documentation("reflection//static analysis", "True if ?task has property ?property with value ?value.");
         }
 
         private static bool LastMethodCallFrame(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
@@ -226,6 +230,29 @@ namespace Step.Interpreter
             }
             else 
                 throw new InvalidOperationException($"Task in call to Method is neither primitive nor compound.");
+        }
+
+        private static bool TaskProperty(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(TaskProperty), 3, args, o);
+            var task = ArgumentTypeException.Cast<Task>(nameof(TaskProperty), args[0], args, o);
+            var property = args[1];
+            if (property is LogicVariable l)
+            {
+                foreach (var prop in task.Properties)
+                {
+                    if (e.UnifyArrays([l, args[2]], [(object)prop.Key, (object)prop.Value],
+                            out BindingList? bindings) && k(o, bindings, e.State, predecessor))
+                        return true;
+                }
+
+                return false;
+            } else
+                return task.Properties.ContainsKey(property) &&
+                       e.Unify(task.GetProperty<object>(property, e.Module), args[2], out BindingList? bindings) &&
+                       k(o, bindings, e.State, predecessor);
         }
     }
 }
