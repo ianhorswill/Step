@@ -116,7 +116,7 @@ namespace Step
                     object? next = p;
                     while (next is Pair nextP)
                     {
-                        array[i++] = CompressPairChainsWhenPossible(p.First, bindings);
+                        array[i++] = CompressPairChainsWhenPossible(nextP.First, bindings);
                         next = BindingEnvironment.Deref(nextP.Rest, bindings);
                     }
 
