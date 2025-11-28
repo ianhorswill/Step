@@ -351,6 +351,8 @@ Predicates that can be used by a program to check what tasks have been called in
 <h3 id="static analysis">Static analysis</h3>
 Predicates that can be used by a program to check what tasks can call what other tasks.
 <p>
+<code>[<b>MetaTask</b> <i>?task</i> <i>?metaTask</i>]</code><br>True if ?task has metatask ?metatask.
+<p>
 <code>[<b>Method</b> <i>?call</i> <i>?methodBody</i>]</code><br>True if ?methodBody is a call equivalent to the body of a rule that matches ?call.
 <p>
 <code>[<b>TaskCalls</b> <i>?caller</i> <i>?callee</i>]</code><br>True if task ?caller has a method that calls ?callee

@@ -71,6 +71,10 @@ namespace Step.Interpreter
             g[nameof(TaskProperty)] = new GeneralPrimitive(nameof(TaskProperty), TaskProperty)
                 .Arguments("?task", "?property", "?value")
                 .Documentation("reflection//static analysis", "True if ?task has property ?property with value ?value.");
+
+            g[nameof(MetaTask)] = new GeneralPrimitive(nameof(MetaTask), MetaTask)
+                .Arguments("?task", "?metaTask")
+                .Documentation("reflection//static analysis", "True if ?task has metatask ?metatask.");
         }
 
         private static bool LastMethodCallFrame(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Step.Continuation k)
@@ -253,6 +257,61 @@ namespace Step.Interpreter
                 return task.Properties.ContainsKey(property) &&
                        e.Unify(task.GetProperty<object>(property, e.Module), args[2], out BindingList? bindings) &&
                        k(o, bindings, e.State, predecessor);
+        }
+
+        private static bool MetaTask(object?[] args, TextBuffer o, BindingEnvironment e,
+            MethodCallFrame? predecessor,
+            Step.Continuation k)
+        {
+            ArgumentCountException.Check(nameof(MetaTask), 2, args, o);
+            var mtArg = args[1];
+            switch (args[0])
+            {
+                case CompoundTask t:
+                {
+                    if (mtArg is Task mt)
+                        // in in
+                        return t.MetaTask == mt && k(o, e.Unifications, e.State, predecessor);
+                    else
+                        // in out
+                        return e.Unify(mtArg, t.MetaTask, out BindingList? u) && k(o, u, e.State, predecessor);
+                }
+
+                case LogicVariable tl:
+                {
+                    switch (mtArg)
+                    { 
+                        case Task mt:
+                        {
+                            // out in
+                            foreach (var t in e.Module.DefinedTasks)
+                                if (t.MetaTask == mt && e.Unify(tl, t, out BindingList? u) && k(o, u, e.State, predecessor))
+                                    return true;
+                            return false;
+                        }
+                        case LogicVariable mtl:
+                        {
+                            // out out
+                            foreach (var t in e.Module.DefinedTasks)
+                                if (t.MetaTask != null && e.Unify(tl, t, out BindingList? u) && e.Unify(mtl, t.MetaTask, u, out var u2)
+                                    && k(o, u2, e.State, predecessor))
+                                    return true;
+                            return false;
+                        }
+                        default:
+                            ArgumentTypeException.Check(nameof(MetaTask), typeof(Task), mtArg, args, o);
+                            break;
+                        }
+
+                }
+                    break;
+
+                default: 
+                    ArgumentTypeException.Check(nameof(MetaTask), typeof(CompoundTask), args[0], args, o);
+                    break;
+            }
+
+            return false;
         }
     }
 }
