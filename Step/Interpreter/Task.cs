@@ -41,7 +41,7 @@ namespace Step.Interpreter
                 _ => throw new Exception($"Property {Writer.TermToString(key)} of task {Name} was expected to be of type {typeof(T).Name} but was {Writer.TermToString(value)}"),
             } : throw new KeyNotFoundException($"No property {Writer.TermToString(key)} defined for task {Name}");
 
-        public T GetPropertyOrDefault<T>(object key, Module m) =>
+        public T? GetPropertyOrDefault<T>(object key, Module m) =>
             Properties.TryGetValue(key, out var value) ? DereferencePropertyValue(value, m) switch
             {
                 T real => real,

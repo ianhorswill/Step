@@ -58,6 +58,8 @@ namespace Step.Interpreter
         public Task? MetaTask;
         #endregion
 
+        internal static readonly object[] MetaTaskTemplatePropertyName = ["MetaTaskArgumentTemplate"];
+
         /// <summary>
         /// Dictionary of how many successful or pending calls to this task are on this execution path.
         /// </summary>
@@ -358,10 +360,13 @@ namespace Step.Interpreter
         {
             if (MetaTask != null)
             {
-                var args = new object[arglist.Length + 1];
-                args[0] = this;
-                Array.Copy(arglist, 0, args, 1, arglist.Length);
-                return MetaTask.Call([args], output, env, predecessor, k);
+                var metaArgs = GetPropertyOrDefault<object?[]>(MetaTaskTemplatePropertyName, env.Module) ?? new object?[1];
+                var baseCall = new object[arglist.Length + 1];
+                baseCall[0] = this;
+                Array.Copy(arglist, 0, baseCall, 1, arglist.Length);
+                metaArgs[^1] = baseCall;
+
+                return MetaTask.Call(metaArgs, output, env, predecessor, k);
             }
 
             return CallDirect(arglist, output, env, predecessor, k);

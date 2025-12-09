@@ -34,10 +34,10 @@ namespace Step.Interpreter
                     "Used as a metatask for a two-argument predicate to make it a partial order.  This will build a complete table of the transitive closure of the predicate in advance, so it should only be used for non-fluent predicates whose arguments are atoms.  Predicate must be anti-reflexive.");
         }
 
-        private static (Task task, object?[] args) CheckBinaryRelation(string name, object?[] args, TextBuffer output, BindingEnvironment env)
+        private static (Task task, object?[] args) CheckBinaryRelation(string name, object?[] args, TextBuffer output, BindingEnvironment env, int nargs = 1)
         {
-            ArgumentCountException.Check(name, 1, args, output);
-            var call = ArgumentTypeException.Cast<object?[]>(args, args[0], args, output);
+            ArgumentCountException.Check(name, nargs, args, output);
+            var call = ArgumentTypeException.Cast<object?[]>(args, args[nargs-1], args, output);
             if (call.Length == 0)
                 throw new ArgumentTypeException(name,
                     "Argument should be a call with two arguments, but was the empty list", call, output);
@@ -244,9 +244,9 @@ namespace Step.Interpreter
         private static bool RightClosed(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            var (task, tArgs) = CheckBinaryRelation(nameof(RightClosed), args, output, env);
+            var (task, tArgs) = CheckBinaryRelation(nameof(RightClosed), args, output, env, 2);
 
-            var closureOperator = task.GetProperty<Task>("closeOver", env.Module);
+            var closureOperator = ArgumentTypeException.Cast<Task>(nameof(RightClosed), args[0], args, output);
             var temp = new LogicVariable(Temp);
 
             return task.CallDirect([tArgs[0], temp], output, env, predecessor, 

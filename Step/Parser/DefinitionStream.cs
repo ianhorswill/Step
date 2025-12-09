@@ -516,7 +516,7 @@ namespace Step.Parser
                 Interpreter.Step? chain, 
                 CompoundTask.TaskFlags flags,
                 StateVariableName? metaTask,
-                List<KeyValuePair<string, object?>>? propertyList,
+                List<KeyValuePair<object, object?>>? propertyList,
                 string? declaration,
                 string? path, int lineNumber)>
             Definitions
@@ -580,7 +580,7 @@ namespace Step.Parser
             Interpreter.Step? chain, 
             CompoundTask.TaskFlags flags,
             StateVariableName? metaTask,
-            List<KeyValuePair<string, object?>>? propertyList,
+            List<KeyValuePair<object, object?>>? propertyList,
             string? declaration,
                 string? path, int lineNumber)
             ReadDefinition()
@@ -620,10 +620,10 @@ namespace Step.Parser
             Interpreter.Step? chain,
             CompoundTask.TaskFlags flags,
             StateVariableName? metaTask,
-            List<KeyValuePair<string, object?>>? propertyList, 
+            List<KeyValuePair<object, object?>>? propertyList, 
             string? declaration,
             string? path, int lineNumber)
-            ReadDeclaration(CompoundTask.TaskFlags flags, StateVariableName? metaTask, List<KeyValuePair<string, object?>>? propertyList)
+            ReadDeclaration(CompoundTask.TaskFlags flags, StateVariableName? metaTask, List<KeyValuePair<object, object?>>? propertyList)
         {
             var declType = (string?)Get(); // swallow "task" or "predicate
 
@@ -644,11 +644,11 @@ namespace Step.Parser
             return (StateVariableName.Named(taskName), 0, pattern.ToArray(), null, null, flags, metaTask, propertyList, declType, SourceFile, lineNumber);
         }
 
-        private (CompoundTask.TaskFlags, float weight, StateVariableName? metaTask, List<KeyValuePair<string, object?>> propertyList) ReadOptions()
+        private (CompoundTask.TaskFlags, float weight, StateVariableName? metaTask, List<KeyValuePair<object, object?>> propertyList) ReadOptions()
         {
             var weight = 1f;
             StateVariableName? metaTask = null;
-            List<KeyValuePair<string, object?>> propertyList = null;
+            List<KeyValuePair<object, object?>> propertyList = null;
             void ThrowInvalid(object[] attr)
             {
                 throw new SyntaxError($"Invalid task attribute {Writer.TermToString(attr)}", SourceFile, expressionStream.LineNumber);
@@ -664,26 +664,24 @@ namespace Step.Parser
                     string? keyword = null;
                     if (optionKeyword is [string op0])
                         keyword = op0;
-                    else if (optionKeyword is ["meta", string metaTaskArg])
+                    else if (optionKeyword.Length > 1 && optionKeyword[0].Equals("meta") && optionKeyword[1] is string metaTaskArg)
                     {
                         keyword = "meta";
+                        if (!IsGlobalVariableName(metaTaskArg))
+                            throw new SyntaxError(
+                                $"In metatask declaration, {metaTaskArg} is not a valid name for a metatask.",
+                                SourcePath, lineNumber);
                         metaTask = StateVariableName.Named(metaTaskArg);
+                        if (optionKeyword.Length > 2)
+                        {
+                            AddProperty(CompoundTask.MetaTaskTemplatePropertyName, optionKeyword.Skip(2).Append(null).ToArray());
+                        }
                     }
                     else if (optionKeyword is ["property", string propName, _])
                     {
                         keyword = "property";
                         var propValue = optionKeyword[2];
-                        propertyList ??= new();
-                        propertyList.Add(
-                            new(propName,
-                                propValue switch
-                                {
-                                    "null" => null,
-                                    "true" => true,
-                                    "false" => false,
-                                    string { Length: > 0 } s when char.IsUpper(s[0]) => StateVariableName.Named(s),
-                                    _ => propValue
-                                }));
+                        AddProperty(propName, propValue);
                     }
                     else
                         ThrowInvalid(optionKeyword);
@@ -750,6 +748,27 @@ namespace Step.Parser
             }
 
             return (flags, weight, metaTask, propertyList);
+
+            void AddProperty(object propName, object? propValue)
+            {
+                propertyList ??= new();
+                propertyList.Add(
+                    new(propName,
+                        NormalizePropertyValue(propValue)));
+            }
+
+            object? NormalizePropertyValue(object? propValue)
+            {
+                return propValue switch
+                {
+                    "null" => null,
+                    "true" => true,
+                    "false" => false,
+                    object[] tuple => tuple.Select(NormalizePropertyValue).ToArray(),
+                    string { Length: > 0 } s when char.IsUpper(s[0]) => StateVariableName.Named(s),
+                    _ => propValue
+                };
+            }
         }
 
         /// <summary>
