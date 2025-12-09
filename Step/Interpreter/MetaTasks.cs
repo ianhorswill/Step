@@ -20,7 +20,7 @@ namespace Step.Interpreter
             g[nameof(Symmetric)] = new GeneralPrimitive(nameof(Symmetric), Symmetric)
                 .Arguments("call")
                 .Documentation("control flow//metatasks", "Used as a metatask for a two-argument predicate to make it symmetric, i.e. the order of its arguments doesn't matter..");
-            g[nameof(RightClosed)] = new GeneralPrimitive(nameof(RightClosed), RightClosed)
+            g[nameof(RightClosedOver)] = new GeneralPrimitive(nameof(RightClosedOver), RightClosedOver)
                 .Arguments("call")
                 .Documentation("control flow//metatasks",
                     "Used as a metatask for a two-argument predicate to make it right-closed under whatever task is in property closeOver, meaning if the underlying rules imply [Task ?a ?b] then [Task ?a ?c] if [closureOperator ?b ?c].  The canonicl case of this is IsA, where the closure operator is KindOf.");
@@ -241,12 +241,12 @@ namespace Step.Interpreter
             }
         }
 
-        private static bool RightClosed(object?[] args, TextBuffer output, BindingEnvironment env,
+        private static bool RightClosedOver(object?[] args, TextBuffer output, BindingEnvironment env,
             MethodCallFrame? predecessor, Step.Continuation k)
         {
-            var (task, tArgs) = CheckBinaryRelation(nameof(RightClosed), args, output, env, 2);
+            var (task, tArgs) = CheckBinaryRelation(nameof(RightClosedOver), args, output, env, 2);
 
-            var closureOperator = ArgumentTypeException.Cast<Task>(nameof(RightClosed), args[0], args, output);
+            var closureOperator = ArgumentTypeException.Cast<Task>(nameof(RightClosedOver), args[0], args, output);
             var temp = new LogicVariable(Temp);
 
             return task.CallDirect([tArgs[0], temp], output, env, predecessor, 
