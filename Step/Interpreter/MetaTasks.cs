@@ -19,19 +19,19 @@ namespace Step.Interpreter
 
             g[nameof(Symmetric)] = new GeneralPrimitive(nameof(Symmetric), Symmetric)
                 .Arguments("call")
-                .Documentation("control flow//metatasks", "Used as a metatask for a two-argument predicate to make it symmetric, i.e. the order of its arguments doesn't matter..");
+                .Documentation("control flow//metatasks", "Used as a metatask for a binary predicate to make it symmetric, i.e. the order of its arguments doesn't matter..");
             g[nameof(RightClosedOver)] = new GeneralPrimitive(nameof(RightClosedOver), RightClosedOver)
-                .Arguments("call")
+                .Arguments("closureOperator","call")
                 .Documentation("control flow//metatasks",
-                    "Used as a metatask for a two-argument predicate to make it right-closed under whatever task is in property closeOver, meaning if the underlying rules imply [Task ?a ?b] then [Task ?a ?c] if [closureOperator ?b ?c].  The canonicl case of this is IsA, where the closure operator is KindOf.");
+                    "Used as a metatask for a binary predicate to make it right-closed over some other binary predicate.");
             g[nameof(PartialOrder)] = new GeneralPrimitive(nameof(PartialOrder), PartialOrder)
                 .Arguments("call")
                 .Documentation("control flow//metatasks",
-                    "Used as a metatask for a two-argument predicate to make it a partial order.  Predicate must be anti-reflexive.");
+                    "Used as a metatask for a binary predicate to make it a partial order.  Predicate must be anti-reflexive.");
             g[nameof(PartialOrderInfo.FastPartialOrder)] = new GeneralPrimitive(nameof(PartialOrderInfo.FastPartialOrder), PartialOrderInfo.FastPartialOrder)
                 .Arguments("call")
                 .Documentation("control flow//metatasks",
-                    "Used as a metatask for a two-argument predicate to make it a partial order.  This will build a complete table of the transitive closure of the predicate in advance, so it should only be used for non-fluent predicates whose arguments are atoms.  Predicate must be anti-reflexive.");
+                    "Used as a metatask for a binary predicate to make it a partial order.  This will build a complete table of the transitive closure of the predicate in advance, so it should only be used for non-fluent predicates whose arguments are atoms.  Predicate must be anti-reflexive.");
         }
 
         private static (Task task, object?[] args) CheckBinaryRelation(string name, object?[] args, TextBuffer output, BindingEnvironment env, int nargs = 1)
