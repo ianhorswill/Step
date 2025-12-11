@@ -17,6 +17,8 @@ namespace StepRepl
     public record StepButton(string Label, object[] Action, State State);
     public static class StepCode
     {
+        public const string AfterProjectLoad = "AfterProjectLoad";
+
         public static Exception? LastException;
 
         public static Module Module = null!;
@@ -318,6 +320,9 @@ namespace StepRepl
                 LastException = e;
                 //Console.WriteLine($"Error loading project at {ProjectDirectory}: {e.Message}");
             }
+
+            if (Module.Defines(AfterProjectLoad) && Module[AfterProjectLoad] is CompoundTask t)
+                t.Flags |= CompoundTask.TaskFlags.Main;
         }
 
         public static StepThread? CurrentStepThread;

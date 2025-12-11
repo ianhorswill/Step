@@ -36,8 +36,8 @@ public partial class RunnerPage : UserControl
 
     private void RunnerPage_Loaded(object? sender, RoutedEventArgs e)
     {
-        if (StepCode.LastException == null && StepCode.Module.Defines("AfterProjectLoad"))
-            EvalAndShowOutput("[AfterProjectLoad true]");
+        if (StepCode.LastException == null && StepCode.Module.Defines(StepCode.AfterProjectLoad))
+            EvalAndShowOutput($"[{StepCode.AfterProjectLoad} true]");
     }
     
     private RunnerViewModel ViewModel => (RunnerViewModel)DataContext!;
@@ -47,8 +47,8 @@ public partial class RunnerPage : UserControl
     private void ReloadStepCode(object? sender, RoutedEventArgs e)
     {
         StepCode.ReloadStepCode();
-        if (StepCode.LastException == null && StepCode.Module.Defines("AfterProjectLoad"))
-            EvalAndShowOutput("[AfterProjectLoad false]");
+        if (StepCode.LastException == null && StepCode.Module.Defines(StepCode.AfterProjectLoad))
+            EvalAndShowOutput($"[{StepCode.AfterProjectLoad} false]");
         else
             OutputText.Text = $"Reloaded project {StepCode.ProjectName}!\n";
         ShowWarningsAndException();
@@ -270,8 +270,8 @@ public partial class RunnerPage : UserControl
         StepCode.ReloadStepCode();
         ViewModel.AddRecentProjects(path);
         MainWindow.Instance.SetTabDisplayName(this, $"{StepCode.ProjectName}");
-        if (StepCode.LastException == null && StepCode.Module.Defines("AfterProjectLoad"))
-            EvalAndShowOutput("[AfterProjectLoad true]");
+        if (StepCode.LastException == null && StepCode.Module.Defines(StepCode.AfterProjectLoad))
+            EvalAndShowOutput($"[{StepCode.AfterProjectLoad} true]");
         ShowWarningsAndException();
     }
     

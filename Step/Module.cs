@@ -745,7 +745,7 @@ var output = TextBuffer.NewEmpty();
             MethodCallFrame.CurrentFrame = null;
             if (Defines("TopLevelCall"))
                 ((CompoundTask?) this["TopLevelCall"])?.EraseMethods();
-            AddDefinitions($"TopLevelCall: {code}");
+            AddDefinitions($"[main] TopLevelCall: {code}");
             return Call(state, "TopLevelCall");
         }
 
