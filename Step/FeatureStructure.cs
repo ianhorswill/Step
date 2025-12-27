@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
 using Step.Interpreter;
 using Step.Output;
@@ -11,20 +10,32 @@ namespace Step
     [DebuggerDisplay($"{{{nameof(BlockContents)}}}")]
     public sealed class FeatureStructure
     {
+        private const string NextLinkName = "_next_";
+        /// <summary>
+        /// Names of features that are bound in this structure
+        /// </summary>
         private readonly Feature[] features;
+        /// <summary>
+        /// Values of the respective features
+        /// </summary>
         private readonly object?[] values;
-        private readonly LogicVariable next;
+        /// <summary>
+        /// Link to the next block (feature structure)
+        /// This is set by unification.
+        /// It is null for feature structures appearing in the ArgumentPatterns of methods, and only in those patters.
+        /// The null links are changed to logic variables by Resolve() when the method is invoked.
+        /// </summary>
+        private readonly LogicVariable? next;
 
         public FeatureStructure(Feature[] features, object?[] values)
-            : this(features, values, new LogicVariable("_next_", 0))
+            : this(features, values, new LogicVariable(NextLinkName, 0))
         { }
 
-        public FeatureStructure(Feature[] features, object?[] values, LogicVariable next)
+        public FeatureStructure(Feature[] features, object?[] values, LogicVariable? next)
         {
             this.features = features;
             this.values = values;
             this.next = next;
-            Debug.Assert(this.next != null);
         }
 
         public int Count(BindingList? bindings)
@@ -32,7 +43,7 @@ namespace Step
             var count = 0;
             for (var block = this;
                  block != null;
-                 block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
+                 block = block.next == null ? null : BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
                 count += block.features.Length;
 
             return count;
@@ -68,7 +79,7 @@ namespace Step
 
         public bool ContainsFeature(string f, BindingList? bindings) => ContainsFeature(Feature.Intern(f), bindings);
 
-        public FeatureStructure(List<(string feature, object? value)> bindings)
+        public FeatureStructure(List<(string feature, object? value)> bindings, bool isTemplate = false)
         {
             features = new Feature[bindings.Count];
             values = new object?[bindings.Count];
@@ -78,7 +89,7 @@ namespace Step
                 values[i] = bindings[i].value;
             }
 
-            next = new LogicVariable("_next_", 0);
+            next = isTemplate ? null : new LogicVariable(NextLinkName, 0);
         }
 
         public bool TryGetValue(Feature f, BindingList? bindings, out object? value)
@@ -223,10 +234,10 @@ namespace Step
             var f = new Feature[size];
             var v = new object?[size];
             var outIndex = 0;
-            var lastLink = next;
+            LogicVariable? lastLink = null;
             for (var block = this;
                  block != null;
-                 block = BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
+                 block = block.next == null ? null : BindingList.Lookup(bindings, block.next, null!) as FeatureStructure)
             {
                 for (var i = 0; i < block.features.Length; i++)
                 {
@@ -234,16 +245,14 @@ namespace Step
                     v[outIndex] = env.Resolve(block.values[i], bindings, compressPairs);
                     outIndex++;
                 }
-
-                Debug.Assert(block.next != null);
                 lastLink = block.next;
             }
 
-            return new FeatureStructure(f, v, lastLink);
+            return new FeatureStructure(f, v, lastLink?? new LogicVariable(NextLinkName, 0));
         }
 
         public string BlockContents => Writer.TermToString(this, null);
 
-        public FeatureStructure Map(Func<object?, object?> map) => new(features, values.Select(map).ToArray());
+        public FeatureStructure Map(Func<object?, object?> map) => new(features, values.Select(map).ToArray(), null);
     }
 }

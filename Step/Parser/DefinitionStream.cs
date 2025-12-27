@@ -24,9 +24,7 @@
 #endregion
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -500,7 +498,7 @@ namespace Step.Parser
                 throw new SyntaxError("{ } expression should be of the form: { feature: value feature: value ...}.",
                     SourcePath, lineNumber);
 
-            return new FeatureStructure(bindings);
+            return new FeatureStructure(bindings, true);
         }
 
         private void IncrementReferenceCount(LocalVariableName v)
