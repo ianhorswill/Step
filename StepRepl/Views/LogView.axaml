@@ -6,6 +6,7 @@
         xmlns:step="clr-namespace:Step"
         xmlns:step1="clr-namespace:Step;assembly=Step"
         xmlns:stepRepl="clr-namespace:StepRepl"
+        xmlns:replSupport="clr-namespace:Step.ReplSupport;assembly=Step"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="StepRepl.Views.LogView"
         x:DataType="viewModels:LogViewModel">
@@ -15,7 +16,7 @@
   <StackPanel>
       <ListBox x:Name="EventList" ItemsSource="{Binding Events}">
           <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="step1:LogEvent">
+              <DataTemplate x:DataType="replSupport:LogEvent">
                   <SelectableTextBlock
                       Inlines="{Binding Text, Converter={StaticResource htmlTextFormatter}}"
                       FontSize="12"

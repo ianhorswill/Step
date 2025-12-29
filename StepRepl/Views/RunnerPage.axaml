@@ -6,6 +6,8 @@
              xmlns:interpreter="clr-namespace:Step.Interpreter;assembly=Step"
              xmlns:local="clr-namespace:StepRepl"
              xmlns:views="clr-namespace:StepRepl.Views"
+             xmlns:step="clr-namespace:Step;assembly=Step"
+             xmlns:replSupport="clr-namespace:Step.ReplSupport;assembly=Step"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="StepRepl.Views.RunnerPage"
              x:DataType="vm:RunnerViewModel">
@@ -153,7 +155,7 @@
                         </Expander.Header>
                         <ListBox x:Name="WarningText" SelectionMode="Single" SelectionChanged="WarningSelected">
                             <ListBox.ItemTemplate>
-                                <DataTemplate x:DataType="interpreter:WarningInfo">
+                                <DataTemplate x:DataType="replSupport:WarningInfo">
                                     <SelectableTextBlock
                                         Inlines="{Binding Warning, Converter={StaticResource htmlTextFormatter}}"
                                         Foreground="{DynamicResource WarningColor}" FontSize="14" TextWrapping="Wrap"

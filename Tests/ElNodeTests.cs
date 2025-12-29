@@ -1,5 +1,4 @@
-﻿using System.Net.Mail;
-using Step.Interpreter;
+﻿using Step.Binding;
 
 namespace Step.Tests
 {

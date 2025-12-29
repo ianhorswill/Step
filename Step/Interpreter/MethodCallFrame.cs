@@ -4,7 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Step.Binding;
+using Step.Interpreter.Steps;
 using Step.Output;
+using Step.ReplSupport;
+using Step.Tasks;
+using Step.Terms;
 
 namespace Step.Interpreter
 {

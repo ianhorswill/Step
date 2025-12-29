@@ -8,6 +8,11 @@ using GraphViz;
 using Step;
 using Step.Interpreter;
 using Step.Output;
+using Step.Terms;
+using Step.Exceptions;
+using Step.Binding;
+using Step.Tasks;
+using Step.Tasks.Primitives;
 
 
 namespace StepRepl.GraphVisualization
@@ -64,16 +69,16 @@ namespace StepRepl.GraphVisualization
         }
 
         private delegate bool CallMethod(Task t, object?[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k);
+            MethodCallFrame? predecessor, Task.Continuation k);
 
         private static bool Call(Task t, object?[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k) => t.Call(args, o, e, predecessor, k);
+            MethodCallFrame? predecessor, Task.Continuation k) => t.Call(args, o, e, predecessor, k);
 
         private static bool CallDirect(Task t, object?[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k) => t.CallDirect(args, o, e, predecessor, k);
+            MethodCallFrame? predecessor, Task.Continuation k) => t.CallDirect(args, o, e, predecessor, k);
 
         private static bool VisualizeGraphImplementation(object?[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k)
+            MethodCallFrame? predecessor, Task.Continuation k)
         {
             ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args, o);
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
@@ -118,9 +123,9 @@ namespace StepRepl.GraphVisualization
                         graph.NodeLabel = node =>
                         {
                             var label = "unknown label";
-                            nodeLabel.Call(new object?[] { node, labelVar }, o, e, predecessor, (_, u, s, _) =>
+                            nodeLabel.Call([node, labelVar], o, e, predecessor, (_, u, s2, _) =>
                             {
-                                var env = new BindingEnvironment(e, u, s);
+                                var env = new BindingEnvironment(e, u, s2);
                                 label = StringifyStepObject(env.Resolve(labelVar));
                                 return true;
                             });
@@ -192,9 +197,9 @@ namespace StepRepl.GraphVisualization
                 var q = new Queue<object>();
                 var nodeVar = new LogicVariable("?node", 0);
                 var nodesArgs = new object?[] { nodeVar };
-                nodes.Call(nodesArgs, o, e, predecessor, (_, nu, s, _) =>
+                nodes.Call(nodesArgs, o, e, predecessor, (_, nu, s2, _) =>
                 {
-                    var nenv = new BindingEnvironment(e, nu, s);
+                    var nenv = new BindingEnvironment(e, nu, s2);
                     var root = nenv.Resolve(nodeVar, nenv.Unifications, true)!;
                     if (!graph.Nodes.Contains(root))
                     {
@@ -210,11 +215,11 @@ namespace StepRepl.GraphVisualization
                             childArgs[0] = node;
 
                             // Follow edges of node
-                            call(edges, childArgs, o, nenv, predecessor, (_, u, s, _) =>
+                            call(edges, childArgs, o, nenv, predecessor, (_, u, _, _) =>
                             {
                                 var env = new BindingEnvironment(nenv, u, nenv.State);
                                 var start = node;
-                                var end = env.Resolve(endNodeVar, env.Unifications, true);
+                                var end = env.Resolve(endNodeVar, env.Unifications, true)!;
 
                                 if (!graph.Nodes.Contains(end))
                                 {
@@ -233,7 +238,7 @@ namespace StepRepl.GraphVisualization
                                     ? (bool)env.Resolve(directedVar, env.Unifications, true)!
                                     : directed;
                                 var edge = new Graph<object>.Edge(
-                                    start!, end!,
+                                    start, end,
                                     thisEdgeDirected,
                                     label,
                                     color != null ? new Dictionary<string, object>() { { "color", color } } : null);
@@ -250,9 +255,9 @@ namespace StepRepl.GraphVisualization
             else
             {
                 // Add all the edges
-                call(edges, edgeArgs, o, e, predecessor, (_, u, s, _) =>
+                call(edges, edgeArgs, o, e, predecessor, (_, u, s2, _) =>
                 {
-                    var env = new BindingEnvironment(e, u, s);
+                    var env = new BindingEnvironment(e, u, s2);
                     var start = env.Resolve(startNodeVar, env.Unifications, true);
                     var end = env.Resolve(endNodeVar, env.Unifications, true);
                     var label = edgeArgCount > 2
@@ -278,9 +283,9 @@ namespace StepRepl.GraphVisualization
                 {
                     var nodeVar = new LogicVariable("?node", 0);
                     var nodesArgs = new object?[] { nodeVar };
-                    nodes.Call(nodesArgs, o, e, predecessor, (_, u, s, _) =>
+                    nodes.Call(nodesArgs, o, e, predecessor, (_, u, s2, _) =>
                     {
-                        var env = new BindingEnvironment(e, u, s);
+                        var env = new BindingEnvironment(e, u, s2);
                         var node = env.Resolve(nodeVar, env.Unifications, true)!;
                         if (!graph.Nodes.Contains(node))
                             graph.AddNode(node);
@@ -297,9 +302,9 @@ namespace StepRepl.GraphVisualization
                 foreach (var node in graph.Nodes )
                 {
                     colorArgs[0] = node;
-                    nodeColor.Call(colorArgs, o, e, predecessor, (_, u, s, _) =>
+                    nodeColor.Call(colorArgs, o, e, predecessor, (_, u, s2, _) =>
                     {
-                        var env = new BindingEnvironment(e, u, s);
+                        var env = new BindingEnvironment(e, u, s2);
                         var color = env.Resolve(colorVar)!;
                         graph.NodeAttributes[node]["fillcolor"] = color;
                         return true;

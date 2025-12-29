@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Avalonia.Threading;
-using Step;
-using Step.Interpreter;
+using Step.ReplSupport;
 
 namespace StepRepl.ViewModels;
 

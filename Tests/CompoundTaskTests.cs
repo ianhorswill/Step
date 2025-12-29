@@ -23,10 +23,13 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System.Net.Mail;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
-using Step.Interpreter;
+using Step.Binding;
+using Step.Exceptions;
+using Step.Interpreter.Steps;
+using Step.Tasks;
+using Step.Tasks.Primitives;
+using Step.Terms;
 
 namespace Tests
 {
@@ -34,19 +37,20 @@ namespace Tests
     public class CompoundTaskTests
     {
         // ReSharper disable once InconsistentNaming
-        private static readonly DeterministicTextGenerator<object> toString = new DeterministicTextGenerator<object>("ToString", (x) => new[] { x.ToString() });
+        private static readonly DeterministicTextGenerator<object> toString = new DeterministicTextGenerator<object>("ToString", (x) =>
+            [x.ToString()]);
 
         [TestMethod]
         public void MatchingNoVariablesTest()
         {
             var t = new CompoundTask("test", 1);
             t.Flags |= CompoundTask.TaskFlags.Fallible;
-            t.AddMethod(1, new object[]{1}, new LocalVariableName[0], new EmitStep(new []{ "1", "matched"}, null), 0, null, 1);
-            t.AddMethod(1, new object[]{2}, new LocalVariableName[0], new EmitStep(new []{ "2", "matched"}, null), 0, null, 1);
+            t.AddMethod(1, [1], [], new EmitStep(["1", "matched"], null), 0, null, 1);
+            t.AddMethod(1, [2], [], new EmitStep(["2", "matched"], null), 0, null, 1);
 
-            Assert.AreEqual("1 matched", new Call(t, new object[]{1}, null).Expand());
-            Assert.AreEqual("2 matched", new Call(t, new object[]{2}, null).Expand());
-            Assert.AreEqual(null, new Call(t, new object[]{3}, null).Expand());
+            Assert.AreEqual("1 matched", new Call(t, [1], null).Expand());
+            Assert.AreEqual("2 matched", new Call(t, [2], null).Expand());
+            Assert.IsNull(new Call(t, [3], null).Expand());
         }
 
         [TestMethod]
@@ -56,36 +60,36 @@ namespace Tests
             // ReSharper disable once InconsistentNaming
             var X = new LocalVariableName("X", 0);
             var locals = new[] { X };
-            t.AddMethod(1, new object[] {X}, locals,
+            t.AddMethod(1, [X], locals,
                 TestUtils.Sequence(new object[] {toString, X}, new[] {"matched"}), 0,
                 null, 1);
 
-            Assert.AreEqual("1 matched", new Call(t, new object[]{1}, null).Expand());
-            Assert.AreEqual("2 matched", new Call(t, new object[]{2}, null).Expand());
+            Assert.AreEqual("1 matched", new Call(t, [1], null).Expand());
+            Assert.AreEqual("2 matched", new Call(t, [2], null).Expand());
         }
 
         [TestMethod]
         public void UpwardUnifyTest1()
         {
             var up = new CompoundTask("up", 1);
-            up.AddMethod(1, new object[] {"xyz"}, new LocalVariableName[0],
+            up.AddMethod(1, ["xyz"], [],
                 null, 0, null, 1);
 
             var down = new CompoundTask("down", 1);
             // ReSharper disable once InconsistentNaming
             var X = new LocalVariableName("X", 0);
-            down.AddMethod(1, new object[] {X}, new[] { X },
+            down.AddMethod(1, [X], [X],
                 TestUtils.Sequence(new object[] {toString, X}, new[] {"matched"}), 0,
                 null, 1);
 
             var test = new CompoundTask("test", 0);
             // ReSharper disable once InconsistentNaming
             var Y = new LocalVariableName("Y", 0);
-            test.AddMethod(1, new object[0], new [] { Y },
+            test.AddMethod(1, [], [Y],
                 TestUtils.Sequence(new object[] { up, Y }, new object[] { down, Y } ), 0,
                 null, 1);
 
-            Assert.AreEqual("Xyz matched", new Call(test, new object[0], null).Expand());
+            Assert.AreEqual("Xyz matched", new Call(test, [], null).Expand());
         }
 
         [TestMethod]
@@ -128,9 +132,9 @@ namespace Tests
                 }
             }
 
-            Assert.IsTrue(gotA > 0);
-            Assert.IsTrue(gotB > 0);
-            Assert.IsTrue(gotC > 0);
+            Assert.IsGreaterThan(0, gotA);
+            Assert.IsGreaterThan(0, gotB);
+            Assert.IsGreaterThan(0, gotC);
         }
 
         [TestMethod]
@@ -167,7 +171,7 @@ namespace Tests
                 }
             }
 
-            Assert.IsTrue(gotA > 99);
+            Assert.IsGreaterThan(99, gotA);
         }
 
         [TestMethod]

@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Step;
-using Step.Interpreter;
+﻿using Step;
+using Step.Exceptions;
+using Step.Tasks.Primitives;
 
 namespace Tests
 {

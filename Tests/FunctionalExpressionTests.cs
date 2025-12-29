@@ -1,6 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Step;
+﻿using Step;
+using Step.Binding;
 using Step.Interpreter;
+using Step.Output;
+using Step.Terms;
 using static Step.Interpreter.FunctionalExpressionParser;
 
 namespace Tests

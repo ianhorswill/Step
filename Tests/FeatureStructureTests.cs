@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using Step.Interpreter;
-
-namespace Step.Tests
+﻿namespace Step.Tests
 {
     [TestClass()]
     public class FeatureStructureTests

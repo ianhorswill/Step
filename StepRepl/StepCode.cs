@@ -9,8 +9,14 @@ using Step;
 using Step.Interpreter;
 using Step.Output;
 using Step.Utilities;
+using Step.Terms;
 using System.Collections.Generic;
 using System.Linq;
+using Step.Tasks.Primitives;
+using Step.Exceptions;
+using Step.Binding;
+using Step.ReplSupport;
+using Step.Tasks;
 
 namespace StepRepl
 {
@@ -74,14 +80,14 @@ namespace StepRepl
         public static string ProjectName => Path.GetFileName(ProjectDirectory);
 
         public static bool RetainState = true;
-        public static Step.Interpreter.Task? CommandProcessor;
+        public static Step.Tasks.Task? CommandProcessor;
 
         private static void AddDocumentation(string taskName, string section, string docstring) =>
-            (((Step.Interpreter.Task) ReplUtilities[taskName]!)!).Documentation(section, docstring);
+            (((Step.Tasks.Task) ReplUtilities[taskName]!)!).Documentation(section, docstring);
 
         static StepCode()
         {
-            Step.EnvironmentOption.Handler += EnvironmentOption;
+            Step.ReplSupport.EnvironmentOption.Handler += EnvironmentOption;
             StepThread.WrapExceptions = true;
 
             ReplUtilities = new Module("ReplUtilities", Module.Global)
@@ -241,7 +247,7 @@ namespace StepRepl
                     break;
 
                 case "commandProcessor":
-                    CommandProcessor = ((Step.Interpreter.Task)args[0]!)!;
+                    CommandProcessor = ((Step.Tasks.Task)args[0]!)!;
                     break;
             }
         }
@@ -338,7 +344,7 @@ namespace StepRepl
 
         public static Task<string> Eval(object?[] call)
         {
-            CurrentStepThread = new StepThread(Module, State, (Step.Interpreter.Task)call[0]!, call.Skip(1).ToArray());
+            CurrentStepThread = new StepThread(Module, State, (Step.Tasks.Task)call[0]!, call.Skip(1).ToArray());
             
             return Eval(CurrentStepThread);
         }

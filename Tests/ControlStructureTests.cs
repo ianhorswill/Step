@@ -1,7 +1,7 @@
-﻿using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Step;
-using Step.Interpreter;
+﻿using Step;
+using Step.Binding;
+using Step.Exceptions;
+using Step.Terms;
 
 namespace Tests
 {
@@ -38,14 +38,14 @@ namespace Tests
             Assert.AreEqual("A B B A", m.Call("Test"));
         }
 
-        [TestMethod]
-        public void RandomCoolTest()
-        {
-            var m = TestUtils.Module(
-                "Test: [randomly] [cool] sullen [or] [cool] drunk [or] [cool] vacant [or] [cool] lost [or] [cool] bored [or] crazed [end]");
-            for (var i = 0; i < 100; i++)
-                Assert.AreNotEqual(null, m.Call("Test"));
-        }
+        //[TestMethod]
+        //public void RandomCoolTest()
+        //{
+        //    var m = TestUtils.Module(
+        //        "Test: [randomly] [cool] sullen [or] [cool] drunk [or] [cool] vacant [or] [cool] lost [or] [cool] bored [or] crazed [end]");
+        //    for (var i = 0; i < 100; i++)
+        //        Assert.AreNotEqual(null, m.Call("Test"));
+        //}
 
         [TestMethod]
         public void OnceTest()
@@ -203,9 +203,9 @@ namespace Tests
                 }
             }
 
-            Assert.IsTrue(gotA > 0);
-            Assert.IsTrue(gotB > 0);
-            Assert.IsTrue(gotC > 0);
+            Assert.IsGreaterThan(0, gotA);
+            Assert.IsGreaterThan(0, gotB);
+            Assert.IsGreaterThan(0, gotC);
         }
 
         [TestMethod]

@@ -31,13 +31,18 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
+using Step.Binding;
+using Step.Exceptions;
 using Step.Interpreter;
+using Step.Interpreter.Steps;
 using Step.Output;
 using Step.Parser;
+using Step.ReplSupport;
+using Step.Tasks;
+using Step.Tasks.Primitives;
+using Step.Terms;
 using Step.Utilities;
 using ArgumentException = System.ArgumentException;
-using Task = Step.Interpreter.Task;
 
 [assembly: InternalsVisibleTo("Tests")]
 
@@ -394,7 +399,7 @@ var output = TextBuffer.NewEmpty();
             var output = new TextBuffer(0);
             var env = new BindingEnvironment(this, null!, null, state);
 
-            return t.Call(args, output, env, null, Interpreter.Step.SucceedContinuation);
+            return t.Call(args, output, env, null, Interpreter.Steps.Step.SucceedContinuation);
         }
 
         /// <summary>
@@ -493,7 +498,7 @@ var output = TextBuffer.NewEmpty();
         /// </summary>
         /// <exception cref="CallFailedException">If call to task fails</exception>
         /// <exception cref="ArgumentInstantiationException">If task fails to bind the result variable</exception>
-        public (T1,T2) SolveFor<T1,T2>(Task task, object?[] args, LogicVariable resultVar1, LogicVariable resultVar2, State? state = null)
+        public (T1,T2) SolveFor<T1,T2>(Tasks.Task task, object?[] args, LogicVariable resultVar1, LogicVariable resultVar2, State? state = null)
         {
             if (state == null)
                 state = State.Empty;
@@ -686,14 +691,14 @@ var output = TextBuffer.NewEmpty();
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        private void RunLoadTimeInitialization(object?[] pattern, LocalVariableName[]? locals, Interpreter.Step? chain, string? path, int line)
+        private void RunLoadTimeInitialization(object?[] pattern, LocalVariableName[]? locals, Interpreter.Steps.Step? chain, string? path, int line)
         {
             if (pattern.Length != 0)
                 throw new SyntaxError("Initially command cannot take arguments", path, line);
             State bindings = State.Empty;
             var fakeInitiallyMethod = new Method(new CompoundTask("initially", 0), 1, Array.Empty<object?>(),
                 Array.Empty<LocalVariableName>(), null, path, line);
-            if (!Step.Interpreter.Step.Try(chain, new TextBuffer(0),
+            if (!Interpreter.Steps.Step.Try(chain, new TextBuffer(0),
                 new BindingEnvironment(this,
                     new MethodCallFrame(fakeInitiallyMethod, null, locals!.Select(name => new LogicVariable(name)).ToArray(), 
                         MethodCallFrame.CurrentFrame, MethodCallFrame.CurrentFrame)),
@@ -949,7 +954,7 @@ var output = TextBuffer.NewEmpty();
             if (--SearchLimit == 0)
             {
                 if (isCanceling)
-                    throw new TaskCanceledException();
+                    throw new System.Threading.Tasks.TaskCanceledException();
                 throw new StepTaskTimeoutException();
             }
             Trace?.Invoke(e, method, args, output, env);

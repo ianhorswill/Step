@@ -1,12 +1,15 @@
 ﻿@page "/"
-@using System.Diagnostics.CodeAnalysis
-@using Step
-@using Step.Interpreter
-@using Step.Output
-@using StepRepl.GraphVisualization
-@using Task = System.Threading.Tasks.Task
 @using System.Numerics
 @using System.Text.Json
+@using Step
+@using Step.Binding
+@using Step.Exceptions
+@using Step.Interpreter
+@using Step.Output
+@using Step.Tasks
+@using Step.Tasks.Primitives
+@using StepRepl.GraphVisualization
+@using Task = System.Threading.Tasks.Task
 @inject IJSRuntime JS
 
 <PageTitle>Step</PageTitle>
@@ -158,7 +161,7 @@
 
 @code {
     private static Module ReplUtilities = MakeReplUtilities();
-    private static Module UserModule;
+    private static Module UserModule = null!;
     internal static State State;
 
     private string command ="";

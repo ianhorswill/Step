@@ -27,7 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Step.Interpreter;
+using Step.Binding;
 using Step.Parser;
 
 namespace Step.Output

@@ -1,6 +1,10 @@
-﻿using System;
+﻿using Step.Terms;
+using System;
 using System.Diagnostics;
 using System.Text;
+using Step.Exceptions;
+using Step.Output;
+using Step.Binding;
 
 namespace Step.Interpreter
 {

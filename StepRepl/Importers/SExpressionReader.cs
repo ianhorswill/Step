@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Text;
 using Step;
-using Step.Interpreter;
+using Step.Tasks.Primitives;
 using Step.Utilities;
 
 namespace StepRepl.Importers

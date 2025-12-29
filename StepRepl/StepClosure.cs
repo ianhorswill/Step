@@ -1,5 +1,7 @@
 ﻿using Step;
-using Task = Step.Interpreter.Task;
+using Step.Binding;
+using Step.ReplSupport;
+using Task = Step.Tasks.Task;
 
 namespace Repl
 {

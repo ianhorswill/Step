@@ -24,10 +24,13 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Step.Binding;
+using Step.Interpreter.Steps;
 using Step.Output;
+using Step.Tasks;
+using Step.Terms;
 
 namespace Step.Interpreter
 {
@@ -64,14 +67,14 @@ namespace Step.Interpreter
         /// <summary>
         /// First Step in the linked list of steps constituting this method
         /// </summary>
-        public readonly Step? StepChain;
+        public readonly Steps.Step? StepChain;
 
         /// <summary>
         /// The relative probability of this method being tried first
         /// </summary>
         public readonly float Weight;
 
-        internal Method(CompoundTask task, float weight, object?[] argumentPattern, LocalVariableName[] localVariableNames, Step? stepChain, string? filePath, int lineNumber)
+        internal Method(CompoundTask task, float weight, object?[] argumentPattern, LocalVariableName[] localVariableNames, Steps.Step? stepChain, string? filePath, int lineNumber)
         {
             Task = task;
             Weight = weight;
@@ -91,7 +94,7 @@ namespace Step.Interpreter
         /// <param name="k">Continuation to call if method succeeds</param>
         /// <param name="pre">Predecessor frame</param>
         /// <returns>True if the method and its continuation succeeded</returns>
-        public bool Try(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? pre, Step.Continuation k)
+        public bool Try(object?[] args, TextBuffer output, BindingEnvironment env, MethodCallFrame? pre, Task.Continuation k)
         {
             // Make stack frame for locals
             var locals = new LogicVariable[LocalVariableNames.Length];
@@ -205,7 +208,7 @@ namespace Step.Interpreter
                     yield return a;
 
                 if (StepChain != null)
-                    foreach (var c in Step.CalleesOfChain(StepChain))
+                    foreach (var c in Steps.Step.CalleesOfChain(StepChain))
                         yield return c;
             }
         }
@@ -213,6 +216,6 @@ namespace Step.Interpreter
         /// <summary>
         /// All the Call steps inside this method
         /// </summary>
-        public IEnumerable<Call> Calls => StepChain == null ? Step.EmptyCallList : Step.CallsOfChain(StepChain);
+        public IEnumerable<Call> Calls => StepChain == null ? Steps.Step.EmptyCallList : Steps.Step.CallsOfChain(StepChain);
     }
 }

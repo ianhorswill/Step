@@ -3,7 +3,12 @@ using Step.Interpreter;
 using System;
 using System.IO;
 using Step;
+using Step.Tasks.Primitives;
 using Step.Utilities;
+using Step.Exceptions;
+using Step.Output;
+using Step.Binding;
+using Step.Tasks;
 
 namespace StepRepl
 {
@@ -128,7 +133,7 @@ namespace StepRepl
 
     private static bool CallInModule(object?[] args, TextBuffer output, BindingEnvironment env,
         MethodCallFrame? predecessor,
-        Step.Interpreter.Step.Continuation k)
+        Task.Continuation k)
     {
         ArgumentCountException.CheckAtLeast(nameof(CallInModule), 2, args, output);
         var call = ArgumentTypeException.Cast<object[]>(nameof(CallInModule), args[0], args, output);
@@ -173,7 +178,7 @@ namespace StepRepl
     }
 
     private static bool CallResult(object?[] args, TextBuffer output, BindingEnvironment env,
-        MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k)
+        MethodCallFrame? predecessor, Task.Continuation k)
     {
         ArgumentCountException.Check(nameof(CallResult), 2, args, output);
         var call = ArgumentTypeException.Cast<object?[]>(nameof(CallResult), args[0], args, output);

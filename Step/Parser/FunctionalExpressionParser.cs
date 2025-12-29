@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Step.Exceptions;
+using Step.Output;
 using Step.Parser;
+using Step.Terms;
 
 namespace Step.Interpreter
 {

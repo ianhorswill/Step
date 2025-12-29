@@ -1,14 +1,9 @@
 ﻿#nullable enable
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Step.Interpreter;
-using Step.Output;
+using Step.Interpreter.Steps;
 using Module = Step.Module;
 
 namespace StepRepl.Views;

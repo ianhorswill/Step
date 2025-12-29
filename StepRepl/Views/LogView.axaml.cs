@@ -1,7 +1,4 @@
-using System.Diagnostics.Tracing;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using StepRepl.ViewModels;
 

@@ -195,6 +195,7 @@ namespace StepRepl.GraphVisualization {
             PlaceComponents(bounds);
 
             TargetEdgeLength = 0.7f*(float)Math.Sqrt(bounds.Width * bounds.Height) / Graph.Diameter;
+            Ranks = null!;
         }
 
         private IBrush GetColorBrushByName(string colorName) => new SolidColorBrush(GetColorByName(colorName));
@@ -218,8 +219,8 @@ namespace StepRepl.GraphVisualization {
             public int? Rank;
             public bool PlacedInRank;
 
-            public List<GraphNode> Parents;
-            public List<GraphNode> Children;
+            public List<GraphNode> Parents = null!;
+            public List<GraphNode> Children = null!;
 
             public float ParentAverageX()
             {

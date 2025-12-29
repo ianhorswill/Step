@@ -1,5 +1,7 @@
-﻿using Step.Interpreter;
-using Task = System.Threading.Tasks.Task;
+﻿using Step.Binding;
+using Step.Exceptions;
+using Step.Tasks.Primitives;
+using Step.ReplSupport;
 
 namespace Step.Tests
 {
@@ -16,7 +18,7 @@ namespace Step.Tests
         }
 
         [TestMethod()]
-        public async Task StartAndAwait()
+        public async System.Threading.Tasks.Task StartAndAwait()
         {
             var m = Module.FromDefinitions("Test: [Write success]");
             for (var i = 0; i < 10; i++)
@@ -50,7 +52,7 @@ namespace Step.Tests
         //}
 
         [TestMethod()]
-        public async Task DebuggerStartAndAwait()
+        public async System.Threading.Tasks.Task DebuggerStartAndAwait()
         {
             var m = Module.FromDefinitions("Test: [Write success]");
             using var t = new StepThread(m, State.Empty, "Test");
@@ -61,7 +63,7 @@ namespace Step.Tests
         }
 
         [TestMethod()]
-        public async Task SingleStep()
+        public async System.Threading.Tasks.Task SingleStep()
         {
             var m = Module.FromDefinitions("Test: [Sub] [Sub] [Write success]", "Sub.");
             using var t = new StepThread(m, State.Empty, "Test");
@@ -79,7 +81,7 @@ namespace Step.Tests
         }
 
         [TestMethod()]
-        public async Task NonDebuggerBurnInTest()
+        public async System.Threading.Tasks.Task NonDebuggerBurnInTest()
         {
             var m = Module.FromDefinitions("Test: [Sub] [Sub] [Write success]",
                 "Sub.",
@@ -149,7 +151,7 @@ namespace Step.Tests
 
         private Task<List<(Module.MethodTraceEvent, string)>> lastExecutionTraceTask;
 
-        public async Task DebuggerBurnInCycle(Module m)
+        public async System.Threading.Tasks.Task DebuggerBurnInCycle(Module m)
         {
 
             {

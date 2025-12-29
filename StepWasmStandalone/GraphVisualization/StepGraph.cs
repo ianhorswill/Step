@@ -1,11 +1,14 @@
-﻿#nullable enable
-using System.Text;
+﻿using System.Text;
 using GraphViz;
 using Step;
-using Step.Interpreter;
+using Step.Binding;
+using Step.Exceptions;
 using Step.Output;
-using Task = Step.Interpreter.Task;
+using Step.Tasks.Primitives;
+using Step.Terms;
+using Task = Step.Tasks.Task;
 
+// ReSharper disable once CheckNamespace
 namespace StepRepl.GraphVisualization
 {
     internal static class StepGraph
@@ -46,6 +49,7 @@ namespace StepRepl.GraphVisualization
             }
 
             foreach (var n in graph.Nodes)
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 if (graph.NodeAttributes[n] != null
                     && graph.NodeAttributes.TryGetValue(n, out var attrs)
                     && attrs.TryGetValue("fillcolor", out var color))
@@ -57,9 +61,8 @@ namespace StepRepl.GraphVisualization
         }
 
         private static
-            Step.Interpreter.GeneralPrimitive.Implementation
-            VisualizeGraphImplementation(bool generateDiv) => (object?[] args, TextBuffer o, BindingEnvironment e,
-            MethodCallFrame? predecessor, Step.Interpreter.Step.Continuation k) =>
+            GeneralPrimitive.Implementation
+            VisualizeGraphImplementation(bool generateDiv) => (args, o, e, predecessor, k) =>
         {
             ArgumentCountException.CheckAtLeast(VisualizeGraph, 1, args, o);
             var edges = ArgumentTypeException.Cast<Task>(VisualizeGraph, args[0], args, o);
@@ -109,7 +112,7 @@ namespace StepRepl.GraphVisualization
                         graph.NodeLabel = node =>
                         {
                             var label = "unknown label";
-                            nodeLabel.Call(new object?[] { node, labelVar }, o, e, predecessor, (_, u, s, _) =>
+                            nodeLabel.Call([node, labelVar], o, e, predecessor, (_, u, s, _) =>
                             {
                                 var env = new BindingEnvironment(e, u, s);
                                 label = StringifyStepObject(env.Resolve(labelVar));
@@ -190,11 +193,11 @@ namespace StepRepl.GraphVisualization
                             childArgs[0] = node;
 
                             // Follow edges of node
-                            edges.Call(childArgs, o, nenv, predecessor, (_, u, s, _) =>
+                            edges.Call(childArgs, o, nenv, predecessor, (_, u, _, _) =>
                             {
                                 var env = new BindingEnvironment(nenv, u, nenv.State);
                                 var start = node;
-                                var end = env.Resolve(endNodeVar, env.Unifications, true);
+                                var end = env.Resolve(endNodeVar, env.Unifications, true)!;
 
                                 if (!graph.Nodes.Contains(end))
                                 {
@@ -213,7 +216,7 @@ namespace StepRepl.GraphVisualization
                                     ? (bool)env.Resolve(directedVar, env.Unifications, true)!
                                     : directed;
                                 var edge = new Graph<object>.Edge(
-                                    start!, end!,
+                                    start, end,
                                     thisEdgeDirected,
                                     label,
                                     color != null ? new Dictionary<string, object>() { { "color", color } } : null);

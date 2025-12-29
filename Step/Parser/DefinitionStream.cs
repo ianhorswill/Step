@@ -28,8 +28,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using Step.Interpreter;
+using Step.Exceptions;
+using Step.Interpreter.Steps;
 using Step.Output;
+using Step.Tasks;
+using Step.Tasks.Primitives;
+using Step.Terms;
 
 namespace Step.Parser
 {
@@ -81,7 +85,7 @@ namespace Step.Parser
             this.expressionStream = expressionStream;
             this.expressions = expressionStream.Expressions.GetEnumerator();
             MoveNext();
-            chainBuilder = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
+            chainBuilder = new Interpreter.Steps.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
             groupExpander = new DeclarationGroupExpander(module);
         }
 
@@ -459,9 +463,9 @@ namespace Step.Parser
         /// These are represented in the token stream as complex objects, so we don't have to deal with curly braces;
         /// the front end has already done that.
         /// </summary>
-        private FeatureStructure ParseFeatureStructure(IList<object> elementDeclarations)
+        private FeatureStructure ParseFeatureStructure(IList<object?> elementDeclarations)
         {
-            elementDeclarations = elementDeclarations.Where(e => !e.Equals("\n")).ToArray();
+            elementDeclarations = elementDeclarations.Where(e => e == null || !e.Equals("\n")).ToArray();
             List<(string, object?)> bindings = new();
 
             int i;
@@ -472,17 +476,18 @@ namespace Step.Parser
                 if (feature == null)
                     throw new SyntaxError(
                         Writer.TermToString(featureSpec) + " is not a valid feature name in a { } expression." +
-                        featureSpec.GetType().Name, feature, lineNumber);
-                if (!elementDeclarations[i + 1].Equals(":"))
+                        (featureSpec == null ? "null" : featureSpec.GetType().Name), feature, lineNumber);
+                var nextElement = elementDeclarations[i + 1];
+                if (nextElement == null || !nextElement.Equals(":"))
                     throw new SyntaxError($"Feature name {feature} should end with a colon.", SourcePath, lineNumber);
 
                 var valueExp = elementDeclarations[i + 2];
-                if (valueExp.Equals("\"") || valueExp.Equals("“"))
+                if (valueExp != null && (valueExp.Equals("\"") || valueExp.Equals("“")))
                 {
                     var text = new List<string>();
-                    for (var j = i + 3; j < elementDeclarations.Count && !elementDeclarations[j].Equals("\"") && !elementDeclarations[j].Equals("”"); j++)
+                    for (var j = i + 3; j < elementDeclarations.Count && !elementDeclarations[j]!.Equals("\"") && !elementDeclarations[j]!.Equals("”"); j++)
                     {
-                        text.Add(elementDeclarations[j].ToString()!);
+                        text.Add((elementDeclarations[j]??"null").ToString()!);
                         i++;
                     }
 
@@ -511,7 +516,7 @@ namespace Step.Parser
         /// </summary>
         internal IEnumerable<(StateVariableName task, float weight, object?[] pattern,
                 LocalVariableName[]? locals, 
-                Interpreter.Step? chain, 
+                Interpreter.Steps.Step? chain, 
                 CompoundTask.TaskFlags flags,
                 StateVariableName? metaTask,
                 List<KeyValuePair<object, object?>>? propertyList,
@@ -568,14 +573,14 @@ namespace Step.Parser
             chainBuilder.Clear();
         }
 
-        private readonly Interpreter.Step.ChainBuilder chainBuilder;
+        private readonly Interpreter.Steps.Step.ChainBuilder chainBuilder;
 
         /// <summary>
         /// Read and parse the next method definition
         /// </summary>
         private (StateVariableName task, float weight, object?[] pattern,
             LocalVariableName[]? locals, 
-            Interpreter.Step? chain, 
+            Interpreter.Steps.Step? chain, 
             CompoundTask.TaskFlags flags,
             StateVariableName? metaTask,
             List<KeyValuePair<object, object?>>? propertyList,
@@ -615,7 +620,7 @@ namespace Step.Parser
 
         private (StateVariableName task, float weight, object?[] pattern, 
             LocalVariableName[]? locals,
-            Interpreter.Step? chain,
+            Interpreter.Steps.Step? chain,
             CompoundTask.TaskFlags flags,
             StateVariableName? metaTask,
             List<KeyValuePair<object, object?>>? propertyList, 
@@ -646,7 +651,7 @@ namespace Step.Parser
         {
             var weight = 1f;
             StateVariableName? metaTask = null;
-            List<KeyValuePair<object, object?>> propertyList = null;
+            List<KeyValuePair<object, object?>> propertyList = [];
             void ThrowInvalid(object[] attr)
             {
                 throw new SyntaxError($"Invalid task attribute {Writer.TermToString(attr)}", SourceFile, expressionStream.LineNumber);
@@ -749,7 +754,6 @@ namespace Step.Parser
 
             void AddProperty(object propName, object? propValue)
             {
-                propertyList ??= new();
                 propertyList.Add(
                     new(propName,
                         NormalizePropertyValue(propValue)));
@@ -900,7 +904,7 @@ namespace Step.Parser
             if (ignoreCurrentToken)
                 Get();
 
-            var featureSpecs = new List<object?> { };
+            var featureSpecs = new List<object?>();
 
             while ((Peek == null || !Peek.Equals("}")) && !end)
             {
@@ -955,7 +959,7 @@ namespace Step.Parser
                 _ => task
             };
 
-        private void ReadBody(Interpreter.Step.ChainBuilder chain, Func<bool> endPredicate)
+        private void ReadBody(Interpreter.Steps.Step.ChainBuilder chain, Func<bool> endPredicate)
         {
             while (!endPredicate())
             {
@@ -976,7 +980,7 @@ namespace Step.Parser
         /// <summary>
         /// If we're looking at a method call, compile it.
         /// </summary>
-        private void TryProcessMethodCall(Interpreter.Step.ChainBuilder chain)
+        private void TryProcessMethodCall(Interpreter.Steps.Step.ChainBuilder chain)
         {
             if (AtKeywordMarker)
                 // Not a call
@@ -1034,7 +1038,7 @@ namespace Step.Parser
                     break;
 
                 case "now":
-                    if (expression.Length >= 3 && expression[2].Equals("="))
+                    if (expression.Length >= 3 && expression[2].EqualsNullTolerant("="))
                         AssignmentStep.FromExpression(chain, expression, SourceFile, lineNumber);
                     else
                         FluentUpdateStep.FromExpression(chain, CanonicalizeArglist(expression), Module, SourceFile, lineNumber);
@@ -1068,7 +1072,7 @@ namespace Step.Parser
                         IncrementReferenceCount(local);
                     }
                     var target = isLocal ? (object?) local : StateVariableName.Named(targetName);
-                    var args = CanonicalizeArglist(expression.Skip(1).Where(token => !token.Equals("\n")));
+                    var args = CanonicalizeArglist(expression.Skip(1).Where(token => !token.EqualsNullTolerant("\n")));
                     chain.AddStep(new Call(target!, args, null));
                     break;
             }
@@ -1080,10 +1084,10 @@ namespace Step.Parser
         /// Read the text of a branch of a [randomly] or [firstOf] expression
         /// </summary>
         /// <returns></returns>
-        private Interpreter.Step ReadAlternativeBranches(string type)
+        private Interpreter.Steps.Step ReadAlternativeBranches(string type)
         {
-            var chains = new List<Interpreter.Step?>();
-            var chain = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
+            var chains = new List<Interpreter.Steps.Step?>();
+            var chain = new Interpreter.Steps.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
             while (!ExplicitEndToken)
             {
                 Get(); // Skip keyword marker
@@ -1103,8 +1107,8 @@ namespace Step.Parser
         /// <returns></returns>
         private BranchStep ReadCase(object controlVar)
         {
-            var chains = new List<Interpreter.Step?>();
-            var chain = new Interpreter.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
+            var chains = new List<Interpreter.Steps.Step?>();
+            var chain = new Interpreter.Steps.Step.ChainBuilder(GetLocal, Canonicalize, CanonicalizeArglist);
             var arglist = new List<object>();
             while (!ExplicitEndToken)
             {
@@ -1143,7 +1147,7 @@ namespace Step.Parser
         /// <summary>
         /// If we're looking at a mention expression (?x, ?x/Foo, ?x/Foo/Bar, etc.), compile it.
         /// </summary>
-        private void TryProcessMentionExpression(Interpreter.Step.ChainBuilder chain)
+        private void TryProcessMentionExpression(Interpreter.Steps.Step.ChainBuilder chain)
         {
             if (EndOfDefinition)
                 return;
@@ -1183,7 +1187,7 @@ namespace Step.Parser
         /// </summary>
         /// <param name="chain">Chain to add to</param>
         /// <param name="variable">The variable before the /</param>
-        private void ReadComplexMentionExpression(Interpreter.Step.ChainBuilder chain, IVariableName variable)
+        private void ReadComplexMentionExpression(Interpreter.Steps.Step.ChainBuilder chain, IVariableName variable)
         {
 // This is a complex "/" expression
             while (Equals(Peek, "/"))
@@ -1219,7 +1223,7 @@ namespace Step.Parser
         /// <param name="chain">Chain to add to</param>
         /// <param name="variable">Result of the expression from before the last "/"</param>
         /// <param name="targetVar">Task to call on local</param>
-        private void ReadMentionExpressionTail(Interpreter.Step.ChainBuilder chain, IVariableName variable, object targetVar)
+        private void ReadMentionExpressionTail(Interpreter.Steps.Step.ChainBuilder chain, IVariableName variable, object targetVar)
         {
             AddMentionExpressionTail(chain, targetVar, variable);
             while (Equals(Peek, "+"))
@@ -1236,11 +1240,11 @@ namespace Step.Parser
         }
 
         static readonly StateVariableName BinaryTask = StateVariableName.Named("BinaryTask");
-        private void AddMentionExpressionTail(Interpreter.Step.ChainBuilder chain, object target, IVariableName local)
+        private void AddMentionExpressionTail(Interpreter.Steps.Step.ChainBuilder chain, object target, IVariableName local)
         {
             var temp = GetFreshLocal("temp");
             chain.AddStep(new BranchStep(target.ToString(),
-                new Interpreter.Step[]{ 
+                new Interpreter.Steps.Step[]{ 
                     Call.MakeCall(BinaryTask, target,
                     Call.MakeCall(target, local, temp, 
                         Call.MakeCall(Call.MentionHook, temp, null))),
@@ -1252,7 +1256,7 @@ namespace Step.Parser
         /// <summary>
         /// If this is a sequence of fixed text tokens, compile them into an EmitStep.
         /// </summary>
-        private void TryProcessTextBlock(Interpreter.Step.ChainBuilder chain)
+        private void TryProcessTextBlock(Interpreter.Steps.Step.ChainBuilder chain)
         {
             tokensToEmit.Clear();
             if (Peek is TupleExpression)

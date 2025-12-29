@@ -25,7 +25,11 @@
 
 using System.Collections;
 using Step;
+using Step.Binding;
 using Step.Interpreter;
+using Step.Output;
+using Step.Tasks.Primitives;
+using Step.Terms;
 
 namespace Tests
 {
@@ -35,9 +39,9 @@ namespace Tests
         private readonly SimplePredicate<int> positive = new SimplePredicate<int>("Positive", n => n > 0);
         private static readonly DeterministicTextGenerator<object> ToStringPrimitive = new DeterministicTextGenerator<object>("ToString", (x) => new []{ x.ToString() });
 
-        bool Succeeds(Step.Interpreter.Step s)
+        bool Succeeds(Step.Interpreter.Steps.Step s)
         {
-            return s.Try(TextBuffer.NewEmpty(), BindingEnvironment.NewEmpty(), Step.Interpreter.Step.SucceedContinuation, null);
+            return s.Try(TextBuffer.NewEmpty(), BindingEnvironment.NewEmpty(), Step.Interpreter.Steps.Step.SucceedContinuation, null);
         }
 
         [TestMethod]

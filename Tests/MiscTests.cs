@@ -1,6 +1,5 @@
-﻿using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Step;
+﻿using Step;
+using Step.Exceptions;
 
 namespace Tests
 {
@@ -84,7 +83,7 @@ namespace Tests
             var m = Module.FromDefinitions("Test: [Test]");
             Assert.ThrowsExactly<TaskCanceledException>(() =>
             {
-                var t = Task.Factory.StartNew(
+                var t = System.Threading.Tasks.Task.Factory.StartNew(
                     () =>
                     {
                         tok.Register(Module.Cancel);

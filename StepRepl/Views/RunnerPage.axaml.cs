@@ -16,6 +16,8 @@ using Step;
 using Step.Interpreter;
 using Step.Parser;
 using Task = System.Threading.Tasks.Task;
+using Step.ReplSupport;
+using Step.Tasks;
 
 namespace StepRepl.Views;
 

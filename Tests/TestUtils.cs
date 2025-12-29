@@ -1,8 +1,11 @@
-﻿using System;
-using System.Linq;
-using Step;
+﻿using Step;
+using Step.Binding;
 using Step.Interpreter;
+using Step.Interpreter.Steps;
+using Step.Output;
+using Step.Terms;
 
+[assembly: DoNotParallelize]
 namespace Tests
 {
     public static class TestUtils
@@ -14,7 +17,7 @@ namespace Tests
             return m;
         }
 
-        public static string Expand(this Step.Interpreter.Step step, Module g)
+        public static string Expand(this Step.Interpreter.Steps.Step step, Module g)
         {
             string result = null;
             step.Try(TextBuffer.NewEmpty(),
@@ -29,14 +32,14 @@ namespace Tests
             return result;
         }
 
-        public static string Expand(this Step.Interpreter.Step step)
+        public static string Expand(this Step.Interpreter.Steps.Step step)
         {
             return step.Expand(new Module("test"));
         }
 
-        internal static Step.Interpreter.Step Sequence(params object[] steps)
+        internal static Step.Interpreter.Steps.Step Sequence(params object[] steps)
         {
-            Step.Interpreter.Step next = null;
+            Step.Interpreter.Steps.Step next = null;
             for (var i = steps.Length - 1; i >= 0; i--)
             {
                 var step = steps[i];

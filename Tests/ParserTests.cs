@@ -23,11 +23,11 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System.Net.Mail;
 using Step;
 using Step.Parser;
-using Step.Interpreter;
 using Step.Output;
+using Step.Terms;
+using Step.Tasks;
 
 namespace Tests
 {
@@ -58,7 +58,7 @@ namespace Tests
                 // ReSharper restore StringLiteralTypo
                 // ReSharper disable once StringLiteralTypo
                 .Warnings().Where(w => w.Contains("ingleton")).ToArray();
-            Assert.AreEqual(0, warnings.Length);
+            Assert.IsEmpty(warnings);
         }
         
         [TestMethod]
@@ -97,7 +97,7 @@ namespace Tests
                 if (output == null)
                     output = input;
                 var tokens = new TextFileTokenStream(new StringReader(input), null).Tokens.ToArray();
-                Assert.AreEqual(expectedLength, tokens.Length);
+                Assert.HasCount(expectedLength, tokens);
                 Assert.AreEqual(output, tokens.Untokenize(new FormattingOptions() { Capitalize = false }));
             }
 
@@ -121,7 +121,7 @@ namespace Tests
                 if (output == null)
                     output = input;
                 var tokens = new ExpressionStream(new StringReader(input), null).Expressions.Cast<string>().ToArray();
-                Assert.AreEqual(expectedLength, tokens.Length);
+                Assert.HasCount(expectedLength, tokens);
                 Assert.AreEqual(output, tokens.Untokenize(new FormattingOptions() { Capitalize = false }));
             }
 
@@ -137,7 +137,7 @@ namespace Tests
             void Test(string input, params object[] expectedResult)
             {
                 var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
-                Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
+                Assert.HasCount(expectedResult.Length, expressions, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
                     var expected = expectedResult[i];
@@ -146,7 +146,7 @@ namespace Tests
                     {
                         if (actual is object[] actualArray)
                         {
-                            Assert.AreEqual(array.Length, actualArray.Length, $"Output expression is unexpected length at position {i}");
+                            Assert.HasCount(array.Length, actualArray, $"Output expression is unexpected length at position {i}");
                             for (var j = 0; j < array.Length; j++)
                                 Assert.AreEqual(array[j], actualArray[j], $"Mismatch in output at position {i}, element number {j}");
                         } else
@@ -168,7 +168,7 @@ namespace Tests
             void Test(string input, params object[] expectedResult)
             {
                 var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
-                Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
+                Assert.HasCount(expectedResult.Length, expressions, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
                     var expected = expectedResult[i];
@@ -177,7 +177,7 @@ namespace Tests
                     {
                         if (actual is object[] actualArray)
                         {
-                            Assert.AreEqual(array.Length, actualArray.Length, $"Output expression is unexpected length at position {i}");
+                            Assert.HasCount(array.Length, actualArray, $"Output expression is unexpected length at position {i}");
                             for (var j = 0; j < array.Length; j++)
                                 Assert.AreEqual(array[j], actualArray[j], $"Mismatch in output at position {i}, element number {j}");
                         } else
@@ -260,7 +260,7 @@ GenericIncompatibility snoring."));
             void Test(string input, params object[] expectedResult)
             {
                 var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
-                Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
+                Assert.HasCount(expectedResult.Length, expressions, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
                     var expected = expectedResult[i];
@@ -269,7 +269,9 @@ GenericIncompatibility snoring."));
                     {
                         if (actual is object[] actualArray)
                         {
+#pragma warning disable MSTEST0037
                             Assert.AreEqual(array.Length, actualArray.Length, $"Output expression is unexpected length at position {i}");
+#pragma warning restore MSTEST0037
                             for (var j = 0; j < array.Length; j++)
                                 Assert.AreEqual(array[j], actualArray[j], $"Mismatch in output at position {i}, element number {j}");
                         } else
@@ -288,7 +290,7 @@ GenericIncompatibility snoring."));
             void Test(string input, params object[] expectedResult)
             {
                 var expressions = new ExpressionStream(new StringReader(input), null).Expressions.ToArray();
-                Assert.AreEqual(expectedResult.Length, expressions.Length, "Output is of unexpected length");
+                Assert.HasCount(expectedResult.Length, expressions, "Output is of unexpected length");
                 for (var i = 0; i < expectedResult.Length; i++)
                 {
                     var expected = expectedResult[i];
@@ -297,7 +299,7 @@ GenericIncompatibility snoring."));
                     {
                         if (actual is object[] actualArray)
                         {
-                            Assert.AreEqual(array.Length, actualArray.Length, $"Output expression is unexpected length at position {i}");
+                            Assert.HasCount(array.Length, actualArray, $"Output expression is unexpected length at position {i}");
                             for (var j = 0; j < array.Length; j++)
                                 Assert.AreEqual(array[j], actualArray[j], $"Mismatch in output at position {i}, element number {j}");
                         } else
@@ -449,7 +451,7 @@ a
 b
 [end]");
             var expected = new[] {"Foo", ":", "\n", "a", "\n", "\n", "\n", "b", "\n", "[", "end", "]"};
-            Assert.AreEqual(actual.Length, expected.Length);
+            Assert.HasCount(expected.Length, actual);
             for (var i = 0; i < actual.Length; i++)
                 Assert.AreEqual(expected[i], actual[i]);
         }
@@ -460,7 +462,7 @@ b
             var actual = TextFileTokenStream.Tokenize(@"Test: foo  # comment
 Baz: baz");
             var expected = new[] { "Test", ":", "foo", "\n", "Baz", ":", "baz" };
-            Assert.AreEqual(actual.Length, expected.Length);
+            Assert.HasCount(expected.Length, actual);
             for (var i = 0; i < actual.Length; i++)
                 Assert.AreEqual(expected[i], actual[i]);
         }

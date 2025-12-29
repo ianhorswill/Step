@@ -1,5 +1,6 @@
 ﻿using System.Collections;
-using Step.Interpreter;
+using Step.Binding;
+using Step.Terms;
 
 namespace Step.Tests
 {
@@ -15,7 +16,7 @@ namespace Step.Tests
             Assert.AreEqual(2, p2.First);
             var p3 = (Pair)p2.Rest;
             Assert.AreEqual(3, p3.First);
-            Assert.IsTrue(((IList)p3.Rest).Count == 0);
+            Assert.IsEmpty((IList)p3.Rest!);
         }
 
         [TestMethod()]

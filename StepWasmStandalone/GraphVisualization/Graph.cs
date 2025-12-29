@@ -1,9 +1,4 @@
-﻿#nullable enable
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace GraphViz
@@ -101,7 +96,7 @@ namespace GraphViz
             o.Write('"');
         }
 
-        public abstract IEnumerable<(object Node, Dictionary<string, object> Attributes, string Label)> NodesUntyped { get; }
+        public abstract IEnumerable<(object Node, Dictionary<string, object?> Attributes, string Label)> NodesUntyped { get; }
         public abstract IEnumerable<(object From, object To, Dictionary<string, object>? Attributes, bool IsDirected, string? Label)> EdgesUntyped { get; }
 
         public abstract float UndirectedDistance(object from, object to);
@@ -174,12 +169,12 @@ namespace GraphViz
         /// <summary>
         /// The attributes assigned to a given node
         /// </summary>
-        public Dictionary<T, Dictionary<string, object>>
+        public Dictionary<T, Dictionary<string, object?>>
             NodeAttributes;
 
         public bool Hierarchical;
 
-        public override IEnumerable<(object Node, Dictionary<string, object> Attributes, string Label)> NodesUntyped =>
+        public override IEnumerable<(object Node, Dictionary<string, object?> Attributes, string Label)> NodesUntyped =>
             nodes.Select(n => ((object)n, NodeAttributes[n], NodeLabel(n)));
 
         public override
@@ -199,7 +194,7 @@ namespace GraphViz
             IdOf = new Dictionary<T, string>(comparer);
             NodeIndex = new Dictionary<T, int>(comparer);
             nodes = new HashSet<T>(comparer);
-            NodeAttributes = new Dictionary<T, Dictionary<string, object>>(comparer);
+            NodeAttributes = new Dictionary<T, Dictionary<string, object?>>(comparer);
         }
 
         /// <summary>
@@ -212,7 +207,7 @@ namespace GraphViz
                 return;
             NodeIndex[n] = nodes.Count;
             nodes.Add(n);
-            NodeAttributes[n] = new Dictionary<string, object>();
+            NodeAttributes[n] = new Dictionary<string, object?>();
             if (DefaultNodeAttributes != null)
                 foreach (var p in DefaultNodeAttributes(n))
                     NodeAttributes[n][p.Key] = p.Value;
@@ -392,7 +387,7 @@ namespace GraphViz
             o.Write(" [");
             o.Write(" label = ");
             WriteAttribute(NodeLabel(n), o);
-            WriteAttributeList(NodeAttributes[n], " ", null, o);
+            WriteAttributeList(NodeAttributes[n]!, " ", null, o);
             o.WriteLine("];");
         }
         #endregion

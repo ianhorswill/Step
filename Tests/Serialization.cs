@@ -1,7 +1,8 @@
 ﻿using System.Collections;
 using Step;
-using Step.Interpreter;
+using Step.Binding;
 using Step.Serialization;
+using Step.Terms;
 
 namespace Tests
 {
@@ -26,7 +27,9 @@ namespace Tests
 
             if (a is object[] ta && b is object[] tb)
             {
+#pragma warning disable MSTEST0037
                 Assert.AreEqual(ta.Length, tb.Length);
+#pragma warning restore MSTEST0037
                 for (var i = 0; i < ta.Length; i++)
                     AssertTreeEqual(ta[i], tb[i]);
                 return;

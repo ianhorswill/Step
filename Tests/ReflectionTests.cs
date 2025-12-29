@@ -1,5 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Step;
+﻿using Step;
+using Step.Binding;
 
 namespace Tests
 {

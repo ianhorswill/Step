@@ -23,11 +23,10 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using System;
 using System.Collections;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
-using Step.Interpreter;
+using Step.Binding;
+using Step.Exceptions;
 using Step.Utilities;
 
 namespace Tests
@@ -162,10 +161,10 @@ namespace Tests
             m.AddDefinitions("[fallible] Test ?x ?y: [= ?x ?z] [= ?z ?y] succeeded",
                 "[fallible] TextX ?x: [Test ?x ?y] [= ?y 1] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 1));
-            Assert.AreEqual(null, m.Call("Test", 1, 2));
+            Assert.IsNull(m.Call("Test", 1, 2));
             
             Assert.AreEqual("Succeeded Succeeded", m.Call("TextX", 1));
-            Assert.AreEqual(null, m.Call("TextX", 2));
+            Assert.IsNull(m.Call("TextX", 2));
         }
 
         [TestMethod]
@@ -174,7 +173,7 @@ namespace Tests
             var m = new Module("test");
             m.AddDefinitions("[fallible] Test ?x ?y: [< ?x ?y] Succeeded");
             Assert.AreEqual("Succeeded", m.Call("Test", 1, 2));
-            Assert.AreEqual(null, m.Call("Test", 1, 1));
+            Assert.IsNull(m.Call("Test", 1, 1));
         }
 
         [TestMethod]
@@ -264,7 +263,9 @@ namespace Tests
         public void MakeManualTest()
         {
             Documentation.WriteHtmlReference(Module.Global, "manual.htm");
+#pragma warning disable MSTEST0032
             Assert.IsTrue(true);
+#pragma warning restore MSTEST0032
         }
 
         [TestMethod]

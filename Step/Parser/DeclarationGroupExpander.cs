@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Step.Interpreter;
+using Step.Exceptions;
 using Step.Output;
+using Step.Terms;
 
 namespace Step.Parser
 {

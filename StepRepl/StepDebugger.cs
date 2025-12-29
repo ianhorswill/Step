@@ -1,8 +1,9 @@
 ﻿#nullable enable
 using System;
 using Step;
+using Step.Binding;
 using Step.Interpreter;
-using Step.Output;
+using Step.ReplSupport;
 using Task = System.Threading.Tasks.Task;
 
 namespace StepRepl;

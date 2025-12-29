@@ -23,9 +23,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 #endregion
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Step;
-using Step.Interpreter;
+using Step.Binding;
+using Step.Exceptions;
 
 namespace Tests
 {
@@ -66,7 +66,7 @@ namespace Tests
                 "Foo c.");
 
             var result = m.CallFunction<object[]>("Test");
-            Assert.AreEqual(3, result.Length);
+            Assert.HasCount(3, result);
             Assert.AreEqual("a", result[0]);
             Assert.AreEqual("b", result[1]);
             Assert.AreEqual("c", result[2]);
@@ -300,7 +300,7 @@ namespace Tests
                 "Foo 2: 2",
                 "Foo 3: 3");
             Assert.AreEqual("1 2 3", m.Call("Test"));
-            Assert.AreEqual(null, m.Call("FailTest"));
+            Assert.IsNull(m.Call("FailTest"));
         }
 
         [TestMethod]
