@@ -29,6 +29,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Step.Exceptions;
+using Step.Interpreter;
 using Step.Interpreter.Steps;
 using Step.Output;
 using Step.Tasks;
@@ -425,7 +426,20 @@ namespace Step.Parser
                     return ParseFeatureStructure(featureStructure.Elements);
 
                 case TupleExpression { BracketStyle: "()" } guard:
-                    return new TupleExpression(guard.BracketStyle, CanonicalizeArglist(guard.Elements));
+                {
+                    var e = guard.Elements;
+                    if (e.Length == 0 || !e[0].EqualsNullTolerant("lambda"))
+                        throw new SyntaxError($"Invalid parenthesized expression", SourcePath, lineNumber);
+                    var colon = Array.IndexOf(e, ":");
+                    if (colon < 0)
+                        throw new SyntaxError($"lambda expression does not contain a colon", SourcePath, lineNumber);
+                    var head = new object?[colon-1];
+                    var bodyLength = e.Length-(colon+1);
+                    var body = new object?[bodyLength];
+                    Array.Copy(e, 1, head, 0, colon-1);
+                    Array.Copy(e, colon+1, body, 0, bodyLength);
+                    return new LambdaExpression(CanonicalizeArglist(head), CanonicalizeArglist(body));
+                }
                     
                 case TupleExpression t:
                     return CanonicalizeArglist(t.Elements);

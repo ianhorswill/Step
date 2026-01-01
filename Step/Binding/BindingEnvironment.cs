@@ -27,7 +27,9 @@ using Step.Interpreter;
 using Step.Terms;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using Step.Parser;
 
 namespace Step.Binding
 {
@@ -165,6 +167,9 @@ namespace Step.Binding
 
                 case FeatureStructure s:
                     return s.Resolve(this, unifications, compressPairs);
+
+                case LambdaExpression l:
+                    return l.Instantiate(this);
 
                 default:
                     return term;
@@ -459,6 +464,47 @@ namespace Step.Binding
                 default:
                     return term;
             }
+        }
+
+        /// <summary>
+        /// Dereference all variables in term, also renaming any local variables that appear.
+        /// This behaves identically to Deref except in the case where term is a tuple (i.e. object[]), in which case it
+        /// recursively recopies the array and dereferences its elements
+        /// </summary>
+        ///
+        public object? CopyTermCloningVariables(object? term) =>
+            CopyTermCloningVariables(term, new Dictionary<LogicVariable, LogicVariable>());
+
+        private object? CopyTermCloningVariables(object? term, Dictionary<LogicVariable, LogicVariable> rename)
+        {
+            var This = this;
+            switch (term)
+            {
+                case LocalVariableName n:
+                    return CopyTermCloningVariables(Resolve(n), rename);
+
+                case LogicVariable l:
+                    var d = Deref(l);
+                    return d is LogicVariable l2? GetRenamedLogicVariable(l2, rename) : CopyTermCloningVariables(d, rename);
+
+                case object[] tuple:
+                    return tuple.Select(t => This.CopyTermCloningVariables(t, rename)).ToArray();
+
+                case Pair p:
+                    return new Pair(CopyTermCloningVariables(p.First, rename), CopyTermCloningVariables(p.Rest, rename));
+
+                default:
+                    return term;
+            }
+        }
+
+        private LogicVariable GetRenamedLogicVariable(LogicVariable original,
+            Dictionary<LogicVariable, LogicVariable> rename)
+        {
+            if (!rename.TryGetValue(original, out var ren)) 
+                ren = rename[original] = new LogicVariable(original.Name);
+
+            return ren;
         }
 
         /// <summary>
