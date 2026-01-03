@@ -113,6 +113,11 @@ namespace Step.Interpreter.Steps
                         yield return e;
                     break;
 
+                case LambdaExpression lambda:
+                    foreach (var e in TaskReferencesWithin(lambda.Body))
+                        yield return e;
+                    break;
+
                 case FeatureStructure s:
                     foreach (var f in s.FeatureValues(null))
                         foreach (var c in TaskReferencesWithin(f.Value))
