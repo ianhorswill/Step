@@ -168,6 +168,11 @@ namespace Step.Tasks.Primitives
             g[nameof(TreeSearch)] = new GeneralPrimitive(nameof(TreeSearch), TreeSearch)
                 .Arguments("startNode", "finalNode", "utility", "NextNode", "GoalNode", "NodeUtility")
                 .Documentation("Performs a best-first search of a tree starting at startNode, using NextNode to enumerate neighbors of a given node, GoalNode to test whether a node is a goal node, and NodeUtility to compute a utility to use for the best-first search.");
+
+            g[nameof(Map)] = new GeneralPrimitive(nameof(Map), Map)
+                .Arguments("predicate", "list", "...")
+                .Documentation("data structures",
+                    "True when predicate holds when called with the respective elements of each list.  Lists must all be  the same length.");
         }
 
         private static bool CallImplementation(object?[] args, TextBuffer output, BindingEnvironment env,
@@ -591,6 +596,65 @@ namespace Step.Tasks.Primitives
         private static bool Min(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
         {
             return MaxMinDriver("Min", args, -1, o, e, k, predecessor);
+        }
+
+        private static bool Map(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
+        {
+            ArgumentCountException.CheckAtLeast(nameof(Map), 2, args, o);
+            var task = ArgumentTypeException.Cast<Task>(nameof(Map), args[0], args, o);
+
+            var listArgs = args.Slice(1, args.Length - 1);
+            var lists = new object?[listArgs.Length][];
+            int? length = null;
+
+            for (var i = 0; i < lists.Length; i++)
+            {
+                var arg = e.Resolve(listArgs[i], e.Unifications, true);
+                switch (arg)
+                {
+                    case object?[] a:
+                        lists[i] = a;
+                        if (length.HasValue)
+                        {
+                            if (a.Length != length)
+                                throw new StepExecutionException("Input lists in call to Map are different lengths", o);
+                        }
+                        else 
+                            length = a.Length;
+                        break;
+
+                    case LogicVariable:
+                        break;
+
+                    default:
+                        throw new ArgumentTypeException(nameof(Map), typeof(object[]), listArgs[i], args, o);
+                }
+            }
+            
+            if (!length.HasValue)
+                throw new ArgumentTypeException(nameof(Map), typeof(object[]), listArgs[0], args, o);
+
+            for (var i = 0; i < lists.Length; i++)
+                if (lists[i] == null!)
+                {
+                    var list = new object?[length.Value];
+                    for (var j = 0; j < list.Length; j++)
+                        list[j] = new LogicVariable("?element", 0);
+                    lists[i] = list;
+                }
+
+            bool Recur(int index, TextBuffer newOut, BindingList? u, State s, MethodCallFrame? frame)
+            {
+                if (index == length.Value)
+                    return e.Unify(listArgs, lists, u, out var finalU) && k(newOut, finalU, s, frame);
+                return task.Call(lists.Select(a => a[index]).ToArray(),
+                    newOut,
+                    new BindingEnvironment(e, u, s),
+                    frame,
+                    (nextOut, nextU, nextS, nextFrame) => Recur(index + 1, nextOut, nextU, nextS, nextFrame));
+            }
+
+            return Recur(0, o, e.Unifications, e.State, predecessor);
         }
 
         /// <summary>
