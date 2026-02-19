@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Step\Step.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\sprites\" />
+  </ItemGroup>
+
 </Project>

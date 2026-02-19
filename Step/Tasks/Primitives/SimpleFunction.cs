@@ -9,6 +9,35 @@ namespace Step.Tasks.Primitives
     /// <summary>
     /// A predicate that represents a non-invertible function.
     /// </summary>
+    /// <typeparam name="TOut">Type of function value</typeparam>
+    public class SimpleFunction<TOut> : GeneralPredicateBase
+    {
+        /// <summary>
+        /// A predicate that represents a non-invertible function.
+        /// </summary>
+        /// <param name="name">Name of the function predicate</param>
+        /// <param name="implementation">C# implementation of the function</param>
+        public SimpleFunction(string name, Func<TOut> implementation) : base(name, 2)
+        {
+            this.implementation = implementation;
+        }
+
+        private readonly Func<TOut> implementation;
+
+        /// <inheritdoc />
+        protected override IEnumerable<BindingList?> Iterator(object?[] args, BindingEnvironment env, TextBuffer output)
+        {
+            ArgumentCountException.Check(Name, 1, args, output);
+            var result = implementation();
+            if (env.Unify(args[0], result, out BindingList? bindings))
+                return new[] { bindings };
+            return EmptyBindingListArray;
+        }
+    }
+
+    /// <summary>
+    /// A predicate that represents a non-invertible function.
+    /// </summary>
     /// <typeparam name="TIn">Type of function argument</typeparam>
     /// <typeparam name="TOut">Type of function value</typeparam>
     public class SimpleFunction<TIn, TOut> : GeneralPredicateBase

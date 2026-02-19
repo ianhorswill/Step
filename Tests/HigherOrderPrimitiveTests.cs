@@ -264,6 +264,50 @@ namespace Tests
         }
 
         [TestMethod]
+        public void SumIntTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[generator] Generate 1:",
+                "Generate 2:",
+                "Generate 3:",
+                "Test ?sum : [Sum ?score [Generate ?score] ?sum]");
+            Assert.AreEqual(6, m.CallFunction<int>("Test"));
+        }
+
+        [TestMethod]
+        public void SumFloatTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[generator] Generate 1:",
+                "Generate 2.5:",
+                "Generate 3:",
+                "Test ?sum : [Sum ?score [Generate ?score] ?sum]");
+            Assert.AreEqual(6.5f, m.CallFunction<float>("Test"));
+        }
+
+        [TestMethod]
+        public void ProductIntTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[generator] Generate 2:",
+                "Generate 2:",
+                "Generate 3:",
+                "Test ?Product : [Product ?score [Generate ?score] ?Product]");
+            Assert.AreEqual(12, m.CallFunction<int>("Test"));
+        }
+
+        [TestMethod]
+        public void ProductFloatTest()
+        {
+            var m = new Module("test");
+            m.AddDefinitions("[generator] Generate 2:",
+                "Generate 2.5:",
+                "Generate 3:",
+                "Test ?Product : [Product ?score [Generate ?score] ?Product]");
+            Assert.AreEqual(15f, m.CallFunction<float>("Test"));
+        }
+
+        [TestMethod]
         public void MaxFailTest()
         {
             var m = new Module("test");

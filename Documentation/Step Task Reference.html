@@ -188,6 +188,10 @@ Tasks that collect together all the solutions to a given call.
 <p>
 <code>[<b>Min</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable
 <p>
+<code>[<b>Product</b> <i>?factor</i> <i>generator</i> <i>?product</i>]</code><br>True if ?product is the product (multiplication) of the value ?factor from all solutions to generator
+<p>
+<code>[<b>Sum</b> <i>?term</i> <i>generator</i> <i>?sum</i>]</code><br>True if ?sum is the sum of the value ?term from all solutions to generator
+<p>
 <h3 id="metatasks">Metatasks</h3>
 <code>[<b>FastPartialOrder</b> <i>call</i>]</code><br>Used as a metatask for a binary predicate to make it a partial order.  This will build a complete table of the transitive closure of the predicate in advance, so it should only be used for non-fluent predicates whose arguments are atoms.  Predicate must be anti-reflexive.
 <p>
@@ -208,6 +212,8 @@ Predicates that create or access complex data objects.  Note that dictionaries a
 <code>[<b>HasFeature</b> <i>featureStructure</i> <i>feature</i>]</code><br>True when featureStructure contains a feature with the specified name.
 <p>
 <code>[<b>Hashtable</b> <i>?h</i>]</code><br>Creates a new empty hash table and stores it in ?h
+<p>
+<code>[<b>Map</b> <i>predicate</i> <i>list</i> <i>...</i>]</code><br>True when predicate holds when called with the respective elements of each list.  Lists must all be  the same length.
 <p>
 <h3 id="lists">Lists</h3>
 Predicates access tuples/lists in particular.  These work with any C# object that implements the IList interface, including Step tuples (which are the C# type object[]).

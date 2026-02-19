@@ -240,6 +240,10 @@ async function addAnimatedSprite(name, textureFile, x, y, destroyOffScreen, expl
 }
 
 function destroyGameObject(o) {
+    console.log("destroying " + o);
+    if (typeof o == 'string')
+        o = gameObjects[o];
+    console.log("actual: " + o);
     if (o.immovable) return;  // it's a wall or something
     game.stage.removeChild(o.container);
     delete gameObjects[o.name];

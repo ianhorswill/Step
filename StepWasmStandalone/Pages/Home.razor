@@ -58,7 +58,6 @@
             editor.textContent = content;
             highlight(editor);
             jar.restore({start: start, end: start });
-            console.log(editor.clientHeight);
             if (realScrollTop < editor.clientHeight)
                 editor.scrollTop = realScrollTop;
             else
@@ -197,55 +196,6 @@
         return sourceCode;
     }
 
-    private static readonly Dictionary<string, Vector2> GameState = new();
-
-    [JSInvokable]
-    public static void ProcessGameNotifications(object[] notifications, JsonElement[][] gameState)
-    {
-        singleton.ReallyProcessGameNotifications(notifications, gameState);
-    }
-
-    public void ReallyProcessGameNotifications(object[] notifications, JsonElement[][] gameState)
-    {
-        foreach (var tuple in gameState)
-        {
-            var name = tuple[0].GetString()!;
-            var x = tuple[1].GetSingle();
-            var y = tuple[2].GetSingle();
-            GameState[name] = new Vector2(x, y);
-        }
-
-        object? current = null;
-        try
-        {
-            foreach (var n in notifications)
-            {
-                current = n is JsonElement e?DecodeJsonElement(e):n;
-                var (text, newState) = UserModule.Call(State, "GameEvent", current);
-                State = newState;
-                output = (MarkupString)(output.Value + text);
-            }
-        }
-        catch (Exception e)
-        {
-            outputHeading = $"Error processing game event: {Writer.TermToString(current)}";
-            output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
-            StateHasChanged();
-        }
-    }
-
-    object? DecodeJsonElement(JsonElement e) =>
-        e.ValueKind switch
-        {
-            JsonValueKind.Array => e.EnumerateArray().Select(DecodeJsonElement).ToArray(),
-            JsonValueKind.String => e.GetString(),
-            JsonValueKind.Number => e.GetSingle(),
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Null => null,
-            _ => "unknownObject"
-        };
-
     string lastModuleSource="";
 
     private async void Run()
@@ -342,23 +292,45 @@
 
         m["StartGame"] = new SimplePredicate<object[],object[]>("StartGame", (animated, stat) =>
         {
+            foreach (object[] o in animated)
+                GameObjectTypes[(string)o[0]] = (string)o[1];
+            foreach (object[] o in stat)
+                GameObjectTypes[(string)o[0]] = (string)o[1];
             singleton.JS.InvokeAsync<string>("startGame", animated, stat);
             return true;
         });
 
         m["AddStaticSprite"] = new SimplePredicate<string, string, float, float, bool, bool, bool>("AddStaticSprite", (name, textureFile, x, y, destroyOffScreen, explosive, immovable) =>
         {
+            GameObjectTypes[name] = textureFile;
             singleton.JS.InvokeAsync<string>("addStaticSprite", name, textureFile, x, y, destroyOffScreen, explosive, immovable);
             return true;
         });
 
         m["AddAnimatedSprite"] = new SimplePredicate<string, string, float, float, bool, bool, bool>("AddAnimatedSprite", (name, textureFile, x, y, destroyOffScreen, explosive, immovable) =>
         {
+            GameObjectTypes[name] = textureFile;
             if (!textureFile.EndsWith(".png") && !textureFile.StartsWith("http"))
                 textureFile = $"spritesheets/{textureFile}.png";
             singleton.JS.InvokeAsync<string>("addAnimatedSprite", name, textureFile, x, y, destroyOffScreen, explosive, immovable);
             return true;
         });
+
+        m["DestroyGameObject"] = new SimplePredicate<string>("DestroyGameObject", (name) =>
+        {
+            singleton.JS.InvokeAsync<string>("destroyGameObject", name);
+            return true;
+        });
+
+        m["EatGameObject"] = new SimplePredicate<string, string>("EatGameObject", (agent, victim) =>
+        {
+            singleton.JS.InvokeAsync<string>("destroyGameObject", victim);
+            var position = GameState[agent];
+            singleton.JS.InvokeAsync<string>("gotoXY", agent, position.X, position.Y, 1);
+            return true;
+        });
+
+        m["AllGameObjects"] = new SimpleFunction<object[][]>("AllGameObjects", () => GameState.Keys.Select(k => new object[] { k, GameObjectTypes[k] }).ToArray());
 
         m["SetConstantVelocity"] = new SimplePredicate<string, float, float>("SetConstantVelocity", (name, x, y) =>
         {
@@ -393,6 +365,9 @@
         m["Distance"] = new SimpleFunction<string, string, float>("Distance", 
             (a, b) => (GameState[a] - GameState[b]).Length());
 
+        m["InverseDistance"] = new SimpleFunction<string, string, float>("InverseDistance",
+            (a, b) => 1.0f/(GameState[a] - GameState[b]).Length());
+
         m["NeedState"] = new SimpleFunction<string, string, float>("NeedState", (who, what) =>
         {
             if (needStates.TryGetValue((who, what), out var state))
@@ -426,6 +401,58 @@
         singleton = this;
     }
 
+    #region Game stuff
+    private static readonly Dictionary<string, Vector2> GameState = new();
+    private static readonly Dictionary<string, string> GameObjectTypes = new();
+
+    [JSInvokable]
+    public static void ProcessGameNotifications(object[] notifications, JsonElement[][] gameState)
+    {
+        singleton.ReallyProcessGameNotifications(notifications, gameState);
+    }
+
+    public void ReallyProcessGameNotifications(object[] notifications, JsonElement[][] gameState)
+    {
+        GameState.Clear();
+        foreach (var tuple in gameState)
+        {
+            var name = tuple[0].GetString()!;
+            var x = tuple[1].GetSingle();
+            var y = tuple[2].GetSingle();
+            GameState[name] = new Vector2(x, y);
+        }
+
+        object? current = null;
+        try
+        {
+            foreach (var n in notifications)
+            {
+                current = n is JsonElement e ? DecodeJsonElement(e) : n;
+                var (text, newState) = UserModule.Call(State, "GameEvent", current);
+                State = newState;
+                output = (MarkupString)(output.Value + text);
+            }
+        }
+        catch (Exception e)
+        {
+            outputHeading = $"Error processing game event: {Writer.TermToString(current)}";
+            output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
+            StateHasChanged();
+        }
+    }
+
+    object? DecodeJsonElement(JsonElement e) =>
+        e.ValueKind switch
+        {
+            JsonValueKind.Array => e.EnumerateArray().Select(DecodeJsonElement).ToArray(),
+            JsonValueKind.String => e.GetString(),
+            JsonValueKind.Number => e.GetSingle(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => "unknownObject"
+        };
+
     public readonly struct NeedState
     {
         private readonly float Snapshot;
@@ -451,7 +478,9 @@
     }
 
     private static readonly Dictionary<(string, string), NeedState> needStates = new ();
+    #endregion
 }
+
 <p></p>
 <h3>@outputHeading</h3>
 

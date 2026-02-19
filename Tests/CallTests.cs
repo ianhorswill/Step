@@ -89,9 +89,9 @@ namespace Tests
         public void PathTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Map 1 2:",
-                "Map 2 3:",
-                "MyMethod ?x: ?x/Map/Write",
+            m.AddDefinitions("M 1 2:",
+                "M 2 3:",
+                "MyMethod ?x: ?x/M/Write",
                 "Test: [MyMethod 1]");
             Assert.AreEqual("2",m.Call("Test"));
         }
@@ -100,9 +100,9 @@ namespace Tests
         public void PathTest2()
         {
             var m = new Module("test");
-            m.AddDefinitions("Map 1 2:",
-                "Map 2 3:",
-                "MyMethod ?x: ?x/Map",
+            m.AddDefinitions("M 1 2:",
+                "M 2 3:",
+                "MyMethod ?x: ?x/M",
                 "Mention ?x: [Write ?x]",
                 "Test: [MyMethod 1]");
             Assert.AreEqual("2", m.Call("Test"));
@@ -112,10 +112,10 @@ namespace Tests
         public void PathPlusTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Map 1 2:",
-                "Map 2 3:",
+            m.AddDefinitions("M 1 2:",
+                "M 2 3:",
                 "Foo ?x: foo",
-                "MyMethod ?x: ?x/Map/Write+Foo",
+                "MyMethod ?x: ?x/M/Write+Foo",
                 "Test: [MyMethod 1]");
             Assert.AreEqual("2 foo",m.Call("Test"));
         }
@@ -124,10 +124,10 @@ namespace Tests
         public void StackTraceTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Map 1 2:",
-                "Map 2 3:",
+            m.AddDefinitions("M 1 2:",
+                "M 2 3:",
                 "Foo ?x: foo",
-                "MyMethod ?x: ?x/Map/Write+Foo",
+                "MyMethod ?x: ?x/M/Write+Foo",
                 "Test: [MyMethod 1]");
             m.Call("Test");
             Assert.AreEqual("[Foo 2][MyMethod 1][Test]",

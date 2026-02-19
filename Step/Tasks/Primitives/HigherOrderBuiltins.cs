@@ -149,6 +149,12 @@ namespace Step.Tasks.Primitives
             g[nameof(Min)] = new GeneralPrimitive(nameof(Min), Min)
                 .Arguments("?scoreVariable", "code", "...")
                 .Documentation("control flow//looping//all solutions predicates", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable");
+            g[nameof(Sum)] = new GeneralPrimitive(nameof(Sum), Sum)
+                .Arguments("?term", "generator", "?sum")
+                .Documentation("control flow//looping//all solutions predicates", "True if ?sum is the sum of the value ?term from all solutions to generator");
+            g[nameof(Product)] = new GeneralPrimitive(nameof(Product), Product)
+                .Arguments("?factor", "generator", "?product")
+                .Documentation("control flow//looping//all solutions predicates", "True if ?product is the product (multiplication) of the value ?factor from all solutions to generator");
             g[nameof(SaveText)] = new GeneralPrimitive(nameof(SaveText), SaveText)
                 .Arguments("call", "?variable")
                 .Documentation("control flow//calling tasks", "Runs call, but places its output in ?variable rather than the output buffer.  Does not preserve variable bindings, output, or state changes, other than saving the output in the second argument.");
@@ -590,12 +596,22 @@ namespace Step.Tasks.Primitives
 
         private static bool Max(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
         {
-            return MaxMinDriver("Max", args, 1, o, e, k, predecessor);
+            return MaxMinDriver(nameof(Max), args, 1, o, e, k, predecessor);
         }
 
         private static bool Min(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
         {
-            return MaxMinDriver("Min", args, -1, o, e, k, predecessor);
+            return MaxMinDriver(nameof(Min), args, -1, o, e, k, predecessor);
+        }
+
+        private static bool Sum(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
+        {
+            return ReduceDriver(nameof(Sum), args, 0, (a, b) => a + b, (a, b) => a + b, o, e, k, predecessor);
+        }
+
+        private static bool Product(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
+        {
+            return ReduceDriver(nameof(Product), args, 1, (a, b) => a * b, (a, b) => a * b, o, e, k, predecessor);
         }
 
         private static bool Map(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
@@ -720,6 +736,73 @@ namespace Step.Tasks.Primitives
             // So pass it on to our continuation
             return gotOne
                    && k(o.Append(bestResult.Output!), bestResult.Bindings, bestResult.State, bestFrame);
+        }
+
+        private static bool ReduceDriver(string taskName, object?[] args,
+            int unit, Func<int, int, int> integerFunc, Func<float, float, float> floatFunc, TextBuffer o, BindingEnvironment e,
+            Task.Continuation k,
+            MethodCallFrame? predecessor)
+        {
+            var termVar = args[0] as LogicVariable;
+            var goal = ArgumentTypeException.Cast<object[]>(taskName, args[1], args, o);
+            var task = ArgumentTypeException.Cast<Task>(taskName, goal[0], args, o);
+            var taskArgs = goal.Slice(1, goal.Length - 1);
+            if (termVar == null)
+                throw new ArgumentInstantiationException(taskName, e, args, o);
+
+            var floatMode = false;
+            var intAccumulator = unit;
+            var floatAccumulator = (float)unit;
+
+            task.Call(taskArgs, o, e, predecessor,
+                (output, u, d, p) =>
+                {
+                    var env = new BindingEnvironment(e, u, d);
+
+                    var maybeTerm = env.Resolve(termVar);
+                    switch (maybeTerm)
+                    {
+                        case int i:
+                            if (floatMode)
+                                floatAccumulator = floatFunc(floatAccumulator, i);
+                            else 
+                                intAccumulator = integerFunc(intAccumulator, i);
+                            break;
+
+                        case float f:
+                            if (floatMode)
+                                floatAccumulator = floatFunc(floatAccumulator, f);
+                            else
+                            {
+                                floatMode = true;
+                                floatAccumulator = floatFunc(intAccumulator, f);
+                            }
+                            break;
+
+                        case double df:
+                            if (floatMode)
+                                floatAccumulator = floatFunc(floatAccumulator, (float)df);
+                            else
+                            {
+                                floatMode = true;
+                                floatAccumulator = floatFunc(intAccumulator, (float)df);
+                            }
+                            break;
+
+                        case LogicVariable _:
+                            throw new ArgumentInstantiationException(taskName, new BindingEnvironment(e, u, d), args, o);
+
+                        default:
+                            throw new ArgumentTypeException(taskName, typeof(float), maybeTerm, args, o);
+                    }
+
+                    // Always ask for another solution
+                    return false;
+                });
+
+            // When we get here, we've iterated through all solutions and kept the best one.
+            // So pass it on to our continuation
+            return e.Unify(args[2], floatMode?(object)floatAccumulator:(object)intAccumulator, out BindingList? u) && k(o, u, e.State, predecessor);
         }
 
         private static bool SaveText(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
