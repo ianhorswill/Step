@@ -261,7 +261,10 @@ function destroyAllGameObjects() {
 /// Physics, such as it is
 ///
 
-let notifications = [];
+let notifications = [];  // Pending messages to sent to Step
+let tickRate = 999999999999;      // period between tick messages to send to Step in units of ms
+let timeToTick = tickRate;
+
 function updateGameObjects(time) {
     try {
         const w = game.screen.right;
@@ -269,6 +272,13 @@ function updateGameObjects(time) {
 
         notifications = [];
 
+        timeToTick -= time.deltaTime;
+        if (timeToTick < 0) {
+            timeToTick += tickRate;
+            notify("tick");
+        }
+
+        // Update velocities and positions
         for (let i = 0; i < gameObjectArray.length; i++) {
             const o = gameObjectArray[i];
             const c = o.container;
@@ -289,6 +299,7 @@ function updateGameObjects(time) {
             }
         }
 
+        // Resolve collisions
         let toDestroy = [];
         for (let i = 0; i < gameObjectArray.length; i++) {
             const io = gameObjectArray[i];
@@ -322,10 +333,11 @@ function updateGameObjects(time) {
         for (let i = 0; i < toDestroy.length; i++)
             destroyGameObject(toDestroy[i]);
 
+        // Inform Step code of anything interesting that happened.
         if (notifications.length > 0)
             postNotifications();
     } catch (e) {
-        console.log("error in addStaticSprite");
+        console.log("error in updateGameObjects");
         console.log(e);
     }
 }
@@ -371,6 +383,10 @@ function stop(gameObject) {
     console.log(gameObject.name + " stop");
     setConstantVelocity(gameObject, 0, 0);
     gameObject.stopAt = null;
+}
+
+function setTickRate(rate) {
+    tickRate = timeToTick = rate;
 }
 
 function gotoXY(agent, x, y, speed) {

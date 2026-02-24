@@ -362,6 +362,12 @@
             return true;
         });
 
+        m["SetTickRate"] = new SimplePredicate<int>("SetTickRate", (frames) =>
+        {
+            singleton.JS.InvokeAsync<string>("setTickRate", frames);
+            return true;
+        });
+
         m["Distance"] = new SimpleFunction<string, string, float>("Distance", 
             (a, b) => (GameState[a] - GameState[b]).Length());
 
