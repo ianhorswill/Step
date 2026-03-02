@@ -184,9 +184,9 @@ Tasks that collect together all the solutions to a given call.
 <p>
 <code>[<b>FindUnique</b> <i>?result</i> <i>call</i> <i>?all_results</i>]</code><br>Runs call, backtracking to find every possible solution to it.  For each solution, FindUnique records the value of ?result, and returns a list of all ?results in order, in ?all_results, eliminating duplicate solutions.  If call never fails, this will run forever.
 <p>
-<code>[<b>Max</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the largest value of ?scoreVariable
+<code>[<b>Maximal</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the largest value of ?scoreVariable
 <p>
-<code>[<b>Min</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable
+<code>[<b>Minimal</b> <i>?scoreVariable</i> <i>code</i> <i>...</i>]</code><br>Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable
 <p>
 <code>[<b>Product</b> <i>?factor</i> <i>generator</i> <i>?product</i>]</code><br>True if ?product is the product (multiplication) of the value ?factor from all solutions to generator
 <p>

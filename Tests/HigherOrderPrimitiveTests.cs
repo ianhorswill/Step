@@ -247,7 +247,7 @@ namespace Tests
                 "Generate b 2:",
                 "Generate c 1:",
                 "Mention ?x: [Write ?x]",
-                "Test: [Max ?score [Generate ?x ?score]] ?x ?score");
+                "Test: [Maximal ?score [Generate ?x ?score]] ?x ?score");
             Assert.AreEqual("B 2", m.Call("Test"));
         }
 
@@ -259,7 +259,7 @@ namespace Tests
                 "Generate b 0:",
                 "Generate c 2:",
                 "Mention ?x: [Write ?x]",
-                "Test: [Min ?score [Generate ?x ?score]] ?x ?score");
+                "Test: [Minimal ?score [Generate ?x ?score]] ?x ?score");
             Assert.AreEqual("B 0", m.Call("Test"));
         }
 
@@ -311,7 +311,7 @@ namespace Tests
         public void MaxFailTest()
         {
             var m = new Module("test");
-            m.AddDefinitions("Test: [Max ?score [Fail]] ?x ?score",
+            m.AddDefinitions("Test: [Maximal ?score [Fail]] ?x ?score",
                 "Mention ?x: [Write ?x]",
                 "Test: Max failed");
             Assert.AreEqual("Max failed", m.Call("Test"));

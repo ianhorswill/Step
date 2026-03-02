@@ -143,10 +143,10 @@ namespace Step.Tasks.Primitives
             g[nameof(ExactlyOnce)] = new GeneralPrimitive(nameof(ExactlyOnce), ExactlyOnce)
                 .Arguments("code", "...")
                 .Documentation("control flow//controlling backtracking", "Runs code normally.  If the code fails, ExactlyOnce throws an exception.  If it succeeds, ExactlyOnce succeeds.  However, if any subsequent code backtracks, once will not rerun the code, but will fail to whatever code preceded it.");
-            g[nameof(Max)] = new GeneralPrimitive(nameof(Max), Max)
+            g[nameof(Maximal)] = new GeneralPrimitive(nameof(Maximal), Maximal)
                 .Arguments("?scoreVariable", "code", "...")
                 .Documentation("control flow//looping//all solutions predicates", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the largest value of ?scoreVariable");
-            g[nameof(Min)] = new GeneralPrimitive(nameof(Min), Min)
+            g[nameof(Minimal)] = new GeneralPrimitive(nameof(Minimal), Minimal)
                 .Arguments("?scoreVariable", "code", "...")
                 .Documentation("control flow//looping//all solutions predicates", "Runs code, backtracking to find all solutions, keeping the state (text output and variable bindings) of the solution with the smallest value of ?scoreVariable");
             g[nameof(Sum)] = new GeneralPrimitive(nameof(Sum), Sum)
@@ -594,14 +594,14 @@ namespace Step.Tasks.Primitives
             return k(finalOutput, finalBindings, finalState, finalFrame);
         }
 
-        private static bool Max(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
+        private static bool Maximal(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
         {
-            return MaxMinDriver(nameof(Max), args, 1, o, e, k, predecessor);
+            return MaxMinDriver(nameof(Maximal), args, 1, o, e, k, predecessor);
         }
 
-        private static bool Min(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
+        private static bool Minimal(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
         {
-            return MaxMinDriver(nameof(Min), args, -1, o, e, k, predecessor);
+            return MaxMinDriver(nameof(Minimal), args, -1, o, e, k, predecessor);
         }
 
         private static bool Sum(object?[] args, TextBuffer o, BindingEnvironment e, MethodCallFrame? predecessor, Task.Continuation k)
