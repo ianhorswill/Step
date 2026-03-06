@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Step.Binding;
 using Step.Exceptions;
@@ -268,55 +269,102 @@ namespace Step.Interpreter
                 throw new SyntaxError("Empty functional expression", path, lineNumber);
             var func = arr[0] as string;
             var args = arr.Skip(1).Select(x => FromSExpression(x, start, path, lineNumber)).ToArray();
-            switch (func)
+            return func switch
             {
-                case "+":
-                    return new FunctionCall("+", (a, e, o) =>
+                "+" => AccumulateBinaryOperator("+", args, 0, (a, b) => a + b, (a, b) => a + b),
+                "*" => AccumulateBinaryOperator("*", args, 1, (a, b) => a * b, (a, b) => a * b),
+                "-" => AccumulateBinaryOperator("-", args, 0, (a, b) => a - b, (a, b) => a - b),
+                "/" => AccumulateBinaryOperator("/", args, 1, (a, b) => a / b, (a, b) => a / b),
+                "min" => AccumulateBinaryOperator("min", args, (Func<int, int, int> )Math.Min, (Func<float,float,float>)Math.Min, path, lineNumber),
+                "max" => AccumulateBinaryOperator("max", args, (Func<int, int, int>)Math.Max, (Func<float, float, float>)Math.Max, path, lineNumber),
+                _ => throw new SyntaxError($"Unknown function: {Writer.TermToString(arr[0])}", path, lineNumber)
+            };
+        }
+
+        private static FunctionCall AccumulateBinaryOperator(string name, FunctionalExpression[] args, int unity, Func<int,int,int> iFunc, Func<float,float,float> fFunc)
+        {
+            return new FunctionCall("+", (a, e, o) =>
+            {
+                int iResult = unity;
+                float fResult = iResult;
+                bool intMode = true;
+                foreach (var arg in args)
+                {
+                    var value = arg.Eval(e, o);
+                    if (intMode)
                     {
-                        int iResult = 0;
-                        float fResult = 0;
-                        bool intMode = true;
-                        foreach (var arg in args)
+                        switch (value)
                         {
-                            var value = arg.Eval(e, o);
-                            if (intMode)
-                            {
-                                if (value is int i)
-                                    iResult += i;
-                                else if (value is float f)
-                                {
-                                    fResult = iResult + f;
-                                    intMode = false;
-                                }
-                                else
-                                    throw new ArgumentTypeException("+", typeof(float), arg, args, o);
-                            }
-                            else
-                            {
-                                switch (value)
-                                {
-                                    case int i:
-                                        fResult += i;
-                                        break;
-                                    case float f: 
-                                        fResult += f;
-                                        break;
-
-                                    case double d:
-                                        fResult += (float)d;
-                                        break;
-
-                                    default:
-                                        throw new ArgumentTypeException("+", typeof(float), arg, args, o);
-                                }
-                            }
+                            case int i:
+                                iResult = iFunc(iResult, i);
+                                break;
+                            case float f:
+                                fResult = fFunc(iResult, f);
+                                intMode = false;
+                                break;
+                            default:
+                                throw new ArgumentTypeException("+", typeof(float), arg, args, o);
                         }
-                        return intMode?(object?)iResult:(object?)fResult;
-                    }, args);
+                    }
+                    else // float mode
+                    {
+                        fResult = value switch
+                        {
+                            int i => fFunc(fResult, i),
+                            float f => fFunc(fResult, f),
+                            double d => fFunc(fResult, (float)d),
+                            _ => throw new ArgumentTypeException("+", typeof(float), arg, args, o)
+                        };
+                    }
+                }
+                return intMode?(object?)iResult:(object?)fResult;
+            }, args);
+        }
 
-                default:
-                    throw new SyntaxError($"Unknown function: {Writer.TermToString(arr[0])}", path, lineNumber);
-            }
+        private static FunctionCall AccumulateBinaryOperator(string name, FunctionalExpression[] args, Func<int, int, int> iFunc, Func<float, float, float> fFunc, string? path, int lineNumber)
+        {
+            if (args.Length == 0)
+                throw new SyntaxError($"Insufficient arguments in call to {name}", path, lineNumber);
+            return new FunctionCall("+", (a, e, o) =>
+            {
+                int iResult = 0;
+                float fResult = 0;
+                bool intMode = true;
+                bool gotOne;
+                for (var index = 0; index < args.Length; index++)
+                {
+                    var arg = args[index];
+                    var value = arg.Eval(e, o);
+
+                    if (intMode)
+                    {
+                        switch (value)
+                        {
+                            case int i:
+                                iResult = (index == 0) ? i : iFunc(iResult, i);
+                                break;
+                            case float f:
+                                fResult = (index == 0) ? f : fFunc(iResult, f);
+                                intMode = false;
+                                break;
+                            default:
+                                throw new ArgumentTypeException("+", typeof(float), arg, args, o);
+                        }
+                    }
+                    else // float mode
+                    {
+                        fResult = value switch
+                        {
+                            int i => fFunc(fResult, i),
+                            float f => fFunc(fResult, f),
+                            double d => fFunc(fResult, (float)d),
+                            _ => throw new ArgumentTypeException("+", typeof(float), arg, args, o)
+                        };
+                    }
+                }
+
+                return intMode ? (object?)iResult : (object?)fResult;
+            }, args);
         }
 
         public static FunctionalExpression FromTuple(object?[] tuple, int start = 0, string? path = null, int lineNumber = 0) =>
