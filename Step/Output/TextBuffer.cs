@@ -39,6 +39,7 @@ namespace Step.Output
     [DebuggerDisplay("{" + nameof(AsString) + "}")]
     public readonly struct TextBuffer
     {
+        public static readonly TextBuffer Dummy = NewEmpty();
         private class ResizableBuffer
         {
             public ResizableBuffer(string[] data)

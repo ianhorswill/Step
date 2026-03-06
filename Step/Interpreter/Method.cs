@@ -104,7 +104,7 @@ namespace Step.Interpreter
             MethodCallFrame.CurrentFrame = newFrame;
             var newEnv = new BindingEnvironment(env, newFrame);
             
-            if (newEnv.UnifyArrays(args, newEnv.ResolveList(ArgumentPattern), out BindingEnvironment finalEnv))
+            if (ResolveAndUnify(args, newEnv, out var finalEnv))
             {
                 //Console.WriteLine(Writer.TermToString(args));
                 env.Module.TraceMethod(Module.MethodTraceEvent.Enter, this, args, output, finalEnv);
@@ -126,6 +126,26 @@ namespace Step.Interpreter
             MethodCallFrame.CurrentFrame = newFrame;
             env.Module.TraceMethod(Module.MethodTraceEvent.MethodFail, this, args, output, finalEnv);
             return false;
+        }
+
+        private bool ResolveAndUnify(object?[] args, BindingEnvironment env, out BindingEnvironment finalEnv)
+        {
+            if (args.Length != ArgumentPattern.Length)
+            {
+                finalEnv = env;
+                return false;
+            }
+
+            var u = env.Unifications;
+            for (var i = 0; i < args.Length; i++)
+                if (!env.Unify(args[i], env.Resolve(ArgumentPattern[i], u), u, out u))
+                {
+                    finalEnv = env;
+                    return false;
+                }
+
+            finalEnv = new BindingEnvironment(env, u, env.State);
+            return true;
         }
 
         /// <summary>

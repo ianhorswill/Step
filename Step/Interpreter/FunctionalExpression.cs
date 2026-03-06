@@ -55,7 +55,7 @@ namespace Step.Interpreter
         {
             var value = e.Resolve(Variable);
             if (value is LogicVariable)
-                throw new ArgumentInstantiationException("variable reference", e, new[] {value}, output);
+                throw new ArgumentInstantiationException("variable reference", e, new[] { value }, output);
             return value;
         }
 
@@ -76,7 +76,8 @@ namespace Step.Interpreter
             Operator = op;
         }
 
-        public override object? Eval(BindingEnvironment e, TextBuffer output) => Operator.Implementation(Arg.Eval(e, output), output);
+        public override object? Eval(BindingEnvironment e, TextBuffer output) =>
+            Operator.Implementation(Arg.Eval(e, output), output);
 
         public override void BuildString(StringBuilder b, bool nested)
         {
@@ -116,6 +117,43 @@ namespace Step.Interpreter
             Arg2.BuildString(b, true);
             if (nested)
                 b.Append(')');
+        }
+    }
+
+    class FunctionCall : FunctionalExpression
+    {
+        public readonly Func<object?[], BindingEnvironment, TextBuffer, object?> Function;
+        public readonly string OperatorName;
+        public readonly FunctionalExpression[] Arguments;
+
+        public FunctionCall(string operatorName, Func<object?[], BindingEnvironment, TextBuffer, object?> function,
+            FunctionalExpression[] arguments)
+        {
+            OperatorName = operatorName;
+            Function = function;
+            Arguments = arguments;
+        }
+
+        public override object? Eval(BindingEnvironment e, TextBuffer output)
+        {
+            var args = new object?[Arguments.Length];
+            for (int i = 0; i < Arguments.Length; i++)
+                args[i] = Arguments[i].Eval(e, output);
+            var result = Function(args, e, output);
+            return result;
+        }
+
+        public override void BuildString(StringBuilder b, bool nested)
+        {
+            b.Append('[');
+            b.Append(OperatorName);
+            foreach (var t in Arguments)
+            {
+                b.Append(" ");
+                t.BuildString(b, false);
+            }
+
+            b.Append(']');
         }
     }
 }

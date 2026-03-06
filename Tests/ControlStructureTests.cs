@@ -272,6 +272,14 @@ namespace Tests
         }
 
         [TestMethod]
+        public void SetSExpTest()
+        {
+            var m = Module.FromDefinitions("Test ?x ?y ?z: [set R = @(+ ?x ?y)] [= ?z R]");
+            Assert.AreEqual(2, m.CallFunction<int>("Test", 1, 1));
+            Assert.AreEqual(2f, m.CallFunction<float>("Test", 1, 1f));
+        }
+
+        [TestMethod]
         public void IncTest()
         {
             var m = Module.FromDefinitions("Test ?x: [set X = 0] [inc X] [= ?x X]");

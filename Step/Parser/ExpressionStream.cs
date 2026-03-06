@@ -121,7 +121,7 @@ namespace Step.Parser
                 while (!end)
                 {
                     // Read tokens up to bracketed expressions
-                    while (!end && Peek != "[")
+                    while (!end && Peek != "[" && Peek != "@(")
                     {
                         var token = Get();
                         if (token == "]")
@@ -133,12 +133,17 @@ namespace Step.Parser
                     {
                         // We're at the start of a bracketed expression
                         var openBracket = Get();
+                        var expectedCloseBracket = MatchingCloseBracket(openBracket);
                         buffer.Clear();
-                        while (!end && Peek != "]")
+                        while (!end && Peek != expectedCloseBracket)
                         {
                             var token = Get();
-                            if (token == "[" || token == "{" || token == "(")
+                            if (token == "[" || token == "{" || token == "(" || token == "@(")
                                 buffer.Add(ReadSubExpression(token));
+                            else if (token == ")" || token == "]" || token == "}")
+                                throw new SyntaxError(
+                                    $"Open bracket '{openBracket}' matched not by '{expectedCloseBracket}' as expected but by '{token}'",
+                                    FilePath, LineNumber);
                             else if (token != "\n")
                                 buffer.Add(token);
                         }
@@ -147,7 +152,7 @@ namespace Step.Parser
                                 "Incomplete expression: open bracket without a matching close bracket", FilePath, LineNumber);
  
                         var closeBracket = Get();
-                        if (closeBracket != MatchingCloseBracket(openBracket))
+                        if (closeBracket != expectedCloseBracket)
                             throw new SyntaxError(
                                 $"Nested expression begun with '{openBracket}' is matched with an incompatible closing '{closeBracket}'",
                                 FilePath, LineNumber);
@@ -162,6 +167,10 @@ namespace Step.Parser
                                 yield return new TupleExpression("()", buffer.ToArray());
                                 break;
 
+                            case "@(":
+                                yield return new TupleExpression("@()", buffer.ToArray());
+                                break;
+
                             default:
                                 yield return buffer.ToArray();
                                 break;
@@ -171,17 +180,15 @@ namespace Step.Parser
             }
         }
 
-        string MatchingCloseBracket(string openBracket)
-        {
-            switch (openBracket)
+        private string MatchingCloseBracket(string openBracket) =>
+            openBracket switch
             {
-                case "[": return "]";
-                case "{": return "}";
-                case "(": return ")";
-                default:
-                    throw new InvalidOperationException($"'{openBracket}' is not an appropriate token for marking a nested expression.");
-            }
-        }
+                "[" => "]",
+                "{" => "}",
+                "@(" or "(" => ")",
+                _ => throw new InvalidOperationException(
+                    $"'{openBracket}' is not an appropriate token for marking a nested expression.")
+            };
 
         private static readonly string[] OpenBrackets = ["[", "(", "{"];
         private static readonly string[] CloseBrackets = ["]", ")", "}"];
@@ -215,6 +222,9 @@ namespace Step.Parser
 
                 case "(":
                     return new TupleExpression("()", buffer.ToArray());
+
+                case "@(":
+                    return new TupleExpression("@()", buffer.ToArray());
 
                 default:
                     return buffer.ToArray();

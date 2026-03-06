@@ -185,9 +185,14 @@ namespace Step.Parser
                     while (IsPunctuationNotSpecial || LookingAt('\n'))
                     {
                         var ch = Get();
-                        if (ch == '\n' && (LookingAt('\r') || LookingAt('\n')))
+                        if (ch == '@' && LookingAt('('))
+                        {
+                            Get(); // Swallow paren;
+                            yield return "@(";
+                        }
+                        else if (ch == '\n' && (LookingAt('\r') || LookingAt('\n')))
                             yield return TextUtilities.NewParagraphToken;
-                        else
+                        else 
                             yield return ch.ToString();
                     }
 

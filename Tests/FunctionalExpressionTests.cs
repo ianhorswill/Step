@@ -76,10 +76,17 @@ namespace Tests
         }
 
         [TestMethod]
+        public void ArgListText()
+        {
+            var m = Module.FromDefinitions("Test ?x @(+ ?x 1).");
+            Assert.AreEqual(2, m.CallFunction<int>("Test", 1));
+        }
+
+        [TestMethod]
         public void ParenTest()
         {
             Assert.AreEqual(20, Parse("(", 1, "*", 2, "+", 3, ")", "*", 4).Eval(EmptyEnvironment, new TextBuffer()));
-            Assert.AreEqual(24, Parse(1, "*","(", 3, "+", 3, ")", "*", 4).Eval(EmptyEnvironment, new TextBuffer()));
+            Assert.AreEqual(24, Parse(1, "*", "(", 3, "+", 3, ")", "*", 4).Eval(EmptyEnvironment, new TextBuffer()));
             Assert.AreEqual(15, Parse(1, "*", "(", 3, "+", 3, "*", 4, ")").Eval(EmptyEnvironment, new TextBuffer()));
         }
     }

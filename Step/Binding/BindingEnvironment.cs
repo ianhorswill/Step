@@ -29,6 +29,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Step.Output;
 using Step.Parser;
 
 namespace Step.Binding
@@ -170,6 +171,9 @@ namespace Step.Binding
 
                 case LambdaExpression l:
                     return l.Instantiate(this);
+
+                case FunctionalExpression f:
+                    return f.Eval(new BindingEnvironment(this, unifications, this.State), TextBuffer.Dummy);
 
                 default:
                     return term;

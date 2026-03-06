@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Step.Binding;
 using Step.Exceptions;
 using Step.Output;
 using Step.Parser;
@@ -250,6 +252,73 @@ namespace Step.Interpreter
             }
         }
 
+        public static FunctionalExpression FromSExpression(object? x, int start = 0, string? path = null,
+            int lineNumber = 0) =>
+            x switch
+        {
+            StateVariableName _ => new VariableReference(x),
+            LocalVariableName _=> new VariableReference(x),
+            object?[] arr => FunctionCallFromSExpression(arr, start, path, lineNumber),
+            _ => new Constant(x)
+        };
+
+        private static FunctionalExpression FunctionCallFromSExpression(object?[] arr, int start, string? path, int lineNumber)
+        {
+            if (arr.Length == 0)
+                throw new SyntaxError("Empty functional expression", path, lineNumber);
+            var func = arr[0] as string;
+            var args = arr.Skip(1).Select(x => FromSExpression(x, start, path, lineNumber)).ToArray();
+            switch (func)
+            {
+                case "+":
+                    return new FunctionCall("+", (a, e, o) =>
+                    {
+                        int iResult = 0;
+                        float fResult = 0;
+                        bool intMode = true;
+                        foreach (var arg in args)
+                        {
+                            var value = arg.Eval(e, o);
+                            if (intMode)
+                            {
+                                if (value is int i)
+                                    iResult += i;
+                                else if (value is float f)
+                                {
+                                    fResult = iResult + f;
+                                    intMode = false;
+                                }
+                                else
+                                    throw new ArgumentTypeException("+", typeof(float), arg, args, o);
+                            }
+                            else
+                            {
+                                switch (value)
+                                {
+                                    case int i:
+                                        fResult += i;
+                                        break;
+                                    case float f: 
+                                        fResult += f;
+                                        break;
+
+                                    case double d:
+                                        fResult += (float)d;
+                                        break;
+
+                                    default:
+                                        throw new ArgumentTypeException("+", typeof(float), arg, args, o);
+                                }
+                            }
+                        }
+                        return intMode?(object?)iResult:(object?)fResult;
+                    }, args);
+
+                default:
+                    throw new SyntaxError($"Unknown function: {Writer.TermToString(arr[0])}", path, lineNumber);
+            }
+        }
+
         public static FunctionalExpression FromTuple(object?[] tuple, int start = 0, string? path = null, int lineNumber = 0) =>
             FunctionalExpressionParser.Parse(tuple, start, path, lineNumber);
 
@@ -265,6 +334,9 @@ namespace Step.Interpreter
         /// <returns>The FunctionalExpression denoted by the tokens</returns>
         public static FunctionalExpression Parse(object?[] tokens, int start, string? path = null, int lineNumber = 0)
         {
+            //if (start == tokens.Length - 1 && tokens[start] is object?[] sexp)
+            //    return FromSExpression(sexp, start, path, lineNumber);
+
             var position = start;
             
             // True if we've reached the end of the array of tokens
@@ -285,6 +357,21 @@ namespace Step.Interpreter
             FunctionalExpression ParseUnaryOperatorChain()
             {
                 var token = Get();
+
+                if (token is FunctionalExpression f)
+                    return f;
+
+                if (token is TupleExpression t)
+                {
+                    return t.BracketStyle switch
+                    {
+                        "()" => Parse(t.Elements, 0, path, lineNumber),
+                        "@()" => FromSExpression(t.Elements, 0, path, lineNumber),
+                        _ => throw new SyntaxError(
+                            $"Inappropriate bracketed expression of type \"{t.BracketStyle}\" in functional expression",
+                            path, lineNumber)
+                    };
+                }
                 var uOp = LookupUnary(token);
                 if (uOp != null)
                     return new UnaryOperator(uOp, ParseUnaryOperatorChain());

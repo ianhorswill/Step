@@ -440,6 +440,11 @@ namespace Step.Parser
                     Array.Copy(e, colon+1, body, 0, bodyLength);
                     return new LambdaExpression(CanonicalizeArglist(head), CanonicalizeArglist(body));
                 }
+
+                case TupleExpression { BracketStyle: "@()" } functional:
+                {
+                    return FunctionalExpressionParser.FromSExpression(CanonicalizeArglist(functional.Elements), 0, SourcePath, lineNumber);
+                }
                     
                 case TupleExpression t:
                     return CanonicalizeArglist(t.Elements);
