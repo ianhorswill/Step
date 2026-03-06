@@ -194,7 +194,7 @@ namespace Step.Parser
                     $"'{openBracket}' is not an appropriate token for marking a nested expression.")
             };
 
-        private static readonly string[] OpenBrackets = ["[", "(", "{"];
+        private static readonly string[] OpenBrackets = ["[", "(", "{", "@(", "!("];
         private static readonly string[] CloseBrackets = ["]", ")", "}"];
 
         private object ReadSubExpression(string openBracket)

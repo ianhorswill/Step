@@ -90,6 +90,15 @@ namespace Tests
         }
 
         [TestMethod]
+        public void NowTest()
+        {
+            var m = Module.FromDefinitions(
+                "DecaySatisfaction ?who ?what ?rate: [Satisfaction ?who ?what ?sat] [now [Satisfaction ?who ?what @(max 0 (- ?sat ?rate))]] [Satisfaction ?who ?what ?new] [Write ?new]",
+                "[fluent] Satisfaction a a 10.");
+            Assert.AreEqual("5", m.Call("DecaySatisfaction", "a", "a", 5));
+        }
+
+        [TestMethod]
         public void ParenTest()
         {
             Assert.AreEqual(20, Parse("(", 1, "*", 2, "+", 3, ")", "*", 4).Eval(EmptyEnvironment, new TextBuffer()));
