@@ -425,7 +425,7 @@ namespace Step.Parser
                 case TupleExpression { BracketStyle: "{}" } featureStructure:
                     return ParseFeatureStructure(featureStructure.Elements);
 
-                case TupleExpression { BracketStyle: "()" } guard:
+                case TupleExpression { BracketStyle: "!()" } guard:
                 {
                     var e = guard.Elements;
                     if (e.Length == 0 || !e[0].EqualsNullTolerant("lambda"))

@@ -78,8 +78,15 @@ namespace Tests
         [TestMethod]
         public void ArgListText()
         {
-            var m = Module.FromDefinitions("Test ?x @(+ ?x 1).");
-            Assert.AreEqual(2, m.CallFunction<int>("Test", 1));
+            var m = Module.FromDefinitions("Test ?x @(min 3 ?x).");
+            Assert.AreEqual(2, m.CallFunction<int>("Test", 2));
+        }
+
+        [TestMethod]
+        public void ArgListText2()
+        {
+            var m = Module.FromDefinitions("Test ?x: [Write @(max 0 (- ?x 10))]");
+            Assert.AreEqual("0", m.Call("Test", 4));
         }
 
         [TestMethod]

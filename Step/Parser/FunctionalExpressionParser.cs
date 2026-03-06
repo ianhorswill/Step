@@ -271,39 +271,40 @@ namespace Step.Interpreter
             var args = arr.Skip(1).Select(x => FromSExpression(x, start, path, lineNumber)).ToArray();
             return func switch
             {
-                "+" => AccumulateBinaryOperator("+", args, 0, (a, b) => a + b, (a, b) => a + b),
-                "*" => AccumulateBinaryOperator("*", args, 1, (a, b) => a * b, (a, b) => a * b),
-                "-" => AccumulateBinaryOperator("-", args, 0, (a, b) => a - b, (a, b) => a - b),
-                "/" => AccumulateBinaryOperator("/", args, 1, (a, b) => a / b, (a, b) => a / b),
+                "+" => AccumulateBinaryOperator("+", args, false, 0, (a, b) => a + b, (a, b) => a + b),
+                "*" => AccumulateBinaryOperator("*", args, false, 1, (a, b) => a * b, (a, b) => a * b),
+                "-" => AccumulateBinaryOperator("-", args, true, 0, (a, b) => a - b, (a, b) => a - b),
+                "/" => AccumulateBinaryOperator("/", args, true, 1, (a, b) => a / b, (a, b) => a / b),
                 "min" => AccumulateBinaryOperator("min", args, (Func<int, int, int> )Math.Min, (Func<float,float,float>)Math.Min, path, lineNumber),
                 "max" => AccumulateBinaryOperator("max", args, (Func<int, int, int>)Math.Max, (Func<float, float, float>)Math.Max, path, lineNumber),
                 _ => throw new SyntaxError($"Unknown function: {Writer.TermToString(arr[0])}", path, lineNumber)
             };
         }
 
-        private static FunctionCall AccumulateBinaryOperator(string name, FunctionalExpression[] args, int unity, Func<int,int,int> iFunc, Func<float,float,float> fFunc)
+        private static FunctionCall AccumulateBinaryOperator(string name, FunctionalExpression[] args, bool isInverse, int unity, Func<int,int,int> iFunc, Func<float,float,float> fFunc)
         {
-            return new FunctionCall("+", (a, e, o) =>
+            return new FunctionCall(name, (a, e, o) =>
             {
                 int iResult = unity;
                 float fResult = iResult;
                 bool intMode = true;
-                foreach (var arg in args)
+                for (var index = 0; index < args.Length; index++)
                 {
+                    var arg = args[index];
                     var value = arg.Eval(e, o);
                     if (intMode)
                     {
                         switch (value)
                         {
                             case int i:
-                                iResult = iFunc(iResult, i);
+                                iResult = (isInverse && index== 0 && args.Length > 1)? i : iFunc(iResult, i);
                                 break;
                             case float f:
-                                fResult = fFunc(iResult, f);
+                                fResult = (isInverse && index == 0 && args.Length > 1) ? f : fFunc(iResult, f);
                                 intMode = false;
                                 break;
                             default:
-                                throw new ArgumentTypeException("+", typeof(float), arg, args, o);
+                                throw new ArgumentTypeException(name, typeof(float), arg, args, o);
                         }
                     }
                     else // float mode
@@ -313,10 +314,11 @@ namespace Step.Interpreter
                             int i => fFunc(fResult, i),
                             float f => fFunc(fResult, f),
                             double d => fFunc(fResult, (float)d),
-                            _ => throw new ArgumentTypeException("+", typeof(float), arg, args, o)
+                            _ => throw new ArgumentTypeException(name, typeof(float), arg, args, o)
                         };
                     }
                 }
+
                 return intMode?(object?)iResult:(object?)fResult;
             }, args);
         }
@@ -325,7 +327,7 @@ namespace Step.Interpreter
         {
             if (args.Length == 0)
                 throw new SyntaxError($"Insufficient arguments in call to {name}", path, lineNumber);
-            return new FunctionCall("+", (a, e, o) =>
+            return new FunctionCall(name, (a, e, o) =>
             {
                 int iResult = 0;
                 float fResult = 0;
@@ -348,7 +350,7 @@ namespace Step.Interpreter
                                 intMode = false;
                                 break;
                             default:
-                                throw new ArgumentTypeException("+", typeof(float), arg, args, o);
+                                throw new ArgumentTypeException(name, typeof(float), arg, args, o);
                         }
                     }
                     else // float mode
@@ -358,7 +360,7 @@ namespace Step.Interpreter
                             int i => fFunc(fResult, i),
                             float f => fFunc(fResult, f),
                             double d => fFunc(fResult, (float)d),
-                            _ => throw new ArgumentTypeException("+", typeof(float), arg, args, o)
+                            _ => throw new ArgumentTypeException(name, typeof(float), arg, args, o)
                         };
                     }
                 }

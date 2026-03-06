@@ -121,7 +121,7 @@ namespace Step.Parser
                 while (!end)
                 {
                     // Read tokens up to bracketed expressions
-                    while (!end && Peek != "[" && Peek != "@(")
+                    while (!end && Peek != "[" && Peek != "@(" && Peek != "!(")
                     {
                         var token = Get();
                         if (token == "]")
@@ -171,6 +171,10 @@ namespace Step.Parser
                                 yield return new TupleExpression("@()", buffer.ToArray());
                                 break;
 
+                            case "!(":
+                                yield return new TupleExpression("!()", buffer.ToArray());
+                                break;
+
                             default:
                                 yield return buffer.ToArray();
                                 break;
@@ -185,7 +189,7 @@ namespace Step.Parser
             {
                 "[" => "]",
                 "{" => "}",
-                "@(" or "(" => ")",
+                "!(" or "@(" or "(" => ")",
                 _ => throw new InvalidOperationException(
                     $"'{openBracket}' is not an appropriate token for marking a nested expression.")
             };
