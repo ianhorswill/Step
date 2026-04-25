@@ -5,7 +5,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Step sandbox</title>
-    <!--<base href="/" />-->
+
+    <script>
+        (function () {
+            // Detect base path from URL (e.g., /myapp/ -> "myapp")
+            var pathSegments = window.location.pathname.split('/').filter(s => s);
+            var basePath = pathSegments.length > 0 ? `/${pathSegments[0]}/` : '/';
+
+            //console.log('Detected base path:', basePath);
+            // Create and insert <base> tag dynamically
+            var baseTag = document.createElement('base');
+            baseTag.href = basePath;
+            document.head.appendChild(baseTag);
+
+            // Optional: store for later use in JS interop
+            window.__blazorBasePath = basePath;
+        })();
+    </script>
+
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -17,6 +34,13 @@
 </head>
 
 <body>
+    <script type="module">
+            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+            mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+            window.mermaid = mermaid
+    </script>
+    <script src="./GameDriver.js" type="module"></script>
+
     <div id="app">
         <svg class="loading-progress">
             <circle r="40%" cx="50%" cy="50%" />

@@ -1,0 +1,12 @@
+﻿@page "/Editor/{id}"
+@using System.Security.Principal
+
+<h3>@id</h3>
+
+<div id=@($"codeEditor-{id}") class="language-step">@(Packages[id])</div>
+
+@code {
+    [Parameter]
+    public string? id { get; set; }
+    public static readonly Dictionary<string, string> Packages = new();
+}

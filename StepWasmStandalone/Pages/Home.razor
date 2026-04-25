@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using System.Numerics
 @using System.Text.Json
+@using System.Text.RegularExpressions
 @using Step
 @using Step.Binding
 @using Step.Exceptions
@@ -11,22 +12,18 @@
 @using StepRepl.GraphVisualization
 @using Task = System.Threading.Tasks.Task
 @inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>Step</PageTitle>
 
 <h3>Program</h3>
 
-<div id="codeEditor" class="language-step"># Enter code here
+<div id="codeEditor" class="language-step">
+
 </div>
 
 <p>Control-click on a task/predicate name to navigate to its definition (only works for your own tasks, not built-in tasks)</p>
-
-<script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-        window.mermaid = mermaid
-    </script>
-    
+  
 <script type="module">
     import { CodeJar } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/codejar.min.js';
     import { withLineNumbers } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/linenumbers.min.js';
@@ -97,9 +94,13 @@
     window.addEventListener('message', function(event) {
         if (event.source == window.opener)
         {
-            jar.updateCode(DotNet.invokeMethod('StepWasmStandalone', 'SetSource', event.data));
-            //jar.updateCode(event.data);
-            dirty = false;
+            var message = event.data;
+            if (typeof message === "string")
+            {
+                jar.updateCode(DotNet.invokeMethod('StepWasmStandalone', 'SetSource', message));
+                dirty = false;
+            } else if (typeof message === "object" && "packageRepository" in message)
+                packageRepository = message.packageRepository;
         } else
             console.log("wrong message sender");
     } );
@@ -132,7 +133,13 @@
 
 <script>
     function GetUserCode() {
+        console.log("GetUserCode");
         return jar.toString();
+    }
+
+    function SetUserCode(source) {
+        console.log("SetUserCode: "+source);
+        jar.updateCode(source);
     }
 
     function LogIt(s) {
@@ -144,9 +151,20 @@
             mermaid.run();
             window.requestAnimationFrame(function() { window.scrollTo(0, document.body.scrollHeight); });
         });
-    }    
+    }
+
+    if (typeof packageRepository === 'undefined')
+        packageRepository = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+
+    async function FetchPackage(packageName) {
+        const packageUrl = packageRepository + packageName + ".step";
+        console.log("Package URL: "+packageUrl);
+        const response = await fetch(packageUrl);
+        if (!response.ok)
+            return null;
+        return await response.text();
+    }
 </script>
-<script src="./GameDriver.js"></script>
 
 @* <textarea @bind="@source" id="sourceCode" style="width: 800px; height: 400px;" spellcheck="false"/> *@
 <br>
@@ -192,11 +210,12 @@
         }
 
         singleton.StateHasChanged();
+        singleton.InvokeAsync(() => singleton.EnsureModulesLoaded(sourceCode));
 
         return sourceCode;
     }
 
-    string lastModuleSource="";
+    static string lastModuleSource="";
 
     private async void Run()
     {
@@ -216,6 +235,7 @@
                     var m = new Module("User", ReplUtilities);
                     m.FormattingOptions.LineSeparator = " <br> ";
                     m.FormattingOptions.ParagraphMarker = " <p> ";
+                    await EnsureModulesLoaded(source);
                     m.AddDefinitions(source);
                     lastModuleSource = source;
                     UserModule = m;
@@ -244,16 +264,35 @@
             {
                 outputHeading = "No";
                 output = (MarkupString)"<i>The command did not generate an error, but it was not successful; the answer to your query is \"no\".</i>";
+                lastModuleSource= "";
             }
             catch (Exception e)
             {
                 outputHeading = "Error";
                 output = (MarkupString)(e.Message + "<br>" + Module.StackTrace(MethodCallFrame.CurrentFrameBindings).Replace("\n", "<br>"));
+                lastModuleSource = "";
             }
             await JS.InvokeVoidAsync("ScheduleMermaidRenderAndScollToEnd");
         }
 
         StateHasChanged();
+    }
+
+    private async Task EnsureModulesLoaded(string source)
+    {
+        foreach (var requirement in source.Split('\n').Where(l => l.StartsWith("require ")))
+        {
+            var match = Regex.Match(requirement, @"require\s+([A-Za-z0-9_]+)");
+            var packageName = match.Groups[1].Value;
+            if (!Editor.Packages.ContainsKey(packageName))
+            {
+                var code = await JS.InvokeAsync<string>("FetchPackage", packageName);
+                if (code == null)
+                    throw new FileNotFoundException($"Failed to load package: {packageName}");
+                Editor.Packages[packageName] = code;
+                NavMenu.Update();
+            }
+        }
     }
 
     private static bool IsTopLevelCallFailure(CallFailedException e) => e.Task is CompoundTask { Name: "TopLevelCall" };
@@ -405,6 +444,21 @@
     protected override void OnInitialized()
     {
         singleton = this;
+        Module.RequireHook = (packageName) =>         {
+            if (Editor.Packages.TryGetValue(packageName, out var code))
+                return new StringReader(code);
+            throw new Exception($"Package not found: {packageName}");
+        };
+
+        if (!string.IsNullOrEmpty(lastModuleSource))
+        {
+            JS.InvokeVoidAsync("SetUserCode", lastModuleSource);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        lastModuleSource = await JS.InvokeAsync<string>("GetUserCode");
     }
 
     #region Game stuff

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using Step.Binding;
 using Step.Exceptions;
 using Step.Output;
@@ -274,7 +275,7 @@ namespace Step.Interpreter
                 "+" => AccumulateBinaryOperator("+", args, false, 0, (a, b) => a + b, (a, b) => a + b),
                 "*" => AccumulateBinaryOperator("*", args, false, 1, (a, b) => a * b, (a, b) => a * b),
                 "-" => AccumulateBinaryOperator("-", args, true, 0, (a, b) => a - b, (a, b) => a - b),
-                "/" => AccumulateBinaryOperator("/", args, true, 1, (a, b) => a / b, (a, b) => a / b),
+                "/" => DivisionOperator("/", args),
                 "min" => AccumulateBinaryOperator("min", args, (Func<int, int, int> )Math.Min, (Func<float,float,float>)Math.Min, path, lineNumber),
                 "max" => AccumulateBinaryOperator("max", args, (Func<int, int, int>)Math.Max, (Func<float, float, float>)Math.Max, path, lineNumber),
                 _ => throw new SyntaxError($"Unknown function: {Writer.TermToString(arr[0])}", path, lineNumber)
@@ -360,6 +361,56 @@ namespace Step.Interpreter
                             int i => fFunc(fResult, i),
                             float f => fFunc(fResult, f),
                             double d => fFunc(fResult, (float)d),
+                            _ => throw new ArgumentTypeException(name, typeof(float), arg, args, o)
+                        };
+                    }
+                }
+
+                return intMode ? (object?)iResult : (object?)fResult;
+            }, args);
+        }
+
+        private static FunctionCall DivisionOperator(string name, FunctionalExpression[] args)
+        {
+            return new FunctionCall(name, (a, e, o) =>
+            {
+                int iResult = 1;
+                float fResult = iResult;
+                bool intMode = true;
+                for (var index = 0; index < args.Length; index++)
+                {
+                    var arg = args[index];
+                    var value = arg.Eval(e, o);
+                    if (intMode)
+                    {
+                        switch (value)
+                        {
+                            case int i:
+                                if (index == 0 && args.Length > 1)
+                                    iResult = i;
+                                else if (iResult % i == 0)
+                                    iResult = iResult / i;
+                                else
+                                {
+                                    intMode = false;
+                                    fResult = ((float)iResult)/i;
+                                }
+                                break;
+                            case float f:
+                                fResult = (index == 0 && args.Length > 1) ? f : iResult / f;
+                                intMode = false;
+                                break;
+                            default:
+                                throw new ArgumentTypeException(name, typeof(float), arg, args, o);
+                        }
+                    }
+                    else // float mode
+                    {
+                        fResult = value switch
+                        {
+                            int i => fResult / i,
+                            float f => fResult / f,
+                            double d => fResult / (float)d,
                             _ => throw new ArgumentTypeException(name, typeof(float), arg, args, o)
                         };
                     }

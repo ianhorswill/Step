@@ -617,6 +617,8 @@ var output = TextBuffer.NewEmpty();
                          path, line) 
                 in defs.Definitions)
             {
+                if (declaration == "require")
+                    RequireDefinitions(task.Name);
                 if (task.Name == "initially")
                     RunLoadTimeInitialization(pattern, locals, chain, path, line);
                 else
@@ -657,6 +659,21 @@ var output = TextBuffer.NewEmpty();
                     }
                 }
             }
+        }
+
+        public static Func<string, TextReader?>? RequireHook = null;
+        private readonly HashSet<string> requiredPackages = new();
+        private void RequireDefinitions(string packageName)
+        {
+            if (requiredPackages.Contains(packageName))
+                return;
+            if (RequireHook == null)
+                throw new InvalidOperationException(
+                    $"Require used on package {packageName}, but no package provider is available.");
+            var stream = RequireHook(packageName);
+            if (stream == null)
+                throw new FileNotFoundException($"No package found named {packageName}");
+            LoadDefinitions(stream, packageName);
         }
 
         private static readonly LocalVariableName[] NoLocals = Array.Empty<LocalVariableName>();

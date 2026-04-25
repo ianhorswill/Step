@@ -228,7 +228,7 @@ namespace Step.Parser
         /// <summary>
         /// Keywords that can be used as standalone declarations, e.g. "task MyTask ?arg1."
         /// </summary>
-        private static readonly string[] DeclarationKeywords = ["predicate", "task", "fluent", "folder_structure"];
+        private static readonly string[] DeclarationKeywords = ["predicate", "task", "fluent", "folder_structure", "require"];
         #endregion
 
         #region Source-language variables     

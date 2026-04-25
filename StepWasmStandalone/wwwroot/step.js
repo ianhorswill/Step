@@ -163,7 +163,7 @@ const METHOD_NAME = {
 }
 
 const TASK_DECLARATION = {
-  beginKeywords: 'fluent task predicate',
+  beginKeywords: 'fluent task predicate require',
   beginScope: 'keyword',
   end: '$',
   contains: [ METHOD_NAME, LOCAL_VARIABLE  ]
