@@ -31,6 +31,7 @@
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
     <script src="step.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.12.0/dist/pixi.min.js"></script>
+    <script src="EditorSupport.js" type="module"></script>
 </head>
 
 <body>
@@ -39,7 +40,41 @@
             mermaid.initialize({ startOnLoad: true, theme: 'dark' });
             window.mermaid = mermaid
     </script>
-    <script src="./GameDriver.js" type="module"></script>
+<script src="./GameDriver.js" type="module"></script>
+<script>
+    function GetUserCode() {
+        //console.log("GetUserCode");
+        return window.jar.toString();
+    }
+
+    function SetUserCode(source) {
+        //console.log("SetUserCode: "+source);
+        window.jar.updateCode(source);
+    }
+
+    function LogIt(s) {
+        console.log(s);
+    }
+
+    function ScheduleMermaidRenderAndScollToEnd() {
+        window.requestAnimationFrame(function () {
+            mermaid.run();
+            window.requestAnimationFrame(function () { window.scrollTo(0, document.body.scrollHeight); });
+        });
+    }
+
+    if (typeof packageRepository === 'undefined')
+        packageRepository = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+
+    async function FetchPackage(packageName) {
+        const packageUrl = packageRepository + packageName + ".step";
+        //console.log("Package URL: "+packageUrl);
+        const response = await fetch(packageUrl);
+        if (!response.ok)
+            return null;
+        return await response.text();
+    }
+</script>
 
     <div id="app">
         <svg class="loading-progress">
