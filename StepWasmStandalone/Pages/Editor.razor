@@ -8,9 +8,11 @@
 
 <script>
     installCodeJar();
-    const editor = document.querySelector(".language-step");
-    // Reassert that it isn't editable, since CodeJar will make it editable by default.
-    editor.setAttribute('contenteditable', 'false');
+    (() => {
+        const editor = document.querySelector(".language-step");
+        // Reassert that it isn't editable, since CodeJar will make it editable by default.
+        editor.setAttribute('contenteditable', 'false');
+    })();
 </script>
 
 
