@@ -5,8 +5,13 @@
 
 <div id=@($"codeEditor-{id}") class="language-step">@(Packages[id])</div>
 
+<script>
+    installCodeJar();
+</script>
+
+
 @code {
     [Parameter]
     public string? id { get; set; }
-    public static readonly Dictionary<string, string> Packages = new();
+    public static readonly Dictionary<string, string> Packages = new() { { "foo", "foo" }};
 }

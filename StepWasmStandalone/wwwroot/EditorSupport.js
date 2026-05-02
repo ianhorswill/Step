@@ -36,6 +36,25 @@ function gotoDefinition(name) {
         console.log("Can't find: " + name);
 }
 
+window.addEventListener('message', function (event) {
+    if (event.source == window.opener) {
+        var message = event.data;
+        if (typeof message === "string") {
+            jar.updateCode(DotNet.invokeMethod('StepWasmStandalone', 'SetSource', message));
+            dirty = false;
+        } else if (typeof message === "object" && "packageRepository" in message)
+            packageRepository = message.packageRepository;
+    } else
+        console.log("wrong message sender");
+});
+
+window.addEventListener("beforeunload", function (event) {
+    if (dirty) {
+        event.preventDefault();
+        event.returnValue = '';
+    }
+});
+
 function installCodeJar() {
     const highlight = editor => {
         // highlight.js does not trims old tags,
@@ -64,39 +83,23 @@ function installCodeJar() {
             console.log("Token is not a name: " + name);
     });
 
-    window.addEventListener('message', function (event) {
-        if (event.source == window.opener) {
-            var message = event.data;
-            if (typeof message === "string") {
-                jar.updateCode(DotNet.invokeMethod('StepWasmStandalone', 'SetSource', message));
-                dirty = false;
-            } else if (typeof message === "object" && "packageRepository" in message)
-                packageRepository = message.packageRepository;
-        } else
-            console.log("wrong message sender");
-    });
+    const downloadButton = document.getElementById('downloadButton');
 
-    window.addEventListener("beforeunload", function (event) {
-        if (dirty) {
-            event.preventDefault();
-            event.returnValue = '';
-        }
-    });
+    if (downloadButton != null)
+        downloadButton.addEventListener('click', function () {
+            // Create a Blob object with the content
+            const blob = new Blob([jar.toString()], { type: "text/plain" });
 
-    document.getElementById('downloadButton').addEventListener('click', function () {
-        // Create a Blob object with the content
-        const blob = new Blob([jar.toString()], { type: "text/plain" });
+            // Create a temporary anchor element
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "Saved.step"; // Set the file name
 
-        // Create a temporary anchor element
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "Saved.step"; // Set the file name
-
-        // Append the anchor to the document, trigger the download, and remove it
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    });
+            // Append the anchor to the document, trigger the download, and remove it
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
 }
 
 window.installCodeJar = installCodeJar;

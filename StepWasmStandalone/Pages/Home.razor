@@ -41,10 +41,23 @@
         window.opener.postMessage("_ready_", "*");
 </script>
 
+
+<p></p>
+<h3>@outputHeading</h3>
+
+<p id="codeOutput" role="status">@output</p>
+
 @code {
     private static Module ReplUtilities = MakeReplUtilities();
     private static Module UserModule = null!;
     internal static State State;
+
+    public static bool RetainState = true;
+    public static Task? CommandProcessor;
+
+    private static Home singleton=null!;
+
+    static string lastModuleSource="";
 
     private string command ="";
 
@@ -79,8 +92,6 @@
 
         return sourceCode;
     }
-
-    static string lastModuleSource="";
 
     private async void Run()
     {
@@ -302,10 +313,6 @@
         return m;
     }
 
-    public static bool RetainState = true;
-    public static Task? CommandProcessor;
-
-    private static Home singleton=null!;
     protected override void OnInitialized()
     {
         singleton = this;
@@ -405,10 +412,4 @@
     private static readonly Dictionary<(string, string), NeedState> needStates = new ();
     #endregion
 }
-
-<p></p>
-<h3>@outputHeading</h3>
-
-<p id="codeOutput" role="status">@output</p>
-
 
