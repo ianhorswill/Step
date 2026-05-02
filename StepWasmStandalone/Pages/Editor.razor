@@ -1,17 +1,53 @@
 ﻿@page "/Editor/{id}"
 @using System.Security.Principal
+@inject NavigationManager Nav
 
 <h3>@id</h3>
 
-<div id=@($"codeEditor-{id}") class="language-step">@(Packages[id])</div>
+<div id=@($"codeEditor-{id}") class="language-step" contenteditable="false">@(Packages[id])</div>
 
 <script>
     installCodeJar();
+    const editor = document.querySelector(".language-step");
+    // Reassert that it isn't editable, since CodeJar will make it editable by default.
+    editor.setAttribute('contenteditable', 'false');
 </script>
 
 
 @code {
     [Parameter]
     public string? id { get; set; }
-    public static readonly Dictionary<string, string> Packages = new() { { "foo", "foo" }};
+
+    public static readonly Dictionary<string, string> Packages = new(); // { { "foo", "foo" }};
+
+    /// <summary>
+    /// Fires when the user navigates away from an Editor page. The argument is
+    /// the id of the editor that was left.
+    /// </summary>
+    public static event Action<string?>? NavigatedAway;
+
+    private IDisposable? navHandlerRegistration;
+
+    protected override void OnInitialized()
+    {
+        navHandlerRegistration = Nav.RegisterLocationChangingHandler(OnLocationChanging);
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (IsEditorPage(context.TargetLocation)) return ValueTask.CompletedTask;
+        navHandlerRegistration?.Dispose();
+        navHandlerRegistration = null;
+        NavigatedAway?.Invoke(id);
+        return ValueTask.CompletedTask;
+    }
+
+    private bool IsEditorPage(string uri)
+    {
+        var path = Nav.ToBaseRelativePath(uri).TrimEnd('/');
+        var query = path.IndexOf('?');
+        if (query >= 0) path = path[..query];
+        return path.StartsWith("Editor/", StringComparison.OrdinalIgnoreCase)
+               || path.Equals("Editor", StringComparison.OrdinalIgnoreCase);
+    }
 }

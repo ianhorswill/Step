@@ -12,13 +12,14 @@
 @using StepRepl.GraphVisualization
 @using Task = System.Threading.Tasks.Task
 @inject IJSRuntime JS
-@implements IAsyncDisposable
+@inject NavigationManager Nav
 
 <PageTitle>Step</PageTitle>
 
 <h3>Program</h3>
 
 <div id="codeEditor" class="language-step">
+@lastModuleSource
 
 </div>
 
@@ -322,15 +323,32 @@
             throw new Exception($"Package not found: {packageName}");
         };
 
-        if (!string.IsNullOrEmpty(lastModuleSource))
-        {
-            JS.InvokeVoidAsync("SetUserCode", lastModuleSource);
-        }
+        // if (!string.IsNullOrEmpty(lastModuleSource))
+        // {
+        //     JS.InvokeVoidAsync("LogIt", "Setting source: "+lastModuleSource);
+        //     JS.InvokeVoidAsync("SetUserCode", lastModuleSource);
+        // }
+
+        navHandlerRegistration = Nav.RegisterLocationChangingHandler(OnLocationChanging);
     }
 
-    public async ValueTask DisposeAsync()
+    private IDisposable? navHandlerRegistration;
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
     {
+        if (IsHomePage(context.TargetLocation)) return;
+        navHandlerRegistration?.Dispose();
+        navHandlerRegistration = null;
         lastModuleSource = await JS.InvokeAsync<string>("GetUserCode");
+        //await JS.InvokeVoidAsync("LogIt", "Captured source: "+lastModuleSource);
+    }
+
+    private bool IsHomePage(string uri)
+    {
+        var path = Nav.ToBaseRelativePath(uri).TrimEnd('/');
+        var query = path.IndexOf('?');
+        if (query >= 0) path = path[..query];
+        return path.Length == 0;
     }
 
     #region Game stuff

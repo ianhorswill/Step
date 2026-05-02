@@ -56,6 +56,8 @@ window.addEventListener("beforeunload", function (event) {
 });
 
 function installCodeJar() {
+    const editor = document.querySelector(".language-step");
+
     const highlight = editor => {
         // highlight.js does not trims old tags,
         // let's do it by this hack.
@@ -64,7 +66,6 @@ function installCodeJar() {
         hljs.highlightElement(editor);
     };
 
-    const editor = document.querySelector(".language-step");
     const jar = CodeJar(editor, withLineNumbers(highlight));
 
     // Put jar someplace the non-module scripts can find it.

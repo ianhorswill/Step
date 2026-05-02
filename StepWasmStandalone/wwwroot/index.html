@@ -48,8 +48,11 @@
     }
 
     function SetUserCode(source) {
-        //console.log("SetUserCode: "+source);
+        console.log("SetUserCode: " + source);
+        window.installCodeJar();
+        console.log("Code jar installed");
         window.jar.updateCode(source);
+        console.log("updated code");
     }
 
     function LogIt(s) {
