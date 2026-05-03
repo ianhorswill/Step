@@ -40,6 +40,15 @@
     
     if (window.opener != null)
         window.opener.postMessage("_ready_", "*");
+
+   // For some reason, Blazor JS interop can find all the GameDrive methods, except this one.
+   // But it works when it's placed here.
+   function stopGame() {
+        if (typeof game === 'undefined' || game === null)
+            return;
+        game.stop();
+        game = null;
+    }
 </script>
 
 
@@ -339,8 +348,14 @@
         if (IsHomePage(context.TargetLocation)) return;
         navHandlerRegistration?.Dispose();
         navHandlerRegistration = null;
+        await ExitPage();
+    }
+
+    private async ValueTask ExitPage()
+    {
         lastModuleSource = await JS.InvokeAsync<string>("GetUserCode");
         //await JS.InvokeVoidAsync("LogIt", "Captured source: "+lastModuleSource);
+        await JS.InvokeVoidAsync("stopGame");
     }
 
     private bool IsHomePage(string uri)

@@ -266,6 +266,8 @@ let tickRate = 999999999999;      // period between tick messages to send to Ste
 let timeToTick = tickRate;
 
 function updateGameObjects(time) {
+    if (typeof game === 'undefined' || game === null)
+        return;
     try {
         const w = game.screen.right;
         const h = game.screen.bottom;
