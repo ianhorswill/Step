@@ -59,7 +59,7 @@
 
     static string lastModuleSource="";
 
-    private string command ="";
+    private static string command ="";
 
     private string outputHeading = "No output";
     private MarkupString output = new MarkupString("no output");
@@ -83,7 +83,7 @@
         {
             var commandStart = CommandCommentPrefix.Length;
             var commandEnd = sourceCode.IndexOf('\n');
-            singleton.command = sourceCode.Substring(commandStart, commandEnd-commandStart).Trim();
+            command = sourceCode.Substring(commandStart, commandEnd-commandStart).Trim();
             sourceCode = sourceCode.Substring(commandEnd+1);
         }
 
