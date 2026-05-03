@@ -1,6 +1,8 @@
 ﻿import { CodeJar } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/codejar.min.js';
 import { withLineNumbers } from 'https://cdn.jsdelivr.net/npm/codejar@3.3.0/linenumbers.min.js';
 
+window.dirty = false;
+
 function tokenUnderCursor(event) {
     const caretPosition = document.caretPositionFromPoint(event.clientX, event.clientY);
     const text = caretPosition.offsetNode.textContent
@@ -41,7 +43,7 @@ window.addEventListener('message', function (event) {
         var message = event.data;
         if (typeof message === "string") {
             jar.updateCode(DotNet.invokeMethod('StepWasmStandalone', 'SetSource', message));
-            dirty = false;
+            window.dirty = false;
         } else if (typeof message === "object" && "packageRepository" in message)
             packageRepository = message.packageRepository;
     } else
@@ -49,7 +51,7 @@ window.addEventListener('message', function (event) {
 });
 
 window.addEventListener("beforeunload", function (event) {
-    if (dirty) {
+    if (window.dirty) {
         event.preventDefault();
         event.returnValue = '';
     }
@@ -71,7 +73,7 @@ function installCodeJar() {
     // Put jar someplace the non-module scripts can find it.
     window.jar = jar;
 
-    let dirty = false;
+    window.dirty = false;
 
     editor.addEventListener("click", function (event) {
         if (!event.ctrlKey)

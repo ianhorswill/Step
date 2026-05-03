@@ -20,7 +20,7 @@
     [Parameter]
     public string? id { get; set; }
 
-    public static readonly Dictionary<string, string> Packages = new() { { "foo", "foo" }};
+    public static readonly Dictionary<string, string> Packages = new(); // { { "foo", "foo" }};
 
     /// <summary>
     /// Fires when the user navigates away from an Editor page. The argument is

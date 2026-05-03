@@ -40,17 +40,7 @@
     
     if (window.opener != null)
         window.opener.postMessage("_ready_", "*");
-
-   // For some reason, Blazor JS interop can find all the GameDrive methods, except this one.
-   // But it works when it's placed here.
-   function stopGame() {
-        if (typeof game === 'undefined' || game === null)
-            return;
-        game.stop();
-        game = null;
-    }
 </script>
-
 
 <p></p>
 <h3>@outputHeading</h3>
@@ -221,7 +211,8 @@
                 GameObjectTypes[(string)o[0]] = (string)o[1];
             foreach (object[] o in stat)
                 GameObjectTypes[(string)o[0]] = (string)o[1];
-            singleton.JS.InvokeAsync<string>("startGame", animated, stat);
+            singleton.afterRenderActions.Add(async () => await singleton.JS.InvokeVoidAsync("startGame", animated, stat));
+
             return true;
         });
 
@@ -356,6 +347,16 @@
         lastModuleSource = await JS.InvokeAsync<string>("GetUserCode");
         //await JS.InvokeVoidAsync("LogIt", "Captured source: "+lastModuleSource);
         await JS.InvokeVoidAsync("stopGame");
+    }
+
+    List<Func<Task>> afterRenderActions = new();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        foreach (var t in afterRenderActions)
+        {
+            await t();
+        }
+        afterRenderActions.Clear();
     }
 
     private bool IsHomePage(string uri)

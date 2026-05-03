@@ -6,6 +6,7 @@ let gameObjectArray = [];
 ///
 
 async function startGame(animatedSprites, staticSprites) {
+    console.log("start up")
     try {
         if (typeof game === 'undefined' || game === null) {
             game = new PIXI.Application();
@@ -27,6 +28,7 @@ async function startGame(animatedSprites, staticSprites) {
         await other;
 
         game.ticker.add(updateGameObjects);
+        console.log("done");
     } catch (e) {
         console.log('error in startGame');
         console.log(e);
@@ -34,6 +36,14 @@ async function startGame(animatedSprites, staticSprites) {
     }
     postNotifications();
     return true;
+}
+
+function stopGame() {
+    if (typeof game === 'undefined' || game === null)
+        return;
+    game.canvas.remove();
+    game.stop();
+    game = null;
 }
 
 ///
