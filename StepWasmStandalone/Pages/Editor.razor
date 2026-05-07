@@ -1,6 +1,7 @@
 ﻿@page "/Editor/{id}"
 @using System.Security.Principal
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <h3>@id</h3>
 
@@ -13,6 +14,9 @@
         // Reassert that it isn't editable, since CodeJar will make it editable by default.
         editor.setAttribute('contenteditable', 'false');
     })();
+    function ResetEditorCode(code) {
+        jar.updateCode(code);
+    }
 </script>
 
 
@@ -20,7 +24,7 @@
     [Parameter]
     public string? id { get; set; }
 
-    public static readonly Dictionary<string, string> Packages = new(); // { { "foo", "foo" }};
+    public static readonly Dictionary<string, string> Packages = new(); //{ { "foo", "foo" }, { "bar", "bar" }};
 
     /// <summary>
     /// Fires when the user navigates away from an Editor page. The argument is
@@ -42,6 +46,12 @@
         navHandlerRegistration = null;
         NavigatedAway?.Invoke(id);
         return ValueTask.CompletedTask;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        await JS.InvokeVoidAsync("ResetEditorCode", Packages[id]);
     }
 
     private bool IsEditorPage(string uri)
