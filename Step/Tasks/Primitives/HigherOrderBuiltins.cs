@@ -88,6 +88,7 @@ namespace Step.Tasks.Primitives
                 "Predicates that run other predicates.");
 
             g["Succeeds"] = g[nameof(Call)] = Call;
+            g["AllSucceed"] = And;
             g["CallDirect"] = new GeneralPrimitive(nameof(CallDirectImplementation), CallDirectImplementation)
                 .Arguments("call", "extra_arguments", "...")
                 .Documentation("control flow//calling tasks", "Runs the call to the task represented in the tuple 'call', but bypasses any meta-predicate it might have. If extra_arguments are included, they will be added to the end of the call tuple.");
