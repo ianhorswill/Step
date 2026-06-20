@@ -95,6 +95,22 @@ namespace StepRepl
             .Arguments("directoryPath", "subPath")
             .Documentation("StepRepl//utilities", "True when the specified subdirectory is in the specified directory.");
 
+        g["PathDirectoryAndName"] = new GeneralPrimitive("PathDirectoryAndName", (args, output, env, frame, k) =>
+        {
+            ArgumentCountException.Check("PathDirectoryAndName", 3, args, output);
+            if (args[0] is string path)
+            {
+                return env.UnifyArrays([args[1], args[2]], [Path.GetDirectoryName(path), Path.GetFileName(path)],
+                           out BindingList? bindings)
+                       && k(output, bindings, env.State, frame);
+            }
+
+            var dir = ArgumentTypeException.Cast<string>("PathDirectoryAndName", args[1], args, output);
+            var name = ArgumentTypeException.Cast<string>("PathDirectoryAndName", args[2], args, output);
+            return env.Unify(args[0], Path.Combine(dir, name), out BindingList? bindings2)
+                   && k(output, bindings2, env.State, frame);
+        });
+
         //g["ProjectDirectory"] = new SimpleFunction<string, string>("SubdirectoryHere", Repl.FindProject);
 
         g[nameof(CallInModule)] = new GeneralPrimitive(nameof(CallInModule), CallInModule)
