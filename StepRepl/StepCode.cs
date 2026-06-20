@@ -89,6 +89,7 @@ namespace StepRepl
         {
             Step.ReplSupport.EnvironmentOption.Handler += EnvironmentOption;
             StepThread.WrapExceptions = true;
+            Step.Module.RequireHook = ignore => new StringReader("");
 
             ReplUtilities = new Module("ReplUtilities", Module.Global)
             {
